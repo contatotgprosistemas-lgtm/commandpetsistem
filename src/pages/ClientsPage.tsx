@@ -1,4 +1,5 @@
-import { Search, Plus, Phone, Mail, Tag } from "lucide-react";
+import { Search, Phone, Mail } from "lucide-react";
+import { NovoClienteDialog } from "@/components/NovoClienteDialog";
 
 const clients = [
   { name: "João Santos", phone: "+55 11 99999-1234", email: "joao@email.com", pets: 2, tags: ["VIP", "Hotel"], lastVisit: "15/03/2026" },
