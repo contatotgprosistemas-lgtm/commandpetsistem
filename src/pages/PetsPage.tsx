@@ -1,5 +1,6 @@
 import { StatusTag } from "@/components/StatusTag";
-import { PawPrint, Search, Plus, Filter } from "lucide-react";
+import { PawPrint, Search, Filter } from "lucide-react";
+import { NovoPetDialog } from "@/components/NovoPetDialog";
 
 const pets = [
   { name: "Rex", breed: "Golden Retriever", tutor: "João Santos", weight: "32kg", age: "4 anos", status: "in-bath" as const },
@@ -20,10 +21,7 @@ export default function PetsPage() {
           <h1 className="text-lg font-semibold text-foreground">Pets</h1>
           <p className="text-sm text-muted-foreground">{pets.length} pets cadastrados</p>
         </div>
-        <button className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
-          <Plus className="h-4 w-4" strokeWidth={1.5} />
-          Novo Pet
-        </button>
+        <NovoPetDialog />
       </div>
 
       {/* Filters */}
