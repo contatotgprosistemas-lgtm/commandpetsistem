@@ -1,5 +1,6 @@
 import { StatusTag } from "@/components/StatusTag";
-import { PawPrint, Search, Plus, Filter } from "lucide-react";
+import { PawPrint, Search, Filter } from "lucide-react";
+import { NovoPetDialog } from "@/components/NovoPetDialog";
 
 const pets = [
   { name: "Rex", breed: "Golden Retriever", tutor: "João Santos", weight: "32kg", age: "4 anos", status: "in-bath" as const },
