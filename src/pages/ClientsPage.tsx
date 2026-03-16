@@ -28,10 +28,7 @@ export default function ClientsPage() {
           <h1 className="text-lg font-semibold text-foreground">Clientes</h1>
           <p className="text-sm text-muted-foreground">{clients.length} clientes cadastrados</p>
         </div>
-        <button className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
-          <Plus className="h-4 w-4" strokeWidth={1.5} />
-          Novo Cliente
-        </button>
+        <NovoClienteDialog />
       </div>
 
       <div className="relative max-w-sm">

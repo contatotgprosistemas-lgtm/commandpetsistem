@@ -29,10 +29,7 @@ export default function AgendaPage() {
             <Calendar className="h-4 w-4" strokeWidth={1.5} />
             Hoje
           </button>
-          <button className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-2">
-            <Plus className="h-4 w-4" strokeWidth={1.5} />
-            Novo Agendamento
-          </button>
+          <NovoAgendamentoDialog />
         </div>
       </div>
 
