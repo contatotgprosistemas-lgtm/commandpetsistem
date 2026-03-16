@@ -1,4 +1,5 @@
-import { Calendar, Clock, PawPrint, Plus } from "lucide-react";
+import { Calendar, Clock, PawPrint } from "lucide-react";
+import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { StatusTag } from "@/components/StatusTag";
 
 const timeSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
