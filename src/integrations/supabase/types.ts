@@ -185,6 +185,50 @@ export type Database = {
           },
         ]
       }
+      conexoes_whatsapp: {
+        Row: {
+          created_at: string
+          data_conexao: string | null
+          empresa_id: string
+          id: string
+          numero: string | null
+          session_data: Json | null
+          status: string
+          ultima_atividade: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_conexao?: string | null
+          empresa_id: string
+          id?: string
+          numero?: string | null
+          session_data?: Json | null
+          status?: string
+          ultima_atividade?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_conexao?: string | null
+          empresa_id?: string
+          id?: string
+          numero?: string | null
+          session_data?: Json | null
+          status?: string
+          ultima_atividade?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conexoes_whatsapp_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contas_pagar: {
         Row: {
           categoria: string | null
