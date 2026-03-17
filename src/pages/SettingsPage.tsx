@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff } from "lucide-react";
+import WhatsAppConnectionCard from "@/components/WhatsAppConnectionCard";
 
 // ─── Dados da Empresa ───────────────────────────────────────────────
 function EmpresaTab() {
