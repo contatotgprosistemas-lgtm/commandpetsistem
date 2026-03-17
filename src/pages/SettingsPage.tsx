@@ -13,7 +13,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff } from "lucide-react";
-import WhatsAppConnectionCard from "@/components/WhatsAppConnectionCard";
 
 // ─── Dados da Empresa ───────────────────────────────────────────────
 function EmpresaTab() {
@@ -421,33 +420,32 @@ function SegurancaTab() {
 
 // ─── Integrações ────────────────────────────────────────────────────
 function IntegracoesTab() {
-  return (
-    <div className="space-y-6">
-      <WhatsAppConnectionCard />
+  const integrations = [
+    { name: "WhatsApp Business", desc: "Conecte sua conta do WhatsApp para enviar e receber mensagens", connected: false },
+    { name: "Gateway de Pagamento", desc: "Receba pagamentos online dos seus clientes", connected: false },
+    { name: "Google Calendar", desc: "Sincronize agendamentos com o Google Calendar", connected: false },
+  ];
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Outras Integrações</CardTitle>
-          <CardDescription>Conecte serviços externos ao seu sistema</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {[
-            { name: "Gateway de Pagamento", desc: "Receba pagamentos online dos seus clientes", connected: false },
-            { name: "Google Calendar", desc: "Sincronize agendamentos com o Google Calendar", connected: false },
-          ].map((int) => (
-            <div key={int.name} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-              <div>
-                <p className="text-sm font-medium text-foreground">{int.name}</p>
-                <p className="text-xs text-muted-foreground">{int.desc}</p>
-              </div>
-              <Button variant={int.connected ? "outline" : "default"} size="sm">
-                {int.connected ? "Configurar" : "Conectar"}
-              </Button>
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Integrações</CardTitle>
+        <CardDescription>Conecte serviços externos ao seu sistema</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {integrations.map((int) => (
+          <div key={int.name} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+            <div>
+              <p className="text-sm font-medium text-foreground">{int.name}</p>
+              <p className="text-xs text-muted-foreground">{int.desc}</p>
             </div>
-          ))}
-        </CardContent>
-      </Card>
-    </div>
+            <Button variant={int.connected ? "outline" : "default"} size="sm">
+              {int.connected ? "Configurar" : "Conectar"}
+            </Button>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
