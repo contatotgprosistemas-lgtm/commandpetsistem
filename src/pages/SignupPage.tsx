@@ -43,8 +43,8 @@ export default function SignupPage() {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader className="space-y-2">
-            <div className="mx-auto h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+            <div className="mx-auto h-12 w-12 rounded-full bg-secondary flex items-center justify-center">
+              <CheckCircle className="h-6 w-6 text-primary" />
             </div>
             <CardTitle>Verifique seu e-mail</CardTitle>
             <CardDescription>
