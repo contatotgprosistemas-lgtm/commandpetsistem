@@ -35,48 +35,22 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    // 1. Create empresa
-    const { data: empresaData, error: empresaError } = await supabase
-      .from("empresas")
-      .insert({ nome_empresa: empresa })
-      .select("id")
-      .single();
-
-    if (empresaError) {
-      setLoading(false);
-      toast({ title: "Erro ao criar empresa", description: empresaError.message, variant: "destructive" });
-      return;
-    }
-
-    // 2. Sign up user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { nome },
+        data: { nome, empresa },
         emailRedirectTo: window.location.origin,
       },
     });
 
+    setLoading(false);
+
     if (authError) {
-      setLoading(false);
       toast({ title: "Erro ao criar conta", description: authError.message, variant: "destructive" });
       return;
     }
 
-    // 3. Update profile with empresa_id and add admin role
-    if (authData.user) {
-      await supabase
-        .from("profiles")
-        .update({ empresa_id: empresaData.id, cargo: "admin" })
-        .eq("user_id", authData.user.id);
-
-      await supabase
-        .from("user_roles")
-        .insert({ user_id: authData.user.id, role: "admin" });
-    }
-
-    setLoading(false);
     toast({
       title: "Conta criada com sucesso!",
       description: "Verifique seu email para confirmar o cadastro.",
