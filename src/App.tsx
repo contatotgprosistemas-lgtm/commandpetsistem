@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import CRMInbox from "@/pages/CRMInbox";
@@ -11,6 +13,11 @@ import AgendaPage from "@/pages/AgendaPage";
 import FinancePage from "@/pages/FinancePage";
 import ClientsPage from "@/pages/ClientsPage";
 import SettingsPage from "@/pages/SettingsPage";
+import SuperAdminPage from "@/pages/SuperAdminPage";
+import LoginPage from "@/pages/LoginPage";
+import SignupPage from "@/pages/SignupPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,18 +28,25 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppLayout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/crm" element={<CRMInbox />} />
-            <Route path="/pets" element={<PetsPage />} />
-            <Route path="/agenda" element={<AgendaPage />} />
-            <Route path="/financeiro" element={<FinancePage />} />
-            <Route path="/clientes" element={<ClientsPage />} />
-            <Route path="/configuracoes" element={<SettingsPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AppLayout>
+        <AuthProvider>
+          <AppLayout>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/crm" element={<ProtectedRoute><CRMInbox /></ProtectedRoute>} />
+              <Route path="/pets" element={<ProtectedRoute><PetsPage /></ProtectedRoute>} />
+              <Route path="/agenda" element={<ProtectedRoute><AgendaPage /></ProtectedRoute>} />
+              <Route path="/financeiro" element={<ProtectedRoute><FinancePage /></ProtectedRoute>} />
+              <Route path="/clientes" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
+              <Route path="/configuracoes" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute requireAdmin><SuperAdminPage /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AppLayout>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

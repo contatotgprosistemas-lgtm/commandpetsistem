@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -12,20 +13,32 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
+  Shield,
+  LogOut,
 } from "lucide-react";
-
-const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
-  { icon: PawPrint, label: "Pets", path: "/pets" },
-  { icon: Calendar, label: "Agenda", path: "/agenda" },
-  { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
-  { icon: Users, label: "Clientes", path: "/clientes" },
-  { icon: Settings, label: "Configurações", path: "/configuracoes" },
-];
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { isSuperAdmin, signOut, profile } = useAuth();
+  const navigate = useNavigate();
+
+  const navItems = [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+    { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
+    { icon: PawPrint, label: "Pets", path: "/pets" },
+    { icon: Calendar, label: "Agenda", path: "/agenda" },
+    { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
+    { icon: Users, label: "Clientes", path: "/clientes" },
+    ...(isSuperAdmin
+      ? [{ icon: Shield, label: "Super Admin", path: "/admin" }]
+      : []),
+    { icon: Settings, label: "Configurações", path: "/configuracoes" },
+  ];
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <motion.aside
@@ -82,13 +95,33 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="h-12 flex items-center justify-center border-t border-sidebar-border text-sidebar-muted hover:text-sidebar-foreground transition-colors"
-      >
-        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-      </button>
+      {/* User + Logout */}
+      <div className="border-t border-sidebar-border p-2 space-y-1">
+        {!collapsed && profile && (
+          <div className="px-3 py-2 text-xs text-sidebar-muted truncate">
+            {profile.nome}
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+        >
+          <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.5} />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                Sair
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-full flex items-center justify-center py-2 text-sidebar-muted hover:text-sidebar-foreground transition-colors"
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
+      </div>
     </motion.aside>
   );
 }
