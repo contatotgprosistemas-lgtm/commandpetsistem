@@ -420,30 +420,11 @@ function SegurancaTab() {
 
 // ─── Integrações ────────────────────────────────────────────────────
 function IntegracoesTab() {
-  const [statuses, setStatuses] = useState<Record<string, boolean>>({});
-  const [connecting, setConnecting] = useState<string | null>(null);
-
   const integrations = [
-    { key: "whatsapp", name: "WhatsApp Business", desc: "Conecte sua conta do WhatsApp para enviar e receber mensagens", icon: "📱" },
-    { key: "pagamento", name: "Gateway de Pagamento", desc: "Receba pagamentos online dos seus clientes", icon: "💳" },
-    { key: "gcalendar", name: "Google Calendar", desc: "Sincronize agendamentos com o Google Calendar", icon: "📅" },
+    { name: "WhatsApp Business", desc: "Conecte sua conta do WhatsApp para enviar e receber mensagens", connected: false },
+    { name: "Gateway de Pagamento", desc: "Receba pagamentos online dos seus clientes", connected: false },
+    { name: "Google Calendar", desc: "Sincronize agendamentos com o Google Calendar", connected: false },
   ];
-
-  const handleConnect = (key: string) => {
-    setConnecting(key);
-    // Simula conexão
-    setTimeout(() => {
-      setStatuses((prev) => ({ ...prev, [key]: !prev[key] }));
-      setConnecting(null);
-      const isNowConnected = !statuses[key];
-      toast({
-        title: isNowConnected ? "Integração conectada!" : "Integração desconectada",
-        description: isNowConnected
-          ? "A configuração detalhada estará disponível em breve."
-          : "A integração foi removida.",
-      });
-    }, 1200);
-  };
 
   return (
     <Card>
@@ -452,33 +433,17 @@ function IntegracoesTab() {
         <CardDescription>Conecte serviços externos ao seu sistema</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {integrations.map((int) => {
-          const connected = statuses[int.key] || false;
-          const isLoading = connecting === int.key;
-          return (
-            <div key={int.key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{int.icon}</span>
-                <div>
-                  <p className="text-sm font-medium text-foreground flex items-center gap-2">
-                    {int.name}
-                    {connected && <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">Conectado</Badge>}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{int.desc}</p>
-                </div>
-              </div>
-              <Button
-                variant={connected ? "outline" : "default"}
-                size="sm"
-                disabled={isLoading}
-                onClick={() => handleConnect(int.key)}
-              >
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                {connected ? "Desconectar" : "Conectar"}
-              </Button>
+        {integrations.map((int) => (
+          <div key={int.name} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+            <div>
+              <p className="text-sm font-medium text-foreground">{int.name}</p>
+              <p className="text-xs text-muted-foreground">{int.desc}</p>
             </div>
-          );
-        })}
+            <Button variant={int.connected ? "outline" : "default"} size="sm">
+              {int.connected ? "Configurar" : "Conectar"}
+            </Button>
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
