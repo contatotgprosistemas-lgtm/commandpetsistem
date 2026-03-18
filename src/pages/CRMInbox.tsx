@@ -225,6 +225,7 @@ export default function CRMInbox() {
                     </div>
                   ))
                 )}
+                <div ref={messagesEndRef} />
               </div>
             </div>
 
