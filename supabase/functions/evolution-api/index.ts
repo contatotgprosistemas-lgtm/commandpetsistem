@@ -79,7 +79,14 @@ Deno.serve(async (req) => {
           }),
         });
         const data = await res.json();
-        if (!res.ok) return json({ error: "Evolution API error", details: data }, res.status);
+
+        // If instance already exists, that's fine — just ensure DB is in sync
+        const alreadyExists = !res.ok && res.status === 403 &&
+          JSON.stringify(data).includes("already in use");
+
+        if (!res.ok && !alreadyExists) {
+          return json({ error: "Evolution API error", details: data }, res.status);
+        }
 
         // Save connection to DB
         await supabase.from("conexoes_whatsapp").upsert({
