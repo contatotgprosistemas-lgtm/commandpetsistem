@@ -137,11 +137,11 @@ export function WhatsAppConnectionPanel() {
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Status:</span>
           {state === "connected" ? (
-            <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+            <Badge className="bg-primary/10 text-primary border-primary/20">
               <Wifi className="h-3 w-3 mr-1" /> Conectado
             </Badge>
           ) : state === "waiting_qr" ? (
-            <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+            <Badge className="bg-accent text-accent-foreground border-accent">
               <QrCode className="h-3 w-3 mr-1" /> Aguardando QR Code
             </Badge>
           ) : (
