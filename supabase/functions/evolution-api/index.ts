@@ -88,6 +88,27 @@ Deno.serve(async (req) => {
           return json({ error: "Evolution API error", details: data }, res.status);
         }
 
+        // Always (re)configure webhook on the instance
+        try {
+          await fetch(`${baseUrl}/webhook/set/${name}`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              url: webhookUrl,
+              webhook_by_events: false,
+              webhook_base64: false,
+              events: [
+                "MESSAGES_UPSERT",
+                "CONNECTION_UPDATE",
+              ],
+              enabled: true,
+            }),
+          });
+          console.log("Webhook configured for instance:", name);
+        } catch (whErr) {
+          console.error("Failed to set webhook:", whErr);
+        }
+
         // Save connection to DB
         await supabase.from("conexoes_whatsapp").upsert({
           empresa_id: empresaId,
