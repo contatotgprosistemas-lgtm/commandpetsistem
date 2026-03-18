@@ -157,13 +157,7 @@ export function CRMSidebarPanel({ clienteId, telefone }: CRMSidebarPanelProps) {
   });
 
   if (!clienteId) {
-    return (
-      <div className="w-80 border-l border-border bg-card p-6 flex items-center justify-center shrink-0">
-        <p className="text-sm text-muted-foreground text-center">
-          Selecione uma conversa para ver os dados do CRM
-        </p>
-      </div>
-    );
+    return null;
   }
 
   if (loadingCliente) {
