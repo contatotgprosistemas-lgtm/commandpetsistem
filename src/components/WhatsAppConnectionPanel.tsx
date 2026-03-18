@@ -9,6 +9,37 @@ import { Loader2, Wifi, WifiOff, QrCode, RefreshCw, LogOut } from "lucide-react"
 
 type ConnectionState = "disconnected" | "waiting_qr" | "connected" | "loading";
 
+type EvolutionApiResponse = {
+  state?: string;
+  base64?: unknown;
+  qrcode?: {
+    base64?: unknown;
+  };
+};
+
+const extractQrBase64 = (payload: unknown): string | null => {
+  if (!payload || typeof payload !== "object") return null;
+
+  const data = payload as Record<string, unknown>;
+  const fromRoot = typeof data.base64 === "string" ? data.base64.trim() : null;
+  if (fromRoot) return fromRoot;
+
+  const qrcode = data.qrcode;
+  if (!qrcode || typeof qrcode !== "object") return null;
+
+  const fromNested = typeof (qrcode as Record<string, unknown>).base64 === "string"
+    ? ((qrcode as Record<string, unknown>).base64 as string).trim()
+    : null;
+
+  return fromNested || null;
+};
+
+const toEdgeErrorMessage = (err: unknown) => {
+  if (err instanceof Error && err.message) return err.message;
+  if (typeof err === "string" && err.trim()) return err;
+  return "Erro desconhecido";
+};
+
 export function WhatsAppConnectionPanel() {
   const { session, profile } = useAuth();
   const [state, setState] = useState<ConnectionState>("loading");
@@ -16,19 +47,29 @@ export function WhatsAppConnectionPanel() {
   const [numero, setNumero] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
 
-  const invoke = useCallback(async (action: string, extra = {}) => {
+  const invoke = useCallback(async (action: string, extra: Record<string, unknown> = {}) => {
+    let accessToken = session?.access_token;
+
+    if (!accessToken) {
+      const { data } = await supabase.auth.getSession();
+      accessToken = data.session?.access_token;
+    }
+
     const { data, error } = await supabase.functions.invoke("evolution-api", {
       body: { action, ...extra },
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
     });
+
     if (error) {
       // 404 "No instance found" is expected on first load
       if (action === "connection_status") {
-        return { state: "unknown" };
+        return { state: "unknown" } as EvolutionApiResponse;
       }
       throw error;
     }
-    return data;
-  }, []);
+
+    return (data ?? {}) as EvolutionApiResponse;
+  }, [session?.access_token]);
 
   // Check initial status
   const checkStatus = useCallback(async () => {
@@ -37,11 +78,18 @@ export function WhatsAppConnectionPanel() {
       if (res.state === "open") {
         setState("connected");
         setQrBase64(null);
+
+        if (!profile?.empresa_id) {
+          setNumero(null);
+          return;
+        }
+
         const { data: conn } = await supabase
           .from("conexoes_whatsapp")
           .select("numero")
-          .eq("empresa_id", profile!.empresa_id!)
+          .eq("empresa_id", profile.empresa_id)
           .single();
+
         setNumero(conn?.numero || null);
       } else {
         setState("disconnected");
@@ -50,15 +98,23 @@ export function WhatsAppConnectionPanel() {
       // No instance yet or error — just show disconnected
       setState("disconnected");
     }
-  }, [invoke, profile]);
+  }, [invoke, profile?.empresa_id]);
 
   useEffect(() => {
-    if (profile?.empresa_id) checkStatus();
+    if (profile?.empresa_id) {
+      void checkStatus();
+      return;
+    }
+
+    setState("disconnected");
+    setQrBase64(null);
+    setNumero(null);
   }, [profile?.empresa_id, checkStatus]);
 
   // Poll for connection while QR is showing
   useEffect(() => {
     if (!polling) return;
+
     const interval = setInterval(async () => {
       try {
         const res = await invoke("connection_status");
@@ -68,38 +124,52 @@ export function WhatsAppConnectionPanel() {
           setPolling(false);
           toast({ title: "WhatsApp conectado com sucesso!" });
         }
-      } catch { /* ignore */ }
+      } catch {
+        // Ignore transient polling errors
+      }
     }, 4000);
+
     return () => clearInterval(interval);
   }, [polling, invoke]);
 
   const handleConnect = async () => {
     setState("waiting_qr");
+
     try {
-      // Create instance if needed
       await invoke("create_instance");
-      // Get QR Code
+
       const qrRes = await invoke("get_qrcode");
-      const base64 = qrRes?.base64 || qrRes?.qrcode?.base64 || null;
+      const base64 = extractQrBase64(qrRes);
+
       if (base64) {
         setQrBase64(base64);
         setPolling(true);
-      } else {
-        toast({ title: "Erro ao gerar QR Code", description: "Tente novamente", variant: "destructive" });
-        setState("disconnected");
+        return;
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro desconhecido";
-      toast({ title: "Erro na conexão", description: message, variant: "destructive" });
+
+      setPolling(false);
+      setQrBase64(null);
       setState("disconnected");
+      toast({ title: "Erro ao gerar QR Code", description: "Tente novamente", variant: "destructive" });
+    } catch (err: unknown) {
+      setPolling(false);
+      setQrBase64(null);
+      setState("disconnected");
+      toast({ title: "Erro na conexão", description: toEdgeErrorMessage(err), variant: "destructive" });
     }
   };
 
   const handleRefreshQR = async () => {
     try {
       const qrRes = await invoke("get_qrcode");
-      const base64 = qrRes.base64 || qrRes.qrcode?.base64 || null;
-      if (base64) setQrBase64(base64);
+      const base64 = extractQrBase64(qrRes);
+
+      if (base64) {
+        setQrBase64(base64);
+        return;
+      }
+
+      toast({ title: "QR Code indisponível", description: "Tente novamente", variant: "destructive" });
     } catch {
       toast({ title: "Erro ao atualizar QR", variant: "destructive" });
     }
@@ -113,10 +183,14 @@ export function WhatsAppConnectionPanel() {
       setNumero(null);
       setPolling(false);
       toast({ title: "WhatsApp desconectado" });
-    } catch (err: any) {
-      toast({ title: "Erro ao desconectar", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Erro ao desconectar", description: toEdgeErrorMessage(err), variant: "destructive" });
     }
   };
+
+  const qrSrc = qrBase64
+    ? (qrBase64.startsWith("data:") ? qrBase64 : `data:image/png;base64,${qrBase64}`)
+    : null;
 
   if (state === "loading") {
     return (
@@ -140,7 +214,6 @@ export function WhatsAppConnectionPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Status Badge */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Status:</span>
           {state === "connected" ? (
@@ -158,7 +231,6 @@ export function WhatsAppConnectionPanel() {
           )}
         </div>
 
-        {/* Connected state */}
         {state === "connected" && (
           <div className="space-y-3">
             {numero && (
@@ -172,22 +244,16 @@ export function WhatsAppConnectionPanel() {
           </div>
         )}
 
-        {/* Disconnected state */}
         {state === "disconnected" && (
           <Button onClick={handleConnect}>
             <QrCode className="h-4 w-4 mr-2" /> Conectar WhatsApp
           </Button>
         )}
 
-        {/* QR Code display */}
-        {state === "waiting_qr" && qrBase64 && (
+        {state === "waiting_qr" && qrSrc && (
           <div className="space-y-3">
             <div className="bg-white rounded-lg p-4 inline-block border border-border">
-              <img
-                src={qrBase64.startsWith("data:") ? qrBase64 : `data:image/png;base64,${qrBase64}`}
-                alt="QR Code WhatsApp"
-                className="w-64 h-64"
-              />
+              <img src={qrSrc} alt="QR Code WhatsApp" className="w-64 h-64" />
             </div>
             <div className="space-y-1">
               <p className="text-sm text-foreground font-medium">Escaneie o QR Code com o WhatsApp</p>
@@ -201,7 +267,7 @@ export function WhatsAppConnectionPanel() {
           </div>
         )}
 
-        {state === "waiting_qr" && !qrBase64 && (
+        {state === "waiting_qr" && !qrSrc && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="text-sm">Gerando QR Code...</span>
