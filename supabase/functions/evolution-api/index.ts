@@ -29,21 +29,24 @@ Deno.serve(async (req) => {
 
   // Authenticate user
   const authHeader = req.headers.get("authorization");
-  if (!authHeader) return json({ error: "Missing authorization" }, 401);
+  if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const anonClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!);
+  const anonClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    global: { headers: { Authorization: authHeader } },
+  });
 
-  const { data: { user }, error: authError } = await anonClient.auth.getUser(
-    authHeader.replace("Bearer ", "")
-  );
-  if (authError || !user) return json({ error: "Unauthorized" }, 401);
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+  if (claimsError || !claimsData?.claims) return json({ error: "Unauthorized" }, 401);
+
+  const userId = claimsData.claims.sub as string;
 
   // Get user's empresa_id
   const { data: profile } = await supabase
     .from("profiles")
     .select("empresa_id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
   if (!profile?.empresa_id) return json({ error: "No empresa found" }, 403);
 
