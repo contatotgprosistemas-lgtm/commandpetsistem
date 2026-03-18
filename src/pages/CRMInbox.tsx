@@ -1,19 +1,23 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatStatusTag } from "@/components/ChatStatusTag";
 import { CRMSidebarPanel } from "@/components/CRMSidebarPanel";
-import { Search, Send, Paperclip, Smile, Phone, MoreVertical, CheckCheck } from "lucide-react";
+import { Search, Send, Paperclip, Smile, Phone, MoreVertical, CheckCheck, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "@/hooks/use-toast";
 
 export default function CRMInbox() {
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
+  const queryClient = useQueryClient();
   const [selectedConversaId, setSelectedConversaId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversations
   const { data: conversas } = useQuery({
@@ -67,6 +71,62 @@ export default function CRMInbox() {
   };
 
   const clienteId = selectedConversa?.cliente_id || null;
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [mensagens]);
+
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selectedConversa || !empresaId || sending) return;
+    const text = messageInput.trim();
+    setMessageInput("");
+    setSending(true);
+
+    try {
+      // 1. Send via Evolution API (WhatsApp)
+      const phone = selectedConversa.contato_telefone.replace(/\D/g, "");
+      const { data: evoRes, error: evoError } = await supabase.functions.invoke("evolution-api", {
+        body: { action: "send_message", number: phone, text },
+      });
+
+      if (evoError) {
+        console.warn("Evolution API send failed, saving locally only:", evoError);
+      }
+
+      // 2. Save message to DB regardless
+      const { error: dbError } = await supabase.from("mensagens").insert({
+        conversa_id: selectedConversaId!,
+        empresa_id: empresaId,
+        conteudo: text,
+        remetente: "agente",
+        tipo: "texto",
+      });
+      if (dbError) throw dbError;
+
+      // 3. Update conversation timestamp
+      await supabase
+        .from("conversas")
+        .update({ ultima_mensagem_at: new Date().toISOString() })
+        .eq("id", selectedConversaId!);
+
+      // 4. Refresh queries
+      queryClient.invalidateQueries({ queryKey: ["mensagens", selectedConversaId] });
+      queryClient.invalidateQueries({ queryKey: ["conversas", empresaId] });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar mensagem", description: err.message, variant: "destructive" });
+      setMessageInput(text); // restore input on error
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   return (
     <div className="flex h-screen">
@@ -165,6 +225,7 @@ export default function CRMInbox() {
                     </div>
                   ))
                 )}
+                <div ref={messagesEndRef} />
               </div>
             </div>
 
@@ -179,11 +240,17 @@ export default function CRMInbox() {
                 <input
                   value={messageInput}
                   onChange={e => setMessageInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder="Digite uma mensagem..."
                   className="flex-1 h-9 px-3 text-sm bg-muted rounded-md border-0 outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+                  disabled={sending}
                 />
-                <button className="h-9 w-9 rounded-md bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground shrink-0 transition-colors">
-                  <Send className="h-4 w-4" strokeWidth={1.5} />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={sending || !messageInput.trim()}
+                  className="h-9 w-9 rounded-md bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground shrink-0 transition-colors disabled:opacity-50"
+                >
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" strokeWidth={1.5} />}
                 </button>
               </div>
             </div>
