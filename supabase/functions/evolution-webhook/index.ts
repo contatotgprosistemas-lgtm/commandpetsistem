@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
     const payload = await req.json();
     console.log("Webhook received:", JSON.stringify(payload).slice(0, 500));
 
-    const event = payload.event;
-    const instance = payload.instance;
+    const event = (payload.event || "").toLowerCase().replace(/_/g, ".");
+    const instance = payload.instance || payload.instanceName || payload.instance_name;
     const data = payload.data;
 
     if (!instance || !data) {
