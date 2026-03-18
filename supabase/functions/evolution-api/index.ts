@@ -251,6 +251,42 @@ Deno.serve(async (req) => {
         return json({ success: true, data });
       }
 
+      // ─── Set/Update Webhook ─────────────────────────────
+      case "set_webhook": {
+        const { data: conn } = await supabase
+          .from("conexoes_whatsapp")
+          .select("session_data")
+          .eq("empresa_id", empresaId)
+          .single();
+        const name = conn?.session_data?.instanceName || instanceName;
+        if (!name) return json({ error: "No instance found" }, 404);
+
+        const webhookUrl = `${SUPABASE_URL}/functions/v1/evolution-webhook`;
+
+        const res = await fetch(`${baseUrl}/webhook/set/${name}`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            url: webhookUrl,
+            webhook_by_events: false,
+            webhook_base64: false,
+            events: [
+              "MESSAGES_UPSERT",
+              "CONNECTION_UPDATE",
+            ],
+            enabled: true,
+          }),
+        });
+        const data = await res.json();
+
+        // Update DB
+        await supabase.from("conexoes_whatsapp").update({
+          session_data: { instanceName: name, webhookUrl },
+        }).eq("empresa_id", empresaId);
+
+        return json({ success: true, data });
+      }
+
       default:
         return json({ error: `Unknown action: ${action}` }, 400);
     }
