@@ -188,6 +188,48 @@ Deno.serve(async (req) => {
         return json({ success: true, data });
       }
 
+      // ─── Send Media (image, audio, document) ──────────────
+      case "send_media": {
+        const { data: conn } = await supabase
+          .from("conexoes_whatsapp")
+          .select("session_data")
+          .eq("empresa_id", empresaId)
+          .single();
+        const name = conn?.session_data?.instanceName;
+        if (!name) return json({ error: "No instance found" }, 404);
+
+        const { number, mediaUrl, mediaType, caption, fileName } = body;
+        if (!number || !mediaUrl || !mediaType) {
+          return json({ error: "number, mediaUrl and mediaType required" }, 400);
+        }
+
+        let endpoint = "sendMedia";
+        const payload: Record<string, unknown> = { number, media: mediaUrl };
+
+        if (mediaType === "audio") {
+          endpoint = "sendWhatsAppAudio";
+          payload.audio = mediaUrl;
+          delete payload.media;
+        } else if (mediaType === "document") {
+          payload.mediatype = "document";
+          payload.caption = caption || "";
+          payload.fileName = fileName || "document";
+        } else {
+          payload.mediatype = "image";
+          payload.caption = caption || "";
+        }
+
+        const res = await fetch(`${baseUrl}/message/${endpoint}/${name}`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) return json({ error: "Evolution API error", details: data }, res.status);
+
+        return json({ success: true, data });
+      }
+
       default:
         return json({ error: `Unknown action: ${action}` }, 400);
     }
