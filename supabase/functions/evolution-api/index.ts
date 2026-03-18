@@ -253,6 +253,32 @@ Deno.serve(async (req) => {
         return json({ success: true, data });
       }
 
+      // ─── Fetch WhatsApp Contacts ────────────────────────
+      case "fetch_contacts": {
+        const { data: conn } = await supabase
+          .from("conexoes_whatsapp")
+          .select("session_data")
+          .eq("empresa_id", empresaId)
+          .single();
+        const name = conn?.session_data?.instanceName;
+        if (!name) return json({ error: "No instance found" }, 404);
+
+        const res = await fetch(`${baseUrl}/chat/contacts/${name}`, { headers });
+        const data = await res.json();
+        if (!res.ok) return json({ error: "Evolution API error", details: data }, res.status);
+
+        // Filter to real contacts (with name and number)
+        const contacts = (Array.isArray(data) ? data : data?.contacts || data?.data || [])
+          .filter((c: any) => c.id && !c.id.includes("@g.us") && c.pushName)
+          .map((c: any) => ({
+            name: c.pushName || c.name || c.verifiedName || "Sem nome",
+            number: c.id?.replace("@s.whatsapp.net", "") || "",
+            profilePicUrl: c.profilePictureUrl || null,
+          }));
+
+        return json({ success: true, contacts });
+      }
+
       // ─── Set/Update Webhook ─────────────────────────────
       case "set_webhook": {
         const { data: conn } = await supabase
