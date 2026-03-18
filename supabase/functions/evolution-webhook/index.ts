@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
     const payload = await req.json();
     console.log("Webhook received:", JSON.stringify(payload).slice(0, 500));
 
-    const event = payload.event;
-    const instance = payload.instance;
+    const event = (payload.event || "").toLowerCase().replace(/_/g, ".");
+    const instance = payload.instance || payload.instanceName || payload.instance_name;
     const data = payload.data;
 
     if (!instance || !data) {
@@ -30,12 +30,30 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Find empresa by instanceName
-    const { data: conn } = await supabase
+    // Find empresa by instanceName - try multiple JSON path approaches
+    let conn = null;
+    const { data: conn1 } = await supabase
       .from("conexoes_whatsapp")
       .select("empresa_id")
       .filter("session_data->>instanceName", "eq", instance)
       .single();
+    conn = conn1;
+
+    if (!conn) {
+      // Fallback: check all connections
+      const { data: allConns } = await supabase
+        .from("conexoes_whatsapp")
+        .select("empresa_id, session_data");
+      if (allConns) {
+        for (const c of allConns) {
+          const sd = c.session_data as Record<string, unknown> | null;
+          if (sd && (sd.instanceName === instance || sd.instance_name === instance)) {
+            conn = { empresa_id: c.empresa_id };
+            break;
+          }
+        }
+      }
+    }
 
     if (!conn) {
       console.warn("No empresa found for instance:", instance);
