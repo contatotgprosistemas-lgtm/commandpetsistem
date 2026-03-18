@@ -57,6 +57,31 @@ export default function CRMInbox() {
     enabled: !!selectedConversaId,
   });
 
+  // Realtime subscription for new messages and conversation updates
+  useEffect(() => {
+    if (!empresaId) return;
+
+    const channel = supabase
+      .channel("crm-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "mensagens" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["mensagens", selectedConversaId] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "conversas" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["conversas", empresaId] });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [empresaId, selectedConversaId, queryClient]);
+
   const filteredConversas = conversas?.filter(c =>
     !searchQuery ||
     c.contato_nome.toLowerCase().includes(searchQuery.toLowerCase()) ||

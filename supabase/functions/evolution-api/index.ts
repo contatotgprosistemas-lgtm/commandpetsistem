@@ -58,6 +58,8 @@ Deno.serve(async (req) => {
       // ─── Create Instance ──────────────────────────────────
       case "create_instance": {
         const name = instanceName || `petcmd_${empresaId.slice(0, 8)}`;
+        const webhookUrl = `${SUPABASE_URL}/functions/v1/evolution-webhook`;
+
         const res = await fetch(`${baseUrl}/instance/create`, {
           method: "POST",
           headers,
@@ -65,6 +67,15 @@ Deno.serve(async (req) => {
             instanceName: name,
             integration: "WHATSAPP-BAILEYS",
             qrcode: true,
+            webhook: {
+              url: webhookUrl,
+              byEvents: false,
+              base64: false,
+              events: [
+                "messages.upsert",
+                "connection.update",
+              ],
+            },
           }),
         });
         const data = await res.json();
@@ -74,7 +85,7 @@ Deno.serve(async (req) => {
         await supabase.from("conexoes_whatsapp").upsert({
           empresa_id: empresaId,
           status: "aguardando_qr",
-          session_data: { instanceName: name },
+          session_data: { instanceName: name, webhookUrl },
         }, { onConflict: "empresa_id" });
 
         return json({ success: true, instance: data, instanceName: name });
