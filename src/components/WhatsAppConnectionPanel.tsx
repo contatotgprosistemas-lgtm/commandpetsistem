@@ -20,7 +20,13 @@ export function WhatsAppConnectionPanel() {
     const { data, error } = await supabase.functions.invoke("evolution-api", {
       body: { action, ...extra },
     });
-    if (error) throw error;
+    if (error) {
+      // 404 "No instance found" is expected on first load
+      if (action === "connection_status") {
+        return { state: "unknown" };
+      }
+      throw error;
+    }
     return data;
   }, []);
 
@@ -31,7 +37,6 @@ export function WhatsAppConnectionPanel() {
       if (res.state === "open") {
         setState("connected");
         setQrBase64(null);
-        // fetch numero from DB
         const { data: conn } = await supabase
           .from("conexoes_whatsapp")
           .select("numero")
@@ -42,6 +47,7 @@ export function WhatsAppConnectionPanel() {
         setState("disconnected");
       }
     } catch {
+      // No instance yet or error — just show disconnected
       setState("disconnected");
     }
   }, [invoke, profile]);
