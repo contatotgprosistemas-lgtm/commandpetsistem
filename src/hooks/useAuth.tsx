@@ -1,11 +1,18 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  profile: { id: string; nome: string; email: string | null; empresa_id: string | null; cargo: string | null; status: string } | null;
+  profile: {
+    id: string;
+    nome: string;
+    email: string | null;
+    empresa_id: string | null;
+    cargo: string | null;
+    status: string;
+  } | null;
   roles: string[];
   loading: boolean;
   signOut: () => Promise<void>;
@@ -28,7 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const initRef = useRef(false);
 
   const loadUserData = useCallback(async (userId: string) => {
     try {
@@ -43,7 +49,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .select("role")
           .eq("user_id", userId),
       ]);
-      setProfile(profileRes.data);
+
+      const profileNotFound = profileRes.error?.code === "PGRST116";
+      if (profileRes.error && !profileNotFound) throw profileRes.error;
+      if (rolesRes.error) throw rolesRes.error;
+
+      setProfile(profileRes.data ?? null);
       setRoles(rolesRes.data?.map((r) => r.role) || []);
     } catch {
       setProfile(null);
@@ -51,59 +62,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const handleSession = useCallback(async (newSession: Session | null) => {
-    setSession(newSession);
-    setUser(newSession?.user ?? null);
-    if (newSession?.user) {
-      await loadUserData(newSession.user.id);
-    } else {
-      setProfile(null);
-      setRoles([]);
-    }
-    setLoading(false);
-  }, [loadUserData]);
+  const applySession = useCallback(
+    async (nextSession: Session | null, showLoading = true) => {
+      if (showLoading) setLoading(true);
+
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user) {
+        await loadUserData(nextSession.user.id);
+      } else {
+        setProfile(null);
+        setRoles([]);
+      }
+
+      setLoading(false);
+    },
+    [loadUserData]
+  );
 
   useEffect(() => {
-    // Prevent double initialization in React StrictMode
-    if (initRef.current) return;
-    initRef.current = true;
-
     let isMounted = true;
 
-    // 1. Set up listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (!isMounted) return;
-        // Use setTimeout to avoid Supabase deadlock warnings
-        // but keep it simple - just load data
-        if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
-          setSession(session);
-          setUser(session?.user ?? null);
-          if (session?.user) {
-            await loadUserData(session.user.id);
-          }
-          setLoading(false);
-        } else if (_event === 'SIGNED_OUT') {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          setRoles([]);
-          setLoading(false);
-        }
-      }
-    );
-
-    // 2. Then get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!isMounted) return;
-      await handleSession(session);
+
+      setTimeout(() => {
+        if (!isMounted) return;
+        void applySession(nextSession, true);
+      }, 0);
+    });
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+      void applySession(session, false);
     });
 
     return () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [handleSession, loadUserData]);
+  }, [applySession]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
