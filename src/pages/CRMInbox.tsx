@@ -1,19 +1,23 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatStatusTag } from "@/components/ChatStatusTag";
 import { CRMSidebarPanel } from "@/components/CRMSidebarPanel";
-import { Search, Send, Paperclip, Smile, Phone, MoreVertical, CheckCheck } from "lucide-react";
+import { Search, Send, Paperclip, Smile, Phone, MoreVertical, CheckCheck, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "@/hooks/use-toast";
 
 export default function CRMInbox() {
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
+  const queryClient = useQueryClient();
   const [selectedConversaId, setSelectedConversaId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversations
   const { data: conversas } = useQuery({
