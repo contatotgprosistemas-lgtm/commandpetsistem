@@ -162,7 +162,7 @@ export function ImportWhatsAppContatosDialog({ onSuccess }: { onSuccess?: () => 
               </div>
 
               {/* Contact list */}
-              <ScrollArea className="flex-1 min-h-0 border border-border rounded-md">
+              <ScrollArea className="h-[300px] border border-border rounded-md">
                 <div className="p-1">
                   {contacts
                     .filter(c =>
