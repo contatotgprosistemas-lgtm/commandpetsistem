@@ -80,7 +80,7 @@ export function WhatsAppConnectionPanel() {
       await invoke("create_instance");
       // Get QR Code
       const qrRes = await invoke("get_qrcode");
-      const base64 = qrRes.base64 || qrRes.qrcode?.base64 || null;
+      const base64 = qrRes?.base64 || qrRes?.qrcode?.base64 || null;
       if (base64) {
         setQrBase64(base64);
         setPolling(true);
@@ -88,8 +88,9 @@ export function WhatsAppConnectionPanel() {
         toast({ title: "Erro ao gerar QR Code", description: "Tente novamente", variant: "destructive" });
         setState("disconnected");
       }
-    } catch (err: any) {
-      toast({ title: "Erro na conexão", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro desconhecido";
+      toast({ title: "Erro na conexão", description: message, variant: "destructive" });
       setState("disconnected");
     }
   };
