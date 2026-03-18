@@ -1,1 +1,7 @@
 project_id = "eydsprhlsdgqfovjuylt"
+
+[functions.evolution-api]
+verify_jwt = false
+
+[functions.consulta-contato]
+verify_jwt = false

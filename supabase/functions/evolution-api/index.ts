@@ -1,0 +1,180 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL");
+  if (!EVOLUTION_API_URL) return json({ error: "EVOLUTION_API_URL not configured" }, 500);
+
+  const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY");
+  if (!EVOLUTION_API_KEY) return json({ error: "EVOLUTION_API_KEY not configured" }, 500);
+
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Authenticate user
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) return json({ error: "Missing authorization" }, 401);
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const anonClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!);
+
+  const { data: { user }, error: authError } = await anonClient.auth.getUser(
+    authHeader.replace("Bearer ", "")
+  );
+  if (authError || !user) return json({ error: "Unauthorized" }, 401);
+
+  // Get user's empresa_id
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("empresa_id")
+    .eq("user_id", user.id)
+    .single();
+  if (!profile?.empresa_id) return json({ error: "No empresa found" }, 403);
+
+  const empresaId = profile.empresa_id;
+  const baseUrl = EVOLUTION_API_URL.replace(/\/$/, "");
+  const headers = { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY };
+
+  try {
+    const { action, instanceName, ...body } = await req.json();
+
+    switch (action) {
+      // ─── Create Instance ──────────────────────────────────
+      case "create_instance": {
+        const name = instanceName || `petcmd_${empresaId.slice(0, 8)}`;
+        const res = await fetch(`${baseUrl}/instance/create`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            instanceName: name,
+            integration: "WHATSAPP-BAILEYS",
+            qrcode: true,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) return json({ error: "Evolution API error", details: data }, res.status);
+
+        // Save connection to DB
+        await supabase.from("conexoes_whatsapp").upsert({
+          empresa_id: empresaId,
+          status: "aguardando_qr",
+          session_data: { instanceName: name },
+        }, { onConflict: "empresa_id" });
+
+        return json({ success: true, instance: data, instanceName: name });
+      }
+
+      // ─── Get QR Code ──────────────────────────────────────
+      case "get_qrcode": {
+        const { data: conn } = await supabase
+          .from("conexoes_whatsapp")
+          .select("session_data")
+          .eq("empresa_id", empresaId)
+          .single();
+        const name = conn?.session_data?.instanceName || instanceName;
+        if (!name) return json({ error: "No instance found" }, 404);
+
+        const res = await fetch(`${baseUrl}/instance/connect/${name}`, { headers });
+        const data = await res.json();
+        if (!res.ok) return json({ error: "Evolution API error", details: data }, res.status);
+
+        return json({ success: true, ...data });
+      }
+
+      // ─── Check Connection Status ─────────────────────────
+      case "connection_status": {
+        const { data: conn } = await supabase
+          .from("conexoes_whatsapp")
+          .select("session_data")
+          .eq("empresa_id", empresaId)
+          .single();
+        const name = conn?.session_data?.instanceName || instanceName;
+        if (!name) return json({ error: "No instance found" }, 404);
+
+        const res = await fetch(`${baseUrl}/instance/connectionState/${name}`, { headers });
+        const data = await res.json();
+        if (!res.ok) return json({ error: "Evolution API error", details: data }, res.status);
+
+        const state = data?.instance?.state || data?.state || "unknown";
+
+        // Update DB status
+        const dbStatus = state === "open" ? "conectado" : state === "close" ? "desconectado" : "aguardando_qr";
+        await supabase
+          .from("conexoes_whatsapp")
+          .update({
+            status: dbStatus,
+            ...(state === "open" ? { data_conexao: new Date().toISOString() } : {}),
+            ultima_atividade: new Date().toISOString(),
+          })
+          .eq("empresa_id", empresaId);
+
+        return json({ success: true, state, dbStatus });
+      }
+
+      // ─── Disconnect / Logout ──────────────────────────────
+      case "logout": {
+        const { data: conn } = await supabase
+          .from("conexoes_whatsapp")
+          .select("session_data")
+          .eq("empresa_id", empresaId)
+          .single();
+        const name = conn?.session_data?.instanceName || instanceName;
+        if (!name) return json({ error: "No instance found" }, 404);
+
+        await fetch(`${baseUrl}/instance/logout/${name}`, { method: "DELETE", headers });
+        await supabase
+          .from("conexoes_whatsapp")
+          .update({ status: "desconectado", ultima_atividade: new Date().toISOString() })
+          .eq("empresa_id", empresaId);
+
+        return json({ success: true });
+      }
+
+      // ─── Send Text Message ────────────────────────────────
+      case "send_message": {
+        const { data: conn } = await supabase
+          .from("conexoes_whatsapp")
+          .select("session_data")
+          .eq("empresa_id", empresaId)
+          .single();
+        const name = conn?.session_data?.instanceName;
+        if (!name) return json({ error: "No instance found" }, 404);
+
+        const { number, text } = body;
+        if (!number || !text) return json({ error: "number and text required" }, 400);
+
+        const res = await fetch(`${baseUrl}/message/sendText/${name}`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ number, text }),
+        });
+        const data = await res.json();
+        if (!res.ok) return json({ error: "Evolution API error", details: data }, res.status);
+
+        return json({ success: true, data });
+      }
+
+      default:
+        return json({ error: `Unknown action: ${action}` }, 400);
+    }
+  } catch (err) {
+    console.error("Evolution API edge function error:", err);
+    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+  }
+});
