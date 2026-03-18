@@ -1,0 +1,1 @@
+ALTER TABLE public.conexoes_whatsapp ADD CONSTRAINT conexoes_whatsapp_empresa_id_unique UNIQUE (empresa_id);
