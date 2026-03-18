@@ -186,6 +186,7 @@ export default function CRMInbox() {
         {/* Header */}
         <div className="h-14 px-4 flex items-center justify-between border-b border-border">
           <h2 className="text-sm font-semibold text-foreground">Conversas</h2>
+          <WhatsAppStatusIndicator />
         </div>
 
         {/* Search */}
