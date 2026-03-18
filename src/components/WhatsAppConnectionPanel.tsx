@@ -20,7 +20,13 @@ export function WhatsAppConnectionPanel() {
     const { data, error } = await supabase.functions.invoke("evolution-api", {
       body: { action, ...extra },
     });
-    if (error) throw error;
+    if (error) {
+      // 404 "No instance found" is expected on first load
+      if (action === "connection_status") {
+        return { state: "unknown" };
+      }
+      throw error;
+    }
     return data;
   }, []);
 
