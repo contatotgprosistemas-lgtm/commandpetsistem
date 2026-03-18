@@ -239,11 +239,17 @@ export default function CRMInbox() {
                 <input
                   value={messageInput}
                   onChange={e => setMessageInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder="Digite uma mensagem..."
                   className="flex-1 h-9 px-3 text-sm bg-muted rounded-md border-0 outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+                  disabled={sending}
                 />
-                <button className="h-9 w-9 rounded-md bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground shrink-0 transition-colors">
-                  <Send className="h-4 w-4" strokeWidth={1.5} />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={sending || !messageInput.trim()}
+                  className="h-9 w-9 rounded-md bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground shrink-0 transition-colors disabled:opacity-50"
+                >
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" strokeWidth={1.5} />}
                 </button>
               </div>
             </div>
