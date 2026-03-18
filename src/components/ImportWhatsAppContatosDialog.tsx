@@ -150,10 +150,27 @@ export function ImportWhatsAppContatosDialog({ onSuccess }: { onSuccess?: () => 
                 </button>
               </div>
 
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                <Input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Buscar contato..."
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
+
               {/* Contact list */}
               <ScrollArea className="h-64 border border-border rounded-md">
                 <div className="p-1">
-                  {contacts.map(c => (
+                  {contacts
+                    .filter(c =>
+                      !search ||
+                      c.name.toLowerCase().includes(search.toLowerCase()) ||
+                      c.number.includes(search)
+                    )
+                    .map(c => (
                     <label
                       key={c.number}
                       className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted/50 cursor-pointer"
