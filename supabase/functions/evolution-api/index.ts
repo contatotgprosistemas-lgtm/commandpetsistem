@@ -330,11 +330,17 @@ Deno.serve(async (req) => {
 
         let synced = 0;
         const chatList = Array.isArray(chats) ? chats : [];
+        const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
 
         for (const chat of chatList) {
           const remoteJid = chat.id || chat.remoteJid || "";
           // Skip groups and status broadcasts
           if (!remoteJid || remoteJid.includes("@g.us") || remoteJid.includes("status@")) continue;
+
+          // Only sync chats with activity in the last 3 days
+          const lastMsgTs = chat.lastMsgTimestamp || chat.conversationTimestamp || chat.updatedAt || 0;
+          const tsMs = typeof lastMsgTs === "number" && lastMsgTs < 1e12 ? lastMsgTs * 1000 : Number(lastMsgTs);
+          if (tsMs && tsMs < threeDaysAgo) continue;
 
           const phone = remoteJid.replace("@s.whatsapp.net", "");
           if (!phone || phone.length < 8) continue;
