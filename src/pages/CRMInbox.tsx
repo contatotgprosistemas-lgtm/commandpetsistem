@@ -8,6 +8,7 @@ import { ChatBubble } from "@/components/chat/ChatBubble";
 import { AudioRecorder } from "@/components/chat/AudioRecorder";
 import { MediaUploadMenu } from "@/components/chat/MediaUploadMenu";
 import { EmojiPicker } from "@/components/chat/EmojiPicker";
+import { WhatsAppStatusIndicator } from "@/components/chat/WhatsAppStatusIndicator";
 import { Search, Send, Smile, Phone, MoreVertical, Loader2, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
@@ -185,6 +186,7 @@ export default function CRMInbox() {
         {/* Header */}
         <div className="h-14 px-4 flex items-center justify-between border-b border-border">
           <h2 className="text-sm font-semibold text-foreground">Conversas</h2>
+          <WhatsAppStatusIndicator />
         </div>
 
         {/* Search */}
