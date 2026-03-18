@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
   try {
     const payload = await req.json();
-    console.log("Webhook received:", JSON.stringify(payload).slice(0, 500));
+    console.log("Webhook received:", JSON.stringify(payload).slice(0, 1500));
 
     const event = (payload.event || "").toLowerCase().replace(/_/g, ".");
     const instance = payload.instance || payload.instanceName || payload.instance_name;
@@ -76,13 +76,41 @@ Deno.serve(async (req) => {
         const remoteJid = key.remoteJid || "";
         const phone = remoteJid.replace("@s.whatsapp.net", "").replace("@g.us", "");
         const pushName = msg.pushName || phone;
-        const content = msg.message?.conversation
-          || msg.message?.extendedTextMessage?.text
-          || msg.message?.imageMessage?.caption
-          || "[mídia]";
-        const messageType = msg.message?.conversation || msg.message?.extendedTextMessage
-          ? "texto"
-          : "midia";
+
+        // Determine message type and content
+        const message = msg.message || {};
+        let content = "";
+        let messageType = "texto";
+
+        if (message.conversation) {
+          content = message.conversation;
+        } else if (message.extendedTextMessage?.text) {
+          content = message.extendedTextMessage.text;
+        } else if (message.imageMessage) {
+          messageType = "imagem";
+          // Use base64 if available, or directPath/url
+          content = msg.mediaUrl || msg.media?.url || message.imageMessage.url || message.imageMessage.directPath || "";
+          if (!content && message.imageMessage.caption) {
+            content = message.imageMessage.caption;
+          }
+          if (!content) content = "[imagem]";
+        } else if (message.videoMessage) {
+          messageType = "midia";
+          content = msg.mediaUrl || msg.media?.url || message.videoMessage.url || "[vídeo]";
+        } else if (message.audioMessage || message.pttMessage) {
+          messageType = "audio";
+          const audioMsg = message.audioMessage || message.pttMessage;
+          content = msg.mediaUrl || msg.media?.url || audioMsg?.url || "[áudio]";
+        } else if (message.documentMessage) {
+          messageType = "documento";
+          content = msg.mediaUrl || msg.media?.url || message.documentMessage.url || "[documento]";
+        } else if (message.stickerMessage) {
+          messageType = "midia";
+          content = msg.mediaUrl || msg.media?.url || "[sticker]";
+        } else {
+          content = "[mídia]";
+          messageType = "midia";
+        }
 
         // Find or create conversation
         let { data: conversa } = await supabase
