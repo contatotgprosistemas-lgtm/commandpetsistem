@@ -24,6 +24,7 @@ export function ImportWhatsAppContatosDialog({ onSuccess }: { onSuccess?: () => 
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
 
   const fetchContacts = async () => {
     setLoading(true);
