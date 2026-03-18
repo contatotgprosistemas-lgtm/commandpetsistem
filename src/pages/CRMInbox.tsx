@@ -9,6 +9,7 @@ import { AudioRecorder } from "@/components/chat/AudioRecorder";
 import { MediaUploadMenu } from "@/components/chat/MediaUploadMenu";
 import { EmojiPicker } from "@/components/chat/EmojiPicker";
 import { WhatsAppStatusIndicator } from "@/components/chat/WhatsAppStatusIndicator";
+import { ImportWhatsAppContatosDialog } from "@/components/ImportWhatsAppContatosDialog";
 import { Search, Send, Smile, Phone, MoreVertical, Loader2, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
