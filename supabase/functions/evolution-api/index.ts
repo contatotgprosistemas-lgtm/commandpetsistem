@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
   const { data: profile } = await supabase
     .from("profiles")
     .select("empresa_id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
   if (!profile?.empresa_id) return json({ error: "No empresa found" }, 403);
 
