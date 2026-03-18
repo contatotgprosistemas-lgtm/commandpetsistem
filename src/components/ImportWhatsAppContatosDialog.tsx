@@ -3,10 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Download, Loader2, Users, CheckCircle2 } from "lucide-react";
+import { Download, Loader2, Users, CheckCircle2, Search } from "lucide-react";
 
 interface WhatsAppContact {
   name: string;
@@ -23,6 +24,7 @@ export function ImportWhatsAppContatosDialog({ onSuccess }: { onSuccess?: () => 
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
 
   const fetchContacts = async () => {
     setLoading(true);
@@ -148,10 +150,27 @@ export function ImportWhatsAppContatosDialog({ onSuccess }: { onSuccess?: () => 
                 </button>
               </div>
 
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                <Input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Buscar contato..."
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
+
               {/* Contact list */}
               <ScrollArea className="h-64 border border-border rounded-md">
                 <div className="p-1">
-                  {contacts.map(c => (
+                  {contacts
+                    .filter(c =>
+                      !search ||
+                      c.name.toLowerCase().includes(search.toLowerCase()) ||
+                      c.number.includes(search)
+                    )
+                    .map(c => (
                     <label
                       key={c.number}
                       className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted/50 cursor-pointer"
