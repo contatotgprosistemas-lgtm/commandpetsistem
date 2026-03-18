@@ -427,6 +427,106 @@ export type Database = {
         }
         Relationships: []
       }
+      funil_vendas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          empresa_id: string
+          estagio: string
+          id: string
+          notas: string | null
+          updated_at: string
+          valor_estimado: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          empresa_id: string
+          estagio?: string
+          id?: string
+          notas?: string | null
+          updated_at?: string
+          valor_estimado?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          empresa_id?: string
+          estagio?: string
+          id?: string
+          notas?: string | null
+          updated_at?: string
+          valor_estimado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funil_vendas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funil_vendas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historico_interacoes: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          descricao: string
+          empresa_id: string
+          id: string
+          tipo: string
+          user_id: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          descricao: string
+          empresa_id: string
+          id?: string
+          tipo?: string
+          user_id?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          descricao?: string
+          empresa_id?: string
+          id?: string
+          tipo?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_interacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_interacoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_interacoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hospedagens: {
         Row: {
           cliente_id: string
@@ -529,6 +629,58 @@ export type Database = {
           },
           {
             foreignKeyName: "mensagens_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notas_contato: {
+        Row: {
+          autor_id: string | null
+          cliente_id: string
+          conteudo: string
+          created_at: string
+          empresa_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          autor_id?: string | null
+          cliente_id: string
+          conteudo: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          autor_id?: string | null
+          cliente_id?: string
+          conteudo?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_contato_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_contato_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_contato_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
