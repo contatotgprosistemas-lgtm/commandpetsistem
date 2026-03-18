@@ -94,14 +94,16 @@ Deno.serve(async (req) => {
             method: "POST",
             headers,
             body: JSON.stringify({
-              url: webhookUrl,
-              webhook_by_events: false,
-              webhook_base64: false,
-              events: [
-                "MESSAGES_UPSERT",
-                "CONNECTION_UPDATE",
-              ],
-              enabled: true,
+              webhook: {
+                url: webhookUrl,
+                webhookByEvents: false,
+                webhookBase64: false,
+                events: [
+                  "MESSAGES_UPSERT",
+                  "CONNECTION_UPDATE",
+                ],
+                enabled: true,
+              },
             }),
           });
           console.log("Webhook configured for instance:", name);
