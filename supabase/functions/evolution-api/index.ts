@@ -263,7 +263,11 @@ Deno.serve(async (req) => {
         const name = conn?.session_data?.instanceName;
         if (!name) return json({ error: "No instance found" }, 404);
 
-        const res = await fetch(`${baseUrl}/chat/contacts/${name}`, { headers });
+        const res = await fetch(`${baseUrl}/chat/findContacts/${name}`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({}),
+        });
         const data = await res.json();
         if (!res.ok) return json({ error: "Evolution API error", details: data }, res.status);
 
