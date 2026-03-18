@@ -113,12 +113,12 @@ export function ImportWhatsAppContatosDialog({ onSuccess }: { onSuccess?: () => 
           Importar do WhatsApp
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Importar Contatos do WhatsApp</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="flex flex-col flex-1 min-h-0 gap-3">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
@@ -134,12 +134,23 @@ export function ImportWhatsAppContatosDialog({ onSuccess }: { onSuccess?: () => 
             </div>
           ) : (
             <>
+              {/* Search */}
+              <div className="relative shrink-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                <Input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Buscar contato..."
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
+
               {/* Header with count and select all */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-success" />
-                  <span className="text-sm font-medium text-foreground">
-                    {contacts.length} contatos encontrados
+                  <span className="text-xs font-medium text-foreground">
+                    {contacts.length} contatos
                   </span>
                 </div>
                 <button
@@ -150,19 +161,8 @@ export function ImportWhatsAppContatosDialog({ onSuccess }: { onSuccess?: () => 
                 </button>
               </div>
 
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-                <Input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Buscar contato..."
-                  className="pl-9 h-9 text-sm"
-                />
-              </div>
-
               {/* Contact list */}
-              <ScrollArea className="h-64 border border-border rounded-md">
+              <ScrollArea className="flex-1 min-h-0 border border-border rounded-md">
                 <div className="p-1">
                   {contacts
                     .filter(c =>
@@ -171,40 +171,42 @@ export function ImportWhatsAppContatosDialog({ onSuccess }: { onSuccess?: () => 
                       c.number.includes(search)
                     )
                     .map(c => (
-                    <label
-                      key={c.number}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted/50 cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={selectedIds.has(c.number)}
-                        onCheckedChange={() => toggleContact(c.number)}
-                      />
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary shrink-0">
-                        {c.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
-                        <p className="text-xs text-muted-foreground font-mono">+{c.number}</p>
-                      </div>
-                    </label>
-                  ))}
+                      <label
+                        key={c.number}
+                        className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted/50 cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={selectedIds.has(c.number)}
+                          onCheckedChange={() => toggleContact(c.number)}
+                          className="shrink-0"
+                        />
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary shrink-0">
+                          {c.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
+                          <p className="text-xs text-muted-foreground font-mono">+{c.number}</p>
+                        </div>
+                      </label>
+                    ))}
                 </div>
               </ScrollArea>
 
-              <p className="text-xs text-muted-foreground">
-                {selectedIds.size} contatos selecionados — serão adicionados como conversas no CRM
+              <p className="text-xs text-muted-foreground shrink-0">
+                {selectedIds.size} contatos selecionados
               </p>
             </>
           )}
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          {/* Actions - always at bottom */}
+          <div className="flex justify-end gap-2 pt-1 shrink-0 border-t border-border mt-auto">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button
+              size="sm"
               disabled={selectedIds.size === 0 || importing || loading}
               onClick={handleImport}
             >
-              {importing ? "Importando..." : `Importar ${selectedIds.size} contatos`}
+              {importing ? "Importando..." : `Importar ${selectedIds.size}`}
             </Button>
           </div>
         </div>
