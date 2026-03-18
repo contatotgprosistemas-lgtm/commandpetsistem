@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          setLoading(true);
           setTimeout(async () => {
             await fetchProfile(session.user.id);
             await fetchRoles(session.user.id);
