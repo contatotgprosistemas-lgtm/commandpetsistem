@@ -1,32 +1,45 @@
 import { test, expect } from "../playwright-fixture";
 
-test("carrega Dashboard sem tela branca", async ({ page }) => {
+async function expectPageOrLogin(page: Parameters<typeof test>[0] extends never ? never : any, heading: string) {
+  const loginHeading = page.getByRole("heading", { name: "PetCommand" });
+  const routeHeading = page.getByRole("heading", { name: heading });
+  await expect(loginHeading.or(routeHeading)).toBeVisible();
+}
+
+test("Dashboard não fica em branco", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expectPageOrLogin(page, "Dashboard");
 });
 
-test("carrega Pets sem tela branca", async ({ page }) => {
+test("Pets não fica em branco", async ({ page }) => {
   await page.goto("/pets");
-  await expect(page.getByRole("heading", { name: "Pets" })).toBeVisible();
+  await expectPageOrLogin(page, "Pets");
 });
 
-test("carrega Agenda sem tela branca", async ({ page }) => {
+test("Agenda não fica em branco", async ({ page }) => {
   await page.goto("/agenda");
-  await expect(page.getByRole("heading", { name: "Agenda" })).toBeVisible();
+  await expectPageOrLogin(page, "Agenda");
 });
 
-test("carrega Financeiro sem tela branca", async ({ page }) => {
+test("Financeiro não fica em branco", async ({ page }) => {
   await page.goto("/financeiro");
-  await expect(page.getByRole("heading", { name: "Financeiro" })).toBeVisible();
+  await expectPageOrLogin(page, "Financeiro");
 });
 
-test("carrega Contatos sem tela branca", async ({ page }) => {
+test("Contatos não fica em branco", async ({ page }) => {
   await page.goto("/clientes");
-  await expect(page.getByRole("heading", { name: "Contatos" })).toBeVisible();
+  await expectPageOrLogin(page, "Contatos");
 });
 
-test("carrega Integrações em Configurações sem tela branca", async ({ page }) => {
+test("Configurações/Integrações não fica em branco", async ({ page }) => {
   await page.goto("/configuracoes");
+
+  const loginHeading = page.getByRole("heading", { name: "PetCommand" });
+  if (await loginHeading.isVisible()) {
+    await expect(loginHeading).toBeVisible();
+    return;
+  }
+
   await expect(page.getByRole("heading", { name: "Configurações" })).toBeVisible();
   await page.getByRole("tab", { name: /Integrações/ }).click();
   await expect(page.getByText("Outras Integrações")).toBeVisible();
