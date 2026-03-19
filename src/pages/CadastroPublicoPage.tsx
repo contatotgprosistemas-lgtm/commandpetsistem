@@ -197,6 +197,25 @@ export default function CadastroPublicoPage() {
                   <FormMessage />
                 </FormItem>
               )} />
+
+              <FormField control={form.control} name="como_conheceu" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Como nos conheceu?</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Redes Sociais">Redes Sociais</SelectItem>
+                      <SelectItem value="Indicação">Indicação</SelectItem>
+                      <SelectItem value="Google">Google</SelectItem>
+                      <SelectItem value="Passou na frente">Passou na frente</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
             </div>
 
             {/* Pets */}
