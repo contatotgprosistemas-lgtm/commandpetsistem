@@ -12,7 +12,9 @@ const authRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const { user } = useAuth();
-  const isAuthRoute = authRoutes.includes(location.pathname);
+  const isAuthRoute = authRoutes.some(route =>
+  location.pathname.startsWith(route)
+);
 
   if (isAuthRoute) {
     return <>{children}</>;
@@ -34,5 +36,4 @@ export function AppLayout({ children }: AppLayoutProps) {
       )}
     </main>
   </div>
-  );
-}
+);
