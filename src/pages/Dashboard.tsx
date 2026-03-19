@@ -37,7 +37,7 @@ export default function Dashboard() {
           <h2 className="text-sm font-medium text-foreground">Pets na Empresa</h2>
         </div>
         <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-          Nenhum pet na casa no momento
+          Nenhum pet na empresa no momento
         </div>
       </div>
     </div>
