@@ -49,7 +49,7 @@ export default function CadastroPublicoPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      nome: "", telefone: "", whatsapp: "", email: "", cpf: "", endereco: "",
+      nome: "", whatsapp: "", email: "", cpf: "", endereco: "", como_conheceu: "",
       pets: [{ nome: "", especie: "Cachorro", raca: "", sexo: "", peso: "", idade: "", comportamento: "", restricoes_alimentares: "", vacinas: "", medicacoes: "" }],
     },
   });
