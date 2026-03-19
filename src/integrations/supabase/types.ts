@@ -134,8 +134,10 @@ export type Database = {
       }
       clientes: {
         Row: {
+          como_conheceu: string | null
           cpf: string | null
           created_at: string
+          data_nascimento: string | null
           email: string | null
           empresa_id: string
           endereco: string | null
@@ -148,8 +150,10 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          como_conheceu?: string | null
           cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           email?: string | null
           empresa_id: string
           endereco?: string | null
@@ -162,8 +166,10 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          como_conheceu?: string | null
           cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           email?: string | null
           empresa_id?: string
           endereco?: string | null
