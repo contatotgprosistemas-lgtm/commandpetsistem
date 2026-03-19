@@ -17,18 +17,34 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!email || !password) {
-      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      toast({
+        title: "Preencha todos os campos",
+        variant: "destructive",
+      });
       return;
     }
+
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
     setLoading(false);
+
     if (error) {
-      toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
-    } else {
-      navigate("/crm");
+      toast({
+        title: "Erro ao entrar",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
     }
+
+    navigate("/");
   };
 
   return (
@@ -43,6 +59,7 @@ export default function LoginPage() {
             <p className="text-sm text-muted-foreground mt-1">Acesse sua conta</p>
           </div>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
@@ -55,8 +72,10 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
+
               <div className="relative">
                 <Input
                   id="password"
@@ -65,6 +84,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -74,14 +94,17 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Entrar
             </Button>
+
             <div className="flex items-center justify-between text-sm">
               <Link to="/signup" className="text-primary hover:underline">
                 Criar conta
               </Link>
+
               <Link to="/forgot-password" className="text-muted-foreground hover:text-foreground">
                 Esqueci minha senha
               </Link>
