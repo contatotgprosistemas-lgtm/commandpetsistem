@@ -39,6 +39,8 @@ export function AppSidebar() {
   const cadastrosItems = [
     { icon: Users, label: "Clientes", path: "/clientes" },
     { icon: PawPrint, label: "Pets", path: "/pets" },
+    { icon: Package, label: "Serviços", path: "/servicos" },
+    { icon: ShoppingBag, label: "Produtos", path: "/produtos" },
   ];
 
   const bottomItems = [

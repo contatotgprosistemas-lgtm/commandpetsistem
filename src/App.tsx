@@ -106,6 +106,28 @@ const App = () => (
             />
 
             <Route
+              path="/servicos"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ServicosPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/produtos"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ProdutosPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/configuracoes"
               element={
                 <ProtectedRoute>
