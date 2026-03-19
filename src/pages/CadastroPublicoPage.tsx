@@ -55,23 +55,16 @@ type FormValues = z.infer<typeof schema>;
 
 function PetVacinasFields({ control, idx }: { control: any; idx: number }) {
   const vacinas = [
-    { name: `pets.${idx}.antiparasitario` as const, dataName: `pets.${idx}.antiparasitario_data` as const, label: "Antiparasitário" },
-    { name: `pets.${idx}.v10` as const, dataName: `pets.${idx}.v10_data` as const, label: "V10" },
-    { name: `pets.${idx}.raiva` as const, dataName: `pets.${idx}.raiva_data` as const, label: "Raiva" },
+    { dataName: `pets.${idx}.antiparasitario_data` as const, label: "Antiparasitário" },
+    { dataName: `pets.${idx}.v10_data` as const, label: "V10" },
+    { dataName: `pets.${idx}.raiva_data` as const, label: "Raiva" },
   ];
   return (
     <div className="space-y-2">
       <FormLabel>Vacinas</FormLabel>
       {vacinas.map((v) => (
-        <div key={v.name} className="grid grid-cols-2 gap-2">
-          <FormField control={control} name={v.name} render={({ field }) => (
-            <FormItem>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder={v.label} /></SelectTrigger></FormControl>
-                <SelectContent><SelectItem value={v.label}>{v.label}</SelectItem></SelectContent>
-              </Select>
-            </FormItem>
-          )} />
+        <div key={v.dataName} className="grid grid-cols-2 gap-2 items-center">
+          <span className="text-sm font-medium text-foreground">{v.label}</span>
           <FormField control={control} name={v.dataName} render={({ field }) => (
             <FormItem>
               <Popover>

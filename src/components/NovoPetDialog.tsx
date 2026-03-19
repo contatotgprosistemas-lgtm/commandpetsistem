@@ -241,25 +241,16 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
               </FormItem>
             </div>
 
-            {/* Vacinas - 3 campos com dropdown + data */}
+            {/* Vacinas */}
             <div className="space-y-3">
               <FormLabel>Vacinas</FormLabel>
               {([
-                { name: "antiparasitario" as const, dataName: "antiparasitario_data" as const, label: "Antiparasitário" },
-                { name: "v10" as const, dataName: "v10_data" as const, label: "V10" },
-                { name: "raiva" as const, dataName: "raiva_data" as const, label: "Raiva" },
+                { dataName: "antiparasitario_data" as const, label: "Antiparasitário" },
+                { dataName: "v10_data" as const, label: "V10" },
+                { dataName: "raiva_data" as const, label: "Raiva" },
               ]).map((vacina) => (
-                <div key={vacina.name} className="grid grid-cols-2 gap-3">
-                  <FormField control={form.control} name={vacina.name} render={({ field }) => (
-                    <FormItem>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder={vacina.label} /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value={vacina.label}>{vacina.label}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )} />
+                <div key={vacina.dataName} className="grid grid-cols-2 gap-3 items-center">
+                  <span className="text-sm font-medium text-foreground">{vacina.label}</span>
                   <FormField control={form.control} name={vacina.dataName} render={({ field }) => (
                     <FormItem>
                       <Popover>
