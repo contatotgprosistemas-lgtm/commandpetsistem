@@ -34,7 +34,7 @@ export default function Dashboard() {
 
       <div className="bg-card rounded-lg shadow-card">
         <div className="px-5 py-4 border-b border-border">
-          <h2 className="text-sm font-medium text-foreground">Pets na Casa</h2>
+          <h2 className="text-sm font-medium text-foreground">Pets na Empresa</h2>
         </div>
         <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
           Nenhum pet na casa no momento
