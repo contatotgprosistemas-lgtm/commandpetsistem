@@ -28,8 +28,9 @@ export default function LoginPage() {
       toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
     } else {
       setTimeout(() => {
-      navigate("/");
-    },100),
+        navigate("/");
+      }, 100);
+    }
   };
 
   return (
