@@ -131,4 +131,4 @@ const App = () => (
   </QueryClientProvider>
 );
 
-export default;
+export default App;
