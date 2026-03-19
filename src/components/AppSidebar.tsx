@@ -25,10 +25,10 @@ export function AppSidebar() {
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
     { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
+    { icon: Users, label: "Clientes", path: "/clientes" },
     { icon: PawPrint, label: "Pets", path: "/pets" },
     { icon: Calendar, label: "Agenda", path: "/agenda" },
     { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
-    { icon: Users, label: "Clientes", path: "/clientes" },
     ...(isSuperAdmin
       ? [{ icon: Shield, label: "Super Admin", path: "/admin" }]
       : []),
