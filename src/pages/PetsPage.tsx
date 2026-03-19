@@ -1,5 +1,6 @@
 import { PawPrint, Search, Filter } from "lucide-react";
 import { NovoPetDialog } from "@/components/NovoPetDialog";
+import { ImportPetsDialog } from "@/components/ImportPetsDialog";
 
 export default function PetsPage() {
   return (
@@ -9,7 +10,10 @@ export default function PetsPage() {
           <h1 className="text-lg font-semibold text-foreground">Pets</h1>
           <p className="text-sm text-muted-foreground">0 pets cadastrados</p>
         </div>
-        <NovoPetDialog />
+        <div className="flex items-center gap-2">
+          <ImportPetsDialog />
+          <NovoPetDialog />
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
