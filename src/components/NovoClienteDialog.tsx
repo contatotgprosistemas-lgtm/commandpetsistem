@@ -18,7 +18,7 @@ import { toast } from "@/hooks/use-toast";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
-  cpf: z.string().trim().max(14).optional().or(z.literal("")),
+  cpf: z.string().trim().min(1, "CPF é obrigatório").max(14),
   data_nascimento: z.date().optional(),
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
