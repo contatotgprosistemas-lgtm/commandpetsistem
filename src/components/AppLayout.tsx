@@ -21,11 +21,17 @@ export function AppLayout({ children }: AppLayoutProps) {
   if (!user) return <div>Loading...</div>;
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      <AppSidebar />
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
-    </div>
-  );
-}
+  <div className="flex min-h-screen w-full bg-background">
+    {user && <AppSidebar />}
+
+    <main className="flex-1 overflow-auto">
+      {!user ? (
+        <div className="flex items-center justify-center h-full">
+          Loading...
+        </div>
+      ) : (
+        children
+      )}
+    </main>
+  </div>
+);
