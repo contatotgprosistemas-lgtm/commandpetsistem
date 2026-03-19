@@ -13,12 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 const schema = z.object({
   cliente_id: z.string().uuid("Selecione um cliente"),
-  pet_id: z.string().uuid("Selecione um pet"),
+  pet_ids: z.array(z.string().uuid()).min(1, "Selecione pelo menos um pet"),
   tipo_servico: z.string().min(1, "Selecione o serviço"),
   data: z.date({ required_error: "Selecione a data" }),
   hora: z.string().regex(/^\d{2}:\d{2}$/, "Horário inválido"),
@@ -37,10 +38,11 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { cliente_id: "", pet_id: "", tipo_servico: "", hora: "09:00", duracao_min: "60", valor: "", notas: "" },
+    defaultValues: { cliente_id: "", pet_ids: [], tipo_servico: "", hora: "09:00", duracao_min: "60", valor: "", notas: "" },
   });
 
   const selectedCliente = form.watch("cliente_id");
+  const selectedPetIds = form.watch("pet_ids");
   const filteredPets = pets.filter(p => p.cliente_id === selectedCliente);
 
   useEffect(() => {
@@ -55,8 +57,16 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   }, [open]);
 
   useEffect(() => {
-    form.setValue("pet_id", "");
+    form.setValue("pet_ids", []);
   }, [selectedCliente]);
+
+  function togglePet(petId: string) {
+    const current = form.getValues("pet_ids");
+    const updated = current.includes(petId)
+      ? current.filter(id => id !== petId)
+      : [...current, petId];
+    form.setValue("pet_ids", updated, { shouldValidate: true });
+  }
 
   async function onSubmit(data: FormValues) {
     setLoading(true);
@@ -71,19 +81,21 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       const [h, m] = data.hora.split(":").map(Number);
       dataHora.setHours(h, m, 0, 0);
 
-      const { error } = await supabase.from("agendamentos").insert({
+      const rows = data.pet_ids.map(pet_id => ({
         empresa_id: profile.empresa_id,
         cliente_id: data.cliente_id,
-        pet_id: data.pet_id,
+        pet_id,
         tipo_servico: data.tipo_servico,
         data_hora: dataHora.toISOString(),
         duracao_min: data.duracao_min ? parseInt(data.duracao_min) : 60,
         valor: data.valor ? parseFloat(data.valor) : null,
         notas: data.notas || null,
-      });
+      }));
+
+      const { error } = await supabase.from("agendamentos").insert(rows);
 
       if (error) throw error;
-      toast({ title: "Agendamento criado com sucesso!" });
+      toast({ title: `${data.pet_ids.length} agendamento(s) criado(s) com sucesso!` });
       form.reset();
       setOpen(false);
       onSuccess?.();
@@ -124,22 +136,31 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 <FormMessage />
               </FormItem>
             )} />
-            <FormField control={form.control} name="pet_id" render={({ field }) => (
+
+            <FormField control={form.control} name="pet_ids" render={() => (
               <FormItem>
-                <FormLabel>Pet *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCliente}>
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder={selectedCliente ? "Selecione o pet" : "Selecione um cliente primeiro"} /></SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
+                <FormLabel>Pets *</FormLabel>
+                {!selectedCliente ? (
+                  <p className="text-sm text-muted-foreground">Selecione um cliente primeiro</p>
+                ) : filteredPets.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum pet cadastrado para este cliente</p>
+                ) : (
+                  <div className="space-y-2 rounded-md border border-border p-3 max-h-40 overflow-y-auto">
                     {filteredPets.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                      <label key={p.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                        <Checkbox
+                          checked={selectedPetIds.includes(p.id)}
+                          onCheckedChange={() => togglePet(p.id)}
+                        />
+                        {p.nome}
+                      </label>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                )}
                 <FormMessage />
               </FormItem>
             )} />
+
             <FormField control={form.control} name="tipo_servico" render={({ field }) => (
               <FormItem>
                 <FormLabel>Serviço *</FormLabel>
