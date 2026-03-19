@@ -30,11 +30,12 @@ const petSchema = z.object({
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome é obrigatório").max(100),
-  telefone: z.string().trim().max(20).optional().or(z.literal("")),
+  data_nascimento: z.date().optional(),
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
   cpf: z.string().trim().max(14).optional().or(z.literal("")),
   endereco: z.string().trim().max(500).optional().or(z.literal("")),
+  como_conheceu: z.string().optional().or(z.literal("")),
   pets: z.array(petSchema),
 });
 
