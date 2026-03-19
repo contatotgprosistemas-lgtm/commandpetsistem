@@ -109,9 +109,12 @@ export default function CRMInbox() {
 
     try {
       const phone = selectedConversa.contato_telefone.replace(/\D/g, "");
-      await supabase.functions.invoke("evolution-api", {
-        body: { action: "send_message", number: phone, text },
-      }).catch(() => {});
+      // Only send via WhatsApp if phone looks valid (10+ digits)
+      if (phone.length >= 10) {
+        await supabase.functions.invoke("evolution-api", {
+          body: { action: "send_message", number: phone, text },
+        }).catch(() => {});
+      }
 
       await supabase.from("mensagens").insert({
         conversa_id: selectedConversaId!,
