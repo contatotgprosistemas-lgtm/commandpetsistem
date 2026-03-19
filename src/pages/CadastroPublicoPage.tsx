@@ -3,12 +3,16 @@ import { useParams } from "react-router-dom";
 import { z } from "zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PawPrint, Plus, Trash2, CheckCircle2, Building2 } from "lucide-react";
+import { format } from "date-fns";
+import { PawPrint, Plus, Trash2, CheckCircle2, Building2, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const petSchema = z.object({
@@ -26,11 +30,12 @@ const petSchema = z.object({
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome é obrigatório").max(100),
-  telefone: z.string().trim().max(20).optional().or(z.literal("")),
+  data_nascimento: z.date().optional(),
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
   cpf: z.string().trim().max(14).optional().or(z.literal("")),
   endereco: z.string().trim().max(500).optional().or(z.literal("")),
+  como_conheceu: z.string().optional().or(z.literal("")),
   pets: z.array(petSchema),
 });
 
@@ -44,7 +49,7 @@ export default function CadastroPublicoPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      nome: "", telefone: "", whatsapp: "", email: "", cpf: "", endereco: "",
+      nome: "", whatsapp: "", email: "", cpf: "", endereco: "", como_conheceu: "",
       pets: [{ nome: "", especie: "Cachorro", raca: "", sexo: "", peso: "", idade: "", comportamento: "", restricoes_alimentares: "", vacinas: "", medicacoes: "" }],
     },
   });
@@ -66,11 +71,12 @@ export default function CadastroPublicoPage() {
             empresa_id: empresaId,
             cliente: {
               nome: data.nome,
-              telefone: data.telefone || null,
+              data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
               whatsapp: data.whatsapp || null,
               email: data.email || null,
               cpf: data.cpf || null,
               endereco: data.endereco || null,
+              como_conheceu: data.como_conheceu || null,
             },
             pets: data.pets.filter(p => p.nome.trim().length > 0),
           }),
@@ -129,10 +135,32 @@ export default function CadastroPublicoPage() {
               )} />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField control={form.control} name="telefone" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone</FormLabel>
-                    <FormControl><Input placeholder="(00) 0000-0000" {...field} /></FormControl>
+                <FormField control={form.control} name="data_nascimento" render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data de Nascimento</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                          >
+                            {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione</span>}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date > new Date()}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -166,6 +194,25 @@ export default function CadastroPublicoPage() {
                 <FormItem>
                   <FormLabel>Endereço</FormLabel>
                   <FormControl><Input placeholder="Rua, número, bairro, cidade" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="como_conheceu" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Como nos conheceu?</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Redes Sociais">Redes Sociais</SelectItem>
+                      <SelectItem value="Indicação">Indicação</SelectItem>
+                      <SelectItem value="Google">Google</SelectItem>
+                      <SelectItem value="Passou na frente">Passou na frente</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )} />
