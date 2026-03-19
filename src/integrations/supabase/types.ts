@@ -696,54 +696,69 @@ export type Database = {
       }
       pets: {
         Row: {
+          antiparasitario_data: string | null
           cliente_id: string
           comportamento: string | null
           created_at: string
+          data_nascimento: string | null
           empresa_id: string
           especie: string
           id: string
           idade: string | null
           medicacoes: string | null
           nome: string
+          pelagem: string | null
           peso: number | null
           raca: string | null
+          raiva_data: string | null
           restricoes_alimentares: string | null
           sexo: string | null
           updated_at: string
+          v10_data: string | null
           vacinas: string | null
         }
         Insert: {
+          antiparasitario_data?: string | null
           cliente_id: string
           comportamento?: string | null
           created_at?: string
+          data_nascimento?: string | null
           empresa_id: string
           especie?: string
           id?: string
           idade?: string | null
           medicacoes?: string | null
           nome: string
+          pelagem?: string | null
           peso?: number | null
           raca?: string | null
+          raiva_data?: string | null
           restricoes_alimentares?: string | null
           sexo?: string | null
           updated_at?: string
+          v10_data?: string | null
           vacinas?: string | null
         }
         Update: {
+          antiparasitario_data?: string | null
           cliente_id?: string
           comportamento?: string | null
           created_at?: string
+          data_nascimento?: string | null
           empresa_id?: string
           especie?: string
           id?: string
           idade?: string | null
           medicacoes?: string | null
           nome?: string
+          pelagem?: string | null
           peso?: number | null
           raca?: string | null
+          raiva_data?: string | null
           restricoes_alimentares?: string | null
           sexo?: string | null
           updated_at?: string
+          v10_data?: string | null
           vacinas?: string | null
         }
         Relationships: [
