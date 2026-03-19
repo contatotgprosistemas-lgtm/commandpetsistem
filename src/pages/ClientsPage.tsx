@@ -68,6 +68,23 @@ export default function ClientsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            onClick={() => {
+              if (!empresaId) {
+                toast.error("Empresa não encontrada");
+                return;
+              }
+              const url = `${window.location.origin}/cadastro/${empresaId}`;
+              navigator.clipboard.writeText(url);
+              toast.success("Link de cadastro copiado!");
+            }}
+          >
+            <Link2 className="h-4 w-4" strokeWidth={1.5} />
+            Link de Cadastro
+          </Button>
           <ImportContatosDialog onSuccess={handleRefresh} />
           <NovoClienteDialog onSuccess={handleRefresh} />
         </div>
