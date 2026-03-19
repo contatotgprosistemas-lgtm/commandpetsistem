@@ -29,27 +29,106 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppLayout>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/crm" element={<ProtectedRoute><CRMInbox /></ProtectedRoute>} />
-              <Route path="/pets" element={<ProtectedRoute><PetsPage /></ProtectedRoute>} />
-              <Route path="/agenda" element={<ProtectedRoute><AgendaPage /></ProtectedRoute>} />
-              <Route path="/financeiro" element={<ProtectedRoute><FinancePage /></ProtectedRoute>} />
-              <Route path="/clientes" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
-              <Route path="/configuracoes" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute requireAdmin><SuperAdminPage /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AppLayout>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Dashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/crm"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <CRMInbox />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/pets"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <PetsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/agenda"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <AgendaPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/financeiro"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <FinancePage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/clientes"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ClientsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/configuracoes"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <SettingsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AppLayout>
+                    <SuperAdminPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
-export default App;
+export default;
