@@ -199,6 +199,9 @@ Deno.serve(async (req) => {
 
         const { number, text } = body;
         if (!number || !text) return json({ error: "number and text required" }, 400);
+        // Validate phone number - must be at least 10 digits (country code + number)
+        const cleanNumber = String(number).replace(/\D/g, "");
+        if (cleanNumber.length < 10) return json({ error: "Invalid phone number format" }, 400);
 
         const res = await fetch(`${baseUrl}/message/sendText/${name}`, {
           method: "POST",

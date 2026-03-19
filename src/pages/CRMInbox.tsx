@@ -142,9 +142,11 @@ export default function CRMInbox() {
 
     try {
       const phone = selectedConversa.contato_telefone.replace(/\D/g, "");
-      await supabase.functions.invoke("evolution-api", {
-        body: { action: "send_media", number: phone, mediaUrl: url, mediaType: type, fileName },
-      }).catch(() => {});
+      if (phone.length >= 10) {
+        await supabase.functions.invoke("evolution-api", {
+          body: { action: "send_media", number: phone, mediaUrl: url, mediaType: type, fileName },
+        }).catch(() => {});
+      }
 
       const tipoDb = type === "image" ? "imagem" : type === "audio" ? "audio" : "documento";
       await supabase.from("mensagens").insert({
