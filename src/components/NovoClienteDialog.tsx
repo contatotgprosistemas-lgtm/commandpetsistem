@@ -95,7 +95,7 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="cpf" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>CPF</FormLabel>
+                  <FormLabel>CPF *</FormLabel>
                   <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>

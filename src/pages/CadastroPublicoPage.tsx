@@ -227,7 +227,7 @@ export default function CadastroPublicoPage() {
                 )} />
                 <FormField control={form.control} name="cpf" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CPF</FormLabel>
+                    <FormLabel>CPF *</FormLabel>
                     <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
