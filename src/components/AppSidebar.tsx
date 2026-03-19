@@ -17,6 +17,8 @@ import {
   Shield,
   LogOut,
   ClipboardList,
+  Package,
+  ShoppingBag,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -26,7 +28,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isCadastrosActive = ["/clientes", "/pets"].includes(location.pathname);
+  const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos"].includes(location.pathname);
 
   // Auto-expand when on a cadastros route
   const cadastrosExpanded = cadastrosOpen || isCadastrosActive;
@@ -39,6 +41,8 @@ export function AppSidebar() {
   const cadastrosItems = [
     { icon: Users, label: "Clientes", path: "/clientes" },
     { icon: PawPrint, label: "Pets", path: "/pets" },
+    { icon: Package, label: "Serviços", path: "/servicos" },
+    { icon: ShoppingBag, label: "Produtos", path: "/produtos" },
   ];
 
   const bottomItems = [
