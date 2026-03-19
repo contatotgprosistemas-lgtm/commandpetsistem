@@ -26,7 +26,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isCadastrosActive = ["/clientes", "/pets"].includes(location.pathname);
+  const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos"].includes(location.pathname);
 
   // Auto-expand when on a cadastros route
   const cadastrosExpanded = cadastrosOpen || isCadastrosActive;
