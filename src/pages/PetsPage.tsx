@@ -1,5 +1,6 @@
 import { PawPrint, Search, Filter } from "lucide-react";
 import { NovoPetDialog } from "@/components/NovoPetDialog";
+import { ImportPetsDialog } from "@/components/ImportPetsDialog";
 
 export default function PetsPage() {
   return (
