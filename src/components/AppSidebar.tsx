@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -12,21 +12,36 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Building2,
   Shield,
   LogOut,
+  ClipboardList,
 } from "lucide-react";
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [cadastrosOpen, setCadastrosOpen] = useState(false);
   const { isSuperAdmin, signOut, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const navItems = [
+  const isCadastrosActive = ["/clientes", "/pets"].includes(location.pathname);
+
+  // Auto-expand when on a cadastros route
+  const cadastrosExpanded = cadastrosOpen || isCadastrosActive;
+
+  const mainItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
     { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
+  ];
+
+  const cadastrosItems = [
     { icon: Users, label: "Clientes", path: "/clientes" },
     { icon: PawPrint, label: "Pets", path: "/pets" },
+  ];
+
+  const bottomItems = [
     { icon: Calendar, label: "Agenda", path: "/agenda" },
     { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
     ...(isSuperAdmin
@@ -39,6 +54,35 @@ export function AppSidebar() {
     await signOut();
     navigate("/login");
   };
+
+  const renderNavItem = (item: { icon: any; label: string; path: string }) => (
+    <NavLink
+      key={item.path}
+      to={item.path}
+      end={item.path === "/"}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors duration-150 ${
+          isActive
+            ? "bg-sidebar-primary text-sidebar-primary-foreground"
+            : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
+        }`
+      }
+    >
+      <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.5} />
+      <AnimatePresence>
+        {!collapsed && (
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="whitespace-nowrap overflow-hidden"
+          >
+            {item.label}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </NavLink>
+  );
 
   return (
     <motion.aside
@@ -65,34 +109,57 @@ export function AppSidebar() {
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === "/"}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors duration-150 ${
-                isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
-              }`
-            }
-          >
-            <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.5} />
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="whitespace-nowrap overflow-hidden"
-                >
-                  {item.label}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </NavLink>
-        ))}
+        {mainItems.map(renderNavItem)}
+
+        {/* Cadastros submenu */}
+        <button
+          onClick={() => setCadastrosOpen(!cadastrosExpanded)}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors duration-150 ${
+            isCadastrosActive
+              ? "text-sidebar-foreground"
+              : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          }`}
+        >
+          <ClipboardList className="h-[18px] w-[18px] shrink-0" strokeWidth={1.5} />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="whitespace-nowrap overflow-hidden flex-1 text-left"
+              >
+                Cadastros
+              </motion.span>
+            )}
+          </AnimatePresence>
+          {!collapsed && (
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                cadastrosExpanded ? "rotate-0" : "-rotate-90"
+              }`}
+            />
+          )}
+        </button>
+
+        <AnimatePresence>
+          {cadastrosExpanded && !collapsed && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="overflow-hidden pl-4 space-y-0.5"
+            >
+              {cadastrosItems.map(renderNavItem)}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* When collapsed, show cadastros items directly */}
+        {collapsed && cadastrosItems.map(renderNavItem)}
+
+        {bottomItems.map(renderNavItem)}
       </nav>
 
       {/* User + Logout */}
