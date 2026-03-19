@@ -71,11 +71,12 @@ export default function CadastroPublicoPage() {
             empresa_id: empresaId,
             cliente: {
               nome: data.nome,
-              telefone: data.telefone || null,
+              data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
               whatsapp: data.whatsapp || null,
               email: data.email || null,
               cpf: data.cpf || null,
               endereco: data.endereco || null,
+              como_conheceu: data.como_conheceu || null,
             },
             pets: data.pets.filter(p => p.nome.trim().length > 0),
           }),
