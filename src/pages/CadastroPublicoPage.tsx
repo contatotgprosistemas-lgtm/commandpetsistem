@@ -45,7 +45,7 @@ const schema = z.object({
   data_nascimento: z.date().optional(),
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
-  cpf: z.string().trim().max(14).optional().or(z.literal("")),
+  cpf: z.string().trim().min(1, "CPF é obrigatório").max(14),
   endereco: z.string().trim().max(500).optional().or(z.literal("")),
   como_conheceu: z.string().optional().or(z.literal("")),
   pets: z.array(petSchema),
@@ -227,7 +227,7 @@ export default function CadastroPublicoPage() {
                 )} />
                 <FormField control={form.control} name="cpf" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CPF</FormLabel>
+                    <FormLabel>CPF *</FormLabel>
                     <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
