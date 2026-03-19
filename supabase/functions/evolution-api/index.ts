@@ -230,7 +230,6 @@ Deno.serve(async (req) => {
         }
         const cleanMediaNumber = String(number).replace(/\D/g, "");
         if (cleanMediaNumber.length < 10) return json({ error: "Invalid phone number format" }, 400);
-        }
 
         let endpoint = "sendMedia";
         const payload: Record<string, unknown> = { number, media: mediaUrl };
