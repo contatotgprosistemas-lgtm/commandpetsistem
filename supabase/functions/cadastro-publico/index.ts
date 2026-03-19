@@ -53,11 +53,12 @@ Deno.serve(async (req) => {
       .insert({
         empresa_id,
         nome: cliente.nome.trim().slice(0, 100),
-        telefone: cliente.telefone?.trim().slice(0, 20) || null,
+        data_nascimento: cliente.data_nascimento || null,
         whatsapp: cliente.whatsapp?.trim().slice(0, 20) || null,
         email: cliente.email?.trim().slice(0, 255) || null,
         endereco: cliente.endereco?.trim().slice(0, 500) || null,
         cpf: cliente.cpf?.trim().slice(0, 14) || null,
+        como_conheceu: cliente.como_conheceu?.trim().slice(0, 100) || null,
       })
       .select("id")
       .single();
