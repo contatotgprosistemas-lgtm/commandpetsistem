@@ -17,6 +17,8 @@ import {
   Shield,
   LogOut,
   ClipboardList,
+  Package,
+  ShoppingBag,
 } from "lucide-react";
 
 export function AppSidebar() {
