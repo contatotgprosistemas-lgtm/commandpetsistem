@@ -14,6 +14,8 @@ import FinancePage from "@/pages/FinancePage";
 import ClientsPage from "@/pages/ClientsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
+import ServicosPage from "@/pages/ServicosPage";
+import ProdutosPage from "@/pages/ProdutosPage";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
