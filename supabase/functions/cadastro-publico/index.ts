@@ -20,7 +20,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate nome length
     if (cliente.nome.length < 2 || cliente.nome.length > 100) {
       return new Response(
         JSON.stringify({ error: "Nome deve ter entre 2 e 100 caracteres" }),
@@ -33,12 +32,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify empresa exists
     const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("id", empresa_id)
-      .maybeSingle();
+      .from("empresas").select("id").eq("id", empresa_id).maybeSingle();
 
     if (empresaError || !empresa) {
       return new Response(
@@ -47,7 +42,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Insert cliente
     const { data: novoCliente, error: clienteError } = await supabase
       .from("clientes")
       .insert({
@@ -70,7 +64,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Insert pets if provided
     let petsInseridos = 0;
     if (Array.isArray(pets) && pets.length > 0) {
       const petRows = pets.slice(0, 20).map((p: any) => ({
@@ -81,11 +74,16 @@ Deno.serve(async (req) => {
         raca: p.raca?.trim().slice(0, 100) || null,
         sexo: p.sexo || null,
         peso: p.peso ? parseFloat(p.peso) || null : null,
-        idade: p.idade?.trim().slice(0, 50) || null,
-        comportamento: p.comportamento?.trim().slice(0, 500) || null,
-        restricoes_alimentares: p.restricoes_alimentares?.trim().slice(0, 500) || null,
-        vacinas: p.vacinas?.trim().slice(0, 500) || null,
-        medicacoes: p.medicacoes?.trim().slice(0, 500) || null,
+        data_nascimento: p.data_nascimento || null,
+        idade: p.idade?.trim?.().slice(0, 50) || null,
+        pelagem: p.pelagem?.trim?.().slice(0, 50) || null,
+        comportamento: p.comportamento?.trim?.().slice(0, 500) || null,
+        restricoes_alimentares: p.restricoes_alimentares?.trim?.().slice(0, 500) || null,
+        vacinas: p.vacinas?.trim?.().slice(0, 500) || null,
+        antiparasitario_data: p.antiparasitario_data || null,
+        v10_data: p.v10_data || null,
+        raiva_data: p.raiva_data || null,
+        medicacoes: p.medicacoes?.trim?.().slice(0, 500) || null,
       })).filter((p: any) => p.nome.length >= 1);
 
       if (petRows.length > 0) {
