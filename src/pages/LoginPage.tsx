@@ -28,7 +28,7 @@ export default function LoginPage() {
       toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
     } else {
       setTimeout(() => {
-        navigate("/");
+        navigate("/teste");
       }, 100);
     }
   };
@@ -49,13 +49,29 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <div className="relative">
-                <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
@@ -65,8 +81,12 @@ export default function LoginPage() {
               Entrar
             </Button>
             <div className="flex items-center justify-between text-sm">
-              <Link to="/signup" className="text-primary hover:underline">Criar conta</Link>
-              <Link to="/forgot-password" className="text-muted-foreground hover:text-foreground">Esqueci minha senha</Link>
+              <Link to="/signup" className="text-primary hover:underline">
+                Criar conta
+              </Link>
+              <Link to="/forgot-password" className="text-muted-foreground hover:text-foreground">
+                Esqueci minha senha
+              </Link>
             </div>
           </form>
         </CardContent>
