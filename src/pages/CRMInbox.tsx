@@ -218,7 +218,6 @@ export default function CRMInbox() {
         <div className="h-14 px-4 flex items-center justify-between border-b border-border">
           <h2 className="text-sm font-semibold text-foreground">Conversas</h2>
           <div className="flex items-center gap-2">
-            <ImportWhatsAppContatosDialog onSuccess={() => queryClient.invalidateQueries({ queryKey: ["conversas", empresaId] })} />
             <WhatsAppStatusIndicator />
           </div>
         </div>
