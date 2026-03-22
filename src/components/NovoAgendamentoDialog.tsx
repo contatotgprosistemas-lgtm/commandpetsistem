@@ -2,17 +2,13 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format } from "date-fns";
-import { CalendarIcon, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -21,14 +17,22 @@ const schema = z.object({
   cliente_id: z.string().uuid("Selecione um cliente"),
   pet_ids: z.array(z.string().uuid()).min(1, "Selecione pelo menos um pet"),
   tipo_servico: z.string().min(1, "Selecione o serviço"),
-  data: z.date({ required_error: "Selecione a data" }),
-  hora: z.string().regex(/^\d{2}:\d{2}$/, "Horário inválido"),
-  duracao_min: z.string().optional(),
+  data_reserva: z.string().min(1, "Informe a data da reserva"),
+  hora_reserva: z.string().regex(/^\d{2}:\d{2}$/, "Horário inválido"),
+  data_entrada: z.string().optional().or(z.literal("")),
+  hora_entrada: z.string().optional().or(z.literal("")),
+  data_saida_provavel: z.string().optional().or(z.literal("")),
+  hora_saida_provavel: z.string().optional().or(z.literal("")),
+  data_saida: z.string().optional().or(z.literal("")),
+  hora_saida: z.string().optional().or(z.literal("")),
+  baia: z.string().optional().or(z.literal("")),
   valor: z.string().optional().or(z.literal("")),
   notas: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof schema>;
+
+const baiaOptions = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 
 export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -39,7 +43,14 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { cliente_id: "", pet_ids: [], tipo_servico: "", hora: "09:00", duracao_min: "60", valor: "", notas: "" },
+    defaultValues: {
+      cliente_id: "", pet_ids: [], tipo_servico: "",
+      data_reserva: "", hora_reserva: "09:00",
+      data_entrada: "", hora_entrada: "",
+      data_saida_provavel: "", hora_saida_provavel: "18:00",
+      data_saida: "", hora_saida: "",
+      baia: "", valor: "", notas: "",
+    },
   });
 
   const selectedCliente = form.watch("cliente_id");
@@ -48,27 +59,17 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
   useEffect(() => {
     if (open) {
-      supabase.from("clientes").select("id, nome").order("nome").then(({ data }) => {
-        if (data) setClientes(data);
-      });
-      supabase.from("pets").select("id, nome, cliente_id").order("nome").then(({ data }) => {
-        if (data) setPets(data);
-      });
-      supabase.from("servicos").select("id, descricao").eq("ativo", true).order("descricao").then(({ data }) => {
-        if (data) setServicos(data);
-      });
+      supabase.from("clientes").select("id, nome").order("nome").then(({ data }) => { if (data) setClientes(data); });
+      supabase.from("pets").select("id, nome, cliente_id").order("nome").then(({ data }) => { if (data) setPets(data); });
+      supabase.from("servicos").select("id, descricao").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data); });
     }
   }, [open]);
 
-  useEffect(() => {
-    form.setValue("pet_ids", []);
-  }, [selectedCliente]);
+  useEffect(() => { form.setValue("pet_ids", []); }, [selectedCliente]);
 
   function togglePet(petId: string) {
     const current = form.getValues("pet_ids");
-    const updated = current.includes(petId)
-      ? current.filter(id => id !== petId)
-      : [...current, petId];
+    const updated = current.includes(petId) ? current.filter(id => id !== petId) : [...current, petId];
     form.setValue("pet_ids", updated, { shouldValidate: true });
   }
 
@@ -81,9 +82,12 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         return;
       }
 
-      const dataHora = new Date(data.data);
-      const [h, m] = data.hora.split(":").map(Number);
-      dataHora.setHours(h, m, 0, 0);
+      const dataHora = new Date(data.data_reserva + "T" + data.hora_reserva + ":00");
+
+      const buildTs = (d: string, h: string) => {
+        if (!d) return null;
+        return new Date(d + "T" + (h || "00:00") + ":00").toISOString();
+      };
 
       const rows = data.pet_ids.map(pet_id => ({
         empresa_id: profile.empresa_id,
@@ -91,13 +95,18 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         pet_id,
         tipo_servico: data.tipo_servico,
         data_hora: dataHora.toISOString(),
-        duracao_min: data.duracao_min ? parseInt(data.duracao_min) : 60,
+        data_entrada: buildTs(data.data_entrada || "", data.hora_entrada || ""),
+        hora_entrada: data.hora_entrada || null,
+        data_saida_provavel: buildTs(data.data_saida_provavel || "", data.hora_saida_provavel || ""),
+        hora_saida_provavel: data.hora_saida_provavel || null,
+        data_saida: buildTs(data.data_saida || "", data.hora_saida || ""),
+        hora_saida: data.hora_saida || null,
+        baia: data.baia || null,
         valor: data.valor ? parseFloat(data.valor) : null,
         notas: data.notas || null,
       }));
 
-      const { error } = await supabase.from("agendamentos").insert(rows);
-
+      const { error } = await supabase.from("agendamentos").insert(rows as any);
       if (error) throw error;
       toast({ title: `${data.pet_ids.length} agendamento(s) criado(s) com sucesso!` });
       form.reset();
@@ -118,29 +127,25 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           Novo Agendamento
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo Agendamento</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Cliente */}
             <FormField control={form.control} name="cliente_id" render={({ field }) => (
               <FormItem>
                 <FormLabel>Cliente *</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Selecione o cliente" /></SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {clientes.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione o cliente" /></SelectTrigger></FormControl>
+                  <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )} />
 
+            {/* Pets */}
             <FormField control={form.control} name="pet_ids" render={() => (
               <FormItem>
                 <FormLabel>Pets *</FormLabel>
@@ -152,10 +157,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                   <div className="space-y-2 rounded-md border border-border p-3 max-h-40 overflow-y-auto">
                     {filteredPets.map(p => (
                       <label key={p.id} className="flex items-center gap-2 cursor-pointer text-sm">
-                        <Checkbox
-                          checked={selectedPetIds.includes(p.id)}
-                          onCheckedChange={() => togglePet(p.id)}
-                        />
+                        <Checkbox checked={selectedPetIds.includes(p.id)} onCheckedChange={() => togglePet(p.id)} />
                         {p.nome}
                       </label>
                     ))}
@@ -165,77 +167,104 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               </FormItem>
             )} />
 
+            {/* Serviço */}
             <FormField control={form.control} name="tipo_servico" render={({ field }) => (
               <FormItem>
                 <FormLabel>Serviço *</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Tipo de serviço" /></SelectTrigger>
-                  </FormControl>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Tipo de serviço" /></SelectTrigger></FormControl>
                   <SelectContent>
                     {servicos.length === 0 ? (
                       <SelectItem value="__empty" disabled>Nenhum serviço cadastrado</SelectItem>
-                    ) : (
-                      servicos.map(s => (
-                        <SelectItem key={s.id} value={s.descricao}>{s.descricao}</SelectItem>
-                      ))
-                    )}
+                    ) : servicos.map(s => <SelectItem key={s.id} value={s.descricao}>{s.descricao}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )} />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="data" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data *</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                          {field.value ? format(field.value, "dd/MM/yyyy") : "Selecione"}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+
+            {/* Row 1: Reserva + Hora Reserva + Data Entrada + Hora Entrada */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <FormField control={form.control} name="data_reserva" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reserva *</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="hora" render={({ field }) => (
+              <FormField control={form.control} name="hora_reserva" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Horário *</FormLabel>
+                  <FormLabel>Hora Reserva *</FormLabel>
+                  <FormControl><Input type="time" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="data_entrada" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data da Entrada</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="hora_entrada" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hora da Entrada</FormLabel>
                   <FormControl><Input type="time" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="duracao_min" render={({ field }) => (
+
+            {/* Row 2: Data Saída Provável + Hr Saída Provável + Data Saída + Hora Saída + Baia */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <FormField control={form.control} name="data_saida_provavel" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Duração (min)</FormLabel>
-                  <FormControl><Input type="number" placeholder="60" {...field} /></FormControl>
+                  <FormLabel>Data Saída Provável</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="valor" render={({ field }) => (
+              <FormField control={form.control} name="hora_saida_provavel" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor (R$)</FormLabel>
-                  <FormControl><Input type="number" step="0.01" placeholder="0,00" {...field} /></FormControl>
+                  <FormLabel>Hr Saída Provável</FormLabel>
+                  <FormControl><Input type="time" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="data_saida" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data da Saída</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="hora_saida" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hora da Saída</FormLabel>
+                  <FormControl><Input type="time" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="baia" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Baia</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                    <SelectContent>{baiaOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )} />
             </div>
+
+            {/* Valor + Observações */}
+            <FormField control={form.control} name="valor" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor (R$)</FormLabel>
+                <FormControl><Input type="number" step="0.01" placeholder="0,00" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
             <FormField control={form.control} name="notas" render={({ field }) => (
               <FormItem>
                 <FormLabel>Observações</FormLabel>
@@ -243,6 +272,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 <FormMessage />
               </FormItem>
             )} />
+
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
               <Button type="submit" disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>
