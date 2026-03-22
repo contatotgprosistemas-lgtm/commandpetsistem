@@ -32,6 +32,7 @@ const schema = z.object({
   hora_saida: z.string().optional().or(z.literal("")),
   baia: z.string().optional().or(z.literal("")),
   valor: z.string().optional().or(z.literal("")),
+  forma_pagamento: z.string().optional().or(z.literal("")),
   notas: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
