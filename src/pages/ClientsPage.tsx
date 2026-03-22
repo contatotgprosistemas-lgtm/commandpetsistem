@@ -21,6 +21,7 @@ export default function ClientsPage() {
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: clientes, isLoading } = useQuery({
