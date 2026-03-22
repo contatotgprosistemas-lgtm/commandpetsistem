@@ -113,10 +113,10 @@ export default function AgendaPage() {
         </TabsList>
 
         <TabsContent value="hoje">
-          <AgendamentoList items={reservaHoje} loading={loading} />
+          <AgendamentoList items={reservaHoje} loading={loading} onCheckin={handleCheckin} />
         </TabsContent>
         <TabsContent value="proximas">
-          <AgendamentoList items={proximasReservas} loading={loading} />
+          <AgendamentoList items={proximasReservas} loading={loading} showCheckin onCheckin={handleCheckin} />
         </TabsContent>
         <TabsContent value="calendario">
           <AgendaCalendar agendamentos={agendamentos} />
