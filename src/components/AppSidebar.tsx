@@ -39,6 +39,7 @@ export function AppSidebar() {
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
     { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
     { icon: Kanban, label: "Pipeline Vendas", path: "/kanban" },
+    { icon: Bot, label: "Chatbot", path: "/chatbot" },
   ];
 
   const cadastrosItems = [
