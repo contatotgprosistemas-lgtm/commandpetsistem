@@ -23,9 +23,12 @@ interface CRMSidebarPanelProps {
 
 const FUNNEL_STAGES = [
   { key: "novo_lead", label: "Novo Lead", color: "bg-muted text-muted-foreground" },
-  { key: "contato_realizado", label: "Contato Realizado", color: "bg-primary/10 text-primary" },
+  { key: "contato_iniciado", label: "Contato Iniciado", color: "bg-primary/10 text-primary" },
+  { key: "qualificacao", label: "Qualificação", color: "bg-primary/10 text-primary" },
+  { key: "proposta", label: "Proposta", color: "bg-warning/10 text-warning" },
   { key: "negociacao", label: "Negociação", color: "bg-warning/10 text-warning" },
-  { key: "cliente", label: "Cliente", color: "bg-success/10 text-success" },
+  { key: "fechado_ganho", label: "Fechado Ganho", color: "bg-success/10 text-success" },
+  { key: "fechado_perdido", label: "Fechado Perdido", color: "bg-destructive/10 text-destructive" },
 ];
 
 export function CRMSidebarPanel({ clienteId, telefone }: CRMSidebarPanelProps) {
