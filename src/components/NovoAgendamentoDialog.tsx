@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus } from "lucide-react";
+import { Plus, CalendarIcon, BedDouble } from "lucide-react";
+import { format, differenceInCalendarDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -10,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -32,14 +37,60 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+interface ServicoItem {
+  id: string;
+  descricao: string;
+  valor: number;
+  tipo: string;
+}
+
 const baiaOptions = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+
+function DatePickerField({
+  value,
+  onChange,
+  placeholder = "Selecione",
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+}) {
+  const dateValue = value ? new Date(value + "T00:00:00") : undefined;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn(
+            "w-full justify-start text-left font-normal h-10",
+            !value && "text-muted-foreground"
+          )}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {dateValue ? format(dateValue, "dd/MM/yyyy") : <span>{placeholder}</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={dateValue}
+          onSelect={(d) => onChange(d ? format(d, "yyyy-MM-dd") : "")}
+          initialFocus
+          locale={ptBR}
+          className={cn("p-3 pointer-events-auto")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
   const [pets, setPets] = useState<{ id: string; nome: string; cliente_id: string }[]>([]);
-  const [servicos, setServicos] = useState<{ id: string; descricao: string }[]>([]);
+  const [servicos, setServicos] = useState<ServicoItem[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -55,13 +106,47 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
   const selectedCliente = form.watch("cliente_id");
   const selectedPetIds = form.watch("pet_ids");
+  const selectedServico = form.watch("tipo_servico");
+  const dataReserva = form.watch("data_reserva");
+  const dataSaidaProvavel = form.watch("data_saida_provavel");
   const filteredPets = pets.filter(p => p.cliente_id === selectedCliente);
+
+  // Find the selected service object
+  const servicoObj = useMemo(
+    () => servicos.find(s => s.descricao === selectedServico),
+    [servicos, selectedServico]
+  );
+
+  // Check if service is hotel type
+  const isHotel = useMemo(() => {
+    if (!servicoObj) return false;
+    const desc = servicoObj.descricao.toLowerCase();
+    const tipo = servicoObj.tipo.toLowerCase();
+    return desc.includes("hotel") || desc.includes("hospedagem") || tipo.includes("hotel") || tipo.includes("hospedagem");
+  }, [servicoObj]);
+
+  // Calculate diárias
+  const diarias = useMemo(() => {
+    if (!isHotel || !dataReserva || !dataSaidaProvavel) return 0;
+    const start = new Date(dataReserva + "T00:00:00");
+    const end = new Date(dataSaidaProvavel + "T00:00:00");
+    const diff = differenceInCalendarDays(end, start);
+    return diff > 0 ? diff : 0;
+  }, [isHotel, dataReserva, dataSaidaProvavel]);
+
+  // Auto-calculate valor for hotel
+  useEffect(() => {
+    if (isHotel && diarias > 0 && servicoObj) {
+      const total = (diarias * servicoObj.valor).toFixed(2);
+      form.setValue("valor", total);
+    }
+  }, [isHotel, diarias, servicoObj]);
 
   useEffect(() => {
     if (open) {
       supabase.from("clientes").select("id, nome").order("nome").then(({ data }) => { if (data) setClientes(data); });
       supabase.from("pets").select("id, nome, cliente_id").order("nome").then(({ data }) => { if (data) setPets(data); });
-      supabase.from("servicos").select("id, descricao").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data); });
+      supabase.from("servicos").select("id, descricao, valor, tipo").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data as ServicoItem[]); });
     }
   }, [open]);
 
@@ -176,7 +261,11 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                   <SelectContent>
                     {servicos.length === 0 ? (
                       <SelectItem value="__empty" disabled>Nenhum serviço cadastrado</SelectItem>
-                    ) : servicos.map(s => <SelectItem key={s.id} value={s.descricao}>{s.descricao}</SelectItem>)}
+                    ) : servicos.map(s => (
+                      <SelectItem key={s.id} value={s.descricao}>
+                        {s.descricao} — R$ {s.valor.toFixed(2)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -188,7 +277,9 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               <FormField control={form.control} name="data_reserva" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Reserva *</FormLabel>
-                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormControl>
+                    <DatePickerField value={field.value} onChange={field.onChange} placeholder="Data reserva" />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -202,7 +293,9 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               <FormField control={form.control} name="data_saida_provavel" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Data Saída Provável</FormLabel>
-                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormControl>
+                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Data saída prov." />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -220,7 +313,9 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               <FormField control={form.control} name="data_entrada" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Data da Entrada</FormLabel>
-                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormControl>
+                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Entrada" />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -234,7 +329,9 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               <FormField control={form.control} name="data_saida" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Data da Saída</FormLabel>
-                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormControl>
+                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Saída" />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -257,11 +354,39 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )} />
             </div>
 
+            {/* Diárias counter (only for hotel) */}
+            {isHotel && (
+              <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 p-3">
+                <BedDouble className="h-5 w-5 text-primary shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">
+                    {diarias > 0
+                      ? `${diarias} diária${diarias > 1 ? "s" : ""}`
+                      : "Selecione as datas de reserva e saída provável"}
+                  </p>
+                  {diarias > 0 && servicoObj && (
+                    <p className="text-xs text-muted-foreground">
+                      {diarias} × R$ {servicoObj.valor.toFixed(2)} = R$ {(diarias * servicoObj.valor).toFixed(2)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Valor + Observações */}
             <FormField control={form.control} name="valor" render={({ field }) => (
               <FormItem>
                 <FormLabel>Valor (R$)</FormLabel>
-                <FormControl><Input type="number" step="0.01" placeholder="0,00" {...field} /></FormControl>
+                <FormControl>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    {...field}
+                    readOnly={isHotel && diarias > 0}
+                    className={cn(isHotel && diarias > 0 && "bg-muted")}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
