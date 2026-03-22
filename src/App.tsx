@@ -57,6 +57,17 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <CRMInbox />
+            </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/kanban"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <KanbanPage />
                   </AppLayout>
                 </ProtectedRoute>
               }
