@@ -20,6 +20,7 @@ import {
   Package,
   ShoppingBag,
   Kanban,
+  Bot,
 } from "lucide-react";
 
 export function AppSidebar() {

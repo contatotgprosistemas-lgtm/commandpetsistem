@@ -75,6 +75,17 @@ const App = () => (
             />
 
             <Route
+              path="/chatbot"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ChatbotPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/pets"
               element={
                 <ProtectedRoute>
