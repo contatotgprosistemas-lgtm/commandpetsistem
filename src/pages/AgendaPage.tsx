@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
+import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,6 +22,10 @@ interface Agendamento {
   notas: string | null;
   valor: number | null;
   duracao_min: number | null;
+  data_saida_provavel: string | null;
+  hora_saida_provavel: string | null;
+  baia: string | null;
+  forma_pagamento: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string } | null;
   cliente: { id: string; nome: string; whatsapp: string | null } | null;
 }
@@ -44,6 +49,7 @@ function StatusDot({ status }: { status: string }) {
 export default function AgendaPage() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
 
   async function fetchAgendamentos() {
     setLoading(true);
