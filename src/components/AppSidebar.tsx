@@ -20,6 +20,7 @@ import {
   Package,
   ShoppingBag,
   Kanban,
+  Bot,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -38,6 +39,7 @@ export function AppSidebar() {
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
     { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
     { icon: Kanban, label: "Pipeline Vendas", path: "/kanban" },
+    { icon: Bot, label: "Chatbot", path: "/chatbot" },
   ];
 
   const cadastrosItems = [

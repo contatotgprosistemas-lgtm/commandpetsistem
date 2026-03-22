@@ -17,6 +17,7 @@ import SuperAdminPage from "@/pages/SuperAdminPage";
 import ServicosPage from "@/pages/ServicosPage";
 import ProdutosPage from "@/pages/ProdutosPage";
 import KanbanPage from "@/pages/KanbanPage";
+import ChatbotPage from "@/pages/ChatbotPage";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
@@ -68,6 +69,17 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <KanbanPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/chatbot"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ChatbotPage />
                   </AppLayout>
                 </ProtectedRoute>
               }
