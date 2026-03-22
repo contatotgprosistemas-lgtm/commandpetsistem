@@ -58,6 +58,16 @@ export default function AgendaPage() {
 
   useEffect(() => { fetchAgendamentos(); }, []);
 
+  async function handleCheckin(id: string) {
+    const { error } = await supabase.from("agendamentos").update({ status: "confirmado" }).eq("id", id);
+    if (error) {
+      toast.error("Erro ao fazer check-in: " + error.message);
+    } else {
+      toast.success("Check-in realizado!");
+      fetchAgendamentos();
+    }
+  }
+
   const today = startOfDay(new Date());
 
   const reservaHoje = agendamentos.filter(a => {
