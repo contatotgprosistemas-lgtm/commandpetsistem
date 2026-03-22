@@ -132,6 +132,62 @@ export type Database = {
           },
         ]
       }
+      chatbot_regras: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          dias_semana: number[] | null
+          empresa_id: string
+          gatilho: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          nome: string
+          ordem: number
+          resposta: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          dias_semana?: number[] | null
+          empresa_id: string
+          gatilho?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          resposta: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          dias_semana?: number[] | null
+          empresa_id?: string
+          gatilho?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          resposta?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_regras_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           como_conheceu: string | null
