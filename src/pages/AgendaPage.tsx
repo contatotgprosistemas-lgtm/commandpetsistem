@@ -164,10 +164,6 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin }: { items: Ag
     </div>
   );
 }
-      ))}
-    </div>
-  );
-}
 
 function AgendamentoRow({ item }: { item: Agendamento }) {
   const petName = item.pet?.nome ?? "Pet";
