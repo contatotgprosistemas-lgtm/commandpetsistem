@@ -268,15 +268,50 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
         {/* Funil */}
         <TabsContent value="funil" className="flex-1 m-0">
           <ScrollArea className="h-full">
-            <div className="p-4 space-y-2">
-              <p className="text-xs text-muted-foreground mb-3">Mover contato no funil:</p>
+            <div className="p-4 space-y-3">
+              {/* Valor da negociação */}
+              <div className="bg-muted/50 rounded-md p-3 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <DollarSign className="h-3.5 w-3.5" />
+                  <span>Valor da Negociação</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">R$</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0,00"
+                    defaultValue={funil?.valor_estimado ?? ""}
+                    className="h-8 text-sm font-medium"
+                    onBlur={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val) && val !== (funil?.valor_estimado ?? 0)) {
+                        updateFunnel.mutate({ valor_estimado: val });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        (e.target as HTMLInputElement).blur();
+                      }
+                    }}
+                  />
+                </div>
+                {funil?.valor_estimado != null && funil.valor_estimado > 0 && (
+                  <p className="text-xs font-semibold text-emerald-600">
+                    {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(funil.valor_estimado)}
+                  </p>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground">Mover contato no funil:</p>
               {FUNNEL_STAGES.map((stage, idx) => {
                 const isActive = stage.key === (funil?.estagio || "novo_lead");
                 const isPast = idx < currentStageIndex;
                 return (
                   <button
                     key={stage.key}
-                    onClick={() => updateFunnel.mutate(stage.key)}
+                    onClick={() => updateFunnel.mutate({ estagio: stage.key })}
                     disabled={updateFunnel.isPending}
                     className={`w-full flex items-center gap-3 p-2.5 rounded-md text-left text-xs transition-colors ${
                       isActive ? "bg-primary/10 border border-primary/30 text-primary font-medium"
