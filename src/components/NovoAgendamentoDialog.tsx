@@ -173,12 +173,13 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                     <SelectTrigger><SelectValue placeholder="Tipo de serviço" /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Banho">Banho</SelectItem>
-                    <SelectItem value="Tosa">Tosa</SelectItem>
-                    <SelectItem value="Banho e Tosa">Banho e Tosa</SelectItem>
-                    <SelectItem value="Daycare">Daycare</SelectItem>
-                    <SelectItem value="Hospedagem">Hospedagem</SelectItem>
-                    <SelectItem value="Consulta">Consulta</SelectItem>
+                    {servicos.length === 0 ? (
+                      <SelectItem value="__empty" disabled>Nenhum serviço cadastrado</SelectItem>
+                    ) : (
+                      servicos.map(s => (
+                        <SelectItem key={s.id} value={s.descricao}>{s.descricao}</SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <FormMessage />
