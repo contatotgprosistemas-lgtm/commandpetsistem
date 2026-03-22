@@ -128,6 +128,75 @@ export function OrcamentoDialog() {
     window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
+  function gerarPDF() {
+    const doc = new jsPDF();
+    const pw = doc.internal.pageSize.getWidth();
+    let y = 20;
+
+    // Header
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("ORÇAMENTO", pw / 2, y, { align: "center" });
+    y += 12;
+
+    doc.setDrawColor(59, 130, 246);
+    doc.setLineWidth(0.5);
+    doc.line(20, y, pw - 20, y);
+    y += 10;
+
+    // Details
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+
+    const addLine = (label: string, value: string) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(label, 20, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(value, 70, y);
+      y += 8;
+    };
+
+    if (selectedServico) addLine("Serviço:", selectedServico);
+    if (dataEntrada) addLine("Entrada:", format(new Date(dataEntrada + "T00:00:00"), "dd/MM/yyyy"));
+    if (dataSaida) addLine("Saída:", format(new Date(dataSaida + "T00:00:00"), "dd/MM/yyyy"));
+    if (isHotel && diarias > 0) addLine("Diárias:", String(diarias));
+    if (cliente) addLine("Cliente:", cliente);
+    
+    y += 4;
+    doc.line(20, y, pw - 20, y);
+    y += 10;
+
+    if (descontoAplicado > 0) {
+      addLine("Subtotal:", `R$ ${valorBase.toFixed(2)}`);
+      addLine("Desconto:", `- R$ ${descontoAplicado.toFixed(2)}`);
+    }
+
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("TOTAL:", 20, y);
+    doc.text(`R$ ${valorFinal.toFixed(2)}`, 70, y);
+    y += 12;
+
+    if (observacoes) {
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Observações:", 20, y);
+      y += 6;
+      const lines = doc.splitTextToSize(observacoes, pw - 40);
+      doc.text(lines, 20, y);
+      y += lines.length * 5;
+    }
+
+    // Footer
+    y += 10;
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`Gerado em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pw / 2, y, { align: "center" });
+
+    doc.save(`orcamento_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+    toast({ title: "PDF gerado com sucesso!" });
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
