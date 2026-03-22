@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  User, TrendingUp,
+  User, TrendingUp, DollarSign,
   Phone, Mail, MapPin, Tag, ChevronRight,
   Plus, Calendar,
   CheckCircle2, Circle,
@@ -118,21 +118,38 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
   });
 
   const updateFunnel = useMutation({
-    mutationFn: async (estagio: string) => {
+    mutationFn: async ({ estagio, valor_estimado }: { estagio?: string; valor_estimado?: number }) => {
       if (!clienteId || !empresaId) throw new Error("Missing");
+      const updateData: Record<string, unknown> = {};
+      if (estagio !== undefined) updateData.estagio = estagio;
+      if (valor_estimado !== undefined) updateData.valor_estimado = valor_estimado;
+
       if (funil) {
-        await supabase.from("funil_vendas").update({ estagio }).eq("id", funil.id);
+        await supabase.from("funil_vendas").update(updateData).eq("id", funil.id);
       } else {
-        await supabase.from("funil_vendas").insert({ cliente_id: clienteId, empresa_id: empresaId, estagio });
+        await supabase.from("funil_vendas").insert({
+          cliente_id: clienteId, empresa_id: empresaId,
+          estagio: estagio || "novo_lead",
+          valor_estimado: valor_estimado ?? 0,
+        });
       }
-      await supabase.from("historico_interacoes").insert({
-        cliente_id: clienteId, empresa_id: empresaId, tipo: "funil",
-        descricao: `Movido para: ${FUNNEL_STAGES.find(s => s.key === estagio)?.label}`, user_id: profile?.id,
-      });
+      if (estagio) {
+        await supabase.from("historico_interacoes").insert({
+          cliente_id: clienteId, empresa_id: empresaId, tipo: "funil",
+          descricao: `Movido para: ${FUNNEL_STAGES.find(s => s.key === estagio)?.label}`, user_id: profile?.id,
+        });
+      }
+      if (valor_estimado !== undefined) {
+        await supabase.from("historico_interacoes").insert({
+          cliente_id: clienteId, empresa_id: empresaId, tipo: "funil",
+          descricao: `Valor da negociação: R$ ${valor_estimado.toFixed(2)}`, user_id: profile?.id,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["crm-funil", clienteId] });
       queryClient.invalidateQueries({ queryKey: ["crm-historico", clienteId] });
+      queryClient.invalidateQueries({ queryKey: ["kanban-funil"] });
       toast.success("Funil atualizado");
     },
   });
@@ -251,15 +268,50 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
         {/* Funil */}
         <TabsContent value="funil" className="flex-1 m-0">
           <ScrollArea className="h-full">
-            <div className="p-4 space-y-2">
-              <p className="text-xs text-muted-foreground mb-3">Mover contato no funil:</p>
+            <div className="p-4 space-y-3">
+              {/* Valor da negociação */}
+              <div className="bg-muted/50 rounded-md p-3 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <DollarSign className="h-3.5 w-3.5" />
+                  <span>Valor da Negociação</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">R$</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0,00"
+                    defaultValue={funil?.valor_estimado ?? ""}
+                    className="h-8 text-sm font-medium"
+                    onBlur={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val) && val !== (funil?.valor_estimado ?? 0)) {
+                        updateFunnel.mutate({ valor_estimado: val });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        (e.target as HTMLInputElement).blur();
+                      }
+                    }}
+                  />
+                </div>
+                {funil?.valor_estimado != null && funil.valor_estimado > 0 && (
+                  <p className="text-xs font-semibold text-emerald-600">
+                    {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(funil.valor_estimado)}
+                  </p>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground">Mover contato no funil:</p>
               {FUNNEL_STAGES.map((stage, idx) => {
                 const isActive = stage.key === (funil?.estagio || "novo_lead");
                 const isPast = idx < currentStageIndex;
                 return (
                   <button
                     key={stage.key}
-                    onClick={() => updateFunnel.mutate(stage.key)}
+                    onClick={() => updateFunnel.mutate({ estagio: stage.key })}
                     disabled={updateFunnel.isPending}
                     className={`w-full flex items-center gap-3 p-2.5 rounded-md text-left text-xs transition-colors ${
                       isActive ? "bg-primary/10 border border-primary/30 text-primary font-medium"
