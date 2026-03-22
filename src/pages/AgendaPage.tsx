@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calculator, PawPrint, Phone, MessageCircle, Pencil } from "lucide-react";
+import { Calculator, PawPrint, Phone, MessageCircle, Pencil, LogIn } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Agendamento {
   id: string;
@@ -56,6 +57,16 @@ export default function AgendaPage() {
   }
 
   useEffect(() => { fetchAgendamentos(); }, []);
+
+  async function handleCheckin(id: string) {
+    const { error } = await supabase.from("agendamentos").update({ status: "confirmado" }).eq("id", id);
+    if (error) {
+      toast.error("Erro ao fazer check-in: " + error.message);
+    } else {
+      toast.success("Check-in realizado!");
+      fetchAgendamentos();
+    }
+  }
 
   const today = startOfDay(new Date());
 
@@ -112,10 +123,10 @@ export default function AgendaPage() {
         </TabsList>
 
         <TabsContent value="hoje">
-          <AgendamentoList items={reservaHoje} loading={loading} />
+          <AgendamentoList items={reservaHoje} loading={loading} onCheckin={handleCheckin} />
         </TabsContent>
         <TabsContent value="proximas">
-          <AgendamentoList items={proximasReservas} loading={loading} />
+          <AgendamentoList items={proximasReservas} loading={loading} showCheckin onCheckin={handleCheckin} />
         </TabsContent>
         <TabsContent value="calendario">
           <AgendaCalendar agendamentos={agendamentos} />
@@ -125,7 +136,7 @@ export default function AgendaPage() {
   );
 }
 
-function AgendamentoList({ items, loading }: { items: Agendamento[]; loading: boolean }) {
+function AgendamentoList({ items, loading, showCheckin, onCheckin }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (id: string) => void }) {
   if (loading) {
     return (
       <div className="space-y-3 mt-4">
@@ -148,13 +159,13 @@ function AgendamentoList({ items, loading }: { items: Agendamento[]; loading: bo
   return (
     <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
       {items.map(item => (
-        <AgendamentoRow key={item.id} item={item} />
+        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} />
       ))}
     </div>
   );
 }
 
-function AgendamentoRow({ item }: { item: Agendamento }) {
+function AgendamentoRow({ item, showCheckin, onCheckin }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (id: string) => void }) {
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
   const clientName = item.cliente?.nome ?? "—";
@@ -164,21 +175,21 @@ function AgendamentoRow({ item }: { item: Agendamento }) {
 
   return (
     <div className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
-      {/* Avatar */}
       <Avatar className="h-11 w-11 border border-border">
         <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">
           {initials}
         </AvatarFallback>
       </Avatar>
 
-      {/* Pet & Client info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
           {petBreed && (
             <span className="text-xs text-muted-foreground">({petBreed})</span>
           )}
-          <Pencil className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+          <button className="h-5 w-5 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground/50 hover:text-primary transition-colors" title="Editar">
+            <Pencil className="h-3 w-3" />
+          </button>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
           <span>{item.tipo_servico}</span>
@@ -190,7 +201,6 @@ function AgendamentoRow({ item }: { item: Agendamento }) {
         </div>
       </div>
 
-      {/* Date & Notes */}
       <div className="text-right shrink-0">
         <p className="text-sm font-medium text-foreground tabular-nums">
           {format(dataHora, "dd/MM/yyyy HH:mm")}
@@ -200,13 +210,22 @@ function AgendamentoRow({ item }: { item: Agendamento }) {
         )}
       </div>
 
-      {/* Status dots */}
       <div className="flex items-center gap-1 shrink-0 ml-2">
         <StatusDot status={item.status} />
       </div>
 
-      {/* Quick actions */}
       <div className="flex items-center gap-1 shrink-0">
+        {showCheckin && item.status !== "confirmado" && item.status !== "concluido" && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 text-xs"
+            onClick={() => onCheckin?.(item.id)}
+          >
+            <LogIn className="h-3.5 w-3.5" />
+            Check-in
+          </Button>
+        )}
         {clientWhatsapp && (
           <Button
             variant="ghost"
