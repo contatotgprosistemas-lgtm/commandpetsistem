@@ -72,7 +72,7 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
       </div>
 
       {/* Quick filter tabs */}
-      <div className="px-2 pt-2 flex gap-1 overflow-x-auto">
+      <div className="px-2 pt-2 flex gap-1 flex-wrap">
         {QUEUE_TABS.map(tab => (
           <button
             key={tab.key}
