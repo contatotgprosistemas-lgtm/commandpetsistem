@@ -200,7 +200,7 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit }: { item: Agenda
           {petBreed && (
             <span className="text-xs text-muted-foreground">({petBreed})</span>
           )}
-          <button className="h-5 w-5 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground/50 hover:text-primary transition-colors" title="Editar">
+          <button onClick={() => onEdit?.(item)} className="h-5 w-5 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground/50 hover:text-primary transition-colors" title="Editar">
             <Pencil className="h-3 w-3" />
           </button>
         </div>
