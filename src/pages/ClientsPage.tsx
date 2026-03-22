@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { NovoClienteDialog } from "@/components/NovoClienteDialog";
 import { ImportContatosDialog } from "@/components/ImportContatosDialog";
-import { Search, Phone, Mail, Trash2, Users, Link2, MessageCircle } from "lucide-react";
+import { EditarClienteDialog } from "@/components/EditarClienteDialog";
+import { Search, Phone, Mail, Trash2, Users, Link2, MessageCircle, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -23,6 +24,7 @@ export default function ClientsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingCliente, setEditingCliente] = useState<any>(null);
 
   const { data: clientes, isLoading } = useQuery({
     queryKey: ["clientes", empresaId],
@@ -139,6 +141,13 @@ export default function ClientsPage() {
                   ))}
                 </div>
                 <div className="flex justify-end gap-1">
+                  <button
+                    onClick={() => setEditingCliente(c)}
+                    className="h-7 w-7 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                    title="Editar contato"
+                  >
+                    <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  </button>
                   {(c.whatsapp || c.telefone) && (
                     <button
                       onClick={() => navigate(`/crm?phone=${encodeURIComponent(c.whatsapp || c.telefone || "")}`)}
@@ -160,6 +169,13 @@ export default function ClientsPage() {
           )}
         </div>
       </div>
+
+      <EditarClienteDialog
+        cliente={editingCliente}
+        open={!!editingCliente}
+        onOpenChange={(open) => { if (!open) setEditingCliente(null); }}
+        onSuccess={() => { setEditingCliente(null); handleRefresh(); }}
+      />
     </div>
   );
 }
