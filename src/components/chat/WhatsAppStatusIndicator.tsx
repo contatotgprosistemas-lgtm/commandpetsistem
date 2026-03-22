@@ -53,7 +53,7 @@ export function WhatsAppStatusIndicator() {
 
   return (
     <button
-      onClick={() => navigate("/configuracoes")}
+      onClick={() => navigate("/configuracoes?tab=integracoes")}
       className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-colors"
     >
       <WifiOff className="h-3 w-3" />

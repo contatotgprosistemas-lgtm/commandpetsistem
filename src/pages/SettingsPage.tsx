@@ -455,6 +455,9 @@ function IntegracoesTab() {
 
 // ─── Página Principal ───────────────────────────────────────────────
 export default function SettingsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "empresa";
+
   return (
     <div className="p-6 space-y-6 max-w-[900px]">
       <div>
@@ -465,7 +468,7 @@ export default function SettingsPage() {
         <p className="text-sm text-muted-foreground">Gerencie as configurações da sua empresa</p>
       </div>
 
-      <Tabs defaultValue="empresa">
+      <Tabs defaultValue={defaultTab} onValueChange={(v) => setSearchParams({ tab: v }, { replace: true })}>
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="empresa" className="gap-1.5"><Building2 className="h-4 w-4" /> Empresa</TabsTrigger>
           <TabsTrigger value="usuarios" className="gap-1.5"><Users className="h-4 w-4" /> Usuários</TabsTrigger>
