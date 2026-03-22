@@ -189,10 +189,31 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         hora_saida: data.hora_saida || null,
         baia: data.baia || null,
         valor: data.valor ? parseFloat(data.valor) : null,
+        forma_pagamento: data.forma_pagamento || null,
         notas: data.notas || null,
       }));
 
       const { error } = await supabase.from("agendamentos").insert(rows as any);
+      if (error) throw error;
+
+      // Gerar fatura em contas_receber para cada pet
+      const valorNum = data.valor ? parseFloat(data.valor) : 0;
+      if (valorNum > 0) {
+        const petNames = data.pet_ids.map(pid => {
+          const pet = pets.find(p => p.id === pid);
+          return pet?.nome || "Pet";
+        });
+        const faturas = data.pet_ids.map((_, idx) => ({
+          empresa_id: profile.empresa_id,
+          cliente_id: data.cliente_id,
+          descricao: `${data.tipo_servico} — ${petNames[idx]}`,
+          valor: valorNum / data.pet_ids.length,
+          vencimento: data.data_reserva,
+          categoria: data.forma_pagamento || "A definir",
+          status: "pendente",
+        }));
+        await supabase.from("contas_receber").insert(faturas as any);
+      }
       if (error) throw error;
       toast({ title: `${data.pet_ids.length} agendamento(s) criado(s) com sucesso!` });
       form.reset();
