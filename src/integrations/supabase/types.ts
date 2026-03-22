@@ -17,11 +17,18 @@ export type Database = {
       agendamentos: {
         Row: {
           atendente_id: string | null
+          baia: string | null
           cliente_id: string
           created_at: string
+          data_entrada: string | null
           data_hora: string
+          data_saida: string | null
+          data_saida_provavel: string | null
           duracao_min: number | null
           empresa_id: string
+          hora_entrada: string | null
+          hora_saida: string | null
+          hora_saida_provavel: string | null
           id: string
           notas: string | null
           pet_id: string
@@ -32,11 +39,18 @@ export type Database = {
         }
         Insert: {
           atendente_id?: string | null
+          baia?: string | null
           cliente_id: string
           created_at?: string
+          data_entrada?: string | null
           data_hora: string
+          data_saida?: string | null
+          data_saida_provavel?: string | null
           duracao_min?: number | null
           empresa_id: string
+          hora_entrada?: string | null
+          hora_saida?: string | null
+          hora_saida_provavel?: string | null
           id?: string
           notas?: string | null
           pet_id: string
@@ -47,11 +61,18 @@ export type Database = {
         }
         Update: {
           atendente_id?: string | null
+          baia?: string | null
           cliente_id?: string
           created_at?: string
+          data_entrada?: string | null
           data_hora?: string
+          data_saida?: string | null
+          data_saida_provavel?: string | null
           duracao_min?: number | null
           empresa_id?: string
+          hora_entrada?: string | null
+          hora_saida?: string | null
+          hora_saida_provavel?: string | null
           id?: string
           notas?: string | null
           pet_id?: string
