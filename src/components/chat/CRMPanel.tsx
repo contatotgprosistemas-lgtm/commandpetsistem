@@ -118,21 +118,38 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
   });
 
   const updateFunnel = useMutation({
-    mutationFn: async (estagio: string) => {
+    mutationFn: async ({ estagio, valor_estimado }: { estagio?: string; valor_estimado?: number }) => {
       if (!clienteId || !empresaId) throw new Error("Missing");
+      const updateData: Record<string, unknown> = {};
+      if (estagio !== undefined) updateData.estagio = estagio;
+      if (valor_estimado !== undefined) updateData.valor_estimado = valor_estimado;
+
       if (funil) {
-        await supabase.from("funil_vendas").update({ estagio }).eq("id", funil.id);
+        await supabase.from("funil_vendas").update(updateData).eq("id", funil.id);
       } else {
-        await supabase.from("funil_vendas").insert({ cliente_id: clienteId, empresa_id: empresaId, estagio });
+        await supabase.from("funil_vendas").insert({
+          cliente_id: clienteId, empresa_id: empresaId,
+          estagio: estagio || "novo_lead",
+          valor_estimado: valor_estimado ?? 0,
+        });
       }
-      await supabase.from("historico_interacoes").insert({
-        cliente_id: clienteId, empresa_id: empresaId, tipo: "funil",
-        descricao: `Movido para: ${FUNNEL_STAGES.find(s => s.key === estagio)?.label}`, user_id: profile?.id,
-      });
+      if (estagio) {
+        await supabase.from("historico_interacoes").insert({
+          cliente_id: clienteId, empresa_id: empresaId, tipo: "funil",
+          descricao: `Movido para: ${FUNNEL_STAGES.find(s => s.key === estagio)?.label}`, user_id: profile?.id,
+        });
+      }
+      if (valor_estimado !== undefined) {
+        await supabase.from("historico_interacoes").insert({
+          cliente_id: clienteId, empresa_id: empresaId, tipo: "funil",
+          descricao: `Valor da negociação: R$ ${valor_estimado.toFixed(2)}`, user_id: profile?.id,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["crm-funil", clienteId] });
       queryClient.invalidateQueries({ queryKey: ["crm-historico", clienteId] });
+      queryClient.invalidateQueries({ queryKey: ["kanban-funil"] });
       toast.success("Funil atualizado");
     },
   });
