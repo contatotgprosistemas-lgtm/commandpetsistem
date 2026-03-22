@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calculator, PawPrint, Phone, MessageCircle, Pencil } from "lucide-react";
+import { Calculator, PawPrint, Phone, MessageCircle, Pencil, LogIn } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Agendamento {
   id: string;
