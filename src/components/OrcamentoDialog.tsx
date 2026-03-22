@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Calculator, RotateCcw, X, Send, FileText, Download } from "lucide-react";
 import jsPDF from "jspdf";
 import { differenceInCalendarDays, format } from "date-fns";
