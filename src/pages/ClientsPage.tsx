@@ -121,7 +121,7 @@ export default function ClientsPage() {
             </div>
           ) : (
             filtered.map(c => (
-              <div key={c.id} className="grid grid-cols-[1fr_150px_200px_120px_60px] px-5 py-3 items-center hover:bg-muted/50 transition-colors">
+              <div key={c.id} className="grid grid-cols-[1fr_150px_200px_120px_90px] px-5 py-3 items-center hover:bg-muted/50 transition-colors">
                 <span className="text-sm font-medium text-foreground">{c.nome}</span>
                 <span className="font-mono-tabular text-sm text-muted-foreground flex items-center gap-1.5">
                   <Phone className="h-3 w-3" strokeWidth={1.5} />
@@ -138,7 +138,16 @@ export default function ClientsPage() {
                     </span>
                   ))}
                 </div>
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-1">
+                  {(c.whatsapp || c.telefone) && (
+                    <button
+                      onClick={() => navigate(`/crm?phone=${encodeURIComponent(c.whatsapp || c.telefone || "")}`)}
+                      className="h-7 w-7 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                      title="Abrir conversa no CRM"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDelete(c.id, c.nome)}
                     className="h-7 w-7 rounded hover:bg-destructive/10 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
