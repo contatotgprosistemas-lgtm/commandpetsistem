@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
+import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,6 +22,10 @@ interface Agendamento {
   notas: string | null;
   valor: number | null;
   duracao_min: number | null;
+  data_saida_provavel: string | null;
+  hora_saida_provavel: string | null;
+  baia: string | null;
+  forma_pagamento: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string } | null;
   cliente: { id: string; nome: string; whatsapp: string | null } | null;
 }
@@ -44,12 +49,13 @@ function StatusDot({ status }: { status: string }) {
 export default function AgendaPage() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
 
   async function fetchAgendamentos() {
     setLoading(true);
     const { data } = await supabase
       .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
+      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
       .order("data_hora", { ascending: true });
 
     if (data) setAgendamentos(data as any);
@@ -123,20 +129,27 @@ export default function AgendaPage() {
         </TabsList>
 
         <TabsContent value="hoje">
-          <AgendamentoList items={reservaHoje} loading={loading} onCheckin={handleCheckin} />
+          <AgendamentoList items={reservaHoje} loading={loading} onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
         </TabsContent>
         <TabsContent value="proximas">
-          <AgendamentoList items={proximasReservas} loading={loading} showCheckin onCheckin={handleCheckin} />
+          <AgendamentoList items={proximasReservas} loading={loading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
         </TabsContent>
         <TabsContent value="calendario">
           <AgendaCalendar agendamentos={agendamentos} />
         </TabsContent>
       </Tabs>
+
+      <EditarAgendamentoDialog
+        agendamento={editingAgendamento}
+        open={!!editingAgendamento}
+        onOpenChange={(o) => { if (!o) setEditingAgendamento(null); }}
+        onSuccess={() => { setEditingAgendamento(null); fetchAgendamentos(); }}
+      />
     </div>
   );
 }
 
-function AgendamentoList({ items, loading, showCheckin, onCheckin }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (id: string) => void }) {
+function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (id: string) => void; onEdit?: (a: Agendamento) => void }) {
   if (loading) {
     return (
       <div className="space-y-3 mt-4">
@@ -159,13 +172,13 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin }: { items: Ag
   return (
     <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
       {items.map(item => (
-        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} />
+        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} />
       ))}
     </div>
   );
 }
 
-function AgendamentoRow({ item, showCheckin, onCheckin }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (id: string) => void }) {
+function AgendamentoRow({ item, showCheckin, onCheckin, onEdit }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (id: string) => void; onEdit?: (a: Agendamento) => void }) {
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
   const clientName = item.cliente?.nome ?? "—";
@@ -187,7 +200,7 @@ function AgendamentoRow({ item, showCheckin, onCheckin }: { item: Agendamento; s
           {petBreed && (
             <span className="text-xs text-muted-foreground">({petBreed})</span>
           )}
-          <button className="h-5 w-5 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground/50 hover:text-primary transition-colors" title="Editar">
+          <button onClick={() => onEdit?.(item)} className="h-5 w-5 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground/50 hover:text-primary transition-colors" title="Editar">
             <Pencil className="h-3 w-3" />
           </button>
         </div>

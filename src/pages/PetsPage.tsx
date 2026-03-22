@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { PawPrint, Search, Filter, Trash2, Pencil } from "lucide-react";
+import { PawPrint, Search, Trash2, Pencil } from "lucide-react";
 import { NovoPetDialog } from "@/components/NovoPetDialog";
 import { ImportPetsDialog } from "@/components/ImportPetsDialog";
+import { EditarPetDialog } from "@/components/EditarPetDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ export default function PetsPage() {
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingPet, setEditingPet] = useState<any>(null);
 
   const { data: pets, isLoading } = useQuery({
     queryKey: ["pets", empresaId],
@@ -101,6 +103,13 @@ export default function PetsPage() {
                 <span className="text-sm text-muted-foreground tabular-nums">{p.peso ? `${p.peso}kg` : "—"}</span>
                 <div className="flex justify-end gap-1">
                   <button
+                    onClick={() => setEditingPet(p)}
+                    className="h-7 w-7 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                    title="Editar pet"
+                  >
+                    <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  </button>
+                  <button
                     onClick={() => handleDelete(p.id, p.nome)}
                     className="h-7 w-7 rounded hover:bg-destructive/10 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
                     title="Excluir pet"
@@ -113,6 +122,13 @@ export default function PetsPage() {
           )}
         </div>
       </div>
+
+      <EditarPetDialog
+        pet={editingPet}
+        open={!!editingPet}
+        onOpenChange={(o) => { if (!o) setEditingPet(null); }}
+        onSuccess={() => { setEditingPet(null); handleRefresh(); }}
+      />
     </div>
   );
 }
