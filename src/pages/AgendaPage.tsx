@@ -149,7 +149,7 @@ export default function AgendaPage() {
   );
 }
 
-function AgendamentoList({ items, loading, showCheckin, onCheckin }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (id: string) => void }) {
+function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (id: string) => void; onEdit?: (a: Agendamento) => void }) {
   if (loading) {
     return (
       <div className="space-y-3 mt-4">
@@ -172,13 +172,13 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin }: { items: Ag
   return (
     <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
       {items.map(item => (
-        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} />
+        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} />
       ))}
     </div>
   );
 }
 
-function AgendamentoRow({ item, showCheckin, onCheckin }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (id: string) => void }) {
+function AgendamentoRow({ item, showCheckin, onCheckin, onEdit }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (id: string) => void; onEdit?: (a: Agendamento) => void }) {
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
   const clientName = item.cliente?.nome ?? "—";
