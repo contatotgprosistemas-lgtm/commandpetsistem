@@ -40,7 +40,6 @@ export function useConversations() {
     enabled: !!empresaId,
   });
 
-  // Realtime subscription
   useEffect(() => {
     if (!empresaId) return;
     const channel = supabase
@@ -72,7 +71,6 @@ export function useMessages(conversaId: string | null) {
     enabled: !!conversaId,
   });
 
-  // Realtime subscription for messages
   useEffect(() => {
     if (!conversaId) return;
     const channel = supabase
@@ -85,20 +83,4 @@ export function useMessages(conversaId: string | null) {
   }, [conversaId, queryClient]);
 
   return query;
-}
-
-export function useQuickReplies() {
-  const { profile } = useAuth();
-  return useQuery({
-    queryKey: ["quick-replies", profile?.empresa_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("quick_replies")
-        .select("*")
-        .order("title");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!profile?.empresa_id,
-  });
 }

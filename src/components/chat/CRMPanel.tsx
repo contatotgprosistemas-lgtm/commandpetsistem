@@ -12,9 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  User, History, TrendingUp, StickyNote, ListTodo,
+  User, TrendingUp,
   Phone, Mail, MapPin, Tag, ChevronRight,
-  Plus, Calendar, Flag, CheckCircle2, Circle,
+  Plus, Calendar,
+  CheckCircle2, Circle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -29,11 +30,13 @@ const FUNNEL_STAGES = [
   { key: "fechado_perdido", label: "Fechado Perdido", color: "bg-destructive/10 text-destructive" },
 ];
 
-const PRIORITY_CONFIG = {
-  alta: { label: "Alta", color: "text-destructive", icon: "🔴" },
-  media: { label: "Média", color: "text-warning", icon: "🟡" },
-  baixa: { label: "Baixa", color: "text-muted-foreground", icon: "🟢" },
+const PRIORITY_CONFIG: Record<string, { icon: string }> = {
+  alta: { icon: "🔴" },
+  media: { icon: "🟡" },
+  baixa: { icon: "🟢" },
 };
+
+type Task = { id: string; title: string; description: string | null; due_date: string | null; priority: string; status: string; assigned: { nome: string } | null };
 
 interface CRMPanelProps {
   clienteId: string | null;
@@ -51,7 +54,6 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
   const [taskDue, setTaskDue] = useState("");
   const [taskPriority, setTaskPriority] = useState("media");
 
-  // Fetch client
   const { data: cliente, isLoading } = useQuery({
     queryKey: ["crm-cliente", clienteId],
     queryFn: async () => {
@@ -63,7 +65,6 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
     enabled: !!clienteId,
   });
 
-  // Fetch funnel
   const { data: funil } = useQuery({
     queryKey: ["crm-funil", clienteId],
     queryFn: async () => {
@@ -74,7 +75,6 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
     enabled: !!clienteId,
   });
 
-  // Fetch notes
   const { data: notas } = useQuery({
     queryKey: ["crm-notas", clienteId],
     queryFn: async () => {
@@ -85,18 +85,16 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
     enabled: !!clienteId,
   });
 
-  // Fetch tasks
   const { data: tasks } = useQuery({
     queryKey: ["crm-tasks", clienteId],
     queryFn: async () => {
       if (!clienteId) return [];
-      const { data } = await supabase.from("contact_tasks").select("*, assigned:assigned_user_id(nome)").eq("cliente_id", clienteId).order("due_date", { ascending: true });
-      return data ?? [];
+      const { data } = await (supabase as any).from("contact_tasks").select("*, assigned:assigned_user_id(nome)").eq("cliente_id", clienteId).order("due_date", { ascending: true });
+      return (data ?? []) as Task[];
     },
     enabled: !!clienteId,
   });
 
-  // Fetch history
   const { data: historico } = useQuery({
     queryKey: ["crm-historico", clienteId],
     queryFn: async () => {
@@ -107,7 +105,6 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
     enabled: !!clienteId,
   });
 
-  // Mutations
   const addNote = useMutation({
     mutationFn: async (conteudo: string) => {
       if (!clienteId || !empresaId) throw new Error("Missing data");
@@ -143,7 +140,7 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
   const addTask = useMutation({
     mutationFn: async () => {
       if (!clienteId || !empresaId) throw new Error("Missing");
-      await supabase.from("contact_tasks").insert({
+      await (supabase as any).from("contact_tasks").insert({
         cliente_id: clienteId, empresa_id: empresaId, title: taskTitle,
         description: taskDesc || null, due_date: taskDue || null,
         priority: taskPriority, assigned_user_id: profile?.id,
@@ -160,7 +157,7 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
   const toggleTask = useMutation({
     mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
       const newStatus = currentStatus === "concluida" ? "pendente" : "concluida";
-      await supabase.from("contact_tasks").update({ status: newStatus }).eq("id", id);
+      await (supabase as any).from("contact_tasks").update({ status: newStatus }).eq("id", id);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-tasks", clienteId] }),
   });
@@ -197,7 +194,6 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
         )}
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="contato" className="flex-1 flex flex-col min-h-0">
         <TabsList className="mx-2 mt-2 grid grid-cols-5">
           <TabsTrigger value="contato" className="text-xs px-1">Contato</TabsTrigger>
@@ -317,14 +313,10 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
               {!tasks?.length ? (
                 <p className="text-xs text-muted-foreground text-center py-4">Nenhuma tarefa</p>
               ) : (
-                tasks.map((task: any) => (
+                tasks.map((task) => (
                   <div key={task.id} className={`flex items-start gap-2 p-2.5 rounded-md border border-border ${task.status === "concluida" ? "opacity-60" : ""}`}>
                     <button onClick={() => toggleTask.mutate({ id: task.id, currentStatus: task.status })} className="mt-0.5 shrink-0">
-                      {task.status === "concluida" ? (
-                        <CheckCircle2 className="h-4 w-4 text-success" />
-                      ) : (
-                        <Circle className="h-4 w-4 text-muted-foreground" />
-                      )}
+                      {task.status === "concluida" ? <CheckCircle2 className="h-4 w-4 text-success" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
                     </button>
                     <div className="flex-1 min-w-0">
                       <p className={`text-xs font-medium ${task.status === "concluida" ? "line-through text-muted-foreground" : "text-foreground"}`}>{task.title}</p>
@@ -336,7 +328,7 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
                             {format(new Date(task.due_date), "dd/MM", { locale: ptBR })}
                           </span>
                         )}
-                        <span className="text-[10px]">{PRIORITY_CONFIG[task.priority as keyof typeof PRIORITY_CONFIG]?.icon}</span>
+                        <span className="text-[10px]">{PRIORITY_CONFIG[task.priority]?.icon}</span>
                       </div>
                     </div>
                   </div>

@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
+type QuickReply = { id: string; title: string; content: string; shortcut: string | null };
+
 interface QuickRepliesMenuProps {
   onSelect: (content: string) => void;
 }
@@ -26,12 +28,9 @@ export function QuickRepliesMenu({ onSelect }: QuickRepliesMenuProps) {
   const { data: replies } = useQuery({
     queryKey: ["quick-replies", profile?.empresa_id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("quick_replies")
-        .select("*")
-        .order("title");
+      const { data, error } = await (supabase as any).from("quick_replies").select("*").order("title");
       if (error) throw error;
-      return data;
+      return data as QuickReply[];
     },
     enabled: !!profile?.empresa_id,
   });
@@ -39,7 +38,7 @@ export function QuickRepliesMenu({ onSelect }: QuickRepliesMenuProps) {
   const addReply = useMutation({
     mutationFn: async () => {
       if (!profile?.empresa_id) throw new Error("Missing empresa");
-      const { error } = await supabase.from("quick_replies").insert({
+      const { error } = await (supabase as any).from("quick_replies").insert({
         empresa_id: profile.empresa_id,
         title: newTitle,
         content: newContent,
@@ -59,7 +58,7 @@ export function QuickRepliesMenu({ onSelect }: QuickRepliesMenuProps) {
 
   const deleteReply = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("quick_replies").delete().eq("id", id);
+      const { error } = await (supabase as any).from("quick_replies").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -94,12 +93,7 @@ export function QuickRepliesMenu({ onSelect }: QuickRepliesMenuProps) {
             <div className="space-y-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Buscar..."
-                  className="pl-9"
-                />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="pl-9" />
               </div>
 
               <div className="max-h-[300px] overflow-y-auto space-y-1">
@@ -115,9 +109,7 @@ export function QuickRepliesMenu({ onSelect }: QuickRepliesMenuProps) {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground">{r.title}</p>
                         <p className="text-xs text-muted-foreground truncate">{r.content}</p>
-                        {r.shortcut && (
-                          <span className="text-[10px] text-primary font-mono">/{r.shortcut}</span>
-                        )}
+                        {r.shortcut && <span className="text-[10px] text-primary font-mono">/{r.shortcut}</span>}
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteReply.mutate(r.id); }}

@@ -42,7 +42,6 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
     try { return format(new Date(date), "HH:mm"); } catch { return ""; }
   };
 
-  // Group messages by date for separators
   const getMessagesWithSeparators = () => {
     if (!mensagens?.length) return [];
     const items: { type: "separator" | "message"; date?: string; message?: any }[] = [];
@@ -73,22 +72,17 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
       }
 
       await supabase.from("mensagens").insert({
-        conversa_id: conversa.id,
-        empresa_id: empresaId,
-        conteudo: text,
-        remetente: "agente",
-        tipo: "texto",
+        conversa_id: conversa.id, empresa_id: empresaId, conteudo: text, remetente: "agente", tipo: "texto",
       });
 
       const updates: Record<string, unknown> = {
         ultima_mensagem_at: new Date().toISOString(),
-        last_message_preview: text.slice(0, 100),
       };
       if (!conversa.atendente_id && profile?.id) {
         updates.atendente_id = profile.id;
         updates.status = "em_atendimento";
       }
-      await supabase.from("conversas").update(updates).eq("id", conversa.id);
+      await supabase.from("conversas").update(updates as any).eq("id", conversa.id);
 
       queryClient.invalidateQueries({ queryKey: ["mensagens", conversa.id] });
       queryClient.invalidateQueries({ queryKey: ["conversas", empresaId] });
@@ -112,17 +106,12 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
 
       const tipoDb = type === "image" ? "imagem" : type === "audio" ? "audio" : "documento";
       await supabase.from("mensagens").insert({
-        conversa_id: conversa.id,
-        empresa_id: empresaId,
-        conteudo: url,
-        remetente: "agente",
-        tipo: tipoDb,
+        conversa_id: conversa.id, empresa_id: empresaId, conteudo: url, remetente: "agente", tipo: tipoDb,
       });
 
       await supabase.from("conversas").update({
         ultima_mensagem_at: new Date().toISOString(),
-        last_message_preview: type === "image" ? "📷 Imagem" : type === "audio" ? "🎤 Áudio" : `📄 ${fileName || "Documento"}`,
-      }).eq("id", conversa.id);
+      } as any).eq("id", conversa.id);
 
       queryClient.invalidateQueries({ queryKey: ["mensagens", conversa.id] });
       queryClient.invalidateQueries({ queryKey: ["conversas", empresaId] });
@@ -135,22 +124,19 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
 
   const handleToggleFavorite = async () => {
     if (!conversa) return;
-    await supabase.from("conversas").update({ is_favorited: !conversa.is_favorited }).eq("id", conversa.id);
+    await (supabase as any).from("conversas").update({ is_favorited: !conversa.is_favorited }).eq("id", conversa.id);
     queryClient.invalidateQueries({ queryKey: ["conversas", empresaId] });
   };
 
   const handleArchive = async () => {
     if (!conversa) return;
-    await supabase.from("conversas").update({ is_archived: !conversa.is_archived }).eq("id", conversa.id);
+    await (supabase as any).from("conversas").update({ is_archived: !conversa.is_archived }).eq("id", conversa.id);
     queryClient.invalidateQueries({ queryKey: ["conversas", empresaId] });
     toast({ title: conversa.is_archived ? "Conversa desarquivada" : "Conversa arquivada" });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
   };
 
   const handleEmojiSelect = (emoji: string) => {
@@ -205,24 +191,17 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
           >
             <Star className="h-[18px] w-[18px]" fill={conversa.is_favorited ? "currentColor" : "none"} strokeWidth={1.5} />
           </button>
-          <button
-            onClick={handleArchive}
-            className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground"
-          >
+          <button onClick={handleArchive} className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground">
             <Archive className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </button>
           <button className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground">
             <Phone className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </button>
-          <ConversationActions
-            conversaId={conversa.id}
-            currentAtendenteId={conversa.atendente_id}
-            currentStatus={conversa.status}
-          />
+          <ConversationActions conversaId={conversa.id} currentAtendenteId={conversa.atendente_id} currentStatus={conversa.status} />
         </div>
       </div>
 
-      {/* Messages area */}
+      {/* Messages */}
       <div
         className="flex-1 overflow-y-auto px-4 py-3"
         style={{
@@ -246,25 +225,13 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
                 <MessageSquare className="h-8 w-8 text-muted-foreground/40" />
               </div>
               <p className="text-sm text-muted-foreground">Nenhuma mensagem ainda</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Envie uma mensagem para iniciar a conversa</p>
             </div>
           ) : (
             <div className="space-y-1">
               {items.map((item, idx) => {
-                if (item.type === "separator") {
-                  return <DateSeparator key={`sep-${idx}`} date={item.date!} />;
-                }
+                if (item.type === "separator") return <DateSeparator key={`sep-${idx}`} date={item.date!} />;
                 const msg = item.message;
-                return (
-                  <ChatBubble
-                    key={msg.id}
-                    conteudo={msg.conteudo}
-                    remetente={msg.remetente}
-                    tipo={msg.tipo}
-                    created_at={msg.created_at}
-                    formatTime={formatTime}
-                  />
-                );
+                return <ChatBubble key={msg.id} conteudo={msg.conteudo} remetente={msg.remetente} tipo={msg.tipo} created_at={msg.created_at} formatTime={formatTime} />;
               })}
             </div>
           )}
@@ -272,28 +239,17 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
         </div>
       </div>
 
-      {/* Input bar */}
+      {/* Input */}
       <div className="px-3 py-2 border-t border-border bg-card">
         <div className="max-w-3xl mx-auto flex items-end gap-1.5">
           <div className="relative">
-            <button
-              onClick={() => setShowEmoji(!showEmoji)}
-              className="h-10 w-10 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground shrink-0 transition-colors"
-            >
+            <button onClick={() => setShowEmoji(!showEmoji)} className="h-10 w-10 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground shrink-0 transition-colors">
               <Smile className="h-5 w-5" />
             </button>
-            {showEmoji && (
-              <EmojiPicker onSelect={handleEmojiSelect} onClose={() => setShowEmoji(false)} />
-            )}
+            {showEmoji && <EmojiPicker onSelect={handleEmojiSelect} onClose={() => setShowEmoji(false)} />}
           </div>
-
-          <MediaUploadMenu
-            onMediaUploaded={(url, type, fileName) => handleSendMedia(url, type, fileName)}
-            disabled={sending}
-          />
-
+          <MediaUploadMenu onMediaUploaded={(url, type, fileName) => handleSendMedia(url, type, fileName)} disabled={sending} />
           <QuickRepliesMenu onSelect={(content) => setMessageInput(content)} />
-
           <div className="flex-1 min-w-0">
             <input
               ref={inputRef}
@@ -306,13 +262,8 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
               disabled={sending}
             />
           </div>
-
           {messageInput.trim() ? (
-            <button
-              onClick={handleSendMessage}
-              disabled={sending}
-              className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground shrink-0 transition-colors disabled:opacity-50"
-            >
+            <button onClick={handleSendMessage} disabled={sending} className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground shrink-0 transition-colors disabled:opacity-50">
               {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 ml-0.5" strokeWidth={1.5} />}
             </button>
           ) : (
