@@ -54,6 +54,9 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       supabase.from("pets").select("id, nome, cliente_id").order("nome").then(({ data }) => {
         if (data) setPets(data);
       });
+      supabase.from("servicos").select("id, descricao").eq("ativo", true).order("descricao").then(({ data }) => {
+        if (data) setServicos(data);
+      });
     }
   }, [open]);
 
