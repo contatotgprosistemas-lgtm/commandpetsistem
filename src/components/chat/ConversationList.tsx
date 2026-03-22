@@ -96,22 +96,6 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
         ))}
       </div>
 
-      {/* Status filter */}
-      <div className="px-2 pt-1.5 flex gap-1">
-        {["todos", "novo", "em_atendimento", "aguardando", "finalizado"].map(s => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${
-              statusFilter === s
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-muted/50"
-            }`}
-          >
-            {s === "todos" ? "Todos" : s === "novo" ? "Novo" : s === "em_atendimento" ? "Atendendo" : s === "aguardando" ? "Aguard." : "Final."}
-          </button>
-        ))}
-      </div>
 
       {/* Search */}
       <div className="p-2">
