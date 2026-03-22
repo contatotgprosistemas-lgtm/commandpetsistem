@@ -308,8 +308,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )} />
             </div>
 
-            {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída + Baia */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <FormField control={form.control} name="data_entrada" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Data da Entrada</FormLabel>
@@ -342,6 +342,10 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                   <FormMessage />
                 </FormItem>
               )} />
+            </div>
+
+            {/* Row 3: Baia + Diárias + Valor */}
+            <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3")}>
               <FormField control={form.control} name="baia" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Baia</FormLabel>
@@ -352,44 +356,42 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                   <FormMessage />
                 </FormItem>
               )} />
-            </div>
 
-            {/* Diárias counter (only for hotel) */}
-            {isHotel && (
-              <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 p-3">
-                <BedDouble className="h-5 w-5 text-primary shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">
+              {isHotel && (
+                <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 h-10">
+                  <BedDouble className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
                     {diarias > 0
                       ? `${diarias} diária${diarias > 1 ? "s" : ""}`
-                      : "Selecione as datas de reserva e saída provável"}
-                  </p>
+                      : "0 diárias"}
+                  </span>
                   {diarias > 0 && servicoObj && (
-                    <p className="text-xs text-muted-foreground">
-                      {diarias} × R$ {servicoObj.valor.toFixed(2)} = R$ {(diarias * servicoObj.valor).toFixed(2)}
-                    </p>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      ({diarias}×R${servicoObj.valor.toFixed(0)})
+                    </span>
                   )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Valor + Observações */}
-            <FormField control={form.control} name="valor" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Valor (R$)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    {...field}
-                    readOnly={isHotel && diarias > 0}
-                    className={cn(isHotel && diarias > 0 && "bg-muted")}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+              <FormField control={form.control} name="valor" render={({ field }) => (
+                <FormItem className={cn(!isHotel && "sm:col-span-2")}>
+                  <FormLabel>Valor (R$)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0,00"
+                      {...field}
+                      readOnly={isHotel && diarias > 0}
+                      className={cn(isHotel && diarias > 0 && "bg-muted")}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* Observações */}
             <FormField control={form.control} name="notas" render={({ field }) => (
               <FormItem>
                 <FormLabel>Observações</FormLabel>
