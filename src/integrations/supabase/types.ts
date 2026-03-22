@@ -132,6 +132,113 @@ export type Database = {
           },
         ]
       }
+      chatbot_flow_steps: {
+        Row: {
+          condition_config: Json | null
+          created_at: string
+          delay_seconds: number | null
+          empresa_id: string
+          flow_id: string
+          id: string
+          message: string | null
+          next_step_id: string | null
+          options: Json | null
+          position: number
+          position_x: number | null
+          position_y: number | null
+          step_type: string
+        }
+        Insert: {
+          condition_config?: Json | null
+          created_at?: string
+          delay_seconds?: number | null
+          empresa_id: string
+          flow_id: string
+          id?: string
+          message?: string | null
+          next_step_id?: string | null
+          options?: Json | null
+          position?: number
+          position_x?: number | null
+          position_y?: number | null
+          step_type?: string
+        }
+        Update: {
+          condition_config?: Json | null
+          created_at?: string
+          delay_seconds?: number | null
+          empresa_id?: string
+          flow_id?: string
+          id?: string
+          message?: string | null
+          next_step_id?: string | null
+          options?: Json | null
+          position?: number
+          position_x?: number | null
+          position_y?: number | null
+          step_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_flow_steps_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chatbot_flow_steps_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chatbot_flows: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          empresa_id: string
+          id: string
+          name: string
+          trigger_keyword: string | null
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          empresa_id: string
+          id?: string
+          name: string
+          trigger_keyword?: string | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          empresa_id?: string
+          id?: string
+          name?: string
+          trigger_keyword?: string | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_flows_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chatbot_regras: {
         Row: {
           ativo: boolean
