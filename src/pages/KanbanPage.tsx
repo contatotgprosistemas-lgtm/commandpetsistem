@@ -36,6 +36,7 @@ export default function KanbanPage() {
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
