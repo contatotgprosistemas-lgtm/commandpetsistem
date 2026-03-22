@@ -56,22 +56,6 @@ export default function Dashboard() {
         <MetricCard title="Contas Pendentes" value="0" change="—" changeType="neutral" icon={<Users className="h-4 w-4" strokeWidth={1.5} />} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-card rounded-lg p-5 shadow-card">
-          <h2 className="text-sm font-medium text-foreground mb-4">Faturamento Semanal</h2>
-          <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">
-            Sem dados para exibir
-          </div>
-        </div>
-
-        <div className="bg-card rounded-lg p-5 shadow-card">
-          <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
-          <div className="flex items-center justify-center h-[160px] text-sm text-muted-foreground">
-            Nenhuma atividade recente
-          </div>
-        </div>
-      </div>
-
       <div className="bg-card rounded-lg shadow-card">
         <div className="px-5 py-4 border-b border-border">
           <h2 className="text-sm font-medium text-foreground">Pets na Empresa ({petsNaEmpresa.length})</h2>
@@ -106,6 +90,22 @@ export default function Dashboard() {
             })}
           </div>
         )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-card rounded-lg p-5 shadow-card">
+          <h2 className="text-sm font-medium text-foreground mb-4">Faturamento Semanal</h2>
+          <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">
+            Sem dados para exibir
+          </div>
+        </div>
+
+        <div className="bg-card rounded-lg p-5 shadow-card">
+          <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
+          <div className="flex items-center justify-center h-[160px] text-sm text-muted-foreground">
+            Nenhuma atividade recente
+          </div>
+        </div>
       </div>
     </div>
   );
