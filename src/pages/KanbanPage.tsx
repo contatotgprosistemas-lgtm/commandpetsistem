@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, User, DollarSign, GripVertical, Phone, Mail } from "lucide-react";
+import { Plus, User, DollarSign, GripVertical, Phone, Mail, MessageCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ export default function KanbanPage() {
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -298,13 +300,28 @@ export default function KanbanPage() {
                       <div className="flex items-start gap-2">
                         <GripVertical className="h-4 w-4 text-muted-foreground/30 mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="flex items-center gap-1.5 min-w-0">
                             <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                               <User className="h-3 w-3 text-primary" />
                             </div>
-                            <span className="text-sm font-medium text-foreground truncate">
-                              {item.cliente?.nome ?? "Sem nome"}
-                            </span>
+                              <span className="text-sm font-medium text-foreground truncate">
+                                {item.cliente?.nome ?? "Sem nome"}
+                              </span>
+                            </div>
+                            {(item.cliente?.telefone || item.cliente?.whatsapp) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const phone = item.cliente?.whatsapp || item.cliente?.telefone || "";
+                                  navigate(`/crm?phone=${encodeURIComponent(phone)}`);
+                                }}
+                                className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                                title="Abrir conversa no CRM"
+                              >
+                                <MessageCircle className="h-3.5 w-3.5" />
+                              </button>
+                            )}
                           </div>
 
                           {item.cliente?.telefone && (
