@@ -165,7 +165,82 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin }: { items: Ag
   );
 }
 
-function AgendamentoRow({ item }: { item: Agendamento }) {
+function AgendamentoRow({ item, showCheckin, onCheckin }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (id: string) => void }) {
+  const petName = item.pet?.nome ?? "Pet";
+  const petBreed = item.pet?.raca;
+  const clientName = item.cliente?.nome ?? "—";
+  const clientWhatsapp = item.cliente?.whatsapp;
+  const dataHora = new Date(item.data_hora);
+  const initials = petName.slice(0, 2).toUpperCase();
+
+  return (
+    <div className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+      <Avatar className="h-11 w-11 border border-border">
+        <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
+          {petBreed && (
+            <span className="text-xs text-muted-foreground">({petBreed})</span>
+          )}
+          <button className="h-5 w-5 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground/50 hover:text-primary transition-colors" title="Editar">
+            <Pencil className="h-3 w-3" />
+          </button>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+          <span>{item.tipo_servico}</span>
+          <span>|</span>
+          <span className="truncate">{clientName}</span>
+          {clientWhatsapp && (
+            <MessageCircle className="h-3 w-3 text-emerald-500 shrink-0" />
+          )}
+        </div>
+      </div>
+
+      <div className="text-right shrink-0">
+        <p className="text-sm font-medium text-foreground tabular-nums">
+          {format(dataHora, "dd/MM/yyyy HH:mm")}
+        </p>
+        {item.notas && (
+          <p className="text-xs text-muted-foreground truncate max-w-[180px]">{item.notas}</p>
+        )}
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0 ml-2">
+        <StatusDot status={item.status} />
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0">
+        {showCheckin && item.status !== "confirmado" && item.status !== "concluido" && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 text-xs"
+            onClick={() => onCheckin?.(item.id)}
+          >
+            <LogIn className="h-3.5 w-3.5" />
+            Check-in
+          </Button>
+        )}
+        {clientWhatsapp && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            title="WhatsApp"
+            onClick={() => window.open(`https://wa.me/${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}
+          >
+            <Phone className="h-3.5 w-3.5 text-emerald-600" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
   const clientName = item.cliente?.nome ?? "—";
