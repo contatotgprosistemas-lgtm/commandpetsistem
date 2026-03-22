@@ -294,6 +294,10 @@ export function OrcamentoDialog() {
               <Send className="h-3.5 w-3.5" />
               Enviar
             </Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={gerarPDF}>
+              <Download className="h-3.5 w-3.5" />
+              Gerar PDF
+            </Button>
           </div>
 
           {/* Actions */}
