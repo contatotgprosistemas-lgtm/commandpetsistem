@@ -35,6 +35,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
   const [pets, setPets] = useState<{ id: string; nome: string; cliente_id: string }[]>([]);
+  const [servicos, setServicos] = useState<{ id: string; descricao: string }[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
