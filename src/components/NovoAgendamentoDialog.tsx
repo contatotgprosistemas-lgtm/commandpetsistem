@@ -183,7 +183,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               </FormItem>
             )} />
 
-            {/* Row 1: Reserva + Hora Reserva + Data Entrada + Hora Entrada */}
+            {/* Row 1: Reserva + Hora Reserva + Saída Provável + Hr Saída Provável */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <FormField control={form.control} name="data_reserva" render={({ field }) => (
                 <FormItem>
@@ -199,24 +199,6 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="data_entrada" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data da Entrada</FormLabel>
-                  <FormControl><Input type="date" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="hora_entrada" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora da Entrada</FormLabel>
-                  <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-
-            {/* Row 2: Data Saída Provável + Hr Saída Provável + Data Saída + Hora Saída + Baia */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <FormField control={form.control} name="data_saida_provavel" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Data Saída Provável</FormLabel>
@@ -227,6 +209,24 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               <FormField control={form.control} name="hora_saida_provavel" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Hr Saída Provável</FormLabel>
+                  <FormControl><Input type="time" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída + Baia */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <FormField control={form.control} name="data_entrada" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data da Entrada</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="hora_entrada" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hora da Entrada</FormLabel>
                   <FormControl><Input type="time" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
