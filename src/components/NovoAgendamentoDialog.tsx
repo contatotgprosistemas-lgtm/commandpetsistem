@@ -33,6 +33,7 @@ const schema = z.object({
   baia: z.string().optional().or(z.literal("")),
   valor: z.string().optional().or(z.literal("")),
   forma_pagamento: z.string().optional().or(z.literal("")),
+  data_pagamento: z.string().optional().or(z.literal("")),
   notas: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
