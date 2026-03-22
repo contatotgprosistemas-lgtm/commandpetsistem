@@ -9,7 +9,7 @@ import { AudioRecorder } from "@/components/chat/AudioRecorder";
 import { MediaUploadMenu } from "@/components/chat/MediaUploadMenu";
 import { EmojiPicker } from "@/components/chat/EmojiPicker";
 import { WhatsAppStatusIndicator } from "@/components/chat/WhatsAppStatusIndicator";
-import { ImportWhatsAppContatosDialog } from "@/components/ImportWhatsAppContatosDialog";
+
 import { ConversationActions } from "@/components/chat/ConversationActions";
 import { Search, Send, Smile, Phone, Loader2, MessageSquare, Inbox, UserCheck, Clock, Users } from "lucide-react";
 import { format } from "date-fns";
@@ -218,7 +218,6 @@ export default function CRMInbox() {
         <div className="h-14 px-4 flex items-center justify-between border-b border-border">
           <h2 className="text-sm font-semibold text-foreground">Conversas</h2>
           <div className="flex items-center gap-2">
-            <ImportWhatsAppContatosDialog onSuccess={() => queryClient.invalidateQueries({ queryKey: ["conversas", empresaId] })} />
             <WhatsAppStatusIndicator />
           </div>
         </div>
