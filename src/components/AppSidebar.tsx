@@ -19,6 +19,7 @@ import {
   ClipboardList,
   Package,
   ShoppingBag,
+  Kanban,
 } from "lucide-react";
 
 export function AppSidebar() {
