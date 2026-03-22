@@ -272,7 +272,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               </FormItem>
             )} />
 
-            {/* Row 1: Reserva + Hora Reserva + Saída Provável + Hr Saída Provável */}
+            {/* Row 1: Reserva + Hora Reserva + Saída Prevista + Hr Saída Prevista */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <FormField control={form.control} name="data_reserva" render={({ field }) => (
                 <FormItem>
@@ -292,16 +292,16 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )} />
               <FormField control={form.control} name="data_saida_provavel" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data Saída Provável</FormLabel>
+                  <FormLabel>Data Saída Prevista</FormLabel>
                   <FormControl>
-                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Data saída prov." />
+                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Data saída prev." />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="hora_saida_provavel" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Hr Saída Provável</FormLabel>
+                  <FormLabel>Hr Saída Prevista</FormLabel>
                   <FormControl><Input type="time" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
