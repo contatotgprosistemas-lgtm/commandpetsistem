@@ -83,10 +83,7 @@ export default function AgendaPage() {
           <p className="text-xs text-muted-foreground capitalize">{todayFormatted}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Calculator className="h-4 w-4" strokeWidth={1.5} />
-            Orçar
-          </Button>
+          <OrcamentoDialog />
           <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
         </div>
       </div>
