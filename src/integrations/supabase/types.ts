@@ -398,6 +398,70 @@ export type Database = {
           },
         ]
       }
+      contact_tasks: {
+        Row: {
+          assigned_user_id: string | null
+          cliente_id: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          empresa_id: string
+          id: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_user_id?: string | null
+          cliente_id: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          empresa_id: string
+          id?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_user_id?: string | null
+          cliente_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          empresa_id?: string
+          id?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_tasks_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_tasks_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_tasks_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contas_pagar: {
         Row: {
           categoria: string | null
@@ -1019,6 +1083,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quick_replies: {
+        Row: {
+          content: string
+          created_at: string
+          empresa_id: string
+          id: string
+          shortcut: string | null
+          title: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          shortcut?: string | null
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          shortcut?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quick_replies_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
