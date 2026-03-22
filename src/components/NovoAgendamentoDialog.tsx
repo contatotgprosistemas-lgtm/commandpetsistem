@@ -101,7 +101,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       data_entrada: "", hora_entrada: "",
       data_saida_provavel: "", hora_saida_provavel: "18:00",
       data_saida: "", hora_saida: "",
-      baia: "", valor: "", notas: "",
+      baia: "", valor: "", forma_pagamento: "", notas: "",
     },
   });
 
