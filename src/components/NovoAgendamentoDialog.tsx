@@ -414,25 +414,36 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )} />
             </div>
 
-            {/* Forma de Pagamento */}
-            <FormField control={form.control} name="forma_pagamento" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Forma de Pagamento</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                    <SelectItem value="PIX">PIX</SelectItem>
-                    <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
-                    <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
-                    <SelectItem value="Boleto">Boleto</SelectItem>
-                    <SelectItem value="Transferência">Transferência</SelectItem>
-                    <SelectItem value="A definir">A definir</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+            {/* Forma de Pagamento + Data de Pagamento */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField control={form.control} name="forma_pagamento" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Forma de Pagamento</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="PIX">PIX</SelectItem>
+                      <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                      <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                      <SelectItem value="Boleto">Boleto</SelectItem>
+                      <SelectItem value="Transferência">Transferência</SelectItem>
+                      <SelectItem value="A definir">A definir</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="data_pagamento" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de Pagamento</FormLabel>
+                  <FormControl>
+                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Data pagamento" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
 
             {/* Observações */}
             <FormField control={form.control} name="notas" render={({ field }) => (
