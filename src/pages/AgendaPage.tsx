@@ -105,6 +105,12 @@ export default function AgendaPage() {
           >
             Próximas Reservas ({proximasReservas.length})
           </TabsTrigger>
+          <TabsTrigger
+            value="calendario"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm"
+          >
+            Calendário
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="hoje">
@@ -112,6 +118,9 @@ export default function AgendaPage() {
         </TabsContent>
         <TabsContent value="proximas">
           <AgendamentoList items={proximasReservas} loading={loading} />
+        </TabsContent>
+        <TabsContent value="calendario">
+          <AgendaCalendar agendamentos={agendamentos} />
         </TabsContent>
       </Tabs>
     </div>
