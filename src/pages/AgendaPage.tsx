@@ -136,7 +136,7 @@ export default function AgendaPage() {
   );
 }
 
-function AgendamentoList({ items, loading }: { items: Agendamento[]; loading: boolean }) {
+function AgendamentoList({ items, loading, showCheckin, onCheckin }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (id: string) => void }) {
   if (loading) {
     return (
       <div className="space-y-3 mt-4">
@@ -159,7 +159,11 @@ function AgendamentoList({ items, loading }: { items: Agendamento[]; loading: bo
   return (
     <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
       {items.map(item => (
-        <AgendamentoRow key={item.id} item={item} />
+        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} />
+      ))}
+    </div>
+  );
+}
       ))}
     </div>
   );
