@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calculator, RotateCcw, X, Send, FileText } from "lucide-react";
+import { Calculator, RotateCcw, X, Send, FileText, Download } from "lucide-react";
+import jsPDF from "jspdf";
 import { differenceInCalendarDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
