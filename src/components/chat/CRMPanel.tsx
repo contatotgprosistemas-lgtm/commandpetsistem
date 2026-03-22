@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  User, TrendingUp,
+  User, TrendingUp, DollarSign,
   Phone, Mail, MapPin, Tag, ChevronRight,
   Plus, Calendar,
   CheckCircle2, Circle,
