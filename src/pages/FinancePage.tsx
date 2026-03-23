@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast, isToday } from "date-fns";
 import { BaixaContaDialog } from "@/components/BaixaContaDialog";
+import { NovaContaBancariaDialog } from "@/components/NovaContaBancariaDialog";
 import FluxoCaixaPage from "@/pages/FluxoCaixaPage";
 import DREPage from "@/pages/DREPage";
 import MovimentacaoPage from "@/pages/MovimentacaoPage";
