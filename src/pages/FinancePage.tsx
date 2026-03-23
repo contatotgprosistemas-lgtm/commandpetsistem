@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2 } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2, MoreVertical, Pencil, Search, Ban } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast, isToday } from "date-fns";
 import { toast } from "sonner";
@@ -113,8 +115,8 @@ export default function FinancePage() {
         </TabsContent>
 
         <TabsContent value="contas-a-receber">
-          <ContasContent
-            contas={contas}
+          <ContasReceberTable
+            contas={contas.filter(c => c.status !== "pago")}
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
             onDelete={async (id) => {
@@ -152,11 +154,10 @@ export default function FinancePage() {
   );
 }
 
-function ContasContent({ contas, loading, onBaixar, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
+function ContasReceberTable({ contas, loading, onBaixar, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   return (
-    <div className="bg-card rounded-lg shadow-card mt-4">
+    <div className="bg-card rounded-lg shadow-card mt-4 overflow-hidden">
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-        <h2 className="text-sm font-medium text-foreground">Contas a Receber</h2>
         <span className="text-xs text-muted-foreground">{contas.length} fatura(s)</span>
       </div>
 
@@ -169,49 +170,70 @@ function ContasContent({ contas, loading, onBaixar, onDelete }: { contas: ContaR
           Nenhuma fatura encontrada
         </div>
       ) : (
-        <div className="divide-y divide-border">
-          {contas.map(c => (
-            <div key={c.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{c.descricao}</p>
-                <p className="text-xs text-muted-foreground">
-                  {c.cliente?.nome || "—"} {c.categoria && `• ${c.categoria}`}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-semibold text-foreground tabular-nums">
-                  R$ {c.valor.toFixed(2)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Venc. {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yyyy")}
-                </p>
-              </div>
-              <div className="shrink-0">
-                {statusBadge(c.status, c.vencimento)}
-              </div>
-              {c.status === "pendente" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 gap-1 text-xs shrink-0"
-                  onClick={() => onBaixar(c)}
-                >
-                  <ArrowDownCircle className="h-3.5 w-3.5" />
-                  Baixar
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
-                title="Excluir fatura"
-                onClick={() => onDelete(c.id)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          ))}
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Documento</TableHead>
+              <TableHead>Emissão</TableHead>
+              <TableHead>Plano de Contas</TableHead>
+              <TableHead>Pessoa</TableHead>
+              <TableHead>Vencimento</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="text-right">Valor Pago</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {contas.map(c => (
+              <TableRow key={c.id}>
+                <TableCell>
+                  <p className="text-sm font-medium">Fatura</p>
+                </TableCell>
+                <TableCell className="text-sm">
+                  {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}
+                </TableCell>
+                <TableCell className="text-sm">{c.categoria || "—"}</TableCell>
+                <TableCell>
+                  <p className="text-sm">{c.cliente?.nome || "—"}</p>
+                  <p className="text-xs text-muted-foreground">{c.descricao}</p>
+                </TableCell>
+                <TableCell className="text-sm">
+                  {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}
+                </TableCell>
+                <TableCell className="text-sm text-right tabular-nums font-medium">
+                  {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </TableCell>
+                <TableCell className="text-sm text-right tabular-nums">0,00</TableCell>
+                <TableCell>
+                  {statusBadge(c.status, c.vencimento)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" className="h-7 w-7">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onBaixar(c)}>
+                        <ArrowDownCircle className="h-4 w-4 mr-2" />
+                        Baixar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => onDelete(c.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
     </div>
   );
