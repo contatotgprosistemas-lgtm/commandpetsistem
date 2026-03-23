@@ -55,6 +55,18 @@ export default function AgendaPage() {
   const [loading, setLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
 
+  async function handleDelete(id: string) {
+    const { error: errHist } = await supabase.from("historico_servicos").delete().eq("agendamento_id", id);
+    const { error: errCR } = await supabase.from("contas_receber").delete().eq("descricao", id);
+    const { error } = await supabase.from("agendamentos").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+      return;
+    }
+    toast.success("Reserva excluída com sucesso.");
+    fetchAgendamentos();
+  }
+
   async function fetchAgendamentos() {
     setLoading(true);
     const { data } = await supabase
