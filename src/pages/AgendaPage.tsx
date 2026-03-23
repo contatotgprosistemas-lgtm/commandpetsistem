@@ -56,14 +56,33 @@ export default function AgendaPage() {
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
 
   async function handleDelete(id: string) {
-    const { error: errHist } = await supabase.from("historico_servicos").delete().eq("agendamento_id", id);
-    const { error: errCR } = await supabase.from("contas_receber").delete().eq("descricao", id);
+    // Find the agendamento to get cliente_id and date for matching contas_receber
+    const agendamento = agendamentos.find(a => a.id === id);
+    
+    // Delete related historico_servicos
+    await supabase.from("historico_servicos").delete().eq("agendamento_id", id);
+    
+    // Delete related checklist/manejo
+    await supabase.from("checklist_registros").delete().eq("agendamento_id", id);
+    await supabase.from("manejo_registros").delete().eq("agendamento_id", id);
+    
+    // Delete related contas_receber (matched by cliente_id + descricao containing tipo_servico)
+    if (agendamento) {
+      const petName = agendamento.pet?.nome || "";
+      const searchDesc = `${agendamento.tipo_servico} — ${petName}`;
+      await supabase
+        .from("contas_receber")
+        .delete()
+        .eq("cliente_id", agendamento.cliente_id)
+        .eq("descricao", searchDesc);
+    }
+    
     const { error } = await supabase.from("agendamentos").delete().eq("id", id);
     if (error) {
       toast.error("Erro ao excluir: " + error.message);
       return;
     }
-    toast.success("Reserva excluída com sucesso.");
+    toast.success("Reserva e faturas relacionadas excluídas com sucesso.");
     fetchAgendamentos();
   }
 
