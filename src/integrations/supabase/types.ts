@@ -861,6 +861,115 @@ export type Database = {
           },
         ]
       }
+      customer_pet_subscriptions: {
+        Row: {
+          auto_renew: boolean | null
+          cliente_id: string
+          created_at: string
+          discount_amount: number | null
+          empresa_id: string
+          end_date: string | null
+          final_price: number
+          id: string
+          next_renewal_date: string | null
+          notes: string | null
+          package_id: string | null
+          payment_method: string | null
+          pet_id: string | null
+          plan_id: string | null
+          price_contracted: number
+          sold_by: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          cliente_id: string
+          created_at?: string
+          discount_amount?: number | null
+          empresa_id: string
+          end_date?: string | null
+          final_price?: number
+          id?: string
+          next_renewal_date?: string | null
+          notes?: string | null
+          package_id?: string | null
+          payment_method?: string | null
+          pet_id?: string | null
+          plan_id?: string | null
+          price_contracted?: number
+          sold_by?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          cliente_id?: string
+          created_at?: string
+          discount_amount?: number | null
+          empresa_id?: string
+          end_date?: string | null
+          final_price?: number
+          id?: string
+          next_renewal_date?: string | null
+          notes?: string | null
+          package_id?: string | null
+          payment_method?: string | null
+          pet_id?: string | null
+          plan_id?: string | null
+          price_contracted?: number
+          sold_by?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_pet_subscriptions_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_pet_subscriptions_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_pet_subscriptions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "service_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_pet_subscriptions_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_pet_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "service_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_pet_subscriptions_sold_by_fkey"
+            columns: ["sold_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_requests: {
         Row: {
           assigned_user_id: string | null
@@ -1592,6 +1701,223 @@ export type Database = {
           },
         ]
       }
+      service_package_items: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          extra_unit_price: number | null
+          id: string
+          package_id: string
+          quantity_included: number
+          service_name: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          extra_unit_price?: number | null
+          id?: string
+          package_id: string
+          quantity_included?: number
+          service_name: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          extra_unit_price?: number | null
+          id?: string
+          package_id?: string
+          quantity_included?: number
+          service_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_package_items_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_package_items_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "service_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_packages: {
+        Row: {
+          created_at: string
+          description: string | null
+          empresa_id: string
+          id: string
+          name: string
+          notes: string | null
+          price: number
+          status: string
+          total_credits: number
+          updated_at: string
+          validity_days: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          empresa_id: string
+          id?: string
+          name: string
+          notes?: string | null
+          price?: number
+          status?: string
+          total_credits?: number
+          updated_at?: string
+          validity_days?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          empresa_id?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          price?: number
+          status?: string
+          total_credits?: number
+          updated_at?: string
+          validity_days?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_packages_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_plan_items: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          extra_unit_price: number | null
+          id: string
+          limit_per_month: number | null
+          limit_per_week: number | null
+          plan_id: string
+          quantity_included: number
+          service_name: string
+          usage_period: string | null
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          extra_unit_price?: number | null
+          id?: string
+          limit_per_month?: number | null
+          limit_per_week?: number | null
+          plan_id: string
+          quantity_included?: number
+          service_name: string
+          usage_period?: string | null
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          extra_unit_price?: number | null
+          id?: string
+          limit_per_month?: number | null
+          limit_per_week?: number | null
+          plan_id?: string
+          quantity_included?: number
+          service_name?: string
+          usage_period?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_plan_items_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_plan_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "service_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_plans: {
+        Row: {
+          auto_renew: boolean | null
+          cancellation_fee: number | null
+          created_at: string
+          description: string | null
+          empresa_id: string
+          id: string
+          min_loyalty_months: number | null
+          name: string
+          notes: string | null
+          pause_fee: number | null
+          price: number
+          recurring_type: string | null
+          rollover_enabled: boolean | null
+          status: string
+          type: string
+          updated_at: string
+          validity_days: number | null
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          cancellation_fee?: number | null
+          created_at?: string
+          description?: string | null
+          empresa_id: string
+          id?: string
+          min_loyalty_months?: number | null
+          name: string
+          notes?: string | null
+          pause_fee?: number | null
+          price?: number
+          recurring_type?: string | null
+          rollover_enabled?: boolean | null
+          status?: string
+          type?: string
+          updated_at?: string
+          validity_days?: number | null
+        }
+        Update: {
+          auto_renew?: boolean | null
+          cancellation_fee?: number | null
+          created_at?: string
+          description?: string | null
+          empresa_id?: string
+          id?: string
+          min_loyalty_months?: number | null
+          name?: string
+          notes?: string | null
+          pause_fee?: number | null
+          price?: number
+          recurring_type?: string | null
+          rollover_enabled?: boolean | null
+          status?: string
+          type?: string
+          updated_at?: string
+          validity_days?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_plans_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       servicos: {
         Row: {
           ativo: boolean
@@ -1629,6 +1955,125 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          empresa_id: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          subscription_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          empresa_id: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          subscription_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          empresa_id?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_events_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "customer_pet_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_usage_logs: {
+        Row: {
+          agendamento_id: string | null
+          created_at: string
+          empresa_id: string
+          extra_amount: number | null
+          id: string
+          notes: string | null
+          pet_id: string | null
+          quantity_used: number
+          service_name: string
+          subscription_id: string
+          usage_date: string
+          was_extra: boolean | null
+        }
+        Insert: {
+          agendamento_id?: string | null
+          created_at?: string
+          empresa_id: string
+          extra_amount?: number | null
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          quantity_used?: number
+          service_name: string
+          subscription_id: string
+          usage_date?: string
+          was_extra?: boolean | null
+        }
+        Update: {
+          agendamento_id?: string | null
+          created_at?: string
+          empresa_id?: string
+          extra_amount?: number | null
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          quantity_used?: number
+          service_name?: string
+          subscription_id?: string
+          usage_date?: string
+          was_extra?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_usage_logs_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_usage_logs_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_usage_logs_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_usage_logs_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "customer_pet_subscriptions"
             referencedColumns: ["id"]
           },
         ]
