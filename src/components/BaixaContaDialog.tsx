@@ -98,8 +98,10 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
-                {bancos.map(b => (
-                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                {contasBancarias.map(cb => (
+                  <SelectItem key={cb.id} value={`${cb.banco} - ${cb.titular}`}>
+                    {cb.banco} - {cb.titular}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
