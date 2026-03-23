@@ -280,6 +280,15 @@ export default function Dashboard() {
           )}
         </DialogContent>
       </Dialog>
+
+      {editOpen && (
+        <EditarAgendamentoDialog
+          agendamento={editOpen}
+          open={!!editOpen}
+          onOpenChange={() => setEditOpen(null)}
+          onSuccess={() => { setEditOpen(null); fetchPetsNaEmpresa(); }}
+        />
+      )}
     </div>
   );
 }
