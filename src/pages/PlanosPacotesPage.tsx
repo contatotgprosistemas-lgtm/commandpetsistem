@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw } from "lucide-react";
+import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { format, isPast, differenceInDays, addDays } from "date-fns";
 import { NovoPlanoDialog } from "@/components/planos/NovoPlanoDialog";
 import { NovoPacoteDialog } from "@/components/planos/NovoPacoteDialog";
 import { ContratacaoDialog } from "@/components/planos/ContratacaoDialog";
+import { PlanejamentoDiasDialog } from "@/components/planos/PlanejamentoDiasDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function PlanosPacotesPage() {
@@ -29,6 +30,7 @@ export default function PlanosPacotesPage() {
   const [contratacaoOpen, setContratacaoOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; name: string } | null>(null);
   const [actionTarget, setActionTarget] = useState<{ action: string; id: string } | null>(null);
+  const [planejamentoSub, setPlanejamentoSub] = useState<any>(null);
 
   async function fetchAll() {
     setLoading(true);
@@ -97,6 +99,18 @@ export default function PlanosPacotesPage() {
 
     toast.success("Plano renovado com sucesso!");
     fetchAll();
+  }
+
+  async function handleFaturar(sub: any) {
+    const planName = plans.find((p: any) => p.id === sub.plan_id)?.name || packages.find((p: any) => p.id === sub.package_id)?.name || "Plano/Pacote";
+    const { error } = await supabase.from("contas_receber").insert({
+      empresa_id: empresaId, cliente_id: sub.cliente_id,
+      descricao: `Fatura manual: ${planName}`,
+      valor: sub.final_price, vencimento: format(new Date(), "yyyy-MM-dd"),
+      status: "pendente", categoria: "Planos e Pacotes"
+    });
+    if (error) { toast.error("Erro ao gerar fatura"); return; }
+    toast.success("Fatura gerada com sucesso!");
   }
 
   // Dashboard metrics
@@ -250,6 +264,12 @@ export default function PlanosPacotesPage() {
                     </div>
                     <div className="shrink-0">{isExpired ? statusBadge("vencido") : statusBadge(s.status)}</div>
                     <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Planejar dias" onClick={() => setPlanejamentoSub(s)}>
+                        <CalendarDays className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Faturar manual" onClick={() => handleFaturar(s)}>
+                        <DollarSign className="h-3.5 w-3.5" />
+                      </Button>
                       {s.status === "ativo" && (
                         <>
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="Pausar" onClick={() => setActionTarget({ action: "pause", id: s.id })}>
@@ -312,6 +332,7 @@ export default function PlanosPacotesPage() {
       {empresaId && <NovoPlanoDialog open={novoPlanoOpen} onOpenChange={setNovoPlanoOpen} onSuccess={fetchAll} empresaId={empresaId} />}
       {empresaId && <NovoPacoteDialog open={novoPacoteOpen} onOpenChange={setNovoPacoteOpen} onSuccess={fetchAll} empresaId={empresaId} />}
       {empresaId && <ContratacaoDialog open={contratacaoOpen} onOpenChange={setContratacaoOpen} onSuccess={fetchAll} empresaId={empresaId} />}
+      {planejamentoSub && <PlanejamentoDiasDialog open={!!planejamentoSub} onOpenChange={o => { if (!o) setPlanejamentoSub(null); }} subscription={planejamentoSub} onSuccess={fetchAll} />}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={o => { if (!o) setDeleteTarget(null); }}>
         <AlertDialogContent>
