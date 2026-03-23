@@ -52,28 +52,54 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
       toast.error("Selecione o banco/forma de pagamento");
       return;
     }
+
+    const vPago = parseFloat(valorPago) || 0;
+    const vJuros = parseFloat(valorJuros) || 0;
+    const vDesconto = parseFloat(valorDesconto) || 0;
+    const valorLiquido = vPago + vJuros - vDesconto;
+
+    if (valorLiquido > conta.valor) {
+      toast.error("Valor da baixa maior que o valor da fatura. Corrija o valor na fatura primeiro.");
+      return;
+    }
+
+    const selectedBank = contasBancarias.find(cb => `${cb.banco} - ${cb.titular}` === banco);
+    if (!selectedBank) {
+      toast.error("Banco não encontrado");
+      return;
+    }
+
     setSaving(true);
-    const { error } = await supabase
-      .from("contas_receber")
-      .update({
-        status: "pago",
-        data_baixa: dataBaixa,
-        banco,
-        valor_pago: parseFloat(valorPago) || 0,
-        valor_juros: parseFloat(valorJuros) || 0,
-        valor_desconto: parseFloat(valorDesconto) || 0,
-        observacao_baixa: observacao || null,
-      } as any)
-      .eq("id", conta.id);
+    const { data, error } = await supabase.rpc("efetuar_baixa", {
+      p_conta_id: conta.id,
+      p_data_baixa: dataBaixa,
+      p_banco_id: selectedBank.id,
+      p_banco_nome: banco,
+      p_valor_pago: vPago,
+      p_valor_juros: vJuros,
+      p_valor_desconto: vDesconto,
+      p_observacao: observacao || null,
+    });
 
     setSaving(false);
     if (error) {
       toast.error("Erro ao efetuar baixa: " + error.message);
+      return;
+    }
+
+    const result = data as any;
+    if (result && !result.success) {
+      toast.error(result.error);
+      return;
+    }
+
+    if (result?.valor_restante > 0.01) {
+      toast.success(`Baixa parcial efetuada! Saldo restante de R$ ${Number(result.valor_restante).toFixed(2)} mantido em aberto.`);
     } else {
       toast.success("Baixa efetuada com sucesso!");
-      onOpenChange(false);
-      onSuccess();
     }
+    onOpenChange(false);
+    onSuccess();
   };
 
   return (

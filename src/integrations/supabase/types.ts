@@ -2114,6 +2114,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      efetuar_baixa: {
+        Args: {
+          p_banco_id: string
+          p_banco_nome: string
+          p_conta_id: string
+          p_data_baixa: string
+          p_observacao?: string
+          p_valor_desconto?: number
+          p_valor_juros?: number
+          p_valor_pago: number
+        }
+        Returns: Json
+      }
       get_user_cliente_id: { Args: never; Returns: string }
       get_user_empresa_id: { Args: never; Returns: string }
       has_role: {
