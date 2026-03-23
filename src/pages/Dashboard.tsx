@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [manejoOpen, setManejoOpen] = useState<PetNaEmpresa | null>(null);
   const [checklistOpen, setChecklistOpen] = useState<PetNaEmpresa | null>(null);
+  const [fichaOpen, setFichaOpen] = useState<PetNaEmpresa | null>(null);
 
   async function fetchPetsNaEmpresa() {
     const { data } = await supabase
