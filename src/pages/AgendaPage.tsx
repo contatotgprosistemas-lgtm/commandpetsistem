@@ -120,9 +120,9 @@ export default function AgendaPage() {
   async function handleCheckin(item: Agendamento) {
     const now = new Date();
     const horaEntrada = format(now, "HH:mm");
-    // Update status to confirmado and record entry time
+    // Update status to na_empresa and record entry time
     const { error } = await supabase.from("agendamentos").update({
-      status: "confirmado",
+      status: "na_empresa",
       data_entrada: now.toISOString(),
       hora_entrada: horaEntrada,
     }).eq("id", item.id);
