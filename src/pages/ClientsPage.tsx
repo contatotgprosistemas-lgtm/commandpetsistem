@@ -6,9 +6,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { NovoClienteDialog } from "@/components/NovoClienteDialog";
 import { ImportContatosDialog } from "@/components/ImportContatosDialog";
 import { EditarClienteDialog } from "@/components/EditarClienteDialog";
-import { Search, Phone, Mail, Trash2, Users, Link2, MessageCircle, Pencil } from "lucide-react";
+import { Search, Phone, Mail, Trash2, Users, Link2, MessageCircle, Pencil, KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const tagColors: Record<string, string> = {
   VIP: "bg-accent/10 text-accent",
@@ -25,6 +28,10 @@ export default function ClientsPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [editingCliente, setEditingCliente] = useState<any>(null);
+  const [accessCliente, setAccessCliente] = useState<any>(null);
+  const [accessEmail, setAccessEmail] = useState("");
+  const [accessSenha, setAccessSenha] = useState("");
+  const [creatingAccess, setCreatingAccess] = useState(false);
 
   const { data: clientes, isLoading } = useQuery({
     queryKey: ["clientes", empresaId],
@@ -52,6 +59,44 @@ export default function ClientsPage() {
       toast.success("Contato excluído");
       handleRefresh();
     }
+  };
+
+  const handleCreateAccess = async () => {
+    if (!accessCliente || !accessEmail || !accessSenha) {
+      toast.error("Preencha email e senha");
+      return;
+    }
+    if (accessSenha.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+    setCreatingAccess(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("criar-acesso-cliente", {
+        body: {
+          cliente_id: accessCliente.id,
+          email: accessEmail,
+          senha: accessSenha,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Acesso criado para ${accessCliente.nome}! Email: ${accessEmail}`);
+      setAccessCliente(null);
+      setAccessEmail("");
+      setAccessSenha("");
+      handleRefresh();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao criar acesso");
+    } finally {
+      setCreatingAccess(false);
+    }
+  };
+
+  const openAccessDialog = (c: any) => {
+    setAccessCliente(c);
+    setAccessEmail(c.email || "");
+    setAccessSenha("");
   };
 
   const filtered = clientes?.filter(c =>
@@ -105,7 +150,7 @@ export default function ClientsPage() {
       </div>
 
       <div className="bg-card rounded-lg shadow-card">
-        <div className="grid grid-cols-[1fr_150px_200px_120px_90px] px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="grid grid-cols-[1fr_150px_200px_120px_120px] px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
           <span>Nome</span>
           <span>Telefone</span>
           <span>Email</span>
@@ -123,8 +168,15 @@ export default function ClientsPage() {
             </div>
           ) : (
             filtered.map(c => (
-              <div key={c.id} className="grid grid-cols-[1fr_150px_200px_120px_90px] px-5 py-3 items-center hover:bg-muted/50 transition-colors">
-                <span className="text-sm font-medium text-foreground">{c.nome}</span>
+              <div key={c.id} className="grid grid-cols-[1fr_150px_200px_120px_120px] px-5 py-3 items-center hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">{c.nome}</span>
+                  {c.user_id && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">
+                      Portal
+                    </span>
+                  )}
+                </div>
                 <span className="font-mono-tabular text-sm text-muted-foreground flex items-center gap-1.5">
                   <Phone className="h-3 w-3" strokeWidth={1.5} />
                   {c.whatsapp || c.telefone || "—"}
@@ -141,6 +193,15 @@ export default function ClientsPage() {
                   ))}
                 </div>
                 <div className="flex justify-end gap-1">
+                  {!c.user_id && (
+                    <button
+                      onClick={() => openAccessDialog(c)}
+                      className="h-7 w-7 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                      title="Gerar acesso ao portal"
+                    >
+                      <KeyRound className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </button>
+                  )}
                   <button
                     onClick={() => setEditingCliente(c)}
                     className="h-7 w-7 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
@@ -176,6 +237,50 @@ export default function ClientsPage() {
         onOpenChange={(open) => { if (!open) setEditingCliente(null); }}
         onSuccess={() => { setEditingCliente(null); handleRefresh(); }}
       />
+
+      {/* Dialog Gerar Acesso ao Portal */}
+      <Dialog open={!!accessCliente} onOpenChange={(open) => { if (!open) { setAccessCliente(null); setAccessEmail(""); setAccessSenha(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              Gerar Acesso ao Portal
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Criar login para <strong>{accessCliente?.nome}</strong> acessar o portal do cliente.
+            </p>
+            <div className="space-y-2">
+              <Label>Email de acesso</Label>
+              <Input
+                type="email"
+                placeholder="email@exemplo.com"
+                value={accessEmail}
+                onChange={(e) => setAccessEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={accessSenha}
+                onChange={(e) => setAccessSenha(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => { setAccessCliente(null); setAccessEmail(""); setAccessSenha(""); }}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateAccess} disabled={creatingAccess}>
+                {creatingAccess && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Criar Acesso
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
