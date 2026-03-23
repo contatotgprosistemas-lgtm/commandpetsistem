@@ -21,6 +21,7 @@ import {
   ShoppingBag,
   Kanban,
   Bot,
+  Gift,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -31,7 +32,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos"].includes(location.pathname);
+  const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos", "/planos-pacotes"].includes(location.pathname);
 
   const cadastrosExpanded = cadastrosOpen || isCadastrosActive;
 
@@ -47,6 +48,7 @@ export function AppSidebar() {
     { icon: PawPrint, label: "Pets", path: "/pets" },
     { icon: Package, label: "Serviços", path: "/servicos" },
     { icon: ShoppingBag, label: "Produtos", path: "/produtos" },
+    { icon: Gift, label: "Planos e Pacotes", path: "/planos-pacotes" },
   ];
 
 

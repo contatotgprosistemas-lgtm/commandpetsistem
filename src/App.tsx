@@ -18,6 +18,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
 import ServicosPage from "@/pages/ServicosPage";
 import ProdutosPage from "@/pages/ProdutosPage";
+import PlanosPacotesPage from "@/pages/PlanosPacotesPage";
 import KanbanPage from "@/pages/KanbanPage";
 import ChatbotPage from "@/pages/ChatbotPage";
 import LoginPage from "@/pages/LoginPage";
@@ -193,6 +194,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <ProdutosPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/planos-pacotes"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <PlanosPacotesPage />
                   </AppLayout>
                 </ProtectedRoute>
               }
