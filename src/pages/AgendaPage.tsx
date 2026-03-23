@@ -151,7 +151,7 @@ export default function AgendaPage() {
 
   const reservaHoje = agendamentos.filter(a => {
     const d = new Date(a.data_hora);
-    return isToday(d) && a.status !== "cancelado" && a.status !== "confirmado" && a.status !== "concluido";
+    return isToday(d) && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido";
   });
 
   const proximasReservas = agendamentos.filter(a => {
