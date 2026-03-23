@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,12 +32,58 @@ const defaultPerguntas = [
   "Fezes Ok?",
 ];
 
+function getTodayRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
 export function ChecklistDialog({ open, onOpenChange, agendamentoId, petId, petName }: ChecklistDialogProps) {
   const { profile } = useAuth();
   const [respostas, setRespostas] = useState<Record<string, string>>({});
   const [customPerguntas, setCustomPerguntas] = useState<{ id: string; pergunta: string }[]>([]);
   const [novaPergunta, setNovaPergunta] = useState("");
   const [saving, setSaving] = useState(false);
+  const [existingId, setExistingId] = useState<string | null>(null);
+
+  // Load today's record if exists
+  useEffect(() => {
+    if (!open) return;
+    const load = async () => {
+      const { start, end } = getTodayRange();
+      const { data } = await supabase
+        .from("checklist_registros")
+        .select("id, respostas")
+        .eq("agendamento_id", agendamentoId)
+        .gte("created_at", start)
+        .lte("created_at", end)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setExistingId(data.id);
+        const saved = (data.respostas as Record<string, any>) || {};
+        const customs = (saved.custom_perguntas as Array<{ pergunta: string; resposta: string }>) || [];
+        const mapped: Record<string, string> = {};
+        Object.entries(saved).forEach(([k, v]) => {
+          if (k !== "custom_perguntas") mapped[k] = String(v);
+        });
+        const customItems = customs.map((c) => {
+          const id = crypto.randomUUID();
+          mapped[`custom_${id}`] = c.resposta;
+          return { id, pergunta: c.pergunta };
+        });
+        setRespostas(mapped);
+        setCustomPerguntas(customItems);
+      } else {
+        setExistingId(null);
+        setRespostas({});
+        setCustomPerguntas([]);
+      }
+    };
+    load();
+  }, [open, agendamentoId]);
 
   function setResposta(key: string, value: string) {
     setRespostas(prev => ({ ...prev, [key]: value }));
@@ -52,20 +98,27 @@ export function ChecklistDialog({ open, onOpenChange, agendamentoId, petId, petN
   async function handleSave() {
     if (!profile?.empresa_id) return;
     setSaving(true);
-    const { error } = await supabase.from("checklist_registros" as any).insert({
-      empresa_id: profile.empresa_id,
-      agendamento_id: agendamentoId,
-      pet_id: petId,
+    const payload = {
       respostas: { ...respostas, custom_perguntas: customPerguntas.map(p => ({ pergunta: p.pergunta, resposta: respostas[`custom_${p.id}`] || "" })) },
-    } as any);
+    };
+
+    let error;
+    if (existingId) {
+      ({ error } = await supabase.from("checklist_registros").update(payload as any).eq("id", existingId));
+    } else {
+      ({ error } = await supabase.from("checklist_registros" as any).insert({
+        empresa_id: profile.empresa_id,
+        agendamento_id: agendamentoId,
+        pet_id: petId,
+        ...payload,
+      } as any));
+    }
     setSaving(false);
     if (error) {
       toast.error("Erro ao salvar checklist: " + error.message);
     } else {
       toast.success("Checklist salvo!");
       onOpenChange(false);
-      setRespostas({});
-      setCustomPerguntas([]);
     }
   }
 
@@ -111,7 +164,7 @@ export function ChecklistDialog({ open, onOpenChange, agendamentoId, petId, petN
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : existingId ? "Atualizar" : "Salvar"}</Button>
         </div>
       </DialogContent>
     </Dialog>
