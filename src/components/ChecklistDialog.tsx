@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
@@ -157,6 +158,15 @@ export function ChecklistDialog({ open, onOpenChange, agendamentoId, petId, petN
               </RadioGroup>
             </div>
           ))}
+        </div>
+        <div className="mt-2">
+          <Label className="text-sm text-foreground">Observações</Label>
+          <Textarea
+            className="text-sm min-h-[60px] mt-1"
+            placeholder="Escreva observações..."
+            value={respostas["observacoes"] || ""}
+            onChange={e => setResposta("observacoes", e.target.value)}
+           />
         </div>
         <div className="flex items-center gap-2 mt-2">
           <Input placeholder="Nova pergunta..." value={novaPergunta} onChange={e => setNovaPergunta(e.target.value)} className="h-8 text-sm" onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addCustomPergunta())} />
