@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
+import { PortalLayout } from "@/components/portal/PortalLayout";
+import { PortalProtectedRoute } from "@/components/portal/PortalProtectedRoute";
 import Dashboard from "@/pages/Dashboard";
 import CRMInbox from "@/pages/CRMInbox";
 import PetsPage from "@/pages/PetsPage";
@@ -25,6 +27,20 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import CadastroPublicoPage from "@/pages/CadastroPublicoPage";
 import NotFound from "@/pages/NotFound";
 
+// Portal pages
+import PortalLoginPage from "@/pages/portal/PortalLoginPage";
+import PortalForgotPasswordPage from "@/pages/portal/PortalForgotPasswordPage";
+import PortalResetPasswordPage from "@/pages/portal/PortalResetPasswordPage";
+import PortalDashboard from "@/pages/portal/PortalDashboard";
+import PortalPetsPage from "@/pages/portal/PortalPetsPage";
+import PortalPagamentosPage from "@/pages/portal/PortalPagamentosPage";
+import PortalMensagensPage from "@/pages/portal/PortalMensagensPage";
+import PortalNotificacoesPage from "@/pages/portal/PortalNotificacoesPage";
+import PortalSolicitacoesPage from "@/pages/portal/PortalSolicitacoesPage";
+import PortalDocumentosPage from "@/pages/portal/PortalDocumentosPage";
+import PortalHistoricoPage from "@/pages/portal/PortalHistoricoPage";
+import PortalContaPage from "@/pages/portal/PortalContaPage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -35,12 +51,39 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Admin auth */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/cadastro/:empresaId" element={<CadastroPublicoPage />} />
 
+            {/* Portal do Cliente auth */}
+            <Route path="/portal/login" element={<PortalLoginPage />} />
+            <Route path="/portal/forgot-password" element={<PortalForgotPasswordPage />} />
+            <Route path="/portal/reset-password" element={<PortalResetPasswordPage />} />
+
+            {/* Portal do Cliente (protected) */}
+            <Route
+              path="/portal"
+              element={
+                <PortalProtectedRoute>
+                  <PortalLayout />
+                </PortalProtectedRoute>
+              }
+            >
+              <Route index element={<PortalDashboard />} />
+              <Route path="pets" element={<PortalPetsPage />} />
+              <Route path="pagamentos" element={<PortalPagamentosPage />} />
+              <Route path="mensagens" element={<PortalMensagensPage />} />
+              <Route path="notificacoes" element={<PortalNotificacoesPage />} />
+              <Route path="solicitacoes" element={<PortalSolicitacoesPage />} />
+              <Route path="documentos" element={<PortalDocumentosPage />} />
+              <Route path="historico" element={<PortalHistoricoPage />} />
+              <Route path="conta" element={<PortalContaPage />} />
+            </Route>
+
+            {/* Admin panel */}
             <Route
               path="/"
               element={
@@ -58,7 +101,7 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <CRMInbox />
-            </AppLayout>
+                  </AppLayout>
                 </ProtectedRoute>
               }
             />
@@ -117,9 +160,6 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-
-
-
 
             <Route
               path="/clientes"
