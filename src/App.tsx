@@ -198,6 +198,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/planos-pacotes"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <PlanosPacotesPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/configuracoes"
