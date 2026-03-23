@@ -77,8 +77,8 @@ export default function FinancePage() {
       </div>
 
       <Tabs defaultValue="contas-bancárias" className="w-full">
-        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4">
-          {["Contas Bancárias", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas"].map(tab => (
+        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4 flex-wrap">
+          {["Contas Bancárias", "Contas a Receber", "Contas a Pagar", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas"].map(tab => (
             <TabsTrigger
               key={tab}
               value={tab.toLowerCase().replace(/ /g, "-")}
@@ -102,21 +102,27 @@ export default function FinancePage() {
               ))}
             </div>
           )}
-
           <div className="flex items-center justify-between mt-4 mb-2">
-            <h2 className="text-sm font-medium text-foreground">Contas a Receber</h2>
+            <h2 className="text-sm font-medium text-foreground">Contas Bancárias</h2>
             <Button size="sm" className="gap-1" onClick={() => setNovaContaOpen(true)}>
               <Plus className="h-4 w-4" />
               Nova Conta
             </Button>
           </div>
+        </TabsContent>
 
+        <TabsContent value="contas-a-receber">
           <ContasContent
             contas={contas}
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
           />
         </TabsContent>
+
+        <TabsContent value="contas-a-pagar">
+          <ContasPagarContent />
+        </TabsContent>
+
         <TabsContent value="fluxo-de-caixa"><FluxoCaixaPage /></TabsContent>
         <TabsContent value="dre"><DREPage /></TabsContent>
         <TabsContent value="movimentação"><MovimentacaoPage /></TabsContent>
@@ -187,6 +193,60 @@ function ContasContent({ contas, loading, onBaixar }: { contas: ContaReceber[]; 
                   Baixar
                 </Button>
               )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ContasPagarContent() {
+  const [contas, setContas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetch() {
+      setLoading(true);
+      const { data } = await supabase
+        .from("contas_pagar")
+        .select("*")
+        .order("vencimento", { ascending: false });
+      if (data) setContas(data);
+      setLoading(false);
+    }
+    fetch();
+  }, []);
+
+  return (
+    <div className="bg-card rounded-lg shadow-card mt-4">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+        <h2 className="text-sm font-medium text-foreground">Contas a Pagar</h2>
+        <span className="text-xs text-muted-foreground">{contas.length} conta(s)</span>
+      </div>
+      {loading ? (
+        <div className="p-5 space-y-3">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+        </div>
+      ) : contas.length === 0 ? (
+        <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+          Nenhuma conta a pagar encontrada
+        </div>
+      ) : (
+        <div className="divide-y divide-border">
+          {contas.map((c: any) => (
+            <div key={c.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{c.descricao}</p>
+                <p className="text-xs text-muted-foreground">{c.fornecedor} {c.categoria && `• ${c.categoria}`}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-sm font-semibold text-foreground tabular-nums">R$ {Number(c.valor).toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">Venc. {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yyyy")}</p>
+              </div>
+              <div className="shrink-0">
+                {statusBadge(c.status, c.vencimento)}
+              </div>
             </div>
           ))}
         </div>
