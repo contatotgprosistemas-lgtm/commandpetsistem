@@ -49,23 +49,42 @@ export default function Dashboard() {
   useEffect(() => { fetchPetsNaEmpresa(); }, []);
 
   async function handleCheckout(item: PetNaEmpresa) {
-    // Update status to concluido
-    const { error } = await supabase.from("agendamentos").update({ status: "concluido" }).eq("id", item.id);
+    const now = new Date();
+    const horaSaida = format(now, "HH:mm");
+    // Update status to concluido and record exit time
+    const { error } = await supabase.from("agendamentos").update({
+      status: "concluido",
+      data_saida: now.toISOString(),
+      hora_saida: horaSaida,
+    }).eq("id", item.id);
     if (error) {
       toast.error("Erro ao fazer checkout: " + error.message);
       return;
     }
 
-    // Save to service history
-    await supabase.from("historico_servicos" as any).insert({
-      empresa_id: item.empresa_id,
-      cliente_id: item.cliente_id,
-      pet_id: item.pet_id,
-      tipo_servico: item.tipo_servico,
-      valor: item.valor,
-      data_servico: item.data_hora,
-      agendamento_id: item.id,
-    } as any);
+    // Update existing history record with checkout info, or insert new one
+    const { data: existing } = await supabase
+      .from("historico_servicos")
+      .select("id")
+      .eq("agendamento_id", item.id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from("historico_servicos").update({
+        notas: `Check-in: ${item.data_entrada ? format(new Date(item.data_entrada), "dd/MM/yyyy") : "—"} ${item.hora_entrada ?? ""} | Check-out: ${format(now, "dd/MM/yyyy")} ${horaSaida}`,
+      } as any).eq("id", existing.id);
+    } else {
+      await supabase.from("historico_servicos" as any).insert({
+        empresa_id: item.empresa_id,
+        cliente_id: item.cliente_id,
+        pet_id: item.pet_id,
+        tipo_servico: item.tipo_servico,
+        valor: item.valor,
+        data_servico: item.data_hora,
+        agendamento_id: item.id,
+        notas: `Check-out: ${format(now, "dd/MM/yyyy")} ${horaSaida}`,
+      } as any);
+    }
 
     toast.success("Checkout realizado!");
     fetchPetsNaEmpresa();
