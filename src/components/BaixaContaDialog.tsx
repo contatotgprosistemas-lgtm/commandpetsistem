@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,16 +16,6 @@ interface BaixaContaDialogProps {
   onSuccess: () => void;
 }
 
-const bancos = [
-  "Dinheiro",
-  "PIX",
-  "Cartão de Crédito",
-  "Cartão de Débito",
-  "Transferência Bancária",
-  "Boleto",
-  "Outro",
-];
-
 export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: BaixaContaDialogProps) {
   const [dataBaixa, setDataBaixa] = useState(format(new Date(), "yyyy-MM-dd"));
   const [banco, setBanco] = useState("");
@@ -34,6 +24,15 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
   const [valorDesconto, setValorDesconto] = useState("");
   const [observacao, setObservacao] = useState("");
   const [saving, setSaving] = useState(false);
+  const [contasBancarias, setContasBancarias] = useState<{ id: string; banco: string; titular: string }[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      supabase.from("contas_bancarias").select("id, banco, titular").then(({ data }) => {
+        if (data) setContasBancarias(data);
+      });
+    }
+  }, [open]);
 
   const handleOpen = (o: boolean) => {
     if (o && conta) {
@@ -99,8 +98,10 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
-                {bancos.map(b => (
-                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                {contasBancarias.map(cb => (
+                  <SelectItem key={cb.id} value={`${cb.banco} - ${cb.titular}`}>
+                    {cb.banco} - {cb.titular}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
