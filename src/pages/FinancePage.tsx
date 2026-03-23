@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast, isToday } from "date-fns";
+import { toast } from "sonner";
 import { BaixaContaDialog } from "@/components/BaixaContaDialog";
 import { NovaContaBancariaDialog } from "@/components/NovaContaBancariaDialog";
 import FluxoCaixaPage from "@/pages/FluxoCaixaPage";
@@ -116,6 +117,12 @@ export default function FinancePage() {
             contas={contas}
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
+            onDelete={async (id) => {
+              const { error } = await supabase.from("contas_receber").delete().eq("id", id);
+              if (error) { toast.error("Erro ao excluir"); return; }
+              toast.success("Fatura excluída");
+              fetchContas();
+            }}
           />
         </TabsContent>
 
@@ -145,7 +152,7 @@ export default function FinancePage() {
   );
 }
 
-function ContasContent({ contas, loading, onBaixar }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void }) {
+function ContasContent({ contas, loading, onBaixar, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   return (
     <div className="bg-card rounded-lg shadow-card mt-4">
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
@@ -193,6 +200,15 @@ function ContasContent({ contas, loading, onBaixar }: { contas: ContaReceber[]; 
                   Baixar
                 </Button>
               )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
+                title="Excluir fatura"
+                onClick={() => onDelete(c.id)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           ))}
         </div>
