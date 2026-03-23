@@ -113,8 +113,8 @@ export default function FinancePage() {
         </TabsContent>
 
         <TabsContent value="contas-a-receber">
-          <ContasContent
-            contas={contas}
+          <ContasReceberTable
+            contas={contas.filter(c => c.status !== "pago")}
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
             onDelete={async (id) => {
