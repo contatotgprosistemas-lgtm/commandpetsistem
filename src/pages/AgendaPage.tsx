@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calculator, PawPrint, Phone, MessageCircle, Pencil, LogIn } from "lucide-react";
+import { Calculator, PawPrint, Phone, MessageCircle, Pencil, LogIn, Trash2 } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
 import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -53,6 +54,18 @@ export default function AgendaPage() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
+
+  async function handleDelete(id: string) {
+    const { error: errHist } = await supabase.from("historico_servicos").delete().eq("agendamento_id", id);
+    const { error: errCR } = await supabase.from("contas_receber").delete().eq("descricao", id);
+    const { error } = await supabase.from("agendamentos").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+      return;
+    }
+    toast.success("Reserva excluída com sucesso.");
+    fetchAgendamentos();
+  }
 
   async function fetchAgendamentos() {
     setLoading(true);
@@ -138,7 +151,7 @@ export default function AgendaPage() {
           <AgendamentoList items={reservaHoje} loading={loading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
         </TabsContent>
         <TabsContent value="proximas">
-          <AgendamentoList items={proximasReservas} loading={loading} onEdit={setEditingAgendamento} />
+          <AgendamentoList items={proximasReservas} loading={loading} onEdit={setEditingAgendamento} showDelete onDelete={handleDelete} />
         </TabsContent>
         <TabsContent value="calendario">
           <AgendaCalendar agendamentos={agendamentos} />
@@ -155,7 +168,7 @@ export default function AgendaPage() {
   );
 }
 
-function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void }) {
+function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showDelete, onDelete }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void }) {
   if (loading) {
     return (
       <div className="space-y-3 mt-4">
@@ -178,13 +191,13 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit }: { i
   return (
     <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
       {items.map(item => (
-        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} />
+        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} showDelete={showDelete} onDelete={onDelete} />
       ))}
     </div>
   );
 }
 
-function AgendamentoRow({ item, showCheckin, onCheckin, onEdit }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void }) {
+function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void }) {
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
   const clientName = item.cliente?.nome ?? "—";
@@ -255,6 +268,29 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit }: { item: Agenda
           >
             <Phone className="h-3.5 w-3.5 text-emerald-600" />
           </Button>
+        )}
+        {showDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Excluir">
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir reserva?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não poderá ser desfeita. A exclusão também irá apagar faturas e registros de serviço relacionados a este agendamento.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => onDelete?.(item.id)}>
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </div>
     </div>
