@@ -319,6 +319,55 @@ export type Database = {
           },
         ]
       }
+      checklist_registros: {
+        Row: {
+          agendamento_id: string
+          created_at: string
+          empresa_id: string
+          id: string
+          pet_id: string
+          respostas: Json
+        }
+        Insert: {
+          agendamento_id: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          pet_id: string
+          respostas?: Json
+        }
+        Update: {
+          agendamento_id?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          pet_id?: string
+          respostas?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_registros_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_registros_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_registros_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           como_conheceu: string | null
@@ -849,6 +898,74 @@ export type Database = {
           },
         ]
       }
+      historico_servicos: {
+        Row: {
+          agendamento_id: string | null
+          cliente_id: string
+          created_at: string
+          data_servico: string
+          empresa_id: string
+          id: string
+          notas: string | null
+          pet_id: string | null
+          tipo_servico: string
+          valor: number | null
+        }
+        Insert: {
+          agendamento_id?: string | null
+          cliente_id: string
+          created_at?: string
+          data_servico?: string
+          empresa_id: string
+          id?: string
+          notas?: string | null
+          pet_id?: string | null
+          tipo_servico: string
+          valor?: number | null
+        }
+        Update: {
+          agendamento_id?: string | null
+          cliente_id?: string
+          created_at?: string
+          data_servico?: string
+          empresa_id?: string
+          id?: string
+          notas?: string | null
+          pet_id?: string | null
+          tipo_servico?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_servicos_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_servicos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_servicos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_servicos_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hospedagens: {
         Row: {
           cliente_id: string
@@ -906,6 +1023,55 @@ export type Database = {
           },
           {
             foreignKeyName: "hospedagens_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manejo_registros: {
+        Row: {
+          agendamento_id: string
+          created_at: string
+          empresa_id: string
+          id: string
+          pet_id: string
+          respostas: Json
+        }
+        Insert: {
+          agendamento_id: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          pet_id: string
+          respostas?: Json
+        }
+        Update: {
+          agendamento_id?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          pet_id?: string
+          respostas?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manejo_registros_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manejo_registros_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manejo_registros_pet_id_fkey"
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
