@@ -877,6 +877,7 @@ export type Database = {
           payment_method: string | null
           pet_id: string | null
           plan_id: string | null
+          planned_days: number[] | null
           price_contracted: number
           sold_by: string | null
           start_date: string
@@ -898,6 +899,7 @@ export type Database = {
           payment_method?: string | null
           pet_id?: string | null
           plan_id?: string | null
+          planned_days?: number[] | null
           price_contracted?: number
           sold_by?: string | null
           start_date?: string
@@ -919,6 +921,7 @@ export type Database = {
           payment_method?: string | null
           pet_id?: string | null
           plan_id?: string | null
+          planned_days?: number[] | null
           price_contracted?: number
           sold_by?: string | null
           start_date?: string

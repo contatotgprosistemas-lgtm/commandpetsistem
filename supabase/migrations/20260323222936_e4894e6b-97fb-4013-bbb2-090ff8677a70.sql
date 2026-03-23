@@ -1,0 +1,1 @@
+ALTER TABLE public.customer_pet_subscriptions ADD COLUMN IF NOT EXISTS planned_days integer[] DEFAULT '{}'::integer[];
