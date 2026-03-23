@@ -11,7 +11,7 @@ import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
 import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -198,6 +198,7 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showD
 }
 
 function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
   const clientName = item.cliente?.nome ?? "—";
@@ -270,27 +271,27 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
           </Button>
         )}
         {showDelete && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Excluir">
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir reserva?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta ação não poderá ser desfeita. A exclusão também irá apagar faturas e registros de serviço relacionados a este agendamento.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => onDelete?.(item.id)}>
-                  Excluir
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Excluir" onClick={() => setConfirmOpen(true)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+            <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Excluir reserva?</DialogTitle>
+                  <DialogDescription>
+                    Esta ação não poderá ser desfeita. A exclusão também irá apagar faturas e registros de serviço relacionados a este agendamento.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancelar</Button>
+                  <Button variant="destructive" onClick={() => { setConfirmOpen(false); onDelete?.(item.id); }}>
+                    Excluir
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
       </div>
     </div>
