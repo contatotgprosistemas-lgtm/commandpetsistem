@@ -21,6 +21,7 @@ import {
   ShoppingBag,
   Kanban,
   Bot,
+  Gift,
 } from "lucide-react";
 
 export function AppSidebar() {
