@@ -118,8 +118,14 @@ export default function AgendaPage() {
   }, []);
 
   async function handleCheckin(item: Agendamento) {
-    // Update status to confirmado (moves to dashboard pets na empresa)
-    const { error } = await supabase.from("agendamentos").update({ status: "confirmado" }).eq("id", item.id);
+    const now = new Date();
+    const horaEntrada = format(now, "HH:mm");
+    // Update status to confirmado and record entry time
+    const { error } = await supabase.from("agendamentos").update({
+      status: "confirmado",
+      data_entrada: now.toISOString(),
+      hora_entrada: horaEntrada,
+    }).eq("id", item.id);
     if (error) {
       toast.error("Erro ao fazer check-in: " + error.message);
       return;
@@ -134,7 +140,7 @@ export default function AgendaPage() {
       valor: item.valor,
       data_servico: item.data_hora,
       agendamento_id: item.id,
-      notas: `Check-in realizado`,
+      notas: `Check-in realizado em ${format(now, "dd/MM/yyyy")} às ${horaEntrada}`,
     } as any);
 
     toast.success("Check-in realizado! Pet aparecerá no Dashboard.");
