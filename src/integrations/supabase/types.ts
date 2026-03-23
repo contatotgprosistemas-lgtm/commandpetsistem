@@ -34,6 +34,7 @@ export type Database = {
           notas: string | null
           pet_id: string
           status: string
+          subscription_id: string | null
           tipo_servico: string
           updated_at: string
           valor: number | null
@@ -57,6 +58,7 @@ export type Database = {
           notas?: string | null
           pet_id: string
           status?: string
+          subscription_id?: string | null
           tipo_servico: string
           updated_at?: string
           valor?: number | null
@@ -80,6 +82,7 @@ export type Database = {
           notas?: string | null
           pet_id?: string
           status?: string
+          subscription_id?: string | null
           tipo_servico?: string
           updated_at?: string
           valor?: number | null
@@ -111,6 +114,13 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agendamentos_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "customer_pet_subscriptions"
             referencedColumns: ["id"]
           },
         ]

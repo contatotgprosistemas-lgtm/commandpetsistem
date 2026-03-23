@@ -1,0 +1,1 @@
+ALTER TABLE public.agendamentos ADD COLUMN IF NOT EXISTS subscription_id uuid REFERENCES public.customer_pet_subscriptions(id) ON DELETE SET NULL;
