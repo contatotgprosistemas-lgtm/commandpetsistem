@@ -134,12 +134,20 @@ function CalendarEvent({ item }: { item: Agendamento }) {
   const petBreed = item.pet?.raca;
   const clientName = item.cliente?.nome;
 
+  const isFromPlan = !!item.subscription_id;
+
   return (
-    <div className="bg-primary/70 text-primary-foreground rounded px-1.5 py-1 text-[10px] leading-tight cursor-default hover:bg-primary/90 transition-colors">
+    <div className={cn(
+      "rounded px-1.5 py-1 text-[10px] leading-tight cursor-default transition-colors",
+      isFromPlan
+        ? "bg-accent text-accent-foreground hover:bg-accent/90 border border-primary/30"
+        : "bg-primary/70 text-primary-foreground hover:bg-primary/90"
+    )}>
       <div className="font-bold">
         <span>{hora}</span>{" "}
         <span>{petName}</span>
         {petBreed && <span> - {petBreed}</span>}
+        {isFromPlan && <span className="ml-1 opacity-70">📋</span>}
       </div>
       {clientName && (
         <div className="opacity-80 truncate">({clientName})</div>
