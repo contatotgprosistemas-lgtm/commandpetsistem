@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { addDays, format, getDay, isBefore, startOfDay } from "date-fns";
 
 const DIAS_SEMANA = [
   { value: 1, label: "Segunda" },
@@ -41,7 +42,10 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
   }
 
   async function handleSave() {
+    if (!subscription) return;
     setSaving(true);
+
+    // 1. Save planned_days
     const { error } = await supabase
       .from("customer_pet_subscriptions" as any)
       .update({ planned_days: selectedDays })
@@ -49,11 +53,77 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
 
     if (error) {
       toast.error("Erro ao salvar planejamento");
+      setSaving(false);
+      return;
+    }
+
+    // 2. Delete old auto-generated agendamentos for this subscription
+    await supabase
+      .from("agendamentos")
+      .delete()
+      .eq("subscription_id" as any, subscription.id)
+      .neq("status", "na_empresa")
+      .neq("status", "concluido");
+
+    // 3. Generate agendamentos for each matching weekday within the subscription period
+    if (selectedDays.length > 0 && subscription.start_date && subscription.end_date) {
+      const startDate = startOfDay(new Date(subscription.start_date + "T00:00:00"));
+      const endDate = startOfDay(new Date(subscription.end_date + "T00:00:00"));
+      const today = startOfDay(new Date());
+
+      // Get plan/package name for tipo_servico
+      let tipoServico = "Plano";
+      if (subscription.plan_id) {
+        const { data: plan } = await supabase
+          .from("service_plans" as any)
+          .select("name")
+          .eq("id", subscription.plan_id)
+          .single();
+        if (plan) tipoServico = (plan as any).name;
+      } else if (subscription.package_id) {
+        const { data: pkg } = await supabase
+          .from("service_packages" as any)
+          .select("name")
+          .eq("id", subscription.package_id)
+          .single();
+        if (pkg) tipoServico = (pkg as any).name;
+      }
+
+      const agendamentos: any[] = [];
+      let current = isBefore(startDate, today) ? today : startDate;
+
+      while (!isBefore(endDate, current)) {
+        const weekday = getDay(current); // 0=Sunday, 1=Monday...
+        if (selectedDays.includes(weekday)) {
+          agendamentos.push({
+            empresa_id: subscription.empresa_id,
+            cliente_id: subscription.cliente_id,
+            pet_id: subscription.pet_id,
+            tipo_servico: tipoServico,
+            data_hora: format(current, "yyyy-MM-dd") + "T08:00:00",
+            status: "agendado",
+            subscription_id: subscription.id,
+            notas: `Gerado automaticamente pelo plano`,
+          });
+        }
+        current = addDays(current, 1);
+      }
+
+      if (agendamentos.length > 0) {
+        // Insert in batches of 50
+        for (let i = 0; i < agendamentos.length; i += 50) {
+          const batch = agendamentos.slice(i, i + 50);
+          await supabase.from("agendamentos").insert(batch as any);
+        }
+      }
+
+      toast.success(`Dias planejados salvos! ${agendamentos.length} reservas geradas.`);
     } else {
       toast.success("Dias planejados salvos!");
-      onSuccess();
-      onOpenChange(false);
     }
+
+    onSuccess();
+    onOpenChange(false);
     setSaving(false);
   }
 
