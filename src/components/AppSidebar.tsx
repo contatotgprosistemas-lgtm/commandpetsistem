@@ -54,13 +54,8 @@ export function AppSidebar() {
     { icon: ShoppingBag, label: "Produtos", path: "/produtos" },
   ];
 
-  const financeiroItems = [
-    { icon: Receipt, label: "Contas", path: "/financeiro" },
-    { icon: TrendingUp, label: "Fluxo de Caixa", path: "/financeiro/fluxo-caixa" },
-    { icon: BarChart3, label: "DRE", path: "/financeiro/dre" },
-    { icon: ArrowLeftRight, label: "Movimentação", path: "/financeiro/movimentacao" },
-    { icon: List, label: "Plano de Contas", path: "/financeiro/plano-contas" },
-  ];
+
+
 
   const bottomItems = [
     { icon: Calendar, label: "Agenda", path: "/agenda" },
