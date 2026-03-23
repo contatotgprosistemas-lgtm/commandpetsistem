@@ -184,6 +184,72 @@ export default function Dashboard() {
           petName={checklistOpen.pet?.nome ?? "Pet"}
         />
       )}
+
+      <Dialog open={!!fichaOpen} onOpenChange={() => setFichaOpen(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ficha do Serviço</DialogTitle>
+          </DialogHeader>
+          {fichaOpen && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-muted-foreground text-xs">Pet</p>
+                  <p className="font-medium text-foreground">{fichaOpen.pet?.nome ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Espécie / Raça</p>
+                  <p className="font-medium text-foreground">{fichaOpen.pet?.especie ?? "—"} {fichaOpen.pet?.raca ? `· ${fichaOpen.pet.raca}` : ""}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Tutor</p>
+                  <p className="font-medium text-foreground">{fichaOpen.cliente?.nome ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">WhatsApp</p>
+                  <p className="font-medium text-foreground">{fichaOpen.cliente?.whatsapp ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Serviço</p>
+                  <p className="font-medium text-foreground">{fichaOpen.tipo_servico}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Valor</p>
+                  <p className="font-medium text-foreground">{fichaOpen.valor != null ? `R$ ${Number(fichaOpen.valor).toFixed(2)}` : "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Baia</p>
+                  <p className="font-medium text-foreground">{fichaOpen.baia ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Forma de Pagamento</p>
+                  <p className="font-medium text-foreground">{fichaOpen.forma_pagamento ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Entrada</p>
+                  <p className="font-medium text-foreground">
+                    {fichaOpen.data_entrada ? format(new Date(fichaOpen.data_entrada), "dd/MM/yyyy") : "—"}
+                    {fichaOpen.hora_entrada ? ` às ${fichaOpen.hora_entrada}` : ""}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Saída Provável</p>
+                  <p className="font-medium text-foreground">
+                    {fichaOpen.data_saida_provavel ? format(new Date(fichaOpen.data_saida_provavel), "dd/MM/yyyy") : "—"}
+                    {fichaOpen.hora_saida_provavel ? ` às ${fichaOpen.hora_saida_provavel}` : ""}
+                  </p>
+                </div>
+              </div>
+              {fichaOpen.notas && (
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">Observações</p>
+                  <p className="text-foreground bg-muted/50 rounded-md p-2 whitespace-pre-wrap">{fichaOpen.notas}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
