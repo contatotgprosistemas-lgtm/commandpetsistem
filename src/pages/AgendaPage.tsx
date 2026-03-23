@@ -168,7 +168,7 @@ export default function AgendaPage() {
   );
 }
 
-function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void }) {
+function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showDelete, onDelete }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void }) {
   if (loading) {
     return (
       <div className="space-y-3 mt-4">
