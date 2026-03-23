@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText } from "lucide-react";
+import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { ManejoDialog } from "@/components/ManejoDialog";
 import { ChecklistDialog } from "@/components/ChecklistDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
 
 interface PetNaEmpresa {
   id: string;
@@ -35,6 +36,7 @@ export default function Dashboard() {
   const [manejoOpen, setManejoOpen] = useState<PetNaEmpresa | null>(null);
   const [checklistOpen, setChecklistOpen] = useState<PetNaEmpresa | null>(null);
   const [fichaOpen, setFichaOpen] = useState<PetNaEmpresa | null>(null);
+  const [editOpen, setEditOpen] = useState<PetNaEmpresa | null>(null);
 
   async function fetchPetsNaEmpresa() {
     const { data } = await supabase
@@ -130,6 +132,15 @@ export default function Dashboard() {
                   </div>
                   <span className="text-xs text-muted-foreground tabular-nums">{format(new Date(item.data_hora), "HH:mm")}</span>
                   <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      title="Editar Agendamento"
+                      onClick={() => setEditOpen(item)}
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -269,6 +280,15 @@ export default function Dashboard() {
           )}
         </DialogContent>
       </Dialog>
+
+      {editOpen && (
+        <EditarAgendamentoDialog
+          agendamento={editOpen}
+          open={!!editOpen}
+          onOpenChange={() => setEditOpen(null)}
+          onSuccess={() => { setEditOpen(null); fetchPetsNaEmpresa(); }}
+        />
+      )}
     </div>
   );
 }
