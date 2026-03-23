@@ -48,6 +48,7 @@ export function AppSidebar() {
     { icon: PawPrint, label: "Pets", path: "/pets" },
     { icon: Package, label: "Serviços", path: "/servicos" },
     { icon: ShoppingBag, label: "Produtos", path: "/produtos" },
+    { icon: Gift, label: "Planos e Pacotes", path: "/planos-pacotes" },
   ];
 
 
