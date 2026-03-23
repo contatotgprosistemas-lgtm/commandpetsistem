@@ -31,6 +31,7 @@ const navItems = [
   { path: "/portal/notificacoes", label: "Notificações", icon: Bell },
   { path: "/portal/documentos", label: "Documentos", icon: FolderOpen },
   { path: "/portal/historico", label: "Histórico", icon: History },
+  { path: "/portal/galeria", label: "Galeria", icon: Camera },
   { path: "/portal/conta", label: "Minha Conta", icon: User },
 ];
 
