@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, DollarSign, Users, LogOut } from "lucide-react";
+import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { ManejoDialog } from "@/components/ManejoDialog";
+import { ChecklistDialog } from "@/components/ChecklistDialog";
 
 interface PetNaEmpresa {
   id: string;
   tipo_servico: string;
   data_hora: string;
   baia: string | null;
+  valor: number | null;
+  empresa_id: string;
+  cliente_id: string;
+  pet_id: string;
   pet: { id: string; nome: string; raca: string | null; especie: string } | null;
   cliente: { id: string; nome: string; whatsapp: string | null } | null;
 }
@@ -19,11 +25,13 @@ interface PetNaEmpresa {
 export default function Dashboard() {
   const [petsNaEmpresa, setPetsNaEmpresa] = useState<PetNaEmpresa[]>([]);
   const [loading, setLoading] = useState(true);
+  const [manejoOpen, setManejoOpen] = useState<PetNaEmpresa | null>(null);
+  const [checklistOpen, setChecklistOpen] = useState<PetNaEmpresa | null>(null);
 
   async function fetchPetsNaEmpresa() {
     const { data } = await supabase
       .from("agendamentos")
-      .select("id, tipo_servico, data_hora, baia, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
+      .select("id, tipo_servico, data_hora, baia, valor, empresa_id, cliente_id, pet_id, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
       .eq("status", "confirmado")
       .order("data_hora", { ascending: true });
     setPetsNaEmpresa((data as any) ?? []);
@@ -32,14 +40,27 @@ export default function Dashboard() {
 
   useEffect(() => { fetchPetsNaEmpresa(); }, []);
 
-  async function handleCheckout(id: string) {
-    const { error } = await supabase.from("agendamentos").update({ status: "concluido" }).eq("id", id);
+  async function handleCheckout(item: PetNaEmpresa) {
+    // Update status to concluido
+    const { error } = await supabase.from("agendamentos").update({ status: "concluido" }).eq("id", item.id);
     if (error) {
       toast.error("Erro ao fazer checkout: " + error.message);
-    } else {
-      toast.success("Checkout realizado!");
-      fetchPetsNaEmpresa();
+      return;
     }
+
+    // Save to service history
+    await supabase.from("historico_servicos" as any).insert({
+      empresa_id: item.empresa_id,
+      cliente_id: item.cliente_id,
+      pet_id: item.pet_id,
+      tipo_servico: item.tipo_servico,
+      valor: item.valor,
+      data_servico: item.data_hora,
+      agendamento_id: item.id,
+    } as any);
+
+    toast.success("Checkout realizado!");
+    fetchPetsNaEmpresa();
   }
 
   return (
@@ -81,10 +102,30 @@ export default function Dashboard() {
                     <p className="text-xs text-muted-foreground">{item.tipo_servico} · Tutor: {item.cliente?.nome ?? "—"} {item.baia ? `· Baia: ${item.baia}` : ""}</p>
                   </div>
                   <span className="text-xs text-muted-foreground tabular-nums">{format(new Date(item.data_hora), "HH:mm")}</span>
-                  <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleCheckout(item.id)}>
-                    <LogOut className="h-3.5 w-3.5" />
-                    Checkout
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      title="Manejo (Boletim Diário)"
+                      onClick={() => setManejoOpen(item)}
+                    >
+                      <Stethoscope className="h-3.5 w-3.5 text-primary" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      title="Checklist"
+                      onClick={() => setChecklistOpen(item)}
+                    >
+                      <ClipboardList className="h-3.5 w-3.5 text-primary" />
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleCheckout(item)}>
+                      <LogOut className="h-3.5 w-3.5" />
+                      Checkout
+                    </Button>
+                  </div>
                 </div>
               );
             })}
@@ -107,6 +148,25 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {manejoOpen && (
+        <ManejoDialog
+          open={!!manejoOpen}
+          onOpenChange={() => setManejoOpen(null)}
+          agendamentoId={manejoOpen.id}
+          petId={manejoOpen.pet?.id ?? ""}
+          petName={manejoOpen.pet?.nome ?? "Pet"}
+        />
+      )}
+      {checklistOpen && (
+        <ChecklistDialog
+          open={!!checklistOpen}
+          onOpenChange={() => setChecklistOpen(null)}
+          agendamentoId={checklistOpen.id}
+          petId={checklistOpen.pet?.id ?? ""}
+          petName={checklistOpen.pet?.nome ?? "Pet"}
+        />
+      )}
     </div>
   );
 }
