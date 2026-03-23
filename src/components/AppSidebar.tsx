@@ -21,19 +21,27 @@ import {
   ShoppingBag,
   Kanban,
   Bot,
+  Receipt,
+  TrendingUp,
+  BarChart3,
+  ArrowLeftRight,
+  List,
 } from "lucide-react";
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [cadastrosOpen, setCadastrosOpen] = useState(false);
+  const [financeiroOpen, setFinanceiroOpen] = useState(false);
   const { isSuperAdmin, signOut, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos"].includes(location.pathname);
+  const isFinanceiroActive = ["/financeiro", "/financeiro/fluxo-caixa", "/financeiro/dre", "/financeiro/movimentacao", "/financeiro/plano-contas"].includes(location.pathname);
 
-  // Auto-expand when on a cadastros route
+  // Auto-expand when on a route
   const cadastrosExpanded = cadastrosOpen || isCadastrosActive;
+  const financeiroExpanded = financeiroOpen || isFinanceiroActive;
 
   const mainItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
@@ -49,15 +57,21 @@ export function AppSidebar() {
     { icon: ShoppingBag, label: "Produtos", path: "/produtos" },
   ];
 
+  const financeiroItems = [
+    { icon: Receipt, label: "Contas", path: "/financeiro" },
+    { icon: TrendingUp, label: "Fluxo de Caixa", path: "/financeiro/fluxo-caixa" },
+    { icon: BarChart3, label: "DRE", path: "/financeiro/dre" },
+    { icon: ArrowLeftRight, label: "Movimentação", path: "/financeiro/movimentacao" },
+    { icon: List, label: "Plano de Contas", path: "/financeiro/plano-contas" },
+  ];
+
   const bottomItems = [
     { icon: Calendar, label: "Agenda", path: "/agenda" },
-    { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
     ...(isSuperAdmin
       ? [{ icon: Shield, label: "Super Admin", path: "/admin" }]
       : []),
     { icon: Settings, label: "Configurações", path: "/configuracoes" },
   ];
-
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
