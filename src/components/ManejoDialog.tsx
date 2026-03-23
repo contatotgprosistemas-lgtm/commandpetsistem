@@ -66,6 +66,17 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
     if (error) {
       toast.error("Erro ao salvar manejo: " + error.message);
     } else {
+      // Send notification to client
+      const { data: petData } = await supabase.from("pets").select("cliente_id").eq("id", petId).single();
+      if (petData?.cliente_id) {
+        await supabase.from("customer_notifications").insert({
+          empresa_id: profile.empresa_id,
+          cliente_id: petData.cliente_id,
+          title: `Boletim Diário — ${petName}`,
+          message: `O boletim diário de ${petName} foi preenchido. Confira os detalhes no portal.`,
+          type: "sistema",
+        });
+      }
       toast.success("Boletim diário salvo!");
       onOpenChange(false);
       setRespostas({});
