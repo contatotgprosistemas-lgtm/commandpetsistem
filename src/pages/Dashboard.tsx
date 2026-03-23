@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ManejoDialog } from "@/components/ManejoDialog";
 import { ChecklistDialog } from "@/components/ChecklistDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface PetNaEmpresa {
   id: string;
