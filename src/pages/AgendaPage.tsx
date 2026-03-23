@@ -120,9 +120,9 @@ export default function AgendaPage() {
   async function handleCheckin(item: Agendamento) {
     const now = new Date();
     const horaEntrada = format(now, "HH:mm");
-    // Update status to confirmado and record entry time
+    // Update status to na_empresa and record entry time
     const { error } = await supabase.from("agendamentos").update({
-      status: "confirmado",
+      status: "na_empresa",
       data_entrada: now.toISOString(),
       hora_entrada: horaEntrada,
     }).eq("id", item.id);
@@ -151,7 +151,7 @@ export default function AgendaPage() {
 
   const reservaHoje = agendamentos.filter(a => {
     const d = new Date(a.data_hora);
-    return isToday(d) && a.status !== "cancelado" && a.status !== "confirmado" && a.status !== "concluido";
+    return isToday(d) && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido";
   });
 
   const proximasReservas = agendamentos.filter(a => {
@@ -291,7 +291,7 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        {showCheckin && item.status !== "confirmado" && item.status !== "concluido" && (
+        {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && (
           <Button
             variant="outline"
             size="sm"

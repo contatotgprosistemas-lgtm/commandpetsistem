@@ -42,7 +42,7 @@ export default function Dashboard() {
     const { data } = await supabase
       .from("agendamentos")
       .select("id, tipo_servico, data_hora, baia, valor, empresa_id, cliente_id, pet_id, notas, forma_pagamento, data_entrada, data_saida_provavel, hora_entrada, hora_saida_provavel, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
-      .eq("status", "confirmado")
+      .eq("status", "na_empresa")
       .order("data_hora", { ascending: true });
     setPetsNaEmpresa((data as any) ?? []);
     setLoading(false);
