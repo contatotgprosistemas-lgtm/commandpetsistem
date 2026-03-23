@@ -136,6 +136,15 @@ export default function Dashboard() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
+                      title="Editar Agendamento"
+                      onClick={() => setEditOpen(item)}
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
                       title="Ficha do Serviço"
                       onClick={() => setFichaOpen(item)}
                     >
