@@ -4,9 +4,14 @@ import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle } fr
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast, isToday } from "date-fns";
 import { BaixaContaDialog } from "@/components/BaixaContaDialog";
+import FluxoCaixaPage from "@/pages/FluxoCaixaPage";
+import DREPage from "@/pages/DREPage";
+import MovimentacaoPage from "@/pages/MovimentacaoPage";
+import PlanoContasPage from "@/pages/PlanoContasPage";
 
 interface ContaReceber {
   id: string;
@@ -60,57 +65,31 @@ export default function FinancePage() {
         <MetricCard title="Contas Vencidas" value={String(vencidas.length)} change="—" changeType="neutral" icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />} />
       </div>
 
-      <div className="bg-card rounded-lg shadow-card">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <h2 className="text-sm font-medium text-foreground">Contas a Receber</h2>
-          <span className="text-xs text-muted-foreground">{contas.length} fatura(s)</span>
-        </div>
+      <Tabs defaultValue="contas" className="w-full">
+        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4">
+          {["Contas", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas"].map(tab => (
+            <TabsTrigger
+              key={tab}
+              value={tab.toLowerCase().replace(/ /g, "-")}
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm"
+            >
+              {tab}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-        {loading ? (
-          <div className="p-5 space-y-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
-          </div>
-        ) : contas.length === 0 ? (
-          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-            Nenhuma fatura encontrada
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {contas.map(c => (
-              <div key={c.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{c.descricao}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {c.cliente?.nome || "—"} {c.categoria && `• ${c.categoria}`}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-foreground tabular-nums">
-                    R$ {c.valor.toFixed(2)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Venc. {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yyyy")}
-                  </p>
-                </div>
-                <div className="shrink-0">
-                  {statusBadge(c.status, c.vencimento)}
-                </div>
-                {c.status === "pendente" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 gap-1 text-xs shrink-0"
-                    onClick={() => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
-                  >
-                    <ArrowDownCircle className="h-3.5 w-3.5" />
-                    Baixar
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        <TabsContent value="contas">
+          <ContasContent
+            contas={contas}
+            loading={loading}
+            onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
+          />
+        </TabsContent>
+        <TabsContent value="fluxo-de-caixa"><FluxoCaixaPage /></TabsContent>
+        <TabsContent value="dre"><DREPage /></TabsContent>
+        <TabsContent value="movimentação"><MovimentacaoPage /></TabsContent>
+        <TabsContent value="plano-de-contas"><PlanoContasPage /></TabsContent>
+      </Tabs>
 
       <BaixaContaDialog
         conta={baixaConta}
@@ -118,6 +97,62 @@ export default function FinancePage() {
         onOpenChange={(o) => { if (!o) setBaixaConta(null); }}
         onSuccess={() => { setBaixaConta(null); fetchContas(); }}
       />
+    </div>
+  );
+}
+
+function ContasContent({ contas, loading, onBaixar }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void }) {
+  return (
+    <div className="bg-card rounded-lg shadow-card mt-4">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+        <h2 className="text-sm font-medium text-foreground">Contas a Receber</h2>
+        <span className="text-xs text-muted-foreground">{contas.length} fatura(s)</span>
+      </div>
+
+      {loading ? (
+        <div className="p-5 space-y-3">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+        </div>
+      ) : contas.length === 0 ? (
+        <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+          Nenhuma fatura encontrada
+        </div>
+      ) : (
+        <div className="divide-y divide-border">
+          {contas.map(c => (
+            <div key={c.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{c.descricao}</p>
+                <p className="text-xs text-muted-foreground">
+                  {c.cliente?.nome || "—"} {c.categoria && `• ${c.categoria}`}
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-sm font-semibold text-foreground tabular-nums">
+                  R$ {c.valor.toFixed(2)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Venc. {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yyyy")}
+                </p>
+              </div>
+              <div className="shrink-0">
+                {statusBadge(c.status, c.vencimento)}
+              </div>
+              {c.status === "pendente" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1 text-xs shrink-0"
+                  onClick={() => onBaixar(c)}
+                >
+                  <ArrowDownCircle className="h-3.5 w-3.5" />
+                  Baixar
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
