@@ -1403,6 +1403,73 @@ export type Database = {
           },
         ]
       }
+      movimentacoes: {
+        Row: {
+          banco: string | null
+          complemento: string | null
+          conta_pagar_id: string | null
+          conta_receber_id: string | null
+          created_at: string
+          data_movimentacao: string
+          empresa_id: string
+          id: string
+          pessoa: string | null
+          plano_contas: string | null
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          banco?: string | null
+          complemento?: string | null
+          conta_pagar_id?: string | null
+          conta_receber_id?: string | null
+          created_at?: string
+          data_movimentacao?: string
+          empresa_id: string
+          id?: string
+          pessoa?: string | null
+          plano_contas?: string | null
+          tipo?: string
+          valor?: number
+        }
+        Update: {
+          banco?: string | null
+          complemento?: string | null
+          conta_pagar_id?: string | null
+          conta_receber_id?: string | null
+          created_at?: string
+          data_movimentacao?: string
+          empresa_id?: string
+          id?: string
+          pessoa?: string | null
+          plano_contas?: string | null
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_conta_pagar_id_fkey"
+            columns: ["conta_pagar_id"]
+            isOneToOne: false
+            referencedRelation: "contas_pagar"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_conta_receber_id_fkey"
+            columns: ["conta_receber_id"]
+            isOneToOne: false
+            referencedRelation: "contas_receber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notas_contato: {
         Row: {
           autor_id: string | null
