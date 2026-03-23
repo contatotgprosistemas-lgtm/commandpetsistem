@@ -216,7 +216,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
                   <SelectContent>
                     <SelectItem value="agendado">Agendado</SelectItem>
                     <SelectItem value="confirmado">Confirmado</SelectItem>
-                    <SelectItem value="pendente">Pendente</SelectItem>
+                    <SelectItem value="na_empresa">Na Empresa</SelectItem>
                     <SelectItem value="concluido">Concluído</SelectItem>
                     <SelectItem value="cancelado">Cancelado</SelectItem>
                   </SelectContent>
