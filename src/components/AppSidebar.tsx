@@ -59,6 +59,7 @@ export function AppSidebar() {
 
   const bottomItems = [
     { icon: Calendar, label: "Agenda", path: "/agenda" },
+    { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
     ...(isSuperAdmin
       ? [{ icon: Shield, label: "Super Admin", path: "/admin" }]
       : []),
