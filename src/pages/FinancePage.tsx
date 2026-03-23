@@ -79,7 +79,7 @@ export default function FinancePage() {
 
       <Tabs defaultValue="contas-bancárias" className="w-full">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4 flex-wrap">
-          {["Contas Bancárias", "Contas a Receber", "Contas a Pagar", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas"].map(tab => (
+          {["Contas a Receber", "Contas a Pagar", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas", "Contas Bancárias"].map(tab => (
             <TabsTrigger
               key={tab}
               value={tab.toLowerCase().replace(/ /g, "-")}
