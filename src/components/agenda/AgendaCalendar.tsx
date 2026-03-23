@@ -22,6 +22,7 @@ interface Agendamento {
   data_hora: string;
   tipo_servico: string;
   status: string;
+  subscription_id?: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string } | null;
   cliente: { id: string; nome: string; whatsapp: string | null } | null;
 }
