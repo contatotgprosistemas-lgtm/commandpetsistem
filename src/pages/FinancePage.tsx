@@ -76,9 +76,9 @@ export default function FinancePage() {
         <MetricCard title="Contas Vencidas" value={String(vencidas.length)} change="—" changeType="neutral" icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />} />
       </div>
 
-      <Tabs defaultValue="contas" className="w-full">
+      <Tabs defaultValue="contas-bancárias" className="w-full">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4">
-          {["Contas", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas"].map(tab => (
+          {["Contas Bancárias", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas"].map(tab => (
             <TabsTrigger
               key={tab}
               value={tab.toLowerCase().replace(/ /g, "-")}
@@ -89,7 +89,28 @@ export default function FinancePage() {
           ))}
         </TabsList>
 
-        <TabsContent value="contas">
+        <TabsContent value="contas-bancárias">
+          {contasBancarias.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+              {contasBancarias.map((cb: any) => (
+                <div key={cb.id} className="bg-primary rounded-lg p-5 text-primary-foreground">
+                  <p className="text-sm font-medium opacity-90">Saldo {cb.banco}</p>
+                  <p className="text-2xl font-bold mt-1">
+                    R$ {Number(cb.saldo_atual).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mt-4 mb-2">
+            <h2 className="text-sm font-medium text-foreground">Contas a Receber</h2>
+            <Button size="sm" className="gap-1" onClick={() => setNovaContaOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Nova Conta
+            </Button>
+          </div>
+
           <ContasContent
             contas={contas}
             loading={loading}
@@ -107,6 +128,12 @@ export default function FinancePage() {
         open={!!baixaConta}
         onOpenChange={(o) => { if (!o) setBaixaConta(null); }}
         onSuccess={() => { setBaixaConta(null); fetchContas(); }}
+      />
+
+      <NovaContaBancariaDialog
+        open={novaContaOpen}
+        onOpenChange={setNovaContaOpen}
+        onSuccess={fetchContasBancarias}
       />
     </div>
   );
