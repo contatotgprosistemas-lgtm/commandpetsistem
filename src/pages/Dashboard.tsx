@@ -115,6 +115,15 @@ export default function Dashboard() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
+                      title="Ficha do Serviço"
+                      onClick={() => setFichaOpen(item)}
+                    >
+                      <FileText className="h-3.5 w-3.5 text-primary" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
                       title="Manejo (Boletim Diário)"
                       onClick={() => setManejoOpen(item)}
                     >
