@@ -101,6 +101,18 @@ export default function PlanosPacotesPage() {
     fetchAll();
   }
 
+  async function handleFaturar(sub: any) {
+    const planName = plans.find((p: any) => p.id === sub.plan_id)?.name || packages.find((p: any) => p.id === sub.package_id)?.name || "Plano/Pacote";
+    const { error } = await supabase.from("contas_receber").insert({
+      empresa_id: empresaId, cliente_id: sub.cliente_id,
+      descricao: `Fatura manual: ${planName}`,
+      valor: sub.final_price, vencimento: format(new Date(), "yyyy-MM-dd"),
+      status: "pendente", categoria: "Planos e Pacotes"
+    });
+    if (error) { toast.error("Erro ao gerar fatura"); return; }
+    toast.success("Fatura gerada com sucesso!");
+  }
+
   // Dashboard metrics
   const activeSubs = subscriptions.filter((s: any) => s.status === "ativo");
   const expiringThisWeek = activeSubs.filter((s: any) => s.end_date && differenceInDays(new Date(s.end_date), new Date()) <= 7 && differenceInDays(new Date(s.end_date), new Date()) >= 0);
