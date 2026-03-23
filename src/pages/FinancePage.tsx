@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast, isToday } from "date-fns";
+import { BaixaContaDialog } from "@/components/BaixaContaDialog";
 
 interface ContaReceber {
   id: string;
