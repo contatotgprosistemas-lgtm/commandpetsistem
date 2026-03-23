@@ -291,7 +291,7 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        {showCheckin && item.status !== "confirmado" && item.status !== "concluido" && (
+        {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && (
           <Button
             variant="outline"
             size="sm"
