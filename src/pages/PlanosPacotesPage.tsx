@@ -12,6 +12,7 @@ import { format, isPast, differenceInDays, addDays } from "date-fns";
 import { NovoPlanoDialog } from "@/components/planos/NovoPlanoDialog";
 import { NovoPacoteDialog } from "@/components/planos/NovoPacoteDialog";
 import { ContratacaoDialog } from "@/components/planos/ContratacaoDialog";
+import { PlanejamentoDiasDialog } from "@/components/planos/PlanejamentoDiasDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function PlanosPacotesPage() {
