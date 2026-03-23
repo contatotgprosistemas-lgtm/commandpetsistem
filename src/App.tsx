@@ -123,6 +123,50 @@ const App = () => (
             />
 
             <Route
+              path="/financeiro/fluxo-caixa"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <FluxoCaixaPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/financeiro/dre"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <DREPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/financeiro/movimentacao"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <MovimentacaoPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/financeiro/plano-contas"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <PlanoContasPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/clientes"
               element={
                 <ProtectedRoute>
