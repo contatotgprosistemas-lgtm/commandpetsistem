@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PawPrint, Search, Trash2, Pencil } from "lucide-react";
 import { NovoPetDialog } from "@/components/NovoPetDialog";
+import { PetMediaUploadDialog } from "@/components/PetMediaUploadDialog";
 import { ImportPetsDialog } from "@/components/ImportPetsDialog";
 import { EditarPetDialog } from "@/components/EditarPetDialog";
 import { supabase } from "@/integrations/supabase/client";
