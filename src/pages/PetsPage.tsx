@@ -61,6 +61,7 @@ export default function PetsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <PetMediaUploadDialog />
           <ImportPetsDialog onSuccess={handleRefresh} />
           <NovoPetDialog onSuccess={handleRefresh} />
         </div>
