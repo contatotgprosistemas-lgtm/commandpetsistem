@@ -77,7 +77,7 @@ export default function FinancePage() {
         <MetricCard title="Contas Vencidas" value={String(vencidas.length)} change="—" changeType="neutral" icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />} />
       </div>
 
-      <Tabs defaultValue="contas-bancárias" className="w-full">
+      <Tabs defaultValue="contas-a-receber" className="w-full">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4 flex-wrap">
           {["Contas a Receber", "Contas a Pagar", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas", "Contas Bancárias"].map(tab => (
             <TabsTrigger
