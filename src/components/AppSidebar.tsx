@@ -31,7 +31,7 @@ import {
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [cadastrosOpen, setCadastrosOpen] = useState(false);
-  const [financeiroOpen, setFinanceiroOpen] = useState(false);
+  
   const { isSuperAdmin, signOut, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
