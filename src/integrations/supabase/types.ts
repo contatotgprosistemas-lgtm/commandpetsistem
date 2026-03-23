@@ -538,39 +538,57 @@ export type Database = {
       }
       contas_receber: {
         Row: {
+          banco: string | null
           categoria: string | null
           cliente_id: string | null
           created_at: string
+          data_baixa: string | null
           descricao: string
           empresa_id: string
           id: string
+          observacao_baixa: string | null
           status: string
           updated_at: string
           valor: number
+          valor_desconto: number | null
+          valor_juros: number | null
+          valor_pago: number | null
           vencimento: string
         }
         Insert: {
+          banco?: string | null
           categoria?: string | null
           cliente_id?: string | null
           created_at?: string
+          data_baixa?: string | null
           descricao: string
           empresa_id: string
           id?: string
+          observacao_baixa?: string | null
           status?: string
           updated_at?: string
           valor: number
+          valor_desconto?: number | null
+          valor_juros?: number | null
+          valor_pago?: number | null
           vencimento: string
         }
         Update: {
+          banco?: string | null
           categoria?: string | null
           cliente_id?: string | null
           created_at?: string
+          data_baixa?: string | null
           descricao?: string
           empresa_id?: string
           id?: string
+          observacao_baixa?: string | null
           status?: string
           updated_at?: string
           valor?: number
+          valor_desconto?: number | null
+          valor_juros?: number | null
+          valor_pago?: number | null
           vencimento?: string
         }
         Relationships: [
