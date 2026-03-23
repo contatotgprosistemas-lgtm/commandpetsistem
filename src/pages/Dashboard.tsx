@@ -19,6 +19,12 @@ interface PetNaEmpresa {
   empresa_id: string;
   cliente_id: string;
   pet_id: string;
+  notas: string | null;
+  forma_pagamento: string | null;
+  data_entrada: string | null;
+  data_saida_provavel: string | null;
+  hora_entrada: string | null;
+  hora_saida_provavel: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string } | null;
   cliente: { id: string; nome: string; whatsapp: string | null } | null;
 }
