@@ -9,6 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
+interface BaixaContaDialogProps {
+  conta: { id: string; descricao: string; valor: number } | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}
+
 export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: BaixaContaDialogProps) {
   const [dataBaixa, setDataBaixa] = useState(format(new Date(), "yyyy-MM-dd"));
   const [banco, setBanco] = useState("");
@@ -17,6 +24,15 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
   const [valorDesconto, setValorDesconto] = useState("");
   const [observacao, setObservacao] = useState("");
   const [saving, setSaving] = useState(false);
+  const [contasBancarias, setContasBancarias] = useState<{ id: string; banco: string; titular: string }[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      supabase.from("contas_bancarias").select("id, banco, titular").then(({ data }) => {
+        if (data) setContasBancarias(data);
+      });
+    }
+  }, [open]);
 
   const handleOpen = (o: boolean) => {
     if (o && conta) {
