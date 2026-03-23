@@ -191,7 +191,7 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showD
   return (
     <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
       {items.map(item => (
-        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} />
+        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} showDelete={showDelete} onDelete={onDelete} />
       ))}
     </div>
   );
