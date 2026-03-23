@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { ManejoDialog } from "@/components/ManejoDialog";
 import { ChecklistDialog } from "@/components/ChecklistDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
 
 interface PetNaEmpresa {
   id: string;
