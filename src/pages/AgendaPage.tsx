@@ -30,6 +30,7 @@ interface Agendamento {
   empresa_id: string;
   cliente_id: string;
   pet_id: string;
+  subscription_id: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string } | null;
   cliente: { id: string; nome: string; whatsapp: string | null } | null;
 }
