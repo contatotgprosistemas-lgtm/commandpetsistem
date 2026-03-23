@@ -159,6 +159,14 @@ export function ChecklistDialog({ open, onOpenChange, agendamentoId, petId, petN
             </div>
           ))}
         </div>
+        <div className="mt-2">
+          <Label className="text-sm text-foreground">Observações</Label>
+          <Textarea
+            className="text-sm min-h-[60px] mt-1"
+            placeholder="Escreva observações..."
+            value={respostas["observacoes"] || ""}
+            onChange={e => setResposta("observacoes", e.target.value)}
+          />
         <div className="flex items-center gap-2 mt-2">
           <Input placeholder="Nova pergunta..." value={novaPergunta} onChange={e => setNovaPergunta(e.target.value)} className="h-8 text-sm" onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addCustomPergunta())} />
           <Button variant="outline" size="sm" className="h-8 gap-1" onClick={addCustomPergunta}><Plus className="h-3.5 w-3.5" />Adicionar</Button>
