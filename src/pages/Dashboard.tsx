@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope } from "lucide-react";
+import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ManejoDialog } from "@/components/ManejoDialog";
 import { ChecklistDialog } from "@/components/ChecklistDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface PetNaEmpresa {
   id: string;
@@ -18,6 +19,12 @@ interface PetNaEmpresa {
   empresa_id: string;
   cliente_id: string;
   pet_id: string;
+  notas: string | null;
+  forma_pagamento: string | null;
+  data_entrada: string | null;
+  data_saida_provavel: string | null;
+  hora_entrada: string | null;
+  hora_saida_provavel: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string } | null;
   cliente: { id: string; nome: string; whatsapp: string | null } | null;
 }
@@ -27,11 +34,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [manejoOpen, setManejoOpen] = useState<PetNaEmpresa | null>(null);
   const [checklistOpen, setChecklistOpen] = useState<PetNaEmpresa | null>(null);
+  const [fichaOpen, setFichaOpen] = useState<PetNaEmpresa | null>(null);
 
   async function fetchPetsNaEmpresa() {
     const { data } = await supabase
       .from("agendamentos")
-      .select("id, tipo_servico, data_hora, baia, valor, empresa_id, cliente_id, pet_id, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
+      .select("id, tipo_servico, data_hora, baia, valor, empresa_id, cliente_id, pet_id, notas, forma_pagamento, data_entrada, data_saida_provavel, hora_entrada, hora_saida_provavel, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
       .eq("status", "confirmado")
       .order("data_hora", { ascending: true });
     setPetsNaEmpresa((data as any) ?? []);
@@ -107,6 +115,15 @@ export default function Dashboard() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
+                      title="Ficha do Serviço"
+                      onClick={() => setFichaOpen(item)}
+                    >
+                      <FileText className="h-3.5 w-3.5 text-primary" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
                       title="Manejo (Boletim Diário)"
                       onClick={() => setManejoOpen(item)}
                     >
@@ -167,6 +184,72 @@ export default function Dashboard() {
           petName={checklistOpen.pet?.nome ?? "Pet"}
         />
       )}
+
+      <Dialog open={!!fichaOpen} onOpenChange={() => setFichaOpen(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ficha do Serviço</DialogTitle>
+          </DialogHeader>
+          {fichaOpen && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-muted-foreground text-xs">Pet</p>
+                  <p className="font-medium text-foreground">{fichaOpen.pet?.nome ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Espécie / Raça</p>
+                  <p className="font-medium text-foreground">{fichaOpen.pet?.especie ?? "—"} {fichaOpen.pet?.raca ? `· ${fichaOpen.pet.raca}` : ""}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Tutor</p>
+                  <p className="font-medium text-foreground">{fichaOpen.cliente?.nome ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">WhatsApp</p>
+                  <p className="font-medium text-foreground">{fichaOpen.cliente?.whatsapp ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Serviço</p>
+                  <p className="font-medium text-foreground">{fichaOpen.tipo_servico}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Valor</p>
+                  <p className="font-medium text-foreground">{fichaOpen.valor != null ? `R$ ${Number(fichaOpen.valor).toFixed(2)}` : "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Baia</p>
+                  <p className="font-medium text-foreground">{fichaOpen.baia ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Forma de Pagamento</p>
+                  <p className="font-medium text-foreground">{fichaOpen.forma_pagamento ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Entrada</p>
+                  <p className="font-medium text-foreground">
+                    {fichaOpen.data_entrada ? format(new Date(fichaOpen.data_entrada), "dd/MM/yyyy") : "—"}
+                    {fichaOpen.hora_entrada ? ` às ${fichaOpen.hora_entrada}` : ""}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Saída Provável</p>
+                  <p className="font-medium text-foreground">
+                    {fichaOpen.data_saida_provavel ? format(new Date(fichaOpen.data_saida_provavel), "dd/MM/yyyy") : "—"}
+                    {fichaOpen.hora_saida_provavel ? ` às ${fichaOpen.hora_saida_provavel}` : ""}
+                  </p>
+                </div>
+              </div>
+              {fichaOpen.notas && (
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">Observações</p>
+                  <p className="text-foreground bg-muted/50 rounded-md p-2 whitespace-pre-wrap">{fichaOpen.notas}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
