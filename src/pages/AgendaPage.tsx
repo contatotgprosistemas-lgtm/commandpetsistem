@@ -30,6 +30,7 @@ interface Agendamento {
   empresa_id: string;
   cliente_id: string;
   pet_id: string;
+  subscription_id: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string } | null;
   cliente: { id: string; nome: string; whatsapp: string | null } | null;
 }
@@ -90,7 +91,7 @@ export default function AgendaPage() {
     setLoading(true);
     const { data } = await supabase
       .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
+      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
       .order("data_hora", { ascending: true });
 
     if (data) setAgendamentos(data as any);
@@ -269,6 +270,9 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
           <span>{item.tipo_servico}</span>
+          {item.subscription_id && (
+            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">Plano</Badge>
+          )}
           <span>|</span>
           <span className="truncate">{clientName}</span>
           {clientWhatsapp && (
