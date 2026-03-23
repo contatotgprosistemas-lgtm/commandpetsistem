@@ -58,10 +58,10 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
     }
 
     // 2. Delete old auto-generated agendamentos for this subscription
-    await supabase
-      .from("agendamentos")
+    await (supabase
+      .from("agendamentos") as any)
       .delete()
-      .eq("subscription_id" as any, subscription.id)
+      .eq("subscription_id", subscription.id)
       .neq("status", "na_empresa")
       .neq("status", "concluido");
 
