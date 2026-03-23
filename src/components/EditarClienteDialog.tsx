@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { CalendarIcon, PawPrint } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -36,8 +37,18 @@ interface EditarClienteDialogProps {
   onSuccess?: () => void;
 }
 
+interface HistoricoServico {
+  id: string;
+  tipo_servico: string;
+  valor: number | null;
+  data_servico: string;
+  notas: string | null;
+}
+
 export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: EditarClienteDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [historico, setHistorico] = useState<HistoricoServico[]>([]);
+  const [loadingHistorico, setLoadingHistorico] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -56,8 +67,20 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         como_conheceu: cliente.como_conheceu || "",
         notas: cliente.notas || "",
       });
+      fetchHistorico(cliente.id);
     }
   }, [cliente, form]);
+
+  async function fetchHistorico(clienteId: string) {
+    setLoadingHistorico(true);
+    const { data } = await supabase
+      .from("historico_servicos" as any)
+      .select("id, tipo_servico, valor, data_servico, notas")
+      .eq("cliente_id", clienteId)
+      .order("data_servico", { ascending: false });
+    setHistorico((data as any) ?? []);
+    setLoadingHistorico(false);
+  }
 
   async function onSubmit(data: FormValues) {
     if (!cliente?.id) return;
@@ -86,111 +109,134 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Contato</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField control={form.control} name="nome" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome *</FormLabel>
-                <FormControl><Input placeholder="Nome completo" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="cpf" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CPF</FormLabel>
-                  <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="data_nascimento" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data de Nascimento</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
+        <Tabs defaultValue="dados" className="w-full">
+          <TabsList className="w-full">
+            <TabsTrigger value="dados" className="flex-1">Dados</TabsTrigger>
+            <TabsTrigger value="historico" className="flex-1">Histórico de Serviços</TabsTrigger>
+          </TabsList>
+          <TabsContent value="dados">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField control={form.control} name="nome" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome *</FormLabel>
+                    <FormControl><Input placeholder="Nome completo" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="cpf" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF</FormLabel>
+                      <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="data_nascimento" render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Data de Nascimento</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                              {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione</span>}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="whatsapp" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>WhatsApp</FormLabel>
+                      <FormControl><Input placeholder="(11) 99999-9999" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="email" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl><Input type="email" placeholder="email@exemplo.com" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <FormField control={form.control} name="endereco" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Endereço</FormLabel>
+                    <FormControl><Input placeholder="Rua, número, bairro" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="como_conheceu" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Como nos conheceu?</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                        >
-                          {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                       </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="whatsapp" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>WhatsApp</FormLabel>
-                  <FormControl><Input placeholder="(11) 99999-9999" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="email" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl><Input type="email" placeholder="email@exemplo.com" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-            <FormField control={form.control} name="endereco" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Endereço</FormLabel>
-                <FormControl><Input placeholder="Rua, número, bairro" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="como_conheceu" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Como nos conheceu?</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Redes Sociais">Redes Sociais</SelectItem>
-                    <SelectItem value="Indicação">Indicação</SelectItem>
-                    <SelectItem value="Google">Google</SelectItem>
-                    <SelectItem value="Passou na frente">Passou na frente</SelectItem>
-                    <SelectItem value="Outro">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="notas" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Observações</FormLabel>
-                <FormControl><Textarea placeholder="Notas internas..." rows={3} {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>
-            </div>
-          </form>
-        </Form>
+                      <SelectContent>
+                        <SelectItem value="Redes Sociais">Redes Sociais</SelectItem>
+                        <SelectItem value="Indicação">Indicação</SelectItem>
+                        <SelectItem value="Google">Google</SelectItem>
+                        <SelectItem value="Passou na frente">Passou na frente</SelectItem>
+                        <SelectItem value="Outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="notas" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações</FormLabel>
+                    <FormControl><Textarea placeholder="Notas internas..." rows={3} {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>
+                </div>
+              </form>
+            </Form>
+          </TabsContent>
+          <TabsContent value="historico">
+            {loadingHistorico ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">Carregando histórico...</div>
+            ) : historico.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <PawPrint className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">Nenhum serviço registrado</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border mt-2">
+                {historico.map(h => (
+                  <div key={h.id} className="py-3 px-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">{h.tipo_servico}</span>
+                      <span className="text-xs text-muted-foreground">{format(new Date(h.data_servico), "dd/MM/yyyy HH:mm")}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      {h.valor != null && <span className="text-sm text-primary font-medium">R$ {Number(h.valor).toFixed(2)}</span>}
+                      {h.notas && <span className="text-xs text-muted-foreground">{h.notas}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

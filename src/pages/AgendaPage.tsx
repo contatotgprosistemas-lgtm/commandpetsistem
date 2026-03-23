@@ -26,6 +26,9 @@ interface Agendamento {
   hora_saida_provavel: string | null;
   baia: string | null;
   forma_pagamento: string | null;
+  empresa_id: string;
+  cliente_id: string;
+  pet_id: string;
   pet: { id: string; nome: string; raca: string | null; especie: string } | null;
   cliente: { id: string; nome: string; whatsapp: string | null } | null;
 }
@@ -55,7 +58,7 @@ export default function AgendaPage() {
     setLoading(true);
     const { data } = await supabase
       .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
+      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
       .order("data_hora", { ascending: true });
 
     if (data) setAgendamentos(data as any);
@@ -64,21 +67,35 @@ export default function AgendaPage() {
 
   useEffect(() => { fetchAgendamentos(); }, []);
 
-  async function handleCheckin(id: string) {
-    const { error } = await supabase.from("agendamentos").update({ status: "confirmado" }).eq("id", id);
+  async function handleCheckin(item: Agendamento) {
+    // Update status to confirmado (moves to dashboard pets na empresa)
+    const { error } = await supabase.from("agendamentos").update({ status: "confirmado" }).eq("id", item.id);
     if (error) {
       toast.error("Erro ao fazer check-in: " + error.message);
-    } else {
-      toast.success("Check-in realizado!");
-      fetchAgendamentos();
+      return;
     }
+
+    // Save to service history
+    await supabase.from("historico_servicos" as any).insert({
+      empresa_id: item.empresa_id,
+      cliente_id: item.cliente_id,
+      pet_id: item.pet_id,
+      tipo_servico: item.tipo_servico,
+      valor: item.valor,
+      data_servico: item.data_hora,
+      agendamento_id: item.id,
+      notas: `Check-in realizado`,
+    } as any);
+
+    toast.success("Check-in realizado! Pet aparecerá no Dashboard.");
+    fetchAgendamentos();
   }
 
   const today = startOfDay(new Date());
 
   const reservaHoje = agendamentos.filter(a => {
     const d = new Date(a.data_hora);
-    return isToday(d) && a.status !== "cancelado";
+    return isToday(d) && a.status !== "cancelado" && a.status !== "confirmado" && a.status !== "concluido";
   });
 
   const proximasReservas = agendamentos.filter(a => {
@@ -90,7 +107,6 @@ export default function AgendaPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1400px]">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -105,25 +121,15 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="hoje" className="w-full">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4">
-          <TabsTrigger
-            value="hoje"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm"
-          >
+          <TabsTrigger value="hoje" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
             Reserva Hoje ({reservaHoje.length})
           </TabsTrigger>
-          <TabsTrigger
-            value="proximas"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm"
-          >
+          <TabsTrigger value="proximas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
             Próximas Reservas ({proximasReservas.length})
           </TabsTrigger>
-          <TabsTrigger
-            value="calendario"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm"
-          >
+          <TabsTrigger value="calendario" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
             Calendário
           </TabsTrigger>
         </TabsList>
@@ -132,7 +138,7 @@ export default function AgendaPage() {
           <AgendamentoList items={reservaHoje} loading={loading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
         </TabsContent>
         <TabsContent value="proximas">
-          <AgendamentoList items={proximasReservas} loading={loading} onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
+          <AgendamentoList items={proximasReservas} loading={loading} onEdit={setEditingAgendamento} />
         </TabsContent>
         <TabsContent value="calendario">
           <AgendaCalendar agendamentos={agendamentos} />
@@ -149,7 +155,7 @@ export default function AgendaPage() {
   );
 }
 
-function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (id: string) => void; onEdit?: (a: Agendamento) => void }) {
+function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void }) {
   if (loading) {
     return (
       <div className="space-y-3 mt-4">
@@ -178,7 +184,7 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit }: { i
   );
 }
 
-function AgendamentoRow({ item, showCheckin, onCheckin, onEdit }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (id: string) => void; onEdit?: (a: Agendamento) => void }) {
+function AgendamentoRow({ item, showCheckin, onCheckin, onEdit }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void }) {
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
   const clientName = item.cliente?.nome ?? "—";
@@ -233,7 +239,7 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit }: { item: Agenda
             variant="outline"
             size="sm"
             className="h-7 gap-1 text-xs"
-            onClick={() => onCheckin?.(item.id)}
+            onClick={() => onCheckin?.(item)}
           >
             <LogIn className="h-3.5 w-3.5" />
             Check-in
