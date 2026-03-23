@@ -21,11 +21,6 @@ import {
   ShoppingBag,
   Kanban,
   Bot,
-  Receipt,
-  TrendingUp,
-  BarChart3,
-  ArrowLeftRight,
-  List,
 } from "lucide-react";
 
 export function AppSidebar() {
