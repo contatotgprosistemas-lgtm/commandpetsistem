@@ -1333,6 +1333,61 @@ export type Database = {
           },
         ]
       }
+      pet_media: {
+        Row: {
+          caption: string | null
+          cliente_id: string
+          created_at: string
+          empresa_id: string
+          id: string
+          media_type: string
+          media_url: string
+          pet_id: string
+        }
+        Insert: {
+          caption?: string | null
+          cliente_id: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          media_type?: string
+          media_url: string
+          pet_id: string
+        }
+        Update: {
+          caption?: string | null
+          cliente_id?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          media_type?: string
+          media_url?: string
+          pet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_media_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_media_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_media_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pets: {
         Row: {
           antiparasitario_data: string | null
