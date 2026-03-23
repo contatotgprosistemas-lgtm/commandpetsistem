@@ -33,8 +33,10 @@ function statusBadge(status: string, vencimento: string) {
 
 export default function FinancePage() {
   const [contas, setContas] = useState<ContaReceber[]>([]);
+  const [contasBancarias, setContasBancarias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [baixaConta, setBaixaConta] = useState<{ id: string; descricao: string; valor: number } | null>(null);
+  const [novaContaOpen, setNovaContaOpen] = useState(false);
 
   async function fetchContas() {
     setLoading(true);
@@ -46,7 +48,15 @@ export default function FinancePage() {
     setLoading(false);
   }
 
-  useEffect(() => { fetchContas(); }, []);
+  async function fetchContasBancarias() {
+    const { data } = await supabase
+      .from("contas_bancarias" as any)
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (data) setContasBancarias(data as any);
+  }
+
+  useEffect(() => { fetchContas(); fetchContasBancarias(); }, []);
 
   const totalReceber = contas.filter(c => c.status === "pendente").reduce((s, c) => s + c.valor, 0);
   const totalPago = contas.filter(c => c.status === "pago").reduce((s, c) => s + c.valor, 0);
