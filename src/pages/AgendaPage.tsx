@@ -197,7 +197,7 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showD
   );
 }
 
-function AgendamentoRow({ item, showCheckin, onCheckin, onEdit }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void }) {
+function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void }) {
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
   const clientName = item.cliente?.nome ?? "—";
