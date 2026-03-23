@@ -77,8 +77,8 @@ export default function FinancePage() {
       </div>
 
       <Tabs defaultValue="contas-bancárias" className="w-full">
-        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4">
-          {["Contas Bancárias", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas"].map(tab => (
+        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4 flex-wrap">
+          {["Contas Bancárias", "Contas a Receber", "Contas a Pagar", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas"].map(tab => (
             <TabsTrigger
               key={tab}
               value={tab.toLowerCase().replace(/ /g, "-")}
@@ -102,21 +102,27 @@ export default function FinancePage() {
               ))}
             </div>
           )}
-
           <div className="flex items-center justify-between mt-4 mb-2">
-            <h2 className="text-sm font-medium text-foreground">Contas a Receber</h2>
+            <h2 className="text-sm font-medium text-foreground">Contas Bancárias</h2>
             <Button size="sm" className="gap-1" onClick={() => setNovaContaOpen(true)}>
               <Plus className="h-4 w-4" />
               Nova Conta
             </Button>
           </div>
+        </TabsContent>
 
+        <TabsContent value="contas-a-receber">
           <ContasContent
             contas={contas}
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
           />
         </TabsContent>
+
+        <TabsContent value="contas-a-pagar">
+          <ContasPagarContent />
+        </TabsContent>
+
         <TabsContent value="fluxo-de-caixa"><FluxoCaixaPage /></TabsContent>
         <TabsContent value="dre"><DREPage /></TabsContent>
         <TabsContent value="movimentação"><MovimentacaoPage /></TabsContent>
