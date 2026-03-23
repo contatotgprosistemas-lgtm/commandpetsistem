@@ -37,11 +37,8 @@ export function AppSidebar() {
   const location = useLocation();
 
   const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos"].includes(location.pathname);
-  const isFinanceiroActive = ["/financeiro", "/financeiro/fluxo-caixa", "/financeiro/dre", "/financeiro/movimentacao", "/financeiro/plano-contas"].includes(location.pathname);
 
-  // Auto-expand when on a route
   const cadastrosExpanded = cadastrosOpen || isCadastrosActive;
-  const financeiroExpanded = financeiroOpen || isFinanceiroActive;
 
   const mainItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
