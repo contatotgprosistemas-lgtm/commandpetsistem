@@ -11,10 +11,6 @@ import CRMInbox from "@/pages/CRMInbox";
 import PetsPage from "@/pages/PetsPage";
 import AgendaPage from "@/pages/AgendaPage";
 import FinancePage from "@/pages/FinancePage";
-import FluxoCaixaPage from "@/pages/FluxoCaixaPage";
-import DREPage from "@/pages/DREPage";
-import MovimentacaoPage from "@/pages/MovimentacaoPage";
-import PlanoContasPage from "@/pages/PlanoContasPage";
 import ClientsPage from "@/pages/ClientsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
@@ -122,49 +118,8 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/financeiro/fluxo-caixa"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <FluxoCaixaPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
 
-            <Route
-              path="/financeiro/dre"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <DREPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
 
-            <Route
-              path="/financeiro/movimentacao"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <MovimentacaoPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/financeiro/plano-contas"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <PlanoContasPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/clientes"

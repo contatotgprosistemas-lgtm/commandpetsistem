@@ -21,27 +21,19 @@ import {
   ShoppingBag,
   Kanban,
   Bot,
-  Receipt,
-  TrendingUp,
-  BarChart3,
-  ArrowLeftRight,
-  List,
 } from "lucide-react";
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [cadastrosOpen, setCadastrosOpen] = useState(false);
-  const [financeiroOpen, setFinanceiroOpen] = useState(false);
+  
   const { isSuperAdmin, signOut, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos"].includes(location.pathname);
-  const isFinanceiroActive = ["/financeiro", "/financeiro/fluxo-caixa", "/financeiro/dre", "/financeiro/movimentacao", "/financeiro/plano-contas"].includes(location.pathname);
 
-  // Auto-expand when on a route
   const cadastrosExpanded = cadastrosOpen || isCadastrosActive;
-  const financeiroExpanded = financeiroOpen || isFinanceiroActive;
 
   const mainItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
@@ -57,16 +49,12 @@ export function AppSidebar() {
     { icon: ShoppingBag, label: "Produtos", path: "/produtos" },
   ];
 
-  const financeiroItems = [
-    { icon: Receipt, label: "Contas", path: "/financeiro" },
-    { icon: TrendingUp, label: "Fluxo de Caixa", path: "/financeiro/fluxo-caixa" },
-    { icon: BarChart3, label: "DRE", path: "/financeiro/dre" },
-    { icon: ArrowLeftRight, label: "Movimentação", path: "/financeiro/movimentacao" },
-    { icon: List, label: "Plano de Contas", path: "/financeiro/plano-contas" },
-  ];
+
+
 
   const bottomItems = [
     { icon: Calendar, label: "Agenda", path: "/agenda" },
+    { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
     ...(isSuperAdmin
       ? [{ icon: Shield, label: "Super Admin", path: "/admin" }]
       : []),
@@ -180,53 +168,6 @@ export function AppSidebar() {
 
         {/* When collapsed, show cadastros items directly */}
         {collapsed && cadastrosItems.map(renderNavItem)}
-
-        {/* Financeiro submenu */}
-        <button
-          onClick={() => setFinanceiroOpen(!financeiroExpanded)}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors duration-150 ${
-            isFinanceiroActive
-              ? "text-sidebar-foreground"
-              : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          }`}
-        >
-          <DollarSign className="h-[18px] w-[18px] shrink-0" strokeWidth={1.5} />
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="whitespace-nowrap overflow-hidden flex-1 text-left"
-              >
-                Financeiro
-              </motion.span>
-            )}
-          </AnimatePresence>
-          {!collapsed && (
-            <ChevronDown
-              className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                financeiroExpanded ? "rotate-0" : "-rotate-90"
-              }`}
-            />
-          )}
-        </button>
-
-        <AnimatePresence>
-          {financeiroExpanded && !collapsed && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="overflow-hidden pl-4 space-y-0.5"
-            >
-              {financeiroItems.map(renderNavItem)}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {collapsed && financeiroItems.map(renderNavItem)}
 
         {bottomItems.map(renderNavItem)}
       </nav>
