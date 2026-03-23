@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,23 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-
-interface BaixaContaDialogProps {
-  conta: { id: string; descricao: string; valor: number } | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
-}
-
-const bancos = [
-  "Dinheiro",
-  "PIX",
-  "Cartão de Crédito",
-  "Cartão de Débito",
-  "Transferência Bancária",
-  "Boleto",
-  "Outro",
-];
 
 export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: BaixaContaDialogProps) {
   const [dataBaixa, setDataBaixa] = useState(format(new Date(), "yyyy-MM-dd"));
