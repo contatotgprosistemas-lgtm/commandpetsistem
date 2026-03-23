@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calculator, PawPrint, Phone, MessageCircle, Pencil, LogIn } from "lucide-react";
+import { Calculator, PawPrint, Phone, MessageCircle, Pencil, LogIn, Trash2 } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
