@@ -99,6 +99,24 @@ export default function AgendaPage() {
 
   useEffect(() => { fetchAgendamentos(); }, []);
 
+  // Auto-refresh at midnight
+  useEffect(() => {
+    const scheduleRefresh = () => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const ms = midnight.getTime() - now.getTime();
+      return setTimeout(() => {
+        fetchAgendamentos();
+        // Schedule next midnight refresh
+        const id = scheduleRefresh();
+        return id;
+      }, ms);
+    };
+    const timerId = scheduleRefresh();
+    return () => clearTimeout(timerId);
+  }, []);
+
   async function handleCheckin(item: Agendamento) {
     // Update status to confirmado (moves to dashboard pets na empresa)
     const { error } = await supabase.from("agendamentos").update({ status: "confirmado" }).eq("id", item.id);
