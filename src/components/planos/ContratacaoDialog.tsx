@@ -8,7 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { addDays, format } from "date-fns";
+import { addDays, format, getDay, isBefore, startOfDay } from "date-fns";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -16,6 +18,16 @@ interface Props {
   onSuccess: () => void;
   empresaId: string;
 }
+
+const DIAS_SEMANA = [
+  { value: 1, label: "Segunda" },
+  { value: 2, label: "Terça" },
+  { value: 3, label: "Quarta" },
+  { value: 4, label: "Quinta" },
+  { value: 5, label: "Sexta" },
+  { value: 6, label: "Sábado" },
+  { value: 0, label: "Domingo" },
+];
 
 export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: Props) {
   const [saving, setSaving] = useState(false);
@@ -33,6 +45,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [autoRenew, setAutoRenew] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("pix");
   const [notes, setNotes] = useState("");
+  const [plannedDays, setPlannedDays] = useState<number[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -52,8 +65,13 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const validityDays = selectedPlan?.validity_days || 30;
   const endDate = format(addDays(new Date(startDate), validityDays), "yyyy-MM-dd");
 
+  function toggleDay(day: number) {
+    setPlannedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+  }
+
   async function handleSave() {
     if (!clienteId || !selectedId) { toast.error("Selecione cliente e plano/pacote"); return; }
+    if (!petId) { toast.error("Selecione o pet"); return; }
     setSaving(true);
 
     const payload: any = {
@@ -62,13 +80,15 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       next_renewal_date: autoRenew ? endDate : null,
       price_contracted: priceContracted, discount_amount: Number(discount || 0),
       final_price: finalPrice, auto_renew: autoRenew, payment_method: paymentMethod,
-      notes, status: "ativo"
+      notes, status: "ativo", planned_days: plannedDays
     };
     if (planType === "plan") payload.plan_id = selectedId;
     else payload.package_id = selectedId;
 
-    const { error } = await supabase.from("customer_pet_subscriptions" as any).insert(payload);
-    if (error) { toast.error("Erro ao contratar"); setSaving(false); return; }
+    const { data: subData, error } = await supabase.from("customer_pet_subscriptions" as any).insert(payload).select("id").single();
+    if (error || !subData) { toast.error("Erro ao contratar"); setSaving(false); return; }
+
+    const subscriptionId = (subData as any).id;
 
     // Generate receivable
     await supabase.from("contas_receber").insert({
@@ -77,7 +97,42 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       valor: finalPrice, vencimento: startDate, status: "pendente", categoria: "Planos e Pacotes"
     });
 
-    toast.success("Contratação realizada com sucesso!");
+    // Generate agendamentos for planned days
+    if (plannedDays.length > 0 && petId) {
+      const start = startOfDay(new Date(startDate + "T00:00:00"));
+      const end = startOfDay(new Date(endDate + "T00:00:00"));
+      const today = startOfDay(new Date());
+      const tipoServico = selectedPlan?.name || "Plano";
+
+      const agendamentos: any[] = [];
+      let current = isBefore(start, today) ? today : start;
+
+      while (!isBefore(end, current)) {
+        const weekday = getDay(current);
+        if (plannedDays.includes(weekday)) {
+          agendamentos.push({
+            empresa_id: empresaId,
+            cliente_id: clienteId,
+            pet_id: petId,
+            tipo_servico: tipoServico,
+            data_hora: format(current, "yyyy-MM-dd") + "T08:00:00",
+            status: "agendado",
+            subscription_id: subscriptionId,
+            notas: "Gerado automaticamente pelo plano",
+          });
+        }
+        current = addDays(current, 1);
+      }
+
+      for (let i = 0; i < agendamentos.length; i += 50) {
+        await supabase.from("agendamentos").insert(agendamentos.slice(i, i + 50) as any);
+      }
+
+      toast.success(`Contratação realizada! ${agendamentos.length} reservas geradas.`);
+    } else {
+      toast.success("Contratação realizada com sucesso!");
+    }
+
     setSaving(false); onSuccess(); onOpenChange(false);
   }
 
@@ -95,9 +150,9 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
           </div>
           {pets.length > 0 && (
             <div className="space-y-1.5">
-              <Label>Pet</Label>
+              <Label>Pet *</Label>
               <Select value={petId} onValueChange={setPetId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o pet (opcional)" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecione o pet" /></SelectTrigger>
                 <SelectContent>{pets.map(p => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}</SelectContent>
               </Select>
             </div>
@@ -135,6 +190,38 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               <Input type="date" value={endDate} disabled />
             </div>
           </div>
+
+          {/* Planned Days */}
+          <div className="space-y-2">
+            <Label>Dias de uso na semana</Label>
+            <div className="flex flex-wrap gap-2">
+              {DIAS_SEMANA.map(dia => {
+                const isSelected = plannedDays.includes(dia.value);
+                return (
+                  <button
+                    key={dia.value}
+                    type="button"
+                    onClick={() => toggleDay(dia.value)}
+                    className={cn(
+                      "relative flex items-center justify-center rounded-lg border-2 px-3 py-2 text-xs font-medium transition-all min-w-[70px]",
+                      isSelected
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                    )}
+                  >
+                    {isSelected && (
+                      <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                      </div>
+                    )}
+                    {dia.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">{plannedDays.length} dia(s) — reservas serão criadas automaticamente</p>
+          </div>
+
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label>Preço</Label>
