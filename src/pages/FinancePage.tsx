@@ -28,6 +28,7 @@ function statusBadge(status: string, vencimento: string) {
 export default function FinancePage() {
   const [contas, setContas] = useState<ContaReceber[]>([]);
   const [loading, setLoading] = useState(true);
+  const [baixaConta, setBaixaConta] = useState<{ id: string; descricao: string; valor: number } | null>(null);
 
   async function fetchContas() {
     setLoading(true);
