@@ -332,6 +332,7 @@ export default function PlanosPacotesPage() {
       {empresaId && <NovoPlanoDialog open={novoPlanoOpen} onOpenChange={setNovoPlanoOpen} onSuccess={fetchAll} empresaId={empresaId} />}
       {empresaId && <NovoPacoteDialog open={novoPacoteOpen} onOpenChange={setNovoPacoteOpen} onSuccess={fetchAll} empresaId={empresaId} />}
       {empresaId && <ContratacaoDialog open={contratacaoOpen} onOpenChange={setContratacaoOpen} onSuccess={fetchAll} empresaId={empresaId} />}
+      {planejamentoSub && <PlanejamentoDiasDialog open={!!planejamentoSub} onOpenChange={o => { if (!o) setPlanejamentoSub(null); }} subscription={planejamentoSub} onSuccess={fetchAll} />}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={o => { if (!o) setDeleteTarget(null); }}>
         <AlertDialogContent>
