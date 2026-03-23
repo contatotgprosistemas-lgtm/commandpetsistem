@@ -33,6 +33,7 @@ const navItems = [
   { path: "/portal/documentos", label: "Documentos", icon: FolderOpen },
   { path: "/portal/historico", label: "Histórico", icon: History },
   { path: "/portal/galeria", label: "Galeria", icon: Camera },
+  { path: "/portal/manejo", label: "Boletim Diário", icon: Stethoscope },
   { path: "/portal/conta", label: "Minha Conta", icon: User },
 ];
 
