@@ -95,11 +95,29 @@ export default function FinancePage() {
                 <div className="shrink-0">
                   {statusBadge(c.status, c.vencimento)}
                 </div>
+                {c.status === "pendente" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1 text-xs shrink-0"
+                    onClick={() => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
+                  >
+                    <ArrowDownCircle className="h-3.5 w-3.5" />
+                    Baixar
+                  </Button>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <BaixaContaDialog
+        conta={baixaConta}
+        open={!!baixaConta}
+        onOpenChange={(o) => { if (!o) setBaixaConta(null); }}
+        onSuccess={() => { setBaixaConta(null); fetchContas(); }}
+      />
     </div>
   );
 }
