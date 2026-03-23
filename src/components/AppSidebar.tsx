@@ -31,7 +31,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos"].includes(location.pathname);
+  const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos", "/planos-pacotes"].includes(location.pathname);
 
   const cadastrosExpanded = cadastrosOpen || isCadastrosActive;
 
