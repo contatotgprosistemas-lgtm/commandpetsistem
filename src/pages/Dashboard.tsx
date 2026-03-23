@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope } from "lucide-react";
+import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
