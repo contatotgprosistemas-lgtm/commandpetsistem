@@ -152,7 +152,7 @@ export default function FinancePage() {
   );
 }
 
-function ContasContent({ contas, loading, onBaixar }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void }) {
+function ContasContent({ contas, loading, onBaixar, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   return (
     <div className="bg-card rounded-lg shadow-card mt-4">
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
