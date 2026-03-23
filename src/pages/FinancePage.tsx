@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast, isToday } from "date-fns";
+import { toast } from "sonner";
 import { BaixaContaDialog } from "@/components/BaixaContaDialog";
 import { NovaContaBancariaDialog } from "@/components/NovaContaBancariaDialog";
 import FluxoCaixaPage from "@/pages/FluxoCaixaPage";
