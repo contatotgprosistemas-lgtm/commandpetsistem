@@ -5,24 +5,29 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, CalendarDays } from "lucide-react";
+import { format } from "date-fns";
+
+const TRANSPORT_FILTER = "tipo_servico.ilike.%taxi%,tipo_servico.ilike.%transport%,tipo_servico.ilike.%leva%";
 
 const statusLabels: Record<string, string> = {
   agendada: "Agendada", finalizada: "Finalizada", cancelada: "Cancelada", nao_realizada: "Não Realizada",
   em_rota_coleta: "Em Rota", pet_coletado: "Coletado", em_deslocamento: "Deslocamento", entregue: "Entregue",
   aguardando_saida: "Aguardando", retorno: "Retorno",
+  agendado: "Agendado", confirmado: "Confirmado", em_atendimento: "Em Atendimento",
+  concluido: "Concluído", cancelado: "Cancelado",
 };
 
-type Booking = {
+type UnifiedBooking = {
   id: string; scheduled_date: string; scheduled_pickup_time: string | null; trip_type: string;
   status: string; final_price: number; payment_status: string; notes: string | null;
-  clientes?: { nome: string }; pets?: { nome: string }; drivers?: { name: string } | null;
-  transport_types?: { name: string } | null;
+  cliente_nome: string; pet_nome: string; driver_nome: string | null; type_nome: string | null;
+  source: "transport" | "agendamento";
 };
 
 export default function TaxiPetHistory() {
   const { profile } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<UnifiedBooking[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -38,14 +43,47 @@ export default function TaxiPetHistory() {
       if (startDate) q = q.gte("scheduled_date", startDate);
       if (endDate) q = q.lte("scheduled_date", endDate);
       if (statusFilter && statusFilter !== "__all__") q = q.eq("status", statusFilter);
-      const { data } = await q;
-      setBookings((data as Booking[]) || []);
+
+      let qAg = supabase.from("agendamentos")
+        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, clientes:cliente_id(nome), pets:pet_id(nome)")
+        .eq("empresa_id", profile.empresa_id!)
+        .or(TRANSPORT_FILTER)
+        .order("data_hora", { ascending: false }).limit(500);
+      if (startDate) qAg = qAg.gte("data_hora", `${startDate}T00:00:00`);
+      if (endDate) qAg = qAg.lte("data_hora", `${endDate}T23:59:59`);
+      if (statusFilter && statusFilter !== "__all__") qAg = qAg.eq("status", statusFilter);
+
+      const [{ data }, { data: ag }] = await Promise.all([q, qAg]);
+
+      const transportItems: UnifiedBooking[] = (data || []).map((b: any) => ({
+        id: b.id, scheduled_date: b.scheduled_date,
+        scheduled_pickup_time: b.scheduled_pickup_time, trip_type: b.trip_type,
+        status: b.status, final_price: Number(b.final_price || 0),
+        payment_status: b.payment_status, notes: b.notes,
+        cliente_nome: b.clientes?.nome || "—", pet_nome: b.pets?.nome || "—",
+        driver_nome: b.drivers?.name || null, type_nome: b.transport_types?.name || b.trip_type,
+        source: "transport",
+      }));
+
+      const agItems: UnifiedBooking[] = (ag || []).map((a: any) => ({
+        id: a.id, scheduled_date: format(new Date(a.data_hora), "yyyy-MM-dd"),
+        scheduled_pickup_time: format(new Date(a.data_hora), "HH:mm:ss"),
+        trip_type: a.tipo_servico, status: a.status,
+        final_price: Number(a.valor || 0), payment_status: "pendente",
+        notes: a.notas, cliente_nome: a.clientes?.nome || "—",
+        pet_nome: a.pets?.nome || "—", driver_nome: null,
+        type_nome: a.tipo_servico, source: "agendamento",
+      }));
+
+      setBookings([...transportItems, ...agItems].sort((a, b) =>
+        b.scheduled_date.localeCompare(a.scheduled_date)
+      ));
     };
     load();
   }, [profile?.empresa_id, startDate, endDate, statusFilter]);
 
   const filtered = bookings.filter((b) =>
-    `${b.clientes?.nome} ${b.pets?.nome} ${b.drivers?.name}`.toLowerCase().includes(search.toLowerCase())
+    `${b.cliente_nome} ${b.pet_nome} ${b.driver_nome}`.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -69,24 +107,31 @@ export default function TaxiPetHistory() {
       <div className="overflow-x-auto">
         <Table>
           <TableHeader><TableRow>
-            <TableHead>Data</TableHead><TableHead>Tutor</TableHead><TableHead>Pet</TableHead>
+            <TableHead>Origem</TableHead><TableHead>Data</TableHead><TableHead>Tutor</TableHead><TableHead>Pet</TableHead>
             <TableHead>Motorista</TableHead><TableHead>Tipo</TableHead><TableHead>Status</TableHead>
             <TableHead>Valor</TableHead><TableHead>Pgto</TableHead>
           </TableRow></TableHeader>
           <TableBody>
             {filtered.map((b) => (
-              <TableRow key={b.id}>
+              <TableRow key={`${b.source}-${b.id}`}>
+                <TableCell>
+                  {b.source === "agendamento" ? (
+                    <Badge variant="outline" className="text-[10px] gap-0.5"><CalendarDays className="h-3 w-3" /> Agenda</Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-[10px]">TaxiPet</Badge>
+                  )}
+                </TableCell>
                 <TableCell className="whitespace-nowrap">{b.scheduled_date} {b.scheduled_pickup_time?.slice(0, 5) || ""}</TableCell>
-                <TableCell>{b.clientes?.nome || "—"}</TableCell>
-                <TableCell>{b.pets?.nome || "—"}</TableCell>
-                <TableCell>{b.drivers?.name || "—"}</TableCell>
-                <TableCell>{b.transport_types?.name || b.trip_type}</TableCell>
-                <TableCell><Badge variant={b.status === "finalizada" ? "default" : b.status === "cancelada" ? "destructive" : "secondary"}>{statusLabels[b.status] || b.status}</Badge></TableCell>
-                <TableCell>R$ {Number(b.final_price).toFixed(2)}</TableCell>
+                <TableCell>{b.cliente_nome}</TableCell>
+                <TableCell>{b.pet_nome}</TableCell>
+                <TableCell>{b.driver_nome || "—"}</TableCell>
+                <TableCell>{b.type_nome}</TableCell>
+                <TableCell><Badge variant={b.status === "finalizada" || b.status === "concluido" ? "default" : b.status === "cancelada" || b.status === "cancelado" ? "destructive" : "secondary"}>{statusLabels[b.status] || b.status}</Badge></TableCell>
+                <TableCell>R$ {b.final_price.toFixed(2)}</TableCell>
                 <TableCell><Badge variant="outline">{b.payment_status}</Badge></TableCell>
               </TableRow>
             ))}
-            {filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Sem registros</TableCell></TableRow>}
+            {filtered.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Sem registros</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>

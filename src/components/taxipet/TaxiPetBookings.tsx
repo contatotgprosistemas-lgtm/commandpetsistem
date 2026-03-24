@@ -9,9 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+
+const TRANSPORT_FILTER = "tipo_servico.ilike.%taxi%,tipo_servico.ilike.%transport%,tipo_servico.ilike.%leva%";
 
 type Booking = {
   id: string; cliente_id: string; pet_id: string; transport_type_id: string | null;
@@ -22,6 +24,7 @@ type Booking = {
   payment_status: string; payment_method: string | null;
   clientes?: { nome: string }; pets?: { nome: string };
   drivers?: { name: string } | null; transport_types?: { name: string } | null;
+  source: "transport" | "agendamento";
 };
 
 const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -35,6 +38,11 @@ const statusMap: Record<string, { label: string; variant: "default" | "secondary
   finalizada: { label: "Finalizada", variant: "outline" },
   cancelada: { label: "Cancelada", variant: "destructive" },
   nao_realizada: { label: "Não Realizada", variant: "destructive" },
+  agendado: { label: "Agendado", variant: "secondary" },
+  confirmado: { label: "Confirmado", variant: "secondary" },
+  em_atendimento: { label: "Em Atendimento", variant: "default" },
+  concluido: { label: "Concluído", variant: "outline" },
+  cancelado: { label: "Cancelado", variant: "destructive" },
 };
 
 const tripTypeLabels: Record<string, string> = {
@@ -68,15 +76,54 @@ export default function TaxiPetBookings() {
   const load = async () => {
     if (!profile?.empresa_id) return;
     const eid = profile.empresa_id;
-    const [{ data: b }, { data: c }, { data: p }, { data: d }, { data: v }, { data: t }] = await Promise.all([
+    const [{ data: b }, { data: c }, { data: p }, { data: d }, { data: v }, { data: t }, { data: ag }] = await Promise.all([
       supabase.from("transport_bookings").select("*, clientes(nome), pets(nome), drivers(name), transport_types(name)").eq("empresa_id", eid).order("scheduled_date", { ascending: false }).limit(200),
       supabase.from("clientes").select("id, nome").eq("empresa_id", eid).order("nome"),
       supabase.from("pets").select("id, nome, cliente_id").eq("empresa_id", eid),
       supabase.from("drivers").select("id, name").eq("empresa_id", eid).eq("status", "ativo"),
       supabase.from("vehicles").select("id, model, plate").eq("empresa_id", eid).eq("status", "ativo"),
       supabase.from("transport_types").select("id, name, base_price").eq("empresa_id", eid).eq("status", "ativo"),
+      supabase.from("agendamentos")
+        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, clientes:cliente_id(nome), pets:pet_id(nome)")
+        .eq("empresa_id", eid)
+        .or(TRANSPORT_FILTER)
+        .order("data_hora", { ascending: false })
+        .limit(200),
     ]);
-    setBookings((b as Booking[]) || []);
+
+    const transportBookings: Booking[] = (b || []).map((item: any) => ({
+      ...item,
+      source: "transport" as const,
+    }));
+
+    const agendamentoBookings: Booking[] = (ag || []).map((item: any) => ({
+      id: item.id,
+      cliente_id: item.cliente_id,
+      pet_id: item.pet_id,
+      transport_type_id: null,
+      driver_id: null,
+      vehicle_id: null,
+      scheduled_date: format(new Date(item.data_hora), "yyyy-MM-dd"),
+      scheduled_pickup_time: format(new Date(item.data_hora), "HH:mm:ss"),
+      scheduled_dropoff_time: null,
+      trip_type: item.tipo_servico,
+      status: item.status,
+      notes: item.notas,
+      special_instructions: null,
+      price: Number(item.valor || 0),
+      extra_fee: 0,
+      discount: 0,
+      final_price: Number(item.valor || 0),
+      payment_status: "pendente",
+      payment_method: null,
+      clientes: item.clientes,
+      pets: item.pets,
+      drivers: null,
+      transport_types: null,
+      source: "agendamento" as const,
+    }));
+
+    setBookings([...transportBookings, ...agendamentoBookings]);
     setClients(c || []);
     setPets(p || []);
     setDrivers((d as any) || []);
@@ -125,6 +172,10 @@ export default function TaxiPetBookings() {
   };
 
   const openEdit = (b: Booking) => {
+    if (b.source === "agendamento") {
+      toast.info("Edite este agendamento na página de Agenda.");
+      return;
+    }
     setEditing(b);
     setForm({
       cliente_id: b.cliente_id, pet_id: b.pet_id, transport_type_id: b.transport_type_id || "",
@@ -161,7 +212,7 @@ export default function TaxiPetBookings() {
       <div className="overflow-x-auto">
         <Table>
           <TableHeader><TableRow>
-            <TableHead>Data</TableHead><TableHead>Tutor</TableHead><TableHead>Pet</TableHead>
+            <TableHead>Origem</TableHead><TableHead>Data</TableHead><TableHead>Tutor</TableHead><TableHead>Pet</TableHead>
             <TableHead>Tipo</TableHead><TableHead>Motorista</TableHead><TableHead>Status</TableHead>
             <TableHead>Valor</TableHead><TableHead>Pgto</TableHead><TableHead className="w-20" />
           </TableRow></TableHeader>
@@ -169,7 +220,14 @@ export default function TaxiPetBookings() {
             {filtered.map((b) => {
               const st = statusMap[b.status] || { label: b.status, variant: "outline" as const };
               return (
-                <TableRow key={b.id}>
+                <TableRow key={`${b.source}-${b.id}`}>
+                  <TableCell>
+                    {b.source === "agendamento" ? (
+                      <Badge variant="outline" className="text-[10px] gap-0.5"><CalendarDays className="h-3 w-3" /> Agenda</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-[10px]">TaxiPet</Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="whitespace-nowrap">{b.scheduled_date}{b.scheduled_pickup_time ? ` ${b.scheduled_pickup_time.slice(0, 5)}` : ""}</TableCell>
                   <TableCell>{b.clientes?.nome || "—"}</TableCell>
                   <TableCell>{b.pets?.nome || "—"}</TableCell>
@@ -179,13 +237,19 @@ export default function TaxiPetBookings() {
                   <TableCell>R$ {Number(b.final_price).toFixed(2)}</TableCell>
                   <TableCell><Badge variant="outline">{payStatusLabels[b.payment_status] || b.payment_status}</Badge></TableCell>
                   <TableCell className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => openEdit(b)}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDelete(b.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    {b.source === "transport" ? (
+                      <>
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(b)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => handleDelete(b.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                      </>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">Via agenda</span>
+                    )}
                   </TableCell>
                 </TableRow>
               );
             })}
-            {filtered.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhuma corrida encontrada</TableCell></TableRow>}
+            {filtered.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Nenhuma corrida encontrada</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>

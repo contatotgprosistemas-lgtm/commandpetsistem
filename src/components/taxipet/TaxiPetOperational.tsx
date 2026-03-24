@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Car, Clock, CheckCircle, MapPin, User, ArrowRight } from "lucide-react";
+import { Car, Clock, CheckCircle, MapPin, User, ArrowRight, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+
+const TRANSPORT_FILTER = "tipo_servico.ilike.%taxi%,tipo_servico.ilike.%transport%,tipo_servico.ilike.%leva%";
 
 const statusFlow = [
   "agendada", "aguardando_saida", "em_rota_coleta", "pet_coletado",
@@ -19,6 +21,8 @@ const statusLabels: Record<string, string> = {
   agendada: "Agendada", aguardando_saida: "Aguardando Saída", em_rota_coleta: "Em Rota p/ Coleta",
   pet_coletado: "Pet Coletado", em_deslocamento: "Em Deslocamento", entregue: "Entregue",
   retorno: "Retorno", finalizada: "Finalizada", cancelada: "Cancelada", nao_realizada: "Não Realizada",
+  agendado: "Agendado", confirmado: "Confirmado", em_atendimento: "Em Atendimento", concluido: "Concluído",
+  cancelado: "Cancelado",
 };
 
 const statusColors: Record<string, string> = {
@@ -31,19 +35,25 @@ const statusColors: Record<string, string> = {
   finalizada: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
   cancelada: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
   nao_realizada: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+  agendado: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  confirmado: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
+  em_atendimento: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  concluido: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  cancelado: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
 };
 
-type Booking = {
+type UnifiedBooking = {
   id: string; status: string; scheduled_date: string; scheduled_pickup_time: string | null;
   trip_type: string; notes: string | null; special_instructions: string | null;
   driver_id: string | null; final_price: number;
-  clientes?: { nome: string }; pets?: { nome: string };
-  drivers?: { name: string } | null; transport_types?: { name: string } | null;
+  cliente_nome: string; pet_nome: string;
+  driver_nome: string | null; type_nome: string | null;
+  source: "transport" | "agendamento";
 };
 
 export default function TaxiPetOperational() {
   const { profile } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<UnifiedBooking[]>([]);
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [driverFilter, setDriverFilter] = useState("");
   const [drivers, setDrivers] = useState<{ id: string; name: string }[]>([]);
@@ -51,25 +61,70 @@ export default function TaxiPetOperational() {
   const load = async () => {
     if (!profile?.empresa_id) return;
     const eid = profile.empresa_id;
-    const [{ data: b }, { data: d }] = await Promise.all([
+
+    const [{ data: b }, { data: d }, { data: ag }] = await Promise.all([
       supabase.from("transport_bookings")
         .select("*, clientes(nome), pets(nome), drivers(name), transport_types(name)")
         .eq("empresa_id", eid).eq("scheduled_date", date)
         .order("scheduled_pickup_time"),
       supabase.from("drivers").select("id, name").eq("empresa_id", eid).eq("status", "ativo"),
+      supabase.from("agendamentos")
+        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, clientes:cliente_id(nome), pets:pet_id(nome)")
+        .eq("empresa_id", eid)
+        .gte("data_hora", `${date}T00:00:00`)
+        .lt("data_hora", `${date}T23:59:59`)
+        .or(TRANSPORT_FILTER),
     ]);
-    setBookings((b as Booking[]) || []);
+
+    const transportBookings: UnifiedBooking[] = (b || []).map((item: any) => ({
+      id: item.id,
+      status: item.status,
+      scheduled_date: item.scheduled_date,
+      scheduled_pickup_time: item.scheduled_pickup_time,
+      trip_type: item.trip_type,
+      notes: item.notes,
+      special_instructions: item.special_instructions,
+      driver_id: item.driver_id,
+      final_price: Number(item.final_price || 0),
+      cliente_nome: item.clientes?.nome || "—",
+      pet_nome: item.pets?.nome || "Pet",
+      driver_nome: item.drivers?.name || null,
+      type_nome: item.transport_types?.name || null,
+      source: "transport",
+    }));
+
+    const agendamentoBookings: UnifiedBooking[] = (ag || []).map((item: any) => ({
+      id: item.id,
+      status: item.status,
+      scheduled_date: date,
+      scheduled_pickup_time: format(new Date(item.data_hora), "HH:mm:ss"),
+      trip_type: item.tipo_servico,
+      notes: item.notas,
+      special_instructions: null,
+      driver_id: null,
+      final_price: Number(item.valor || 0),
+      cliente_nome: item.clientes?.nome || "—",
+      pet_nome: item.pets?.nome || "Pet",
+      driver_nome: null,
+      type_nome: item.tipo_servico,
+      source: "agendamento",
+    }));
+
+    setBookings([...transportBookings, ...agendamentoBookings]);
     setDrivers((d as any) || []);
   };
 
   useEffect(() => { load(); }, [profile?.empresa_id, date]);
 
-  const advanceStatus = async (booking: Booking) => {
+  const advanceStatus = async (booking: UnifiedBooking) => {
+    if (booking.source === "agendamento") {
+      toast.info("Atualize o status deste agendamento na página de Agenda.");
+      return;
+    }
     const idx = statusFlow.indexOf(booking.status);
     if (idx < 0 || idx >= statusFlow.length - 1) return;
     const next = statusFlow[idx + 1];
     await supabase.from("transport_bookings").update({ status: next }).eq("id", booking.id);
-    // Register event
     await supabase.from("transport_events").insert({
       empresa_id: profile!.empresa_id!, booking_id: booking.id,
       event_type: next, description: `Status alterado para: ${statusLabels[next]}`,
@@ -80,13 +135,16 @@ export default function TaxiPetOperational() {
 
   const filtered = bookings.filter((b) => !driverFilter || driverFilter === "__all__" || b.driver_id === driverFilter);
 
+  const isActive = (s: string) => !["agendada", "finalizada", "cancelada", "nao_realizada", "concluido", "cancelado"].includes(s);
+  const isTerminal = (s: string) => ["finalizada", "cancelada", "nao_realizada", "concluido", "cancelado"].includes(s);
+
   const summary = {
     total: filtered.length,
-    coleta: filtered.filter((b) => ["agendada", "aguardando_saida", "em_rota_coleta"].includes(b.status)).length,
+    coleta: filtered.filter((b) => ["agendada", "aguardando_saida", "em_rota_coleta", "agendado", "confirmado"].includes(b.status)).length,
     entrega: filtered.filter((b) => ["em_deslocamento", "entregue"].includes(b.status)).length,
-    andamento: filtered.filter((b) => !["agendada", "finalizada", "cancelada", "nao_realizada"].includes(b.status)).length,
-    finalizadas: filtered.filter((b) => b.status === "finalizada").length,
-    canceladas: filtered.filter((b) => b.status === "cancelada").length,
+    andamento: filtered.filter((b) => isActive(b.status)).length,
+    finalizadas: filtered.filter((b) => ["finalizada", "concluido"].includes(b.status)).length,
+    canceladas: filtered.filter((b) => ["cancelada", "cancelado"].includes(b.status)).length,
   };
 
   return (
@@ -124,10 +182,17 @@ export default function TaxiPetOperational() {
       {/* Booking cards */}
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((b) => (
-          <Card key={b.id} className="relative">
+          <Card key={`${b.source}-${b.id}`} className="relative">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">{b.pets?.nome || "Pet"}</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-sm">{b.pet_nome}</CardTitle>
+                  {b.source === "agendamento" && (
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 gap-0.5">
+                      <CalendarDays className="h-2.5 w-2.5" /> Agenda
+                    </Badge>
+                  )}
+                </div>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusColors[b.status] || ""}`}>
                   {statusLabels[b.status] || b.status}
                 </span>
@@ -135,22 +200,25 @@ export default function TaxiPetOperational() {
             </CardHeader>
             <CardContent className="space-y-1 text-xs">
               <div className="flex items-center gap-1 text-muted-foreground">
-                <User className="h-3 w-3" /> {b.clientes?.nome || "—"}
+                <User className="h-3 w-3" /> {b.cliente_nome}
               </div>
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Clock className="h-3 w-3" /> {b.scheduled_pickup_time?.slice(0, 5) || "—"}
               </div>
-              {b.drivers?.name && (
+              {b.driver_nome && (
                 <div className="flex items-center gap-1 text-muted-foreground">
-                  <Car className="h-3 w-3" /> {b.drivers.name}
+                  <Car className="h-3 w-3" /> {b.driver_nome}
                 </div>
+              )}
+              {b.type_nome && (
+                <div className="text-muted-foreground text-[11px]">🚗 {b.type_nome}</div>
               )}
               {b.special_instructions && (
                 <p className="text-amber-600 dark:text-amber-400 text-[11px] mt-1">⚠ {b.special_instructions}</p>
               )}
               <div className="flex items-center justify-between pt-2 border-t mt-2">
-                <span className="font-medium">R$ {Number(b.final_price).toFixed(2)}</span>
-                {!["finalizada", "cancelada", "nao_realizada"].includes(b.status) && (
+                <span className="font-medium">R$ {b.final_price.toFixed(2)}</span>
+                {b.source === "transport" && !isTerminal(b.status) && (
                   <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => advanceStatus(b)}>
                     Avançar <ArrowRight className="h-3 w-3 ml-1" />
                   </Button>
