@@ -172,7 +172,8 @@ export default function TaxiPetBookings() {
           vencimento: form.scheduled_date,
           categoria: "TaxiPet",
           status: form.payment_status === "pago" ? "pago" : "pendente",
-        });
+          transport_booking_id: newBooking.id,
+        } as any);
       }
 
       toast.success("Corrida agendada" + (shouldGenerateInvoice ? " e fatura gerada" : ""));

@@ -661,6 +661,7 @@ export type Database = {
           id: string
           observacao_baixa: string | null
           status: string
+          transport_booking_id: string | null
           updated_at: string
           valor: number
           valor_desconto: number | null
@@ -680,6 +681,7 @@ export type Database = {
           id?: string
           observacao_baixa?: string | null
           status?: string
+          transport_booking_id?: string | null
           updated_at?: string
           valor: number
           valor_desconto?: number | null
@@ -699,6 +701,7 @@ export type Database = {
           id?: string
           observacao_baixa?: string | null
           status?: string
+          transport_booking_id?: string | null
           updated_at?: string
           valor?: number
           valor_desconto?: number | null
@@ -719,6 +722,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_receber_transport_booking_id_fkey"
+            columns: ["transport_booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings"
             referencedColumns: ["id"]
           },
         ]
