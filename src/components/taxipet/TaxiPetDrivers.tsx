@@ -64,7 +64,7 @@ export default function TaxiPetDrivers() {
 
   const openEdit = (d: Driver) => {
     setEditing(d);
-    setForm({ name: d.name, phone: d.phone || "", whatsapp: d.whatsapp || "", email: d.email || "", document: d.document || "", driver_license: d.driver_license || "", driver_license_expiration: d.driver_license_expiration || "", status: d.status, notes: d.notes || "" });
+    setForm({ name: d.name, whatsapp: d.whatsapp || "", email: d.email || "", document: d.document || "", driver_license: d.driver_license || "", driver_license_expiration: d.driver_license_expiration || "", status: d.status, notes: d.notes || "" });
     setOpen(true);
   };
 
