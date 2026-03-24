@@ -425,34 +425,58 @@ function SegurancaTab() {
 }
 
 // ─── Integrações ────────────────────────────────────────────────────
-function IntegracoesTab() {
-  const otherIntegrations = [
-    { name: "Gateway de Pagamento", desc: "Receba pagamentos online dos seus clientes", connected: false },
-    { name: "Google Calendar", desc: "Sincronize agendamentos com o Google Calendar", connected: false },
-  ];
+function AsaasIntegrationPanel() {
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/asaas-webhook`;
+  const [copied, setCopied] = useState(false);
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    setCopied(true);
+    toast({ title: "URL copiada!" });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Asaas — Gateway de Pagamento</CardTitle>
+        <CardDescription>Configure a integração com o Asaas para cobranças PIX, boleto e cartão</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="space-y-2">
+          <Label>API Key do Asaas</Label>
+          <p className="text-xs text-muted-foreground">
+            A chave já está configurada no sistema. Para alterá-la, entre em contato com o suporte.
+          </p>
+          <div className="flex items-center gap-2">
+            <Input value="••••••••••••••••••••" disabled className="font-mono" />
+            <Badge variant="outline" className="whitespace-nowrap text-green-600 border-green-600">Configurada</Badge>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>URL do Webhook</Label>
+          <p className="text-xs text-muted-foreground">
+            Copie esta URL e cadastre no painel do Asaas em <strong>Configurações → Integrações → Webhooks</strong>.
+            Selecione os eventos <strong>PAYMENT_CONFIRMED</strong> e <strong>PAYMENT_RECEIVED</strong>.
+          </p>
+          <div className="flex items-center gap-2">
+            <Input value={webhookUrl} readOnly className="font-mono text-xs" />
+            <Button variant="outline" size="sm" onClick={handleCopy} className="whitespace-nowrap">
+              {copied ? "Copiado!" : "Copiar"}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function IntegracoesTab() {
   return (
     <div className="space-y-6">
       <WhatsAppConnectionPanel />
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Outras Integrações</CardTitle>
-          <CardDescription>Conecte serviços externos ao seu sistema</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {otherIntegrations.map((int) => (
-            <div key={int.name} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-              <div>
-                <p className="text-sm font-medium text-foreground">{int.name}</p>
-                <p className="text-xs text-muted-foreground">{int.desc}</p>
-              </div>
-              <Button variant={int.connected ? "outline" : "default"} size="sm">
-                {int.connected ? "Configurar" : "Conectar"}
-              </Button>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      <AsaasIntegrationPanel />
     </div>
   );
 }
