@@ -78,7 +78,7 @@ export default function TaxiPetOperational() {
     load();
   };
 
-  const filtered = bookings.filter((b) => !driverFilter || b.driver_id === driverFilter);
+  const filtered = bookings.filter((b) => !driverFilter || driverFilter === "__all__" || b.driver_id === driverFilter);
 
   const summary = {
     total: filtered.length,

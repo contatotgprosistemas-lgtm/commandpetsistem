@@ -37,7 +37,7 @@ export default function TaxiPetHistory() {
         .order("scheduled_date", { ascending: false }).limit(500);
       if (startDate) q = q.gte("scheduled_date", startDate);
       if (endDate) q = q.lte("scheduled_date", endDate);
-      if (statusFilter) q = q.eq("status", statusFilter);
+      if (statusFilter && statusFilter !== "__all__") q = q.eq("status", statusFilter);
       const { data } = await q;
       setBookings((data as Booking[]) || []);
     };
