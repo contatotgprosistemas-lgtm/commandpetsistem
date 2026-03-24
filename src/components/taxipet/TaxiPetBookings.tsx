@@ -285,7 +285,7 @@ export default function TaxiPetBookings() {
               <Select value={form.payment_method} onValueChange={(v) => setForm({ ...form, payment_method: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">—</SelectItem>
+                  <SelectItem value="__none__">—</SelectItem>
                   <SelectItem value="pix">PIX</SelectItem>
                   <SelectItem value="dinheiro">Dinheiro</SelectItem>
                   <SelectItem value="cartao">Cartão</SelectItem>
