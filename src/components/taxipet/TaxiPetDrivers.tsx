@@ -87,7 +87,7 @@ export default function TaxiPetDrivers() {
         <TableHeader>
           <TableRow>
             <TableHead>Nome</TableHead>
-            <TableHead>Telefone</TableHead>
+            <TableHead>WhatsApp</TableHead>
             <TableHead>CNH</TableHead>
             <TableHead>Validade CNH</TableHead>
             <TableHead>Status</TableHead>
