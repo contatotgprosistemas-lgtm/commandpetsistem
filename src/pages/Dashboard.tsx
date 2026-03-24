@@ -213,18 +213,6 @@ export default function Dashboard() {
           <TabsContent value="hoje">
             <AgendamentoList items={reservaHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
           </TabsContent>
-          <TabsContent value="taxi_dog">
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <PawPrint className="h-10 w-10 text-muted-foreground/30 mb-3" strokeWidth={1.5} />
-              <p className="text-sm text-muted-foreground">Nenhum táxi dog agendado</p>
-            </div>
-          </TabsContent>
-          <TabsContent value="pre_reserva">
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <PawPrint className="h-10 w-10 text-muted-foreground/30 mb-3" strokeWidth={1.5} />
-              <p className="text-sm text-muted-foreground">Nenhuma pré reserva</p>
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
 
