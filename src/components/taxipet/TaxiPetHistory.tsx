@@ -129,6 +129,8 @@ export default function TaxiPetHistory() {
                 <TableCell>{b.pet_nome}</TableCell>
                 <TableCell>{b.driver_nome || "—"}</TableCell>
                 <TableCell>{b.type_nome}</TableCell>
+                <TableCell>{b.hora_prevista_buscar || "—"}</TableCell>
+                <TableCell>{b.hora_prevista_levar || "—"}</TableCell>
                 <TableCell><Badge variant={b.status === "finalizada" || b.status === "concluido" ? "default" : b.status === "cancelada" || b.status === "cancelado" ? "destructive" : "secondary"}>{statusLabels[b.status] || b.status}</Badge></TableCell>
                 <TableCell>R$ {b.final_price.toFixed(2)}</TableCell>
                 <TableCell><Badge variant="outline">{b.payment_status}</Badge></TableCell>
