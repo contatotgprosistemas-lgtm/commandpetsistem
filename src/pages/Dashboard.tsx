@@ -148,10 +148,12 @@ export default function Dashboard() {
   }
 
   const today = startOfDay(new Date());
+  const twoDaysFromNow = new Date(today);
+  twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 3); // end of D+2
   const petsNaEmpresa = agendamentos.filter(a => a.status === "na_empresa");
-  const reservaHoje = agendamentos.filter(a => {
-    const d = new Date(a.data_hora);
-    return isToday(d) && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido";
+  const reservaD2 = agendamentos.filter(a => {
+    const d = startOfDay(new Date(a.data_hora));
+    return d >= today && d < twoDaysFromNow && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido";
   });
   const proximasReservas = agendamentos.filter(a => {
     const d = startOfDay(new Date(a.data_hora));
@@ -195,7 +197,7 @@ export default function Dashboard() {
               Na Empresa ({petsNaEmpresa.length})
             </TabsTrigger>
             <TabsTrigger value="hoje" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              Reserva Hoje ({reservaHoje.length})
+              Reserva D+2 ({reservaD2.length})
             </TabsTrigger>
           </TabsList>
 
@@ -211,7 +213,7 @@ export default function Dashboard() {
             />
           </TabsContent>
           <TabsContent value="hoje">
-            <AgendamentoList items={reservaHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
+            <AgendamentoList items={reservaD2} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
           </TabsContent>
         </Tabs>
       </div>
