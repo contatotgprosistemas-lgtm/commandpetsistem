@@ -19,6 +19,8 @@ import FluxoCaixaPage from "@/pages/FluxoCaixaPage";
 import DREPage from "@/pages/DREPage";
 import MovimentacaoPage from "@/pages/MovimentacaoPage";
 import PlanoContasPage from "@/pages/PlanoContasPage";
+import { ImportContasReceberDialog } from "@/components/ImportContasReceberDialog";
+import { ImportContasPagarDialog } from "@/components/ImportContasPagarDialog";
 
 interface ContaReceber {
   id: string;
