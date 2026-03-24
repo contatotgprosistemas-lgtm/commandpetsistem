@@ -197,12 +197,6 @@ export default function Dashboard() {
             <TabsTrigger value="hoje" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
               Reserva Hoje ({reservaHoje.length})
             </TabsTrigger>
-            <TabsTrigger value="taxi_dog" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              Táxi Dog (0)
-            </TabsTrigger>
-            <TabsTrigger value="pre_reserva" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              Pré Reserva (0)
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="na_empresa">
