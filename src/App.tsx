@@ -86,6 +86,7 @@ const App = () => (
               <Route path="historico" element={<PortalHistoricoPage />} />
               <Route path="galeria" element={<PortalFeedPage />} />
               <Route path="manejo" element={<PortalManejoPage />} />
+              <Route path="checklist" element={<PortalChecklistPage />} />
               <Route path="conta" element={<PortalContaPage />} />
             </Route>
 
