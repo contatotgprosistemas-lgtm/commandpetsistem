@@ -165,6 +165,18 @@ export default function FinancePage() {
         onSuccess={() => { setBaixaConta(null); fetchContas(); }}
       />
 
+      <NovaContaReceberDialog
+        open={novaContaReceberOpen}
+        onOpenChange={setNovaContaReceberOpen}
+        onSuccess={fetchContas}
+      />
+
+      <NovaContaPagarDialog
+        open={novaContaPagarOpen}
+        onOpenChange={setNovaContaPagarOpen}
+        onSuccess={() => {}}
+      />
+
       <NovaContaBancariaDialog
         open={novaContaOpen}
         onOpenChange={setNovaContaOpen}
