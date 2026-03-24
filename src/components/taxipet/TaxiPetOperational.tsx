@@ -54,6 +54,8 @@ type UnifiedBooking = {
   pet_nome: string;
   driver_nome: string | null; type_nome: string | null;
   source: "transport" | "agendamento";
+  hora_prevista_buscar: string | null;
+  hora_prevista_levar: string | null;
 };
 
 export default function TaxiPetOperational() {
