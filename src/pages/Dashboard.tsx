@@ -213,7 +213,7 @@ export default function Dashboard() {
             />
           </TabsContent>
           <TabsContent value="hoje">
-            <AgendamentoList items={reservaHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
+            <AgendamentoList items={reservaD2} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
           </TabsContent>
         </Tabs>
       </div>
