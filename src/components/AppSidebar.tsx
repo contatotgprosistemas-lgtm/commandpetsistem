@@ -22,6 +22,7 @@ import {
   Kanban,
   Bot,
   Gift,
+  Car,
 } from "lucide-react";
 
 export function AppSidebar() {
