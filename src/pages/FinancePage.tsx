@@ -195,6 +195,18 @@ export default function FinancePage() {
         onOpenChange={setNovaContaOpen}
         onSuccess={fetchContasBancarias}
       />
+
+      <ImportContasReceberDialog
+        open={importReceberOpen}
+        onOpenChange={setImportReceberOpen}
+        onSuccess={fetchContas}
+      />
+
+      <ImportContasPagarDialog
+        open={importPagarOpen}
+        onOpenChange={setImportPagarOpen}
+        onSuccess={() => {}}
+      />
     </div>
   );
 }
