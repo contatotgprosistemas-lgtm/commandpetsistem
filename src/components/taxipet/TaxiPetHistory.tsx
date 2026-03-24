@@ -111,8 +111,8 @@ export default function TaxiPetHistory() {
         <Table>
           <TableHeader><TableRow>
             <TableHead>Origem</TableHead><TableHead>Data</TableHead><TableHead>Tutor</TableHead><TableHead>Pet</TableHead>
-            <TableHead>Motorista</TableHead><TableHead>Tipo</TableHead><TableHead>Status</TableHead>
-            <TableHead>Valor</TableHead><TableHead>Pgto</TableHead>
+            <TableHead>Motorista</TableHead><TableHead>Tipo</TableHead><TableHead>Buscar</TableHead><TableHead>Levar</TableHead>
+            <TableHead>Status</TableHead><TableHead>Valor</TableHead><TableHead>Pgto</TableHead>
           </TableRow></TableHeader>
           <TableBody>
             {filtered.map((b) => (
