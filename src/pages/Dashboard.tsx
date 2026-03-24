@@ -189,77 +189,49 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <Tabs defaultValue="hoje" className="w-full">
-          <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4">
+        <Tabs defaultValue="na_empresa" className="w-full">
+          <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-6">
+            <TabsTrigger value="na_empresa" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
+              Na Empresa ({petsNaEmpresa.length})
+            </TabsTrigger>
             <TabsTrigger value="hoje" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
               Reserva Hoje ({reservaHoje.length})
             </TabsTrigger>
-            <TabsTrigger value="proximas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              Próximas Reservas ({proximasReservas.length})
+            <TabsTrigger value="taxi_dog" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
+              Táxi Dog (0)
             </TabsTrigger>
-            <TabsTrigger value="calendario" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              Calendário
+            <TabsTrigger value="pre_reserva" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
+              Pré Reserva (0)
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="na_empresa">
+            <NaEmpresaList
+              items={petsNaEmpresa}
+              loading={agendaLoading}
+              onEdit={setEditOpen}
+              onFicha={setFichaOpen}
+              onManejo={setManejoOpen}
+              onChecklist={setChecklistOpen}
+              onCheckout={handleCheckout}
+            />
+          </TabsContent>
           <TabsContent value="hoje">
             <AgendamentoList items={reservaHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
           </TabsContent>
-          <TabsContent value="proximas">
-            <AgendamentoList items={proximasReservas} loading={agendaLoading} onEdit={setEditingAgendamento} showDelete onDelete={handleDelete} />
+          <TabsContent value="taxi_dog">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <PawPrint className="h-10 w-10 text-muted-foreground/30 mb-3" strokeWidth={1.5} />
+              <p className="text-sm text-muted-foreground">Nenhum táxi dog agendado</p>
+            </div>
           </TabsContent>
-          <TabsContent value="calendario">
-            <AgendaCalendar agendamentos={agendamentos} />
+          <TabsContent value="pre_reserva">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <PawPrint className="h-10 w-10 text-muted-foreground/30 mb-3" strokeWidth={1.5} />
+              <p className="text-sm text-muted-foreground">Nenhuma pré reserva</p>
+            </div>
           </TabsContent>
         </Tabs>
-      </div>
-
-      {/* Pets na Empresa */}
-      <div className="bg-card rounded-lg shadow-card">
-        <div className="px-5 py-4 border-b border-border">
-          <h2 className="text-sm font-medium text-foreground">Pets na Empresa ({petsNaEmpresa.length})</h2>
-        </div>
-        {agendaLoading ? (
-          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">Carregando...</div>
-        ) : petsNaEmpresa.length === 0 ? (
-          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">Nenhum pet na empresa no momento</div>
-        ) : (
-          <div className="divide-y divide-border">
-            {petsNaEmpresa.map(item => {
-              const petName = item.pet?.nome ?? "Pet";
-              const initials = petName.slice(0, 2).toUpperCase();
-              return (
-                <div key={item.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
-                  <Avatar className="h-10 w-10 border border-border">
-                    <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{petName} {item.pet?.raca ? `(${item.pet.raca})` : ""}</p>
-                    <p className="text-xs text-muted-foreground">{item.tipo_servico} · Tutor: {item.cliente?.nome ?? "—"} {item.baia ? `· Baia: ${item.baia}` : ""}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground tabular-nums">{format(new Date(item.data_hora), "HH:mm")}</span>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar Agendamento" onClick={() => setEditOpen(item)}>
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Serviço" onClick={() => setFichaOpen(item)}>
-                      <FileText className="h-3.5 w-3.5 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Manejo (Boletim Diário)" onClick={() => setManejoOpen(item)}>
-                      <Stethoscope className="h-3.5 w-3.5 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Checklist" onClick={() => setChecklistOpen(item)}>
-                      <ClipboardList className="h-3.5 w-3.5 text-primary" />
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleCheckout(item)}>
-                      <LogOut className="h-3.5 w-3.5" />
-                      Checkout
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
