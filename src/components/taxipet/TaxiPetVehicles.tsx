@@ -48,7 +48,7 @@ export default function TaxiPetVehicles() {
       empresa_id: profile.empresa_id, brand: form.brand || null, model: form.model, plate: form.plate || null,
       color: form.color || null, year: form.year ? Number(form.year) : null, capacity: Number(form.capacity) || 4,
       vehicle_type: form.vehicle_type, status: form.status, notes: form.notes || null,
-      driver_id: form.driver_id || null,
+      driver_id: form.driver_id && form.driver_id !== "__none__" ? form.driver_id : null,
     };
     if (editing) {
       await supabase.from("vehicles").update(payload).eq("id", editing.id);
@@ -137,7 +137,7 @@ export default function TaxiPetVehicles() {
               <Select value={form.driver_id} onValueChange={(v) => setForm({ ...form, driver_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="__none__">Nenhum</SelectItem>
                   {drivers.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>

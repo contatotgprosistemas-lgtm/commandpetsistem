@@ -91,14 +91,17 @@ export default function TaxiPetBookings() {
     const finalPrice = Number(form.price) + Number(form.extra_fee) - Number(form.discount);
     const payload = {
       empresa_id: profile.empresa_id, cliente_id: form.cliente_id, pet_id: form.pet_id,
-      transport_type_id: form.transport_type_id || null, driver_id: form.driver_id || null,
-      vehicle_id: form.vehicle_id || null, scheduled_date: form.scheduled_date,
+      transport_type_id: form.transport_type_id || null,
+      driver_id: form.driver_id && form.driver_id !== "__none__" ? form.driver_id : null,
+      vehicle_id: form.vehicle_id && form.vehicle_id !== "__none__" ? form.vehicle_id : null,
+      scheduled_date: form.scheduled_date,
       scheduled_pickup_time: form.scheduled_pickup_time || null,
       scheduled_dropoff_time: form.scheduled_dropoff_time || null,
       trip_type: form.trip_type, status: form.status, notes: form.notes || null,
       special_instructions: form.special_instructions || null,
       price: Number(form.price), extra_fee: Number(form.extra_fee), discount: Number(form.discount),
-      final_price: finalPrice, payment_status: form.payment_status, payment_method: form.payment_method || null,
+      final_price: finalPrice, payment_status: form.payment_status,
+      payment_method: form.payment_method && form.payment_method !== "__none__" ? form.payment_method : null,
     };
     if (editing) {
       await supabase.from("transport_bookings").update(payload).eq("id", editing.id);
@@ -233,7 +236,7 @@ export default function TaxiPetBookings() {
               <Select value={form.driver_id} onValueChange={(v) => setForm({ ...form, driver_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                   <SelectItem value="__none__">Nenhum</SelectItem>
                   {drivers.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -243,7 +246,7 @@ export default function TaxiPetBookings() {
               <Select value={form.vehicle_id} onValueChange={(v) => setForm({ ...form, vehicle_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="__none__">Nenhum</SelectItem>
                   {vehicles.map((v) => <SelectItem key={v.id} value={v.id}>{v.model} {v.plate ? `(${v.plate})` : ""}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -285,7 +288,7 @@ export default function TaxiPetBookings() {
               <Select value={form.payment_method} onValueChange={(v) => setForm({ ...form, payment_method: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">—</SelectItem>
+                  <SelectItem value="__none__">—</SelectItem>
                   <SelectItem value="pix">PIX</SelectItem>
                   <SelectItem value="dinheiro">Dinheiro</SelectItem>
                   <SelectItem value="cartao">Cartão</SelectItem>
