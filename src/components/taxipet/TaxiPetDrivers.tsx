@@ -117,8 +117,7 @@ export default function TaxiPetDrivers() {
           <DialogHeader><DialogTitle>{editing ? "Editar Motorista" : "Novo Motorista"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2"><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-            <div><Label>Telefone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-            <div><Label>WhatsApp</Label><Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} /></div>
+            <div className="col-span-2"><Label>WhatsApp</Label><Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} /></div>
             <div className="col-span-2"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div><Label>Documento (CPF/RG)</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} /></div>
             <div><Label>Nº CNH</Label><Input value={form.driver_license} onChange={(e) => setForm({ ...form, driver_license: e.target.value })} /></div>
