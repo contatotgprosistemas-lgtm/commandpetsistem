@@ -50,6 +50,8 @@ export default function FinancePage() {
   const [novaContaOpen, setNovaContaOpen] = useState(false);
   const [novaContaReceberOpen, setNovaContaReceberOpen] = useState(false);
   const [novaContaPagarOpen, setNovaContaPagarOpen] = useState(false);
+  const [importReceberOpen, setImportReceberOpen] = useState(false);
+  const [importPagarOpen, setImportPagarOpen] = useState(false);
 
   async function fetchContas() {
     setLoading(true);
