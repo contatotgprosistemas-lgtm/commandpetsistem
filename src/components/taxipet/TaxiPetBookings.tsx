@@ -243,7 +243,7 @@ export default function TaxiPetBookings() {
               <Select value={form.vehicle_id} onValueChange={(v) => setForm({ ...form, vehicle_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="__none__">Nenhum</SelectItem>
                   {vehicles.map((v) => <SelectItem key={v.id} value={v.id}>{v.model} {v.plate ? `(${v.plate})` : ""}</SelectItem>)}
                 </SelectContent>
               </Select>
