@@ -784,6 +784,78 @@ export type Database = {
           },
         ]
       }
+      customer_addresses: {
+        Row: {
+          city: string | null
+          cliente_id: string
+          complement: string | null
+          created_at: string
+          empresa_id: string
+          id: string
+          is_primary: boolean
+          label: string
+          latitude: number | null
+          longitude: number | null
+          neighborhood: string | null
+          number: string | null
+          reference: string | null
+          state: string | null
+          street: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          city?: string | null
+          cliente_id: string
+          complement?: string | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+          is_primary?: boolean
+          label?: string
+          latitude?: number | null
+          longitude?: number | null
+          neighborhood?: string | null
+          number?: string | null
+          reference?: string | null
+          state?: string | null
+          street?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          city?: string | null
+          cliente_id?: string
+          complement?: string | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          is_primary?: boolean
+          label?: string
+          latitude?: number | null
+          longitude?: number | null
+          neighborhood?: string | null
+          number?: string | null
+          reference?: string | null
+          state?: string | null
+          street?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_addresses_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_addresses_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_documents: {
         Row: {
           cliente_id: string
@@ -1043,6 +1115,62 @@ export type Database = {
           },
           {
             foreignKeyName: "customer_requests_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drivers: {
+        Row: {
+          created_at: string
+          document: string | null
+          driver_license: string | null
+          driver_license_expiration: string | null
+          email: string | null
+          empresa_id: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          document?: string | null
+          driver_license?: string | null
+          driver_license_expiration?: string | null
+          email?: string | null
+          empresa_id: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          document?: string | null
+          driver_license?: string | null
+          driver_license_expiration?: string | null
+          email?: string | null
+          empresa_id?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drivers_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
@@ -2244,6 +2372,441 @@ export type Database = {
           },
         ]
       }
+      transport_bookings: {
+        Row: {
+          actual_dropoff_time: string | null
+          actual_pickup_time: string | null
+          cliente_id: string
+          created_at: string
+          discount: number
+          driver_id: string | null
+          dropoff_address_id: string | null
+          empresa_id: string
+          extra_fee: number
+          final_price: number
+          id: string
+          notes: string | null
+          payment_method: string | null
+          payment_status: string
+          pet_id: string
+          pickup_address_id: string | null
+          price: number
+          recurring_rule_id: string | null
+          related_service_id: string | null
+          scheduled_date: string
+          scheduled_dropoff_time: string | null
+          scheduled_pickup_time: string | null
+          special_instructions: string | null
+          status: string
+          transport_type_id: string | null
+          trip_type: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          actual_dropoff_time?: string | null
+          actual_pickup_time?: string | null
+          cliente_id: string
+          created_at?: string
+          discount?: number
+          driver_id?: string | null
+          dropoff_address_id?: string | null
+          empresa_id: string
+          extra_fee?: number
+          final_price?: number
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          pet_id: string
+          pickup_address_id?: string | null
+          price?: number
+          recurring_rule_id?: string | null
+          related_service_id?: string | null
+          scheduled_date: string
+          scheduled_dropoff_time?: string | null
+          scheduled_pickup_time?: string | null
+          special_instructions?: string | null
+          status?: string
+          transport_type_id?: string | null
+          trip_type?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          actual_dropoff_time?: string | null
+          actual_pickup_time?: string | null
+          cliente_id?: string
+          created_at?: string
+          discount?: number
+          driver_id?: string | null
+          dropoff_address_id?: string | null
+          empresa_id?: string
+          extra_fee?: number
+          final_price?: number
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          pet_id?: string
+          pickup_address_id?: string | null
+          price?: number
+          recurring_rule_id?: string | null
+          related_service_id?: string | null
+          scheduled_date?: string
+          scheduled_dropoff_time?: string | null
+          scheduled_pickup_time?: string | null
+          special_instructions?: string | null
+          status?: string
+          transport_type_id?: string | null
+          trip_type?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_bookings_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_dropoff_address_id_fkey"
+            columns: ["dropoff_address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_pickup_address_id_fkey"
+            columns: ["pickup_address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_recurring_rule_id_fkey"
+            columns: ["recurring_rule_id"]
+            isOneToOne: false
+            referencedRelation: "transport_recurring_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_related_service_id_fkey"
+            columns: ["related_service_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_transport_type_id_fkey"
+            columns: ["transport_type_id"]
+            isOneToOne: false
+            referencedRelation: "transport_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_bookings_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_events: {
+        Row: {
+          booking_id: string
+          created_at: string
+          description: string | null
+          empresa_id: string
+          event_type: string
+          id: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          description?: string | null
+          empresa_id: string
+          event_type: string
+          id?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          description?: string | null
+          empresa_id?: string
+          event_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_events_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_recurring_rules: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          dropoff_address_id: string | null
+          empresa_id: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          pet_id: string
+          pickup_address_id: string | null
+          pickup_time: string | null
+          preferred_driver_id: string | null
+          preferred_vehicle_id: string | null
+          start_date: string
+          status: string
+          transport_type_id: string | null
+          updated_at: string
+          weekdays: number[]
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          dropoff_address_id?: string | null
+          empresa_id: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          pet_id: string
+          pickup_address_id?: string | null
+          pickup_time?: string | null
+          preferred_driver_id?: string | null
+          preferred_vehicle_id?: string | null
+          start_date?: string
+          status?: string
+          transport_type_id?: string | null
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          dropoff_address_id?: string | null
+          empresa_id?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          pet_id?: string
+          pickup_address_id?: string | null
+          pickup_time?: string | null
+          preferred_driver_id?: string | null
+          preferred_vehicle_id?: string | null
+          start_date?: string
+          status?: string
+          transport_type_id?: string | null
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_recurring_rules_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_recurring_rules_dropoff_address_id_fkey"
+            columns: ["dropoff_address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_recurring_rules_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_recurring_rules_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_recurring_rules_pickup_address_id_fkey"
+            columns: ["pickup_address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_recurring_rules_preferred_driver_id_fkey"
+            columns: ["preferred_driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_recurring_rules_preferred_vehicle_id_fkey"
+            columns: ["preferred_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_recurring_rules_transport_type_id_fkey"
+            columns: ["transport_type_id"]
+            isOneToOne: false
+            referencedRelation: "transport_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_route_items: {
+        Row: {
+          actual_time: string | null
+          booking_id: string
+          created_at: string
+          driver_id: string
+          empresa_id: string
+          estimated_time: string | null
+          id: string
+          route_date: string
+          route_order: number
+          status: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          actual_time?: string | null
+          booking_id: string
+          created_at?: string
+          driver_id: string
+          empresa_id: string
+          estimated_time?: string | null
+          id?: string
+          route_date: string
+          route_order?: number
+          status?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          actual_time?: string | null
+          booking_id?: string
+          created_at?: string
+          driver_id?: string
+          empresa_id?: string
+          estimated_time?: string | null
+          id?: string
+          route_date?: string
+          route_order?: number
+          status?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_route_items_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "transport_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_route_items_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_route_items_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_route_items_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_types: {
+        Row: {
+          base_price: number
+          color: string
+          created_at: string
+          description: string | null
+          empresa_id: string
+          id: string
+          name: string
+          status: string
+        }
+        Insert: {
+          base_price?: number
+          color?: string
+          created_at?: string
+          description?: string | null
+          empresa_id: string
+          id?: string
+          name: string
+          status?: string
+        }
+        Update: {
+          base_price?: number
+          color?: string
+          created_at?: string
+          description?: string | null
+          empresa_id?: string
+          id?: string
+          name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_types_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -2261,6 +2824,72 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vehicles: {
+        Row: {
+          brand: string | null
+          capacity: number
+          color: string | null
+          created_at: string
+          driver_id: string | null
+          empresa_id: string
+          id: string
+          model: string
+          notes: string | null
+          plate: string | null
+          status: string
+          updated_at: string
+          vehicle_type: string
+          year: number | null
+        }
+        Insert: {
+          brand?: string | null
+          capacity?: number
+          color?: string | null
+          created_at?: string
+          driver_id?: string | null
+          empresa_id: string
+          id?: string
+          model: string
+          notes?: string | null
+          plate?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_type?: string
+          year?: number | null
+        }
+        Update: {
+          brand?: string | null
+          capacity?: number
+          color?: string | null
+          created_at?: string
+          driver_id?: string | null
+          empresa_id?: string
+          id?: string
+          model?: string
+          notes?: string | null
+          plate?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_type?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
