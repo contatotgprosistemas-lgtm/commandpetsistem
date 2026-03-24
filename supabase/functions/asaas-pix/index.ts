@@ -81,6 +81,11 @@ Deno.serve(async (req) => {
     // Create or reuse Asaas customer
     let asaasCustomerId = cliente.asaas_customer_id;
     if (!asaasCustomerId) {
+      const cleanedCpf = cliente.cpf?.replace(/\D/g, "") || "";
+      if (cleanedCpf.length !== 11 && cleanedCpf.length !== 14) {
+        throw new Error("CPF/CNPJ do cliente não cadastrado ou inválido. Atualize o cadastro do cliente antes de gerar o PIX.");
+      }
+
       const customerRes = await fetch(`${ASAAS_BASE}/customers`, {
         method: "POST",
         headers: {
@@ -89,7 +94,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           name: cliente.nome,
-          cpfCnpj: cliente.cpf?.replace(/\D/g, "") || "00000000000",
+          cpfCnpj: cleanedCpf,
           email: cliente.email || undefined,
           mobilePhone: cliente.whatsapp?.replace(/\D/g, "") || undefined,
         }),
