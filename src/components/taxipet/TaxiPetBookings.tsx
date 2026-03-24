@@ -91,8 +91,9 @@ export default function TaxiPetBookings() {
     const finalPrice = Number(form.price) + Number(form.extra_fee) - Number(form.discount);
     const payload = {
       empresa_id: profile.empresa_id, cliente_id: form.cliente_id, pet_id: form.pet_id,
-      transport_type_id: form.transport_type_id || null, driver_id: form.driver_id || null,
-      vehicle_id: form.vehicle_id || null, scheduled_date: form.scheduled_date,
+      transport_type_id: form.transport_type_id || null,
+      driver_id: form.driver_id && form.driver_id !== "__none__" ? form.driver_id : null,
+      vehicle_id: form.vehicle_id && form.vehicle_id !== "__none__" ? form.vehicle_id : null,
       scheduled_pickup_time: form.scheduled_pickup_time || null,
       scheduled_dropoff_time: form.scheduled_dropoff_time || null,
       trip_type: form.trip_type, status: form.status, notes: form.notes || null,
