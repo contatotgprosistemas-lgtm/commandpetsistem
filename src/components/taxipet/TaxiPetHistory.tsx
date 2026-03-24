@@ -46,7 +46,7 @@ export default function TaxiPetHistory() {
       if (statusFilter && statusFilter !== "__all__") q = q.eq("status", statusFilter);
 
       let qAg = supabase.from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, clientes:cliente_id(nome), pets:pet_id(nome)")
+        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, hora_prevista_buscar, hora_prevista_levar, clientes:cliente_id(nome), pets:pet_id(nome)")
         .eq("empresa_id", profile.empresa_id!)
         .or(TRANSPORT_FILTER)
         .order("data_hora", { ascending: false }).limit(500);
