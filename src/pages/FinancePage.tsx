@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2, MoreVertical, Pencil, Search, Ban, CheckSquare, XCircle } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2, MoreVertical, Pencil, Search, Ban, CheckSquare, XCircle, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +19,8 @@ import FluxoCaixaPage from "@/pages/FluxoCaixaPage";
 import DREPage from "@/pages/DREPage";
 import MovimentacaoPage from "@/pages/MovimentacaoPage";
 import PlanoContasPage from "@/pages/PlanoContasPage";
+import { ImportContasReceberDialog } from "@/components/ImportContasReceberDialog";
+import { ImportContasPagarDialog } from "@/components/ImportContasPagarDialog";
 
 interface ContaReceber {
   id: string;
@@ -48,6 +50,8 @@ export default function FinancePage() {
   const [novaContaOpen, setNovaContaOpen] = useState(false);
   const [novaContaReceberOpen, setNovaContaReceberOpen] = useState(false);
   const [novaContaPagarOpen, setNovaContaPagarOpen] = useState(false);
+  const [importReceberOpen, setImportReceberOpen] = useState(false);
+  const [importPagarOpen, setImportPagarOpen] = useState(false);
 
   async function fetchContas() {
     setLoading(true);
@@ -124,7 +128,11 @@ export default function FinancePage() {
         </TabsContent>
 
         <TabsContent value="contas-a-receber">
-          <div className="flex items-center justify-end mt-4 mb-2">
+          <div className="flex items-center justify-end mt-4 mb-2 gap-2">
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setImportReceberOpen(true)}>
+              <Upload className="h-4 w-4" />
+              Importar Excel
+            </Button>
             <Button size="sm" className="gap-1" onClick={() => setNovaContaReceberOpen(true)}>
               <Plus className="h-4 w-4" />
               Nova Conta a Receber
@@ -144,7 +152,11 @@ export default function FinancePage() {
         </TabsContent>
 
         <TabsContent value="contas-a-pagar">
-          <div className="flex items-center justify-end mt-4 mb-2">
+          <div className="flex items-center justify-end mt-4 mb-2 gap-2">
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setImportPagarOpen(true)}>
+              <Upload className="h-4 w-4" />
+              Importar Excel
+            </Button>
             <Button size="sm" className="gap-1" onClick={() => setNovaContaPagarOpen(true)}>
               <Plus className="h-4 w-4" />
               Nova Conta a Pagar
@@ -182,6 +194,18 @@ export default function FinancePage() {
         open={novaContaOpen}
         onOpenChange={setNovaContaOpen}
         onSuccess={fetchContasBancarias}
+      />
+
+      <ImportContasReceberDialog
+        open={importReceberOpen}
+        onOpenChange={setImportReceberOpen}
+        onSuccess={fetchContas}
+      />
+
+      <ImportContasPagarDialog
+        open={importPagarOpen}
+        onOpenChange={setImportPagarOpen}
+        onSuccess={() => {}}
       />
     </div>
   );
