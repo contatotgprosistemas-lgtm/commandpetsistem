@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { CreditCard, Copy, Check, Loader2, QrCode } from "lucide-react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { CreditCard, Copy, Check, Loader2, QrCode, Download, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalCliente } from "@/hooks/usePortalCliente";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
 
 interface Pagamento {
   id: string;
@@ -38,6 +39,51 @@ function statusBadge(status: string) {
   }
 }
 
+function gerarComprovante(pagamento: Pagamento, clienteNome: string) {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const w = doc.internal.pageSize.getWidth();
+
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("Comprovante de Pagamento", w / 2, 30, { align: "center" });
+
+  doc.setDrawColor(200);
+  doc.line(20, 36, w - 20, 36);
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+
+  const lines: [string, string][] = [
+    ["Cliente", clienteNome],
+    ["Descrição", pagamento.descricao],
+    ["Valor", `R$ ${(pagamento.valor_pago ?? pagamento.valor).toFixed(2)}`],
+    ["Vencimento", new Date(pagamento.vencimento).toLocaleDateString("pt-BR")],
+    ["Data do Pagamento", pagamento.data_baixa ? new Date(pagamento.data_baixa).toLocaleDateString("pt-BR") : new Date().toLocaleDateString("pt-BR")],
+    ["Forma de Pagamento", pagamento.banco || "PIX"],
+    ["Status", "Pago"],
+  ];
+
+  let y = 46;
+  for (const [label, value] of lines) {
+    doc.setFont("helvetica", "bold");
+    doc.text(`${label}:`, 25, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(value, 75, y);
+    y += 8;
+  }
+
+  doc.setDrawColor(200);
+  doc.line(20, y + 2, w - 20, y + 2);
+
+  y += 12;
+  doc.setFontSize(9);
+  doc.setTextColor(130);
+  doc.text("Este comprovante foi gerado automaticamente.", w / 2, y, { align: "center" });
+  doc.text(`ID: ${pagamento.id}`, w / 2, y + 5, { align: "center" });
+
+  doc.save(`comprovante-${pagamento.id.slice(0, 8)}.pdf`);
+}
+
 export default function PortalPagamentosPage() {
   const { cliente, loading: clienteLoading } = usePortalCliente();
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
@@ -48,26 +94,56 @@ export default function PortalPagamentosPage() {
   const [pixLoading, setPixLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [selectedConta, setSelectedConta] = useState<Pagamento | null>(null);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchPagamentos = useCallback(async () => {
+    if (!cliente) return;
+    let query = supabase
+      .from("contas_receber")
+      .select("id, descricao, valor, vencimento, status, data_baixa, valor_pago, banco")
+      .eq("cliente_id", cliente.id)
+      .order("vencimento", { ascending: false });
+
+    if (filter !== "todos") {
+      query = query.eq("status", filter);
+    }
+
+    const { data } = await query;
+    setPagamentos((data as Pagamento[]) ?? []);
+    setLoading(false);
+  }, [cliente, filter]);
 
   useEffect(() => {
-    if (!cliente) return;
-    const fetchData = async () => {
-      let query = supabase
+    fetchPagamentos();
+  }, [fetchPagamentos]);
+
+  // Poll for payment status while PIX dialog is open
+  useEffect(() => {
+    if (!pixDialogOpen || !selectedConta || paymentConfirmed) {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      return;
+    }
+
+    pollingRef.current = setInterval(async () => {
+      const { data } = await supabase
         .from("contas_receber")
-        .select("id, descricao, valor, vencimento, status, data_baixa, valor_pago, banco")
-        .eq("cliente_id", cliente.id)
-        .order("vencimento", { ascending: false });
+        .select("status, data_baixa, valor_pago, banco")
+        .eq("id", selectedConta.id)
+        .single();
 
-      if (filter !== "todos") {
-        query = query.eq("status", filter);
+      if (data?.status === "pago") {
+        setPaymentConfirmed(true);
+        setSelectedConta(prev => prev ? { ...prev, ...data } : prev);
+        fetchPagamentos();
+        if (pollingRef.current) clearInterval(pollingRef.current);
       }
+    }, 5000);
 
-      const { data } = await query;
-      setPagamentos((data as Pagamento[]) ?? []);
-      setLoading(false);
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
     };
-    fetchData();
-  }, [cliente, filter]);
+  }, [pixDialogOpen, selectedConta?.id, paymentConfirmed, fetchPagamentos]);
 
   const handlePayPix = async (pagamento: Pagamento) => {
     setSelectedConta(pagamento);
@@ -75,12 +151,9 @@ export default function PortalPagamentosPage() {
     setPixLoading(true);
     setPixData(null);
     setCopied(false);
+    setPaymentConfirmed(false);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (!token) throw new Error("Sessão expirada");
-
       const { data, error } = await supabase.functions.invoke("asaas-pix", {
         body: { conta_id: pagamento.id },
       });
@@ -104,6 +177,11 @@ export default function PortalPagamentosPage() {
     setCopied(true);
     toast.success("Código PIX copiado!");
     setTimeout(() => setCopied(false), 3000);
+  };
+
+  const handleDownloadReceipt = () => {
+    if (!selectedConta || !cliente) return;
+    gerarComprovante(selectedConta, cliente.nome);
   };
 
   if (clienteLoading || loading) {
@@ -158,13 +236,25 @@ export default function PortalPagamentosPage() {
               </div>
               {(p.status === "pendente" || p.status === "vencido") && (
                 <div className="mt-3 pt-3 border-t border-border">
-                  <Button
-                    size="sm"
-                    className="w-full gap-2"
-                    onClick={() => handlePayPix(p)}
-                  >
+                  <Button size="sm" className="w-full gap-2" onClick={() => handlePayPix(p)}>
                     <QrCode className="h-4 w-4" />
                     Pagar via PIX
+                  </Button>
+                </div>
+              )}
+              {p.status === "pago" && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => {
+                      if (!cliente) return;
+                      gerarComprovante(p, cliente.nome);
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    Baixar Comprovante
                   </Button>
                 </div>
               )}
@@ -174,13 +264,37 @@ export default function PortalPagamentosPage() {
       )}
 
       {/* PIX Dialog */}
-      <Dialog open={pixDialogOpen} onOpenChange={setPixDialogOpen}>
+      <Dialog open={pixDialogOpen} onOpenChange={(open) => {
+        setPixDialogOpen(open);
+        if (!open) setPaymentConfirmed(false);
+      }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-center">Pagamento via PIX</DialogTitle>
+            <DialogTitle className="text-center">
+              {paymentConfirmed ? "Pagamento Confirmado!" : "Pagamento via PIX"}
+            </DialogTitle>
           </DialogHeader>
 
-          {pixLoading ? (
+          {paymentConfirmed ? (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center">
+                <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+              </div>
+              {selectedConta && (
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">{selectedConta.descricao}</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    R$ {(selectedConta.valor_pago ?? selectedConta.valor).toFixed(2)}
+                  </p>
+                  <p className="text-sm text-emerald-600 mt-1">Pagamento recebido com sucesso</p>
+                </div>
+              )}
+              <Button className="w-full gap-2" onClick={handleDownloadReceipt}>
+                <Download className="h-4 w-4" />
+                Baixar Comprovante
+              </Button>
+            </div>
+          ) : pixLoading ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Gerando QR Code PIX...</p>
@@ -216,20 +330,16 @@ export default function PortalPagamentosPage() {
                     value={pixData.qr_code_payload || ""}
                     className="flex-1 text-[10px] bg-muted rounded-lg px-3 py-2 text-muted-foreground truncate border border-border"
                   />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="shrink-0"
-                    onClick={handleCopyPayload}
-                  >
+                  <Button variant="outline" size="icon" className="shrink-0" onClick={handleCopyPayload}>
                     {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
 
-              <p className="text-[10px] text-muted-foreground text-center">
-                Após o pagamento, o status será atualizado automaticamente.
-              </p>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground text-center">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Aguardando confirmação do pagamento...
+              </div>
             </div>
           ) : null}
         </DialogContent>
