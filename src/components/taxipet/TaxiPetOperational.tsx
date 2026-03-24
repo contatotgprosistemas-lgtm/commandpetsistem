@@ -84,22 +84,31 @@ export default function TaxiPetOperational() {
     ]);
 
     const transportBookings: UnifiedBooking[] = (b || []).map((item: any) => ({
-      id: item.id,
-      status: item.status,
-      scheduled_date: item.scheduled_date,
-      scheduled_pickup_time: item.scheduled_pickup_time,
-      trip_type: item.trip_type,
-      notes: item.notes,
-      special_instructions: item.special_instructions,
-      driver_id: item.driver_id,
-      final_price: Number(item.final_price || 0),
+      id: item.id, status: item.status, scheduled_date: item.scheduled_date,
+      scheduled_pickup_time: item.scheduled_pickup_time, trip_type: item.trip_type,
+      notes: item.notes, special_instructions: item.special_instructions,
+      driver_id: item.driver_id, final_price: Number(item.final_price || 0),
       cliente_nome: item.clientes?.nome || "—",
       cliente_whatsapp: item.clientes?.whatsapp || null,
       cliente_endereco: item.clientes?.endereco || null,
       pet_nome: item.pets?.nome || "Pet",
-      driver_nome: item.drivers?.name || null,
-      type_nome: item.transport_types?.name || null,
+      driver_nome: item.drivers?.name || null, type_nome: item.transport_types?.name || null,
       source: "transport",
+      hora_prevista_buscar: null, hora_prevista_levar: null,
+    }));
+
+    const agendamentoBookings: UnifiedBooking[] = (ag || []).map((item: any) => ({
+      id: item.id, status: item.status, scheduled_date: date,
+      scheduled_pickup_time: format(new Date(item.data_hora), "HH:mm:ss"),
+      trip_type: item.tipo_servico, notes: item.notas, special_instructions: null,
+      driver_id: null, final_price: Number(item.valor || 0),
+      cliente_nome: item.clientes?.nome || "—",
+      cliente_whatsapp: item.clientes?.whatsapp || null,
+      cliente_endereco: item.clientes?.endereco || null,
+      pet_nome: item.pets?.nome || "Pet",
+      driver_nome: null, type_nome: item.tipo_servico, source: "agendamento",
+      hora_prevista_buscar: item.hora_prevista_buscar || null,
+      hora_prevista_levar: item.hora_prevista_levar || null,
     }));
 
     const agendamentoBookings: UnifiedBooking[] = (ag || []).map((item: any) => ({
