@@ -29,9 +29,12 @@ interface ContaReceber {
 
 function statusBadge(status: string, vencimento: string) {
   if (status === "pago") return <Badge className="bg-emerald-500/15 text-emerald-600 border-0 text-xs">Pago</Badge>;
-  if (isPast(new Date(vencimento)) && !isToday(new Date(vencimento)))
+  const vencDate = new Date(vencimento + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (vencDate < today)
     return <Badge variant="destructive" className="text-xs">Vencida</Badge>;
-  return <Badge className="bg-amber-500/15 text-amber-600 border-0 text-xs">Pendente</Badge>;
+  return <Badge className="bg-amber-500/15 text-amber-600 border-0 text-xs">Em Aberto</Badge>;
 }
 
 export default function FinancePage() {
