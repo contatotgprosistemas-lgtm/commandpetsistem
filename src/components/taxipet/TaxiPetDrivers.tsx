@@ -98,7 +98,7 @@ export default function TaxiPetDrivers() {
           {filtered.map((d) => (
             <TableRow key={d.id}>
               <TableCell className="font-medium">{d.name}</TableCell>
-              <TableCell>{d.phone || d.whatsapp || "—"}</TableCell>
+              <TableCell>{d.whatsapp || "—"}</TableCell>
               <TableCell>{d.driver_license || "—"}</TableCell>
               <TableCell>{d.driver_license_expiration || "—"}</TableCell>
               <TableCell><Badge variant={statusColor(d.status)}>{d.status}</Badge></TableCell>
