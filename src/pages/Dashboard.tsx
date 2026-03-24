@@ -189,77 +189,49 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <Tabs defaultValue="hoje" className="w-full">
-          <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4">
+        <Tabs defaultValue="na_empresa" className="w-full">
+          <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-6">
+            <TabsTrigger value="na_empresa" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
+              Na Empresa ({petsNaEmpresa.length})
+            </TabsTrigger>
             <TabsTrigger value="hoje" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
               Reserva Hoje ({reservaHoje.length})
             </TabsTrigger>
-            <TabsTrigger value="proximas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              Próximas Reservas ({proximasReservas.length})
+            <TabsTrigger value="taxi_dog" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
+              Táxi Dog (0)
             </TabsTrigger>
-            <TabsTrigger value="calendario" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              Calendário
+            <TabsTrigger value="pre_reserva" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
+              Pré Reserva (0)
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="na_empresa">
+            <NaEmpresaList
+              items={petsNaEmpresa}
+              loading={agendaLoading}
+              onEdit={setEditOpen}
+              onFicha={setFichaOpen}
+              onManejo={setManejoOpen}
+              onChecklist={setChecklistOpen}
+              onCheckout={handleCheckout}
+            />
+          </TabsContent>
           <TabsContent value="hoje">
             <AgendamentoList items={reservaHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
           </TabsContent>
-          <TabsContent value="proximas">
-            <AgendamentoList items={proximasReservas} loading={agendaLoading} onEdit={setEditingAgendamento} showDelete onDelete={handleDelete} />
+          <TabsContent value="taxi_dog">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <PawPrint className="h-10 w-10 text-muted-foreground/30 mb-3" strokeWidth={1.5} />
+              <p className="text-sm text-muted-foreground">Nenhum táxi dog agendado</p>
+            </div>
           </TabsContent>
-          <TabsContent value="calendario">
-            <AgendaCalendar agendamentos={agendamentos} />
+          <TabsContent value="pre_reserva">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <PawPrint className="h-10 w-10 text-muted-foreground/30 mb-3" strokeWidth={1.5} />
+              <p className="text-sm text-muted-foreground">Nenhuma pré reserva</p>
+            </div>
           </TabsContent>
         </Tabs>
-      </div>
-
-      {/* Pets na Empresa */}
-      <div className="bg-card rounded-lg shadow-card">
-        <div className="px-5 py-4 border-b border-border">
-          <h2 className="text-sm font-medium text-foreground">Pets na Empresa ({petsNaEmpresa.length})</h2>
-        </div>
-        {agendaLoading ? (
-          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">Carregando...</div>
-        ) : petsNaEmpresa.length === 0 ? (
-          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">Nenhum pet na empresa no momento</div>
-        ) : (
-          <div className="divide-y divide-border">
-            {petsNaEmpresa.map(item => {
-              const petName = item.pet?.nome ?? "Pet";
-              const initials = petName.slice(0, 2).toUpperCase();
-              return (
-                <div key={item.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
-                  <Avatar className="h-10 w-10 border border-border">
-                    <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{petName} {item.pet?.raca ? `(${item.pet.raca})` : ""}</p>
-                    <p className="text-xs text-muted-foreground">{item.tipo_servico} · Tutor: {item.cliente?.nome ?? "—"} {item.baia ? `· Baia: ${item.baia}` : ""}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground tabular-nums">{format(new Date(item.data_hora), "HH:mm")}</span>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar Agendamento" onClick={() => setEditOpen(item)}>
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Serviço" onClick={() => setFichaOpen(item)}>
-                      <FileText className="h-3.5 w-3.5 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Manejo (Boletim Diário)" onClick={() => setManejoOpen(item)}>
-                      <Stethoscope className="h-3.5 w-3.5 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Checklist" onClick={() => setChecklistOpen(item)}>
-                      <ClipboardList className="h-3.5 w-3.5 text-primary" />
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleCheckout(item)}>
-                      <LogOut className="h-3.5 w-3.5" />
-                      Checkout
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -396,6 +368,77 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist, onCheckout }: {
+  items: Agendamento[]; loading: boolean;
+  onEdit: (a: Agendamento) => void; onFicha: (a: Agendamento) => void;
+  onManejo: (a: Agendamento) => void; onChecklist: (a: Agendamento) => void;
+  onCheckout: (a: Agendamento) => void;
+}) {
+  if (loading) return <div className="space-y-3 mt-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}</div>;
+  if (items.length === 0) return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <PawPrint className="h-10 w-10 text-muted-foreground/30 mb-3" strokeWidth={1.5} />
+      <p className="text-sm text-muted-foreground">Nenhum pet na empresa no momento</p>
+    </div>
+  );
+  return (
+    <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
+      {items.map(item => {
+        const petName = item.pet?.nome ?? "Pet";
+        const initials = petName.slice(0, 2).toUpperCase();
+        const clientWhatsapp = item.cliente?.whatsapp;
+        return (
+          <div key={item.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+            <Avatar className="h-11 w-11 border border-border">
+              <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
+                {item.pet?.raca && <span className="text-xs text-muted-foreground">({item.pet.raca})</span>}
+                {item.subscription_id && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">Plano</Badge>}
+                <button onClick={() => onEdit(item)} className="h-5 w-5 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground/50 hover:text-primary transition-colors" title="Editar">
+                  <Pencil className="h-3 w-3" />
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                <span>{item.tipo_servico}</span>
+                <span>|</span>
+                <span className="truncate">{item.cliente?.nome ?? "—"}</span>
+                {clientWhatsapp && <MessageCircle className="h-3 w-3 text-emerald-500 shrink-0" />}
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-sm font-medium text-foreground tabular-nums">{format(new Date(item.data_hora), "dd/MM/yyyy HH:mm")}</p>
+              {item.baia && <p className="text-xs text-muted-foreground">{item.baia}</p>}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {clientWhatsapp && (
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="WhatsApp" onClick={() => window.open(`https://wa.me/${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}>
+                  <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Serviço" onClick={() => onFicha(item)}>
+                <FileText className="h-3.5 w-3.5 text-primary" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Manejo" onClick={() => onManejo(item)}>
+                <Stethoscope className="h-3.5 w-3.5 text-primary" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Checklist" onClick={() => onChecklist(item)}>
+                <ClipboardList className="h-3.5 w-3.5 text-primary" />
+              </Button>
+              <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => onCheckout(item)}>
+                <LogOut className="h-3.5 w-3.5" />
+                Checkout
+              </Button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
