@@ -29,6 +29,11 @@ const DIAS_SEMANA = [
   { value: 0, label: "Domingo" },
 ];
 
+function isTaxiPetService(name: string) {
+  const lower = (name || "").toLowerCase();
+  return lower.includes("taxi") || lower.includes("transport") || lower.includes("leva");
+}
+
 export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: Props) {
   const [saving, setSaving] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
@@ -46,6 +51,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [paymentMethod, setPaymentMethod] = useState("pix");
   const [notes, setNotes] = useState("");
   const [plannedDays, setPlannedDays] = useState<number[]>([]);
+  const [horaBuscar, setHoraBuscar] = useState("08:00");
+  const [horaLevar, setHoraLevar] = useState("17:00");
 
   useEffect(() => {
     if (!open) return;
@@ -64,6 +71,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const finalPrice = Math.max(0, priceContracted - Number(discount || 0));
   const validityDays = selectedPlan?.validity_days || 30;
   const endDate = format(addDays(new Date(startDate), validityDays), "yyyy-MM-dd");
+  const showHorarios = selectedPlan ? isTaxiPetService(selectedPlan.name) : false;
 
   function toggleDay(day: number) {
     setPlannedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
@@ -90,14 +98,12 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
     const subscriptionId = (subData as any).id;
 
-    // Generate receivable
     await supabase.from("contas_receber").insert({
       empresa_id: empresaId, cliente_id: clienteId,
       descricao: `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name}`,
       valor: finalPrice, vencimento: startDate, status: "pendente", categoria: "Planos e Pacotes"
     });
 
-    // Generate agendamentos for planned days
     if (plannedDays.length > 0 && petId) {
       const start = startOfDay(new Date(startDate + "T00:00:00"));
       const end = startOfDay(new Date(endDate + "T00:00:00"));
@@ -110,7 +116,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       while (!isBefore(end, current)) {
         const weekday = getDay(current);
         if (plannedDays.includes(weekday)) {
-          agendamentos.push({
+          const ag: any = {
             empresa_id: empresaId,
             cliente_id: clienteId,
             pet_id: petId,
@@ -119,7 +125,12 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             status: "agendado",
             subscription_id: subscriptionId,
             notas: "Gerado automaticamente pelo plano",
-          });
+          };
+          if (showHorarios) {
+            ag.hora_prevista_buscar = horaBuscar;
+            ag.hora_prevista_levar = horaLevar;
+          }
+          agendamentos.push(ag);
         }
         current = addDays(current, 1);
       }
@@ -191,7 +202,6 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </div>
           </div>
 
-          {/* Planned Days */}
           <div className="space-y-2">
             <Label>Dias de uso na semana</Label>
             <div className="flex flex-wrap gap-2">
@@ -221,6 +231,19 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </div>
             <p className="text-xs text-muted-foreground">{plannedDays.length} dia(s) — reservas serão criadas automaticamente</p>
           </div>
+
+          {showHorarios && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Hora prevista buscar</Label>
+                <Input type="time" value={horaBuscar} onChange={e => setHoraBuscar(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Hora prevista levar</Label>
+                <Input type="time" value={horaLevar} onChange={e => setHoraLevar(e.target.value)} />
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">

@@ -54,6 +54,8 @@ type UnifiedBooking = {
   pet_nome: string;
   driver_nome: string | null; type_nome: string | null;
   source: "transport" | "agendamento";
+  hora_prevista_buscar: string | null;
+  hora_prevista_levar: string | null;
 };
 
 export default function TaxiPetOperational() {
@@ -74,7 +76,7 @@ export default function TaxiPetOperational() {
         .order("scheduled_pickup_time"),
       supabase.from("drivers").select("id, name").eq("empresa_id", eid).eq("status", "ativo"),
       supabase.from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, clientes:cliente_id(nome, whatsapp, endereco), pets:pet_id(nome)")
+        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, hora_prevista_buscar, hora_prevista_levar, clientes:cliente_id(nome, whatsapp, endereco), pets:pet_id(nome)")
         .eq("empresa_id", eid)
         .gte("data_hora", `${date}T00:00:00`)
         .lt("data_hora", `${date}T23:59:59`)
@@ -82,42 +84,33 @@ export default function TaxiPetOperational() {
     ]);
 
     const transportBookings: UnifiedBooking[] = (b || []).map((item: any) => ({
-      id: item.id,
-      status: item.status,
-      scheduled_date: item.scheduled_date,
-      scheduled_pickup_time: item.scheduled_pickup_time,
-      trip_type: item.trip_type,
-      notes: item.notes,
-      special_instructions: item.special_instructions,
-      driver_id: item.driver_id,
-      final_price: Number(item.final_price || 0),
+      id: item.id, status: item.status, scheduled_date: item.scheduled_date,
+      scheduled_pickup_time: item.scheduled_pickup_time, trip_type: item.trip_type,
+      notes: item.notes, special_instructions: item.special_instructions,
+      driver_id: item.driver_id, final_price: Number(item.final_price || 0),
       cliente_nome: item.clientes?.nome || "—",
       cliente_whatsapp: item.clientes?.whatsapp || null,
       cliente_endereco: item.clientes?.endereco || null,
       pet_nome: item.pets?.nome || "Pet",
-      driver_nome: item.drivers?.name || null,
-      type_nome: item.transport_types?.name || null,
+      driver_nome: item.drivers?.name || null, type_nome: item.transport_types?.name || null,
       source: "transport",
+      hora_prevista_buscar: null, hora_prevista_levar: null,
     }));
 
     const agendamentoBookings: UnifiedBooking[] = (ag || []).map((item: any) => ({
-      id: item.id,
-      status: item.status,
-      scheduled_date: date,
+      id: item.id, status: item.status, scheduled_date: date,
       scheduled_pickup_time: format(new Date(item.data_hora), "HH:mm:ss"),
-      trip_type: item.tipo_servico,
-      notes: item.notas,
-      special_instructions: null,
-      driver_id: null,
-      final_price: Number(item.valor || 0),
+      trip_type: item.tipo_servico, notes: item.notas, special_instructions: null,
+      driver_id: null, final_price: Number(item.valor || 0),
       cliente_nome: item.clientes?.nome || "—",
       cliente_whatsapp: item.clientes?.whatsapp || null,
       cliente_endereco: item.clientes?.endereco || null,
       pet_nome: item.pets?.nome || "Pet",
-      driver_nome: null,
-      type_nome: item.tipo_servico,
-      source: "agendamento",
+      driver_nome: null, type_nome: item.tipo_servico, source: "agendamento",
+      hora_prevista_buscar: item.hora_prevista_buscar || null,
+      hora_prevista_levar: item.hora_prevista_levar || null,
     }));
+
 
     setBookings([...transportBookings, ...agendamentoBookings]);
     setDrivers((d as any) || []);
@@ -250,6 +243,12 @@ export default function TaxiPetOperational() {
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Clock className="h-3 w-3" /> {b.scheduled_pickup_time?.slice(0, 5) || "—"}
               </div>
+              {(b.hora_prevista_buscar || b.hora_prevista_levar) && (
+                <div className="flex items-center gap-2 text-muted-foreground text-[11px]">
+                  {b.hora_prevista_buscar && <span>🔄 Buscar: {b.hora_prevista_buscar}</span>}
+                  {b.hora_prevista_levar && <span>📍 Levar: {b.hora_prevista_levar}</span>}
+                </div>
+              )}
               {b.driver_nome && (
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Car className="h-3 w-3" /> {b.driver_nome}

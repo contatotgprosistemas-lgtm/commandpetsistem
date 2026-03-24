@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Check } from "lucide-react";
@@ -24,16 +26,37 @@ interface Props {
   onSuccess: () => void;
 }
 
+function isTaxiPetService(name: string) {
+  const lower = (name || "").toLowerCase();
+  return lower.includes("taxi") || lower.includes("transport") || lower.includes("leva");
+}
+
 export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuccess }: Props) {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
+  const [horaBuscar, setHoraBuscar] = useState("08:00");
+  const [horaLevar, setHoraLevar] = useState("17:00");
+  const [showHorarios, setShowHorarios] = useState(false);
 
   useEffect(() => {
     if (open && subscription) {
-      const existing = subscription.planned_days || [];
-      setSelectedDays(existing);
+      setSelectedDays(subscription.planned_days || []);
+      // Check if the plan/package is TaxiPet type
+      checkIfTaxiPet();
     }
   }, [open, subscription]);
+
+  async function checkIfTaxiPet() {
+    let name = "";
+    if (subscription.plan_id) {
+      const { data } = await supabase.from("service_plans" as any).select("name").eq("id", subscription.plan_id).single();
+      if (data) name = (data as any).name;
+    } else if (subscription.package_id) {
+      const { data } = await supabase.from("service_packages" as any).select("name").eq("id", subscription.package_id).single();
+      if (data) name = (data as any).name;
+    }
+    setShowHorarios(isTaxiPetService(name));
+  }
 
   function toggleDay(day: number) {
     setSelectedDays(prev =>
@@ -45,7 +68,6 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
     if (!subscription) return;
     setSaving(true);
 
-    // 1. Save planned_days
     const { error } = await supabase
       .from("customer_pet_subscriptions" as any)
       .update({ planned_days: selectedDays })
@@ -57,35 +79,23 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
       return;
     }
 
-    // 2. Delete old auto-generated agendamentos for this subscription
-    await (supabase
-      .from("agendamentos") as any)
+    await (supabase.from("agendamentos") as any)
       .delete()
       .eq("subscription_id", subscription.id)
       .neq("status", "na_empresa")
       .neq("status", "concluido");
 
-    // 3. Generate agendamentos for each matching weekday within the subscription period
     if (selectedDays.length > 0 && subscription.start_date && subscription.end_date) {
       const startDate = startOfDay(new Date(subscription.start_date + "T00:00:00"));
       const endDate = startOfDay(new Date(subscription.end_date + "T00:00:00"));
       const today = startOfDay(new Date());
 
-      // Get plan/package name for tipo_servico
       let tipoServico = "Plano";
       if (subscription.plan_id) {
-        const { data: plan } = await supabase
-          .from("service_plans" as any)
-          .select("name")
-          .eq("id", subscription.plan_id)
-          .single();
+        const { data: plan } = await supabase.from("service_plans" as any).select("name").eq("id", subscription.plan_id).single();
         if (plan) tipoServico = (plan as any).name;
       } else if (subscription.package_id) {
-        const { data: pkg } = await supabase
-          .from("service_packages" as any)
-          .select("name")
-          .eq("id", subscription.package_id)
-          .single();
+        const { data: pkg } = await supabase.from("service_packages" as any).select("name").eq("id", subscription.package_id).single();
         if (pkg) tipoServico = (pkg as any).name;
       }
 
@@ -93,9 +103,9 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
       let current = isBefore(startDate, today) ? today : startDate;
 
       while (!isBefore(endDate, current)) {
-        const weekday = getDay(current); // 0=Sunday, 1=Monday...
+        const weekday = getDay(current);
         if (selectedDays.includes(weekday)) {
-          agendamentos.push({
+          const ag: any = {
             empresa_id: subscription.empresa_id,
             cliente_id: subscription.cliente_id,
             pet_id: subscription.pet_id,
@@ -103,17 +113,20 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
             data_hora: format(current, "yyyy-MM-dd") + "T08:00:00",
             status: "agendado",
             subscription_id: subscription.id,
-            notas: `Gerado automaticamente pelo plano`,
-          });
+            notas: "Gerado automaticamente pelo plano",
+          };
+          if (showHorarios) {
+            ag.hora_prevista_buscar = horaBuscar;
+            ag.hora_prevista_levar = horaLevar;
+          }
+          agendamentos.push(ag);
         }
         current = addDays(current, 1);
       }
 
       if (agendamentos.length > 0) {
-        // Insert in batches of 50
         for (let i = 0; i < agendamentos.length; i += 50) {
-          const batch = agendamentos.slice(i, i + 50);
-          await supabase.from("agendamentos").insert(batch as any);
+          await supabase.from("agendamentos").insert(agendamentos.slice(i, i + 50) as any);
         }
       }
 
@@ -161,6 +174,20 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
             );
           })}
         </div>
+
+        {showHorarios && (
+          <div className="grid grid-cols-2 gap-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Hora prevista buscar</Label>
+              <Input type="time" value={horaBuscar} onChange={e => setHoraBuscar(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Hora prevista levar</Label>
+              <Input type="time" value={horaLevar} onChange={e => setHoraLevar(e.target.value)} />
+            </div>
+          </div>
+        )}
+
         <p className="text-xs text-muted-foreground">
           {selectedDays.length} dia(s) selecionado(s)
         </p>

@@ -28,6 +28,8 @@ export type Database = {
           empresa_id: string
           forma_pagamento: string | null
           hora_entrada: string | null
+          hora_prevista_buscar: string | null
+          hora_prevista_levar: string | null
           hora_saida: string | null
           hora_saida_provavel: string | null
           id: string
@@ -52,6 +54,8 @@ export type Database = {
           empresa_id: string
           forma_pagamento?: string | null
           hora_entrada?: string | null
+          hora_prevista_buscar?: string | null
+          hora_prevista_levar?: string | null
           hora_saida?: string | null
           hora_saida_provavel?: string | null
           id?: string
@@ -76,6 +80,8 @@ export type Database = {
           empresa_id?: string
           forma_pagamento?: string | null
           hora_entrada?: string | null
+          hora_prevista_buscar?: string | null
+          hora_prevista_levar?: string | null
           hora_saida?: string | null
           hora_saida_provavel?: string | null
           id?: string

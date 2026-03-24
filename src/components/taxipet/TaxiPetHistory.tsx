@@ -23,6 +23,7 @@ type UnifiedBooking = {
   status: string; final_price: number; payment_status: string; notes: string | null;
   cliente_nome: string; pet_nome: string; driver_nome: string | null; type_nome: string | null;
   source: "transport" | "agendamento";
+  hora_prevista_buscar: string | null; hora_prevista_levar: string | null;
 };
 
 export default function TaxiPetHistory() {
@@ -45,7 +46,7 @@ export default function TaxiPetHistory() {
       if (statusFilter && statusFilter !== "__all__") q = q.eq("status", statusFilter);
 
       let qAg = supabase.from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, clientes:cliente_id(nome), pets:pet_id(nome)")
+        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, hora_prevista_buscar, hora_prevista_levar, clientes:cliente_id(nome), pets:pet_id(nome)")
         .eq("empresa_id", profile.empresa_id!)
         .or(TRANSPORT_FILTER)
         .order("data_hora", { ascending: false }).limit(500);
@@ -62,7 +63,7 @@ export default function TaxiPetHistory() {
         payment_status: b.payment_status, notes: b.notes,
         cliente_nome: b.clientes?.nome || "—", pet_nome: b.pets?.nome || "—",
         driver_nome: b.drivers?.name || null, type_nome: b.transport_types?.name || b.trip_type,
-        source: "transport",
+        source: "transport", hora_prevista_buscar: null, hora_prevista_levar: null,
       }));
 
       const agItems: UnifiedBooking[] = (ag || []).map((a: any) => ({
@@ -73,6 +74,8 @@ export default function TaxiPetHistory() {
         notes: a.notas, cliente_nome: a.clientes?.nome || "—",
         pet_nome: a.pets?.nome || "—", driver_nome: null,
         type_nome: a.tipo_servico, source: "agendamento",
+        hora_prevista_buscar: a.hora_prevista_buscar || null,
+        hora_prevista_levar: a.hora_prevista_levar || null,
       }));
 
       setBookings([...transportItems, ...agItems].sort((a, b) =>
@@ -108,8 +111,8 @@ export default function TaxiPetHistory() {
         <Table>
           <TableHeader><TableRow>
             <TableHead>Origem</TableHead><TableHead>Data</TableHead><TableHead>Tutor</TableHead><TableHead>Pet</TableHead>
-            <TableHead>Motorista</TableHead><TableHead>Tipo</TableHead><TableHead>Status</TableHead>
-            <TableHead>Valor</TableHead><TableHead>Pgto</TableHead>
+            <TableHead>Motorista</TableHead><TableHead>Tipo</TableHead><TableHead>Buscar</TableHead><TableHead>Levar</TableHead>
+            <TableHead>Status</TableHead><TableHead>Valor</TableHead><TableHead>Pgto</TableHead>
           </TableRow></TableHeader>
           <TableBody>
             {filtered.map((b) => (
@@ -126,12 +129,14 @@ export default function TaxiPetHistory() {
                 <TableCell>{b.pet_nome}</TableCell>
                 <TableCell>{b.driver_nome || "—"}</TableCell>
                 <TableCell>{b.type_nome}</TableCell>
+                <TableCell>{b.hora_prevista_buscar || "—"}</TableCell>
+                <TableCell>{b.hora_prevista_levar || "—"}</TableCell>
                 <TableCell><Badge variant={b.status === "finalizada" || b.status === "concluido" ? "default" : b.status === "cancelada" || b.status === "cancelado" ? "destructive" : "secondary"}>{statusLabels[b.status] || b.status}</Badge></TableCell>
                 <TableCell>R$ {b.final_price.toFixed(2)}</TableCell>
                 <TableCell><Badge variant="outline">{b.payment_status}</Badge></TableCell>
               </TableRow>
             ))}
-            {filtered.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Sem registros</TableCell></TableRow>}
+            {filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Sem registros</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>

@@ -17,6 +17,7 @@ import {
   Camera,
   Stethoscope,
   ClipboardCheck,
+  Car,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ const navItems = [
   { path: "/portal/mensagens", label: "Mensagens", icon: MessageCircle },
   { path: "/portal/solicitacoes", label: "Solicitações", icon: ClipboardList },
   { path: "/portal/notificacoes", label: "Notificações", icon: Bell },
-  
+  { path: "/portal/transporte", label: "Transporte", icon: Car },
   { path: "/portal/historico", label: "Histórico", icon: History },
   { path: "/portal/galeria", label: "Galeria", icon: Camera },
   { path: "/portal/manejo", label: "Boletim Diário", icon: Stethoscope },
