@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2, MoreVertical, Pencil, Search, Ban, CheckSquare, XCircle } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2, MoreVertical, Pencil, Search, Ban, CheckSquare, XCircle, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
