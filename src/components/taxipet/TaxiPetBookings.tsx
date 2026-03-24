@@ -99,7 +99,8 @@ export default function TaxiPetBookings() {
       trip_type: form.trip_type, status: form.status, notes: form.notes || null,
       special_instructions: form.special_instructions || null,
       price: Number(form.price), extra_fee: Number(form.extra_fee), discount: Number(form.discount),
-      final_price: finalPrice, payment_status: form.payment_status, payment_method: form.payment_method || null,
+      final_price: finalPrice, payment_status: form.payment_status,
+      payment_method: form.payment_method && form.payment_method !== "__none__" ? form.payment_method : null,
     };
     if (editing) {
       await supabase.from("transport_bookings").update(payload).eq("id", editing.id);
