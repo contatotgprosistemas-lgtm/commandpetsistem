@@ -9,20 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
   cpf: z.string().trim().min(1, "CPF é obrigatório").max(14),
-  data_nascimento: z.date().optional(),
+  data_nascimento: z.string().optional().or(z.literal("")),
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
+  cep: z.string().trim().max(10).optional().or(z.literal("")),
   endereco: z.string().trim().max(300).optional().or(z.literal("")),
+  numero: z.string().trim().max(20).optional().or(z.literal("")),
   como_conheceu: z.string().optional().or(z.literal("")),
   notas: z.string().trim().max(1000).optional().or(z.literal("")),
 });
@@ -32,11 +31,32 @@ type FormValues = z.infer<typeof schema>;
 export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", cpf: "", whatsapp: "", email: "", endereco: "", como_conheceu: "", notas: "" },
+    defaultValues: { nome: "", cpf: "", data_nascimento: "", whatsapp: "", email: "", cep: "", endereco: "", numero: "", como_conheceu: "", notas: "" },
   });
+
+  async function buscarCep(cep: string) {
+    const clean = cep.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        form.setValue("endereco", `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`);
+      } else {
+        form.setValue("endereco", "");
+        toast({ title: "CEP não encontrado", description: "Preencha o endereço manualmente.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro ao buscar CEP", description: "Preencha o endereço manualmente.", variant: "destructive" });
+    } finally {
+      setCepLoading(false);
+    }
+  }
 
   async function onSubmit(data: FormValues) {
     setLoading(true);
@@ -47,14 +67,16 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
         return;
       }
 
+      const enderecoCompleto = data.numero ? `${data.endereco}, ${data.numero}` : data.endereco;
+
       const { error } = await supabase.from("clientes").insert({
         empresa_id: profile.empresa_id,
         nome: data.nome,
         cpf: data.cpf || null,
-        data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
+        data_nascimento: data.data_nascimento || null,
         whatsapp: data.whatsapp || null,
         email: data.email || null,
-        endereco: data.endereco || null,
+        endereco: enderecoCompleto || null,
         como_conheceu: data.como_conheceu || null,
         notas: data.notas || null,
       } as any);
@@ -101,31 +123,11 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
                 </FormItem>
               )} />
               <FormField control={form.control} name="data_nascimento" render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem>
                   <FormLabel>Data de Nascimento</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                        >
-                          {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <FormControl>
+                    <Input type="date" placeholder="dd/mm/aaaa" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -146,10 +148,38 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
                 </FormItem>
               )} />
             </div>
-            <FormField control={form.control} name="endereco" render={({ field }) => (
+            <div className="grid grid-cols-3 gap-4">
+              <FormField control={form.control} name="cep" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CEP</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        placeholder="00000-000"
+                        {...field}
+                        onBlur={(e) => {
+                          field.onBlur();
+                          buscarCep(e.target.value);
+                        }}
+                      />
+                      {cepLoading && <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="endereco" render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Endereço</FormLabel>
+                  <FormControl><Input placeholder="Rua, bairro, cidade" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="numero" render={({ field }) => (
               <FormItem>
-                <FormLabel>Endereço</FormLabel>
-                <FormControl><Input placeholder="Rua, número, bairro" {...field} /></FormControl>
+                <FormLabel>Número</FormLabel>
+                <FormControl><Input placeholder="Nº da casa/apto" className="w-32" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
