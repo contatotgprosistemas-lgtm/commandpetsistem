@@ -49,6 +49,7 @@ export default function FinancePage() {
     const { data } = await supabase
       .from("contas_receber")
       .select("id, descricao, valor, vencimento, categoria, status, cliente:clientes(nome)")
+      .neq("status", "pago")
       .order("vencimento", { ascending: false });
     if (data) setContas(data as any);
     setLoading(false);
