@@ -22,7 +22,7 @@ export default function TaxiPetDashboard() {
     const end = format(endOfMonth(now), "yyyy-MM-dd");
 
     const load = async () => {
-      const [{ data: bookings }, { data: drivers }, { data: agendamentos }] = await Promise.all([
+      const [{ data: bookings }, { data: drivers }, { data: agendamentos }, { data: faturas }] = await Promise.all([
         supabase.from("transport_bookings")
           .select("status, final_price, scheduled_date")
           .eq("empresa_id", profile.empresa_id!)
@@ -35,12 +35,18 @@ export default function TaxiPetDashboard() {
           .gte("data_hora", `${start}T00:00:00`)
           .lte("data_hora", `${end}T23:59:59`)
           .or(TRANSPORT_FILTER),
+        supabase.from("contas_receber")
+          .select("valor, valor_pago, status")
+          .eq("empresa_id", profile.empresa_id!)
+          .eq("categoria", "TaxiPet")
+          .gte("vencimento", start)
+          .lte("vencimento", end),
       ]);
 
       const b = bookings || [];
       const ag = agendamentos || [];
+      const fr = faturas || [];
 
-      // Map agendamento statuses to unified ones
       const agMapped = ag.map((a) => ({
         status: a.status === "concluido" ? "finalizada" : a.status === "cancelado" ? "cancelada" : a.status === "agendado" ? "agendada" : a.status,
         final_price: Number(a.valor || 0),
@@ -53,6 +59,12 @@ export default function TaxiPetDashboard() {
 
       const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
+      // Receita = faturas pagas + faturas pendentes (valor total das faturas TaxiPet)
+      const receitaFaturas = fr.reduce((sum, f) => {
+        if (f.status === "pago") return sum + Number(f.valor_pago || f.valor || 0);
+        return sum + Number(f.valor || 0);
+      }, 0);
+
       setStats({
         totalMonth: all.length,
         completed: all.filter((x) => x.status === "finalizada").length,
@@ -60,7 +72,7 @@ export default function TaxiPetDashboard() {
         inProgress: all.filter((x) => ["em_rota_coleta", "pet_coletado", "em_deslocamento", "em_atendimento"].includes(x.status)).length,
         scheduled: all.filter((x) => ["agendada", "agendado", "confirmado"].includes(x.status)).length,
         activeDrivers: drivers?.length || 0,
-        revenueMonth: all.filter((x) => x.status === "finalizada").reduce((s, x) => s + x.final_price, 0),
+        revenueMonth: receitaFaturas,
         avgPerDay: Math.round(all.length / daysInMonth),
       });
     };
