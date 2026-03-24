@@ -74,6 +74,8 @@ export default function TaxiPetHistory() {
         notes: a.notas, cliente_nome: a.clientes?.nome || "—",
         pet_nome: a.pets?.nome || "—", driver_nome: null,
         type_nome: a.tipo_servico, source: "agendamento",
+        hora_prevista_buscar: a.hora_prevista_buscar || null,
+        hora_prevista_levar: a.hora_prevista_levar || null,
       }));
 
       setBookings([...transportItems, ...agItems].sort((a, b) =>
