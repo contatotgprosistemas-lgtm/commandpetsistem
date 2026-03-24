@@ -38,9 +38,9 @@ export default function TaxiPetDashboard() {
         supabase.from("contas_receber")
           .select("valor, valor_pago, status")
           .eq("empresa_id", profile.empresa_id!)
-          .eq("categoria", "TaxiPet")
           .gte("vencimento", start)
-          .lte("vencimento", end),
+          .lte("vencimento", end)
+          .or("categoria.eq.TaxiPet,descricao.ilike.%taxipet%,descricao.ilike.%taxi pet%,descricao.ilike.%transporte pet%"),
       ]);
 
       const b = bookings || [];
