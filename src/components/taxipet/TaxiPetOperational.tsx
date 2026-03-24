@@ -261,6 +261,12 @@ export default function TaxiPetOperational() {
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Clock className="h-3 w-3" /> {b.scheduled_pickup_time?.slice(0, 5) || "—"}
               </div>
+              {(b.hora_prevista_buscar || b.hora_prevista_levar) && (
+                <div className="flex items-center gap-2 text-muted-foreground text-[11px]">
+                  {b.hora_prevista_buscar && <span>🔄 Buscar: {b.hora_prevista_buscar}</span>}
+                  {b.hora_prevista_levar && <span>📍 Levar: {b.hora_prevista_levar}</span>}
+                </div>
+              )}
               {b.driver_nome && (
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Car className="h-3 w-3" /> {b.driver_nome}
