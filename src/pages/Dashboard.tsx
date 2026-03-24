@@ -398,7 +398,7 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
             </div>
             <div className="text-right shrink-0">
               <p className="text-sm font-medium text-foreground tabular-nums">{format(new Date(item.data_hora), "dd/MM/yyyy HH:mm")}</p>
-              {item.baia && <p className="text-xs text-muted-foreground">{item.baia}</p>}
+              
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {clientWhatsapp && (
