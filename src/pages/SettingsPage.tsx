@@ -152,6 +152,7 @@ function UsuariosTab() {
   };
 
   return (
+    <div className="space-y-6">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
