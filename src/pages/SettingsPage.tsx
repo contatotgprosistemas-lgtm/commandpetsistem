@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff } from "lucide-react";
 import { WhatsAppConnectionPanel } from "@/components/WhatsAppConnectionPanel";
+import { PermissoesCargoPanel } from "@/components/PermissoesCargoPanel";
 
 // ─── Dados da Empresa ───────────────────────────────────────────────
 function EmpresaTab() {
@@ -151,6 +152,7 @@ function UsuariosTab() {
   };
 
   return (
+    <div className="space-y-6">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
@@ -259,6 +261,8 @@ function UsuariosTab() {
         )}
       </CardContent>
     </Card>
+    <PermissoesCargoPanel />
+    </div>
   );
 }
 
