@@ -111,24 +111,6 @@ export default function TaxiPetOperational() {
       hora_prevista_levar: item.hora_prevista_levar || null,
     }));
 
-    const agendamentoBookings: UnifiedBooking[] = (ag || []).map((item: any) => ({
-      id: item.id,
-      status: item.status,
-      scheduled_date: date,
-      scheduled_pickup_time: format(new Date(item.data_hora), "HH:mm:ss"),
-      trip_type: item.tipo_servico,
-      notes: item.notas,
-      special_instructions: null,
-      driver_id: null,
-      final_price: Number(item.valor || 0),
-      cliente_nome: item.clientes?.nome || "—",
-      cliente_whatsapp: item.clientes?.whatsapp || null,
-      cliente_endereco: item.clientes?.endereco || null,
-      pet_nome: item.pets?.nome || "Pet",
-      driver_nome: null,
-      type_nome: item.tipo_servico,
-      source: "agendamento",
-    }));
 
     setBookings([...transportBookings, ...agendamentoBookings]);
     setDrivers((d as any) || []);
