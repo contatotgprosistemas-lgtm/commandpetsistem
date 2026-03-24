@@ -148,10 +148,12 @@ export default function Dashboard() {
   }
 
   const today = startOfDay(new Date());
+  const twoDaysFromNow = new Date(today);
+  twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 3); // end of D+2
   const petsNaEmpresa = agendamentos.filter(a => a.status === "na_empresa");
-  const reservaHoje = agendamentos.filter(a => {
-    const d = new Date(a.data_hora);
-    return isToday(d) && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido";
+  const reservaD2 = agendamentos.filter(a => {
+    const d = startOfDay(new Date(a.data_hora));
+    return d >= today && d < twoDaysFromNow && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido";
   });
   const proximasReservas = agendamentos.filter(a => {
     const d = startOfDay(new Date(a.data_hora));
