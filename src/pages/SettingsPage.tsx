@@ -261,6 +261,8 @@ function UsuariosTab() {
         )}
       </CardContent>
     </Card>
+    <PermissoesCargoPanel />
+    </div>
   );
 }
 
