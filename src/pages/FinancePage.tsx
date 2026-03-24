@@ -12,6 +12,8 @@ import { format, isPast, isToday } from "date-fns";
 import { toast } from "sonner";
 import { BaixaContaDialog } from "@/components/BaixaContaDialog";
 import { NovaContaBancariaDialog } from "@/components/NovaContaBancariaDialog";
+import { NovaContaReceberDialog } from "@/components/NovaContaReceberDialog";
+import { NovaContaPagarDialog } from "@/components/NovaContaPagarDialog";
 import FluxoCaixaPage from "@/pages/FluxoCaixaPage";
 import DREPage from "@/pages/DREPage";
 import MovimentacaoPage from "@/pages/MovimentacaoPage";
@@ -43,6 +45,8 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(true);
   const [baixaConta, setBaixaConta] = useState<{ id: string; descricao: string; valor: number } | null>(null);
   const [novaContaOpen, setNovaContaOpen] = useState(false);
+  const [novaContaReceberOpen, setNovaContaReceberOpen] = useState(false);
+  const [novaContaPagarOpen, setNovaContaPagarOpen] = useState(false);
 
   async function fetchContas() {
     setLoading(true);
@@ -119,6 +123,12 @@ export default function FinancePage() {
         </TabsContent>
 
         <TabsContent value="contas-a-receber">
+          <div className="flex items-center justify-end mt-4 mb-2">
+            <Button size="sm" className="gap-1" onClick={() => setNovaContaReceberOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Nova Conta a Receber
+            </Button>
+          </div>
           <ContasReceberTable
             contas={contas}
             loading={loading}
@@ -133,6 +143,12 @@ export default function FinancePage() {
         </TabsContent>
 
         <TabsContent value="contas-a-pagar">
+          <div className="flex items-center justify-end mt-4 mb-2">
+            <Button size="sm" className="gap-1" onClick={() => setNovaContaPagarOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Nova Conta a Pagar
+            </Button>
+          </div>
           <ContasPagarContent />
         </TabsContent>
 
@@ -147,6 +163,18 @@ export default function FinancePage() {
         open={!!baixaConta}
         onOpenChange={(o) => { if (!o) setBaixaConta(null); }}
         onSuccess={() => { setBaixaConta(null); fetchContas(); }}
+      />
+
+      <NovaContaReceberDialog
+        open={novaContaReceberOpen}
+        onOpenChange={setNovaContaReceberOpen}
+        onSuccess={fetchContas}
+      />
+
+      <NovaContaPagarDialog
+        open={novaContaPagarOpen}
+        onOpenChange={setNovaContaPagarOpen}
+        onSuccess={() => {}}
       />
 
       <NovaContaBancariaDialog
