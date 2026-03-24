@@ -25,7 +25,7 @@ type Driver = {
   notes: string | null;
 };
 
-const emptyDriver = { name: "", phone: "", whatsapp: "", email: "", document: "", driver_license: "", driver_license_expiration: "", status: "ativo", notes: "" };
+const emptyDriver = { name: "", whatsapp: "", email: "", document: "", driver_license: "", driver_license_expiration: "", status: "ativo", notes: "" };
 
 export default function TaxiPetDrivers() {
   const { profile } = useAuth();
