@@ -23,6 +23,7 @@ type UnifiedBooking = {
   status: string; final_price: number; payment_status: string; notes: string | null;
   cliente_nome: string; pet_nome: string; driver_nome: string | null; type_nome: string | null;
   source: "transport" | "agendamento";
+  hora_prevista_buscar: string | null; hora_prevista_levar: string | null;
 };
 
 export default function TaxiPetHistory() {
