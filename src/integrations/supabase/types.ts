@@ -380,6 +380,7 @@ export type Database = {
       }
       clientes: {
         Row: {
+          asaas_customer_id: string | null
           como_conheceu: string | null
           cpf: string | null
           created_at: string
@@ -397,6 +398,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          asaas_customer_id?: string | null
           como_conheceu?: string | null
           cpf?: string | null
           created_at?: string
@@ -414,6 +416,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          asaas_customer_id?: string | null
           como_conheceu?: string | null
           cpf?: string | null
           created_at?: string
@@ -647,6 +650,7 @@ export type Database = {
       }
       contas_receber: {
         Row: {
+          asaas_payment_id: string | null
           banco: string | null
           categoria: string | null
           cliente_id: string | null
@@ -665,6 +669,7 @@ export type Database = {
           vencimento: string
         }
         Insert: {
+          asaas_payment_id?: string | null
           banco?: string | null
           categoria?: string | null
           cliente_id?: string | null
@@ -683,6 +688,7 @@ export type Database = {
           vencimento: string
         }
         Update: {
+          asaas_payment_id?: string | null
           banco?: string | null
           categoria?: string | null
           cliente_id?: string | null
