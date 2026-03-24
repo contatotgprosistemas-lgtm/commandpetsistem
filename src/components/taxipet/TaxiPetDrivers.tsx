@@ -25,7 +25,7 @@ type Driver = {
   notes: string | null;
 };
 
-const emptyDriver = { name: "", phone: "", whatsapp: "", email: "", document: "", driver_license: "", driver_license_expiration: "", status: "ativo", notes: "" };
+const emptyDriver = { name: "", whatsapp: "", email: "", document: "", driver_license: "", driver_license_expiration: "", status: "ativo", notes: "" };
 
 export default function TaxiPetDrivers() {
   const { profile } = useAuth();
@@ -64,7 +64,7 @@ export default function TaxiPetDrivers() {
 
   const openEdit = (d: Driver) => {
     setEditing(d);
-    setForm({ name: d.name, phone: d.phone || "", whatsapp: d.whatsapp || "", email: d.email || "", document: d.document || "", driver_license: d.driver_license || "", driver_license_expiration: d.driver_license_expiration || "", status: d.status, notes: d.notes || "" });
+    setForm({ name: d.name, whatsapp: d.whatsapp || "", email: d.email || "", document: d.document || "", driver_license: d.driver_license || "", driver_license_expiration: d.driver_license_expiration || "", status: d.status, notes: d.notes || "" });
     setOpen(true);
   };
 
@@ -87,7 +87,7 @@ export default function TaxiPetDrivers() {
         <TableHeader>
           <TableRow>
             <TableHead>Nome</TableHead>
-            <TableHead>Telefone</TableHead>
+            <TableHead>WhatsApp</TableHead>
             <TableHead>CNH</TableHead>
             <TableHead>Validade CNH</TableHead>
             <TableHead>Status</TableHead>
@@ -98,7 +98,7 @@ export default function TaxiPetDrivers() {
           {filtered.map((d) => (
             <TableRow key={d.id}>
               <TableCell className="font-medium">{d.name}</TableCell>
-              <TableCell>{d.phone || d.whatsapp || "—"}</TableCell>
+              <TableCell>{d.whatsapp || "—"}</TableCell>
               <TableCell>{d.driver_license || "—"}</TableCell>
               <TableCell>{d.driver_license_expiration || "—"}</TableCell>
               <TableCell><Badge variant={statusColor(d.status)}>{d.status}</Badge></TableCell>
@@ -117,8 +117,7 @@ export default function TaxiPetDrivers() {
           <DialogHeader><DialogTitle>{editing ? "Editar Motorista" : "Novo Motorista"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2"><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-            <div><Label>Telefone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-            <div><Label>WhatsApp</Label><Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} /></div>
+            <div className="col-span-2"><Label>WhatsApp</Label><Input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} /></div>
             <div className="col-span-2"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div><Label>Documento (CPF/RG)</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} /></div>
             <div><Label>Nº CNH</Label><Input value={form.driver_license} onChange={(e) => setForm({ ...form, driver_license: e.target.value })} /></div>

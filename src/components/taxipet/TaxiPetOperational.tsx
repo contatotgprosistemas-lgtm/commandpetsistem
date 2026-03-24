@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Car, Clock, CheckCircle, MapPin, User, ArrowRight, CalendarDays } from "lucide-react";
+import { Car, Clock, CheckCircle, MapPin, User, ArrowRight, CalendarDays, Phone } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -15,6 +15,10 @@ const TRANSPORT_FILTER = "tipo_servico.ilike.%taxi%,tipo_servico.ilike.%transpor
 const statusFlow = [
   "agendada", "aguardando_saida", "em_rota_coleta", "pet_coletado",
   "em_deslocamento", "entregue", "finalizada",
+];
+
+const agendamentoStatusFlow = [
+  "agendado", "confirmado", "em_atendimento", "concluido",
 ];
 
 const statusLabels: Record<string, string> = {
@@ -46,7 +50,8 @@ type UnifiedBooking = {
   id: string; status: string; scheduled_date: string; scheduled_pickup_time: string | null;
   trip_type: string; notes: string | null; special_instructions: string | null;
   driver_id: string | null; final_price: number;
-  cliente_nome: string; pet_nome: string;
+  cliente_nome: string; cliente_whatsapp: string | null; cliente_endereco: string | null;
+  pet_nome: string;
   driver_nome: string | null; type_nome: string | null;
   source: "transport" | "agendamento";
 };
@@ -64,12 +69,12 @@ export default function TaxiPetOperational() {
 
     const [{ data: b }, { data: d }, { data: ag }] = await Promise.all([
       supabase.from("transport_bookings")
-        .select("*, clientes(nome), pets(nome), drivers(name), transport_types(name)")
+        .select("*, clientes(nome, whatsapp, endereco), pets(nome), drivers(name), transport_types(name)")
         .eq("empresa_id", eid).eq("scheduled_date", date)
         .order("scheduled_pickup_time"),
       supabase.from("drivers").select("id, name").eq("empresa_id", eid).eq("status", "ativo"),
       supabase.from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, clientes:cliente_id(nome), pets:pet_id(nome)")
+        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, clientes:cliente_id(nome, whatsapp, endereco), pets:pet_id(nome)")
         .eq("empresa_id", eid)
         .gte("data_hora", `${date}T00:00:00`)
         .lt("data_hora", `${date}T23:59:59`)
@@ -87,6 +92,8 @@ export default function TaxiPetOperational() {
       driver_id: item.driver_id,
       final_price: Number(item.final_price || 0),
       cliente_nome: item.clientes?.nome || "—",
+      cliente_whatsapp: item.clientes?.whatsapp || null,
+      cliente_endereco: item.clientes?.endereco || null,
       pet_nome: item.pets?.nome || "Pet",
       driver_nome: item.drivers?.name || null,
       type_nome: item.transport_types?.name || null,
@@ -104,6 +111,8 @@ export default function TaxiPetOperational() {
       driver_id: null,
       final_price: Number(item.valor || 0),
       cliente_nome: item.clientes?.nome || "—",
+      cliente_whatsapp: item.clientes?.whatsapp || null,
+      cliente_endereco: item.clientes?.endereco || null,
       pet_nome: item.pets?.nome || "Pet",
       driver_nome: null,
       type_nome: item.tipo_servico,
@@ -118,7 +127,13 @@ export default function TaxiPetOperational() {
 
   const advanceStatus = async (booking: UnifiedBooking) => {
     if (booking.source === "agendamento") {
-      toast.info("Atualize o status deste agendamento na página de Agenda.");
+      const flow = agendamentoStatusFlow;
+      const idx = flow.indexOf(booking.status);
+      if (idx < 0 || idx >= flow.length - 1) return;
+      const next = flow[idx + 1];
+      await supabase.from("agendamentos").update({ status: next }).eq("id", booking.id);
+      toast.success(`Status: ${statusLabels[next]}`);
+      load();
       return;
     }
     const idx = statusFlow.indexOf(booking.status);
@@ -135,8 +150,19 @@ export default function TaxiPetOperational() {
 
   const filtered = bookings.filter((b) => !driverFilter || driverFilter === "__all__" || b.driver_id === driverFilter);
 
-  const isActive = (s: string) => !["agendada", "finalizada", "cancelada", "nao_realizada", "concluido", "cancelado"].includes(s);
   const isTerminal = (s: string) => ["finalizada", "cancelada", "nao_realizada", "concluido", "cancelado"].includes(s);
+
+  const isActive = (s: string) => !["agendada", "finalizada", "cancelada", "nao_realizada", "concluido", "cancelado"].includes(s);
+
+  const formatWhatsAppLink = (phone: string) => {
+    const clean = phone.replace(/\D/g, "");
+    const num = clean.startsWith("55") ? clean : `55${clean}`;
+    return `https://wa.me/${num}`;
+  };
+
+  const formatMapsLink = (address: string) => {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+  };
 
   const summary = {
     total: filtered.length,
@@ -160,7 +186,6 @@ export default function TaxiPetOperational() {
         </Select>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
         {[
           { label: "Total", value: summary.total, icon: Car },
@@ -179,7 +204,6 @@ export default function TaxiPetOperational() {
         ))}
       </div>
 
-      {/* Booking cards */}
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((b) => (
           <Card key={`${b.source}-${b.id}`} className="relative">
@@ -202,6 +226,27 @@ export default function TaxiPetOperational() {
               <div className="flex items-center gap-1 text-muted-foreground">
                 <User className="h-3 w-3" /> {b.cliente_nome}
               </div>
+              {b.cliente_whatsapp && (
+                <a
+                  href={formatWhatsAppLink(b.cliente_whatsapp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:underline"
+                >
+                  <Phone className="h-3 w-3" /> {b.cliente_whatsapp}
+                </a>
+              )}
+              {b.cliente_endereco && (
+                <a
+                  href={formatMapsLink(b.cliente_endereco)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{b.cliente_endereco}</span>
+                </a>
+              )}
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Clock className="h-3 w-3" /> {b.scheduled_pickup_time?.slice(0, 5) || "—"}
               </div>
@@ -218,7 +263,7 @@ export default function TaxiPetOperational() {
               )}
               <div className="flex items-center justify-between pt-2 border-t mt-2">
                 <span className="font-medium">R$ {b.final_price.toFixed(2)}</span>
-                {b.source === "transport" && !isTerminal(b.status) && (
+                {!isTerminal(b.status) && (
                   <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => advanceStatus(b)}>
                     Avançar <ArrowRight className="h-3 w-3 ml-1" />
                   </Button>
