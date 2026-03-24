@@ -76,7 +76,7 @@ export default function TaxiPetOperational() {
         .order("scheduled_pickup_time"),
       supabase.from("drivers").select("id, name").eq("empresa_id", eid).eq("status", "ativo"),
       supabase.from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, clientes:cliente_id(nome, whatsapp, endereco), pets:pet_id(nome)")
+        .select("id, data_hora, tipo_servico, status, notas, valor, cliente_id, pet_id, hora_prevista_buscar, hora_prevista_levar, clientes:cliente_id(nome, whatsapp, endereco), pets:pet_id(nome)")
         .eq("empresa_id", eid)
         .gte("data_hora", `${date}T00:00:00`)
         .lt("data_hora", `${date}T23:59:59`)
