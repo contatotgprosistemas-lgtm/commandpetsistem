@@ -188,8 +188,38 @@ export default function FinancePage() {
 }
 
 function ContasReceberTable({ contas, loading, onBaixar, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const allSelected = contas.length > 0 && selected.length === contas.length;
+
+  const toggleAll = () => {
+    setSelected(allSelected ? [] : contas.map(c => c.id));
+  };
+  const toggle = (id: string) => {
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleBulkBaixar = () => {
+    const items = contas.filter(c => selected.includes(c.id));
+    items.forEach(c => onBaixar(c));
+    setSelected([]);
+  };
+  const handleBulkDelete = async () => {
+    for (const id of selected) { await onDelete(id); }
+    setSelected([]);
+  };
+
   return (
     <div className="bg-card rounded-lg shadow-card mt-4 overflow-hidden">
+      {selected.length > 0 && (
+        <div className="px-5 py-3 border-b border-border flex items-center gap-3 bg-muted/30">
+          <Button size="sm" onClick={handleBulkBaixar} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1">
+            <ArrowDownCircle className="h-4 w-4" /> Baixar Selecionados
+          </Button>
+          <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="gap-1">
+            <XCircle className="h-4 w-4" /> Cancelar Selecionados
+          </Button>
+        </div>
+      )}
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{contas.length} fatura(s)</span>
       </div>
@@ -206,6 +236,9 @@ function ContasReceberTable({ contas, loading, onBaixar, onDelete }: { contas: C
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+              </TableHead>
               <TableHead>Documento</TableHead>
               <TableHead>Emissão</TableHead>
               <TableHead>Plano de Contas</TableHead>
@@ -219,7 +252,10 @@ function ContasReceberTable({ contas, loading, onBaixar, onDelete }: { contas: C
           </TableHeader>
           <TableBody>
             {contas.map(c => (
-              <TableRow key={c.id}>
+              <TableRow key={c.id} className={selected.includes(c.id) ? "bg-primary/5" : ""}>
+                <TableCell>
+                  <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
+                </TableCell>
                 <TableCell>
                   <p className="text-sm font-medium">Fatura</p>
                 </TableCell>
