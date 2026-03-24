@@ -123,6 +123,12 @@ export default function FinancePage() {
         </TabsContent>
 
         <TabsContent value="contas-a-receber">
+          <div className="flex items-center justify-end mt-4 mb-2">
+            <Button size="sm" className="gap-1" onClick={() => setNovaContaReceberOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Nova Conta a Receber
+            </Button>
+          </div>
           <ContasReceberTable
             contas={contas}
             loading={loading}
@@ -137,6 +143,12 @@ export default function FinancePage() {
         </TabsContent>
 
         <TabsContent value="contas-a-pagar">
+          <div className="flex items-center justify-end mt-4 mb-2">
+            <Button size="sm" className="gap-1" onClick={() => setNovaContaPagarOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Nova Conta a Pagar
+            </Button>
+          </div>
           <ContasPagarContent />
         </TabsContent>
 
