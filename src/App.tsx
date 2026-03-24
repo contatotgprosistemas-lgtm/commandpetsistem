@@ -144,16 +144,6 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/agenda"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <AgendaPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/financeiro"
