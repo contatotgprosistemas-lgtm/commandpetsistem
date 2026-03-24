@@ -128,7 +128,11 @@ export default function FinancePage() {
         </TabsContent>
 
         <TabsContent value="contas-a-receber">
-          <div className="flex items-center justify-end mt-4 mb-2">
+          <div className="flex items-center justify-end mt-4 mb-2 gap-2">
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setImportReceberOpen(true)}>
+              <Upload className="h-4 w-4" />
+              Importar Excel
+            </Button>
             <Button size="sm" className="gap-1" onClick={() => setNovaContaReceberOpen(true)}>
               <Plus className="h-4 w-4" />
               Nova Conta a Receber
