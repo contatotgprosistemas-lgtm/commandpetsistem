@@ -154,8 +154,28 @@ export default function TaxiPetBookings() {
       await supabase.from("transport_bookings").update(payload).eq("id", editing.id);
       toast.success("Corrida atualizada");
     } else {
-      await supabase.from("transport_bookings").insert(payload);
-      toast.success("Corrida agendada");
+      const { data: newBooking } = await supabase.from("transport_bookings").insert(payload).select("id").single();
+
+      // Gerar fatura em contas_receber se valor > 0 e não for cortesia/incluso em plano
+      const shouldGenerateInvoice = finalPrice > 0 && !["cortesia", "incluso_plano"].includes(form.payment_status);
+      if (shouldGenerateInvoice && newBooking) {
+        const petName = pets.find((p) => p.id === form.pet_id)?.nome || "Pet";
+        const clientName = clients.find((c) => c.id === form.cliente_id)?.nome || "Cliente";
+        const typeName = types.find((t) => t.id === form.transport_type_id)?.name;
+        const descricao = `TaxiPet - ${typeName || "Transporte"} - ${petName} (${clientName})`;
+
+        await supabase.from("contas_receber").insert({
+          empresa_id: profile.empresa_id,
+          cliente_id: form.cliente_id,
+          descricao,
+          valor: finalPrice,
+          vencimento: form.scheduled_date,
+          categoria: "TaxiPet",
+          status: form.payment_status === "pago" ? "pago" : "pendente",
+        });
+      }
+
+      toast.success("Corrida agendada" + (shouldGenerateInvoice ? " e fatura gerada" : ""));
     }
     setOpen(false); setEditing(null); load();
   };
