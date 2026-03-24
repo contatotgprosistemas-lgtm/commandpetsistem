@@ -136,7 +136,7 @@ export default function TaxiPetHistory() {
                 <TableCell><Badge variant="outline">{b.payment_status}</Badge></TableCell>
               </TableRow>
             ))}
-            {filtered.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Sem registros</TableCell></TableRow>}
+            {filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Sem registros</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>
