@@ -172,7 +172,22 @@ export function NovaContaReceberDialog({ open, onOpenChange, onSuccess }: Props)
             </div>
             <div className="space-y-1">
               <Label>Vencimento <span className="text-destructive">*</span></Label>
-              <Input type="date" value={form.vencimento} onChange={e => setForm({ ...form, vencimento: e.target.value })} />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !form.vencimento && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {form.vencimento ? format(new Date(form.vencimento + "T00:00:00"), "dd/MM/yyyy") : "Selecione"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={form.vencimento ? new Date(form.vencimento + "T00:00:00") : undefined}
+                    onSelect={(date) => date && setForm({ ...form, vencimento: format(date, "yyyy-MM-dd") })}
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-1">
               <Label>Intervalo</Label>

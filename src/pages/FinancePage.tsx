@@ -311,22 +311,42 @@ function ContasReceberTable({ contas, loading, onBaixar, onDelete }: { contas: C
 function ContasPagarContent() {
   const [contas, setContas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<string[]>([]);
 
-  useEffect(() => {
-    async function fetch() {
-      setLoading(true);
-      const { data } = await supabase
-        .from("contas_pagar")
-        .select("*")
-        .order("vencimento", { ascending: false });
-      if (data) setContas(data);
-      setLoading(false);
+  const allSelected = contas.length > 0 && selected.length === contas.length;
+  const toggleAll = () => setSelected(allSelected ? [] : contas.map((c: any) => c.id));
+  const toggle = (id: string) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  async function fetchData() {
+    setLoading(true);
+    const { data } = await supabase
+      .from("contas_pagar")
+      .select("*")
+      .order("vencimento", { ascending: false });
+    if (data) setContas(data);
+    setLoading(false);
+  }
+
+  useEffect(() => { fetchData(); }, []);
+
+  const handleBulkDelete = async () => {
+    for (const id of selected) {
+      await supabase.from("contas_pagar").delete().eq("id", id);
     }
-    fetch();
-  }, []);
+    toast.success(`${selected.length} conta(s) excluída(s)`);
+    setSelected([]);
+    fetchData();
+  };
 
   return (
-    <div className="bg-card rounded-lg shadow-card mt-4">
+    <div className="bg-card rounded-lg shadow-card mt-4 overflow-hidden">
+      {selected.length > 0 && (
+        <div className="px-5 py-3 border-b border-border flex items-center gap-3 bg-muted/30">
+          <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="gap-1">
+            <XCircle className="h-4 w-4" /> Cancelar Selecionados
+          </Button>
+        </div>
+      )}
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <h2 className="text-sm font-medium text-foreground">Contas a Pagar</h2>
         <span className="text-xs text-muted-foreground">{contas.length} conta(s)</span>
@@ -340,23 +360,38 @@ function ContasPagarContent() {
           Nenhuma conta a pagar encontrada
         </div>
       ) : (
-        <div className="divide-y divide-border">
-          {contas.map((c: any) => (
-            <div key={c.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{c.descricao}</p>
-                <p className="text-xs text-muted-foreground">{c.fornecedor} {c.categoria && `• ${c.categoria}`}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-semibold text-foreground tabular-nums">R$ {Number(c.valor).toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">Venc. {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yyyy")}</p>
-              </div>
-              <div className="shrink-0">
-                {statusBadge(c.status, c.vencimento)}
-              </div>
-            </div>
-          ))}
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10">
+                <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+              </TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead>Fornecedor</TableHead>
+              <TableHead>Categoria</TableHead>
+              <TableHead>Vencimento</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {contas.map((c: any) => (
+              <TableRow key={c.id} className={selected.includes(c.id) ? "bg-primary/5" : ""}>
+                <TableCell>
+                  <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
+                </TableCell>
+                <TableCell className="text-sm font-medium">{c.descricao}</TableCell>
+                <TableCell className="text-sm">{c.fornecedor}</TableCell>
+                <TableCell className="text-sm">{c.categoria || "—"}</TableCell>
+                <TableCell className="text-sm">{format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}</TableCell>
+                <TableCell className="text-sm text-right tabular-nums font-medium">
+                  R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </TableCell>
+                <TableCell>{statusBadge(c.status, c.vencimento)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
     </div>
   );
