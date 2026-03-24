@@ -197,12 +197,6 @@ export default function Dashboard() {
             <TabsTrigger value="hoje" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
               Reserva Hoje ({reservaHoje.length})
             </TabsTrigger>
-            <TabsTrigger value="taxi_dog" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              Táxi Dog (0)
-            </TabsTrigger>
-            <TabsTrigger value="pre_reserva" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              Pré Reserva (0)
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="na_empresa">
@@ -218,18 +212,6 @@ export default function Dashboard() {
           </TabsContent>
           <TabsContent value="hoje">
             <AgendamentoList items={reservaHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
-          </TabsContent>
-          <TabsContent value="taxi_dog">
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <PawPrint className="h-10 w-10 text-muted-foreground/30 mb-3" strokeWidth={1.5} />
-              <p className="text-sm text-muted-foreground">Nenhum táxi dog agendado</p>
-            </div>
-          </TabsContent>
-          <TabsContent value="pre_reserva">
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <PawPrint className="h-10 w-10 text-muted-foreground/30 mb-3" strokeWidth={1.5} />
-              <p className="text-sm text-muted-foreground">Nenhuma pré reserva</p>
-            </div>
           </TabsContent>
         </Tabs>
       </div>
