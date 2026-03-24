@@ -63,7 +63,7 @@ export default function TaxiPetHistory() {
         payment_status: b.payment_status, notes: b.notes,
         cliente_nome: b.clientes?.nome || "—", pet_nome: b.pets?.nome || "—",
         driver_nome: b.drivers?.name || null, type_nome: b.transport_types?.name || b.trip_type,
-        source: "transport",
+        source: "transport", hora_prevista_buscar: null, hora_prevista_levar: null,
       }));
 
       const agItems: UnifiedBooking[] = (ag || []).map((a: any) => ({
