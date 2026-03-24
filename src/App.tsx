@@ -147,6 +147,17 @@ const App = () => (
               }
             />
 
+            <Route
+              path="/taxipet"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <TaxiPetPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
 
             <Route
               path="/financeiro"
