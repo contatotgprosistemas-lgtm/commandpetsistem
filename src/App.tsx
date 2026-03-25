@@ -46,6 +46,7 @@ import PortalFeedPage from "@/pages/portal/PortalFeedPage";
 import PortalManejoPage from "@/pages/portal/PortalManejoPage";
 import PortalChecklistPage from "@/pages/portal/PortalChecklistPage";
 import PortalTransportePage from "@/pages/portal/PortalTransportePage";
+import PortalEstouChegandoPage from "@/pages/portal/PortalEstouChegandoPage";
 
 const queryClient = new QueryClient();
 
