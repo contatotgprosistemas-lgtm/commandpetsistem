@@ -49,6 +49,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
