@@ -41,7 +41,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <img src={logo} alt="Nosso Lar Resort Pet" className="mx-auto h-28 w-28 mb-4" />
-          <h1 className="text-xl font-semibold text-foreground tracking-tight">NLR Pet Resort</h1>
+          <h1 className="text-xl font-semibold text-foreground tracking-tight"><h1 className="text-xl font-semibold text-foreground tracking-tight">PetControl System</h1></h1>
           <p className="text-sm text-muted-foreground mt-1">Acesse sua conta</p>
         </div>
 
