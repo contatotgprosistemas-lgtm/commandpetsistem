@@ -197,7 +197,7 @@ export default function Dashboard() {
               Na Empresa ({petsNaEmpresa.length})
             </TabsTrigger>
             <TabsTrigger value="hoje" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              Reserva D+2 ({reservaD2.length})
+              Reservas Hoje ({reservasHoje.length})
             </TabsTrigger>
           </TabsList>
 
