@@ -152,10 +152,6 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
               <Switch checked={autoRenew} onCheckedChange={setAutoRenew} />
               <Label>Renovação automática</Label>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={rollover} onCheckedChange={setRollover} />
-              <Label>Rollover de saldo</Label>
-            </div>
           </div>
 
           <div className="border-t pt-4">
