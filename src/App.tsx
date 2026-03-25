@@ -39,6 +39,7 @@ import OperacionalDashboard from "@/pages/operacional/OperacionalDashboard";
 import OperacionalAgendaPage from "@/pages/operacional/OperacionalAgendaPage";
 import OperacionalClientesPage from "@/pages/operacional/OperacionalClientesPage";
 import OperacionalPetsPage from "@/pages/operacional/OperacionalPetsPage";
+import OperacionalPontoPage from "@/pages/operacional/OperacionalPontoPage";
 import { OperacionalLayout } from "@/components/operacional/OperacionalLayout";
 import { OperacionalProtectedRoute } from "@/components/operacional/OperacionalProtectedRoute";
 import { OperationalAuthProvider } from "@/hooks/useOperationalAuth";
