@@ -111,6 +111,9 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="flex justify-center">
+              <PhotoUpload value={fotoUrl} onChange={setFotoUrl} folder="clientes" />
+            </div>
             <FormField control={form.control} name="nome" render={({ field }) => (
               <FormItem>
                 <FormLabel>Nome *</FormLabel>
