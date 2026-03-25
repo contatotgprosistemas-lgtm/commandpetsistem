@@ -256,10 +256,38 @@ export default function CadastroPublicoPage() {
                   </FormItem>
                 )} />
               </div>
-              <FormField control={form.control} name="endereco" render={({ field }) => (
+              <div className="grid grid-cols-3 gap-4">
+                <FormField control={form.control} name="cep" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CEP</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          placeholder="00000-000"
+                          {...field}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            buscarCep(e.target.value);
+                          }}
+                        />
+                        {cepLoading && <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="endereco" render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Endereço</FormLabel>
+                    <FormControl><Input placeholder="Rua, bairro, cidade" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={form.control} name="numero" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Endereço</FormLabel>
-                  <FormControl><Input placeholder="Rua, número, bairro, cidade" {...field} /></FormControl>
+                  <FormLabel>Número</FormLabel>
+                  <FormControl><Input placeholder="Nº da casa/apto" className="w-32" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
