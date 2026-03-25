@@ -271,7 +271,7 @@ export default function NotasFiscaisPage() {
         mensagem_erro: focusResult?.erros
           ? JSON.stringify(focusResult.erros)
           : null,
-      });
+      }]);
 
       if (dbError) throw dbError;
       return focusResult;
