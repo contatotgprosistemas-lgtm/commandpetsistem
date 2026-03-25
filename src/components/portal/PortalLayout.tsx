@@ -71,10 +71,8 @@ export function PortalLayout() {
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
-        <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center mr-2.5">
-          <PawPrint className="h-3.5 w-3.5 text-primary-foreground" strokeWidth={2} />
-        </div>
-        <span className="font-semibold text-foreground text-sm tracking-tight">Meu Portal</span>
+        <img src={logoTgPro} alt="TG-PRO" className="h-8 w-8 rounded-lg object-cover mr-2.5" />
+        <span className="font-semibold text-foreground text-sm tracking-tight">TG-PRO</span>
         <div className="ml-auto">
           <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
             <LogOut className="h-4 w-4 mr-1" />

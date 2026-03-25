@@ -57,9 +57,7 @@ export default function PortalLoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
-            <div className="h-14 w-14 bg-primary rounded-2xl flex items-center justify-center">
-              <PawPrint className="h-7 w-7 text-primary-foreground" />
-            </div>
+            <img src={logoTgPro} alt="TG-PRO" className="h-20 w-20 rounded-2xl object-cover" />
           </div>
           <CardTitle className="text-xl">Portal do Cliente</CardTitle>
           <CardDescription>Acesse sua conta para ver seus pets, pagamentos e mais.</CardDescription>
