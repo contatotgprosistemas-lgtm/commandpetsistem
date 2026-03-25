@@ -25,14 +25,14 @@ import {
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [cadastrosOpen, setCadastrosOpen] = useState(false);
   
   const { isSuperAdmin, signOut, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos", "/planos-pacotes"].includes(location.pathname);
-  const cadastrosExpanded = cadastrosOpen || isCadastrosActive;
+  const [cadastrosOpen, setCadastrosOpen] = useState(isCadastrosActive);
+  const cadastrosExpanded = cadastrosOpen;
 
   const mainItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
