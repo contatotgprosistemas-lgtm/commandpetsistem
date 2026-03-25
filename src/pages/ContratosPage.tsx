@@ -263,12 +263,6 @@ export default function ContratosPage() {
         </TabsList>
 
         <TabsContent value="contratos" className="space-y-4">
-          <div className="flex justify-end">
-            <Button onClick={() => setShowContractDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Novo Contrato
-            </Button>
-          </div>
-
           <Card>
             <CardContent className="p-0">
               <Table>
