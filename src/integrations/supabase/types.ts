@@ -742,6 +742,259 @@ export type Database = {
           },
         ]
       }
+      contract_events: {
+        Row: {
+          contract_id: string
+          created_at: string
+          description: string | null
+          empresa_id: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          description?: string | null
+          empresa_id: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          description?: string | null
+          empresa_id?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_events_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_events_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_signatures: {
+        Row: {
+          acceptance_text: string
+          content_hash: string
+          contract_id: string
+          created_at: string
+          empresa_id: string
+          id: string
+          signature_image: string | null
+          signed_at: string
+          signer_device: string | null
+          signer_document: string | null
+          signer_email: string | null
+          signer_ip: string | null
+          signer_latitude: number | null
+          signer_longitude: number | null
+          signer_name: string
+          signer_user_agent: string | null
+        }
+        Insert: {
+          acceptance_text?: string
+          content_hash: string
+          contract_id: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          signature_image?: string | null
+          signed_at?: string
+          signer_device?: string | null
+          signer_document?: string | null
+          signer_email?: string | null
+          signer_ip?: string | null
+          signer_latitude?: number | null
+          signer_longitude?: number | null
+          signer_name: string
+          signer_user_agent?: string | null
+        }
+        Update: {
+          acceptance_text?: string
+          content_hash?: string
+          contract_id?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          signature_image?: string | null
+          signed_at?: string
+          signer_device?: string | null
+          signer_document?: string | null
+          signer_email?: string | null
+          signer_ip?: string | null
+          signer_latitude?: number | null
+          signer_longitude?: number | null
+          signer_name?: string
+          signer_user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_signatures_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_signatures_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_templates: {
+        Row: {
+          active: boolean
+          content: string
+          created_at: string
+          description: string | null
+          empresa_id: string
+          id: string
+          name: string
+          placeholders: Json | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          content: string
+          created_at?: string
+          description?: string | null
+          empresa_id: string
+          id?: string
+          name: string
+          placeholders?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          content?: string
+          created_at?: string
+          description?: string | null
+          empresa_id?: string
+          id?: string
+          name?: string
+          placeholders?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_templates_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          cliente_id: string | null
+          content: string
+          content_hash: string | null
+          created_at: string
+          created_by: string | null
+          empresa_id: string
+          id: string
+          pdf_url: string | null
+          sent_at: string | null
+          signed_at: string | null
+          signing_token: string | null
+          status: string
+          template_id: string | null
+          title: string
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          content: string
+          content_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          empresa_id: string
+          id?: string
+          pdf_url?: string | null
+          sent_at?: string | null
+          signed_at?: string | null
+          signing_token?: string | null
+          status?: string
+          template_id?: string | null
+          title: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          content?: string
+          content_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string
+          id?: string
+          pdf_url?: string | null
+          sent_at?: string | null
+          signed_at?: string | null
+          signing_token?: string | null
+          status?: string
+          template_id?: string | null
+          title?: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversas: {
         Row: {
           atendente_id: string | null

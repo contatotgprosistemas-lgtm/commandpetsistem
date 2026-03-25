@@ -1,0 +1,365 @@
+import { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { CheckCircle2, FileText, Shield, AlertTriangle, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface ContractData {
+  id: string;
+  title: string;
+  content: string;
+  content_hash: string | null;
+  status: string;
+  empresa_id: string;
+  token_expires_at: string | null;
+  signed_at: string | null;
+}
+
+export default function ContractSignPage() {
+  const { token } = useParams<{ token: string }>();
+  const [contract, setContract] = useState<ContractData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [signed, setSigned] = useState(false);
+  const [signing, setSigning] = useState(false);
+
+  // Form state
+  const [signerName, setSignerName] = useState("");
+  const [signerEmail, setSignerEmail] = useState("");
+  const [signerDocument, setSignerDocument] = useState("");
+  const [accepted, setAccepted] = useState(false);
+
+  // Signature canvas
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasSignature, setHasSignature] = useState(false);
+
+  // Geolocation
+  const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    loadContract();
+    // Try geolocation
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => {} // optional, ignore errors
+      );
+    }
+  }, [token]);
+
+  async function loadContract() {
+    setLoading(true);
+    // Use anon key query
+    const { data, error: err } = await supabase
+      .from("contracts")
+      .select("id, title, content, content_hash, status, empresa_id, token_expires_at, signed_at")
+      .eq("signing_token", token!)
+      .single();
+
+    if (err || !data) {
+      setError("Contrato não encontrado ou link expirado.");
+      setLoading(false);
+      return;
+    }
+
+    const c = data as ContractData;
+    if (c.token_expires_at && new Date(c.token_expires_at) < new Date()) {
+      setError("Este link de assinatura expirou.");
+      setLoading(false);
+      return;
+    }
+
+    if (c.status === "assinado") {
+      setSigned(true);
+    }
+
+    setContract(c);
+    setLoading(false);
+
+    // Log view event
+    await supabase.from("contract_events").insert({
+      contract_id: c.id,
+      empresa_id: c.empresa_id,
+      event_type: "visualizado",
+      description: "Contrato visualizado pelo assinante",
+      ip_address: null,
+      user_agent: navigator.userAgent,
+    });
+  }
+
+  // Canvas drawing
+  function startDraw(e: React.MouseEvent | React.TouchEvent) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setIsDrawing(true);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = "touches" in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = "touches" in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }
+
+  function draw(e: React.MouseEvent | React.TouchEvent) {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = "touches" in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = "touches" in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "hsl(var(--foreground))";
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    setHasSignature(true);
+  }
+
+  function endDraw() {
+    setIsDrawing(false);
+  }
+
+  function clearCanvas() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSignature(false);
+  }
+
+  async function handleSign() {
+    if (!accepted) {
+      toast.error("Você precisa aceitar os termos");
+      return;
+    }
+    if (!signerName.trim()) {
+      toast.error("Informe seu nome completo");
+      return;
+    }
+    if (!contract) return;
+
+    setSigning(true);
+
+    // Get signature image
+    let signatureImage: string | null = null;
+    if (hasSignature && canvasRef.current) {
+      signatureImage = canvasRef.current.toDataURL("image/png");
+    }
+
+    // Generate hash of content at signing time
+    const encoder = new TextEncoder();
+    const data = encoder.encode(contract.content);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const contentHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+    // Detect device
+    const ua = navigator.userAgent;
+    const isMobile = /Mobile|Android|iPhone/i.test(ua);
+    const device = isMobile ? "Mobile" : "Desktop";
+
+    // Insert signature evidence
+    const { error: sigError } = await supabase.from("contract_signatures").insert({
+      contract_id: contract.id,
+      empresa_id: contract.empresa_id,
+      signer_name: signerName.trim(),
+      signer_email: signerEmail.trim() || null,
+      signer_document: signerDocument.trim() || null,
+      signer_user_agent: ua,
+      signer_device: device,
+      signer_latitude: geo?.lat || null,
+      signer_longitude: geo?.lng || null,
+      signature_image: signatureImage,
+      content_hash: contentHash,
+      acceptance_text: "Li e aceito os termos deste contrato",
+    });
+
+    if (sigError) {
+      toast.error("Erro ao registrar assinatura");
+      setSigning(false);
+      return;
+    }
+
+    // Update contract status
+    await supabase.from("contracts").update({
+      status: "assinado",
+      signed_at: new Date().toISOString(),
+    }).eq("id", contract.id);
+
+    // Log event
+    await supabase.from("contract_events").insert({
+      contract_id: contract.id,
+      empresa_id: contract.empresa_id,
+      event_type: "assinado",
+      description: `Contrato assinado por ${signerName.trim()}`,
+      user_agent: ua,
+      metadata: {
+        signer_name: signerName.trim(),
+        signer_email: signerEmail.trim(),
+        device,
+        geo: geo || null,
+        content_hash: contentHash,
+      },
+    });
+
+    setSigned(true);
+    setSigning(false);
+    toast.success("Contrato assinado com sucesso!");
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center space-y-4">
+            <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
+            <p className="text-lg font-medium">{error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (signed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center space-y-4">
+            <CheckCircle2 className="h-16 w-16 text-emerald-500 mx-auto" />
+            <h2 className="text-xl font-bold">Contrato Assinado!</h2>
+            <p className="text-sm text-muted-foreground">
+              O contrato <strong>"{contract?.title}"</strong> foi assinado com sucesso.
+            </p>
+            {contract?.signed_at && (
+              <p className="text-xs text-muted-foreground">
+                Assinado em {format(new Date(contract.signed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+              </p>
+            )}
+            <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
+              <Shield className="h-4 w-4 inline mr-1" />
+              Documento protegido com hash SHA-256. ID: {contract?.id?.slice(0, 8)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-muted/30 py-8 px-4">
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* Header */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <FileText className="h-6 w-6 text-primary" />
+              <div>
+                <CardTitle className="text-lg">{contract?.title}</CardTitle>
+                <p className="text-sm text-muted-foreground">Documento para assinatura eletrônica</p>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Contract content */}
+        <Card>
+          <CardContent className="pt-6">
+            <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed">{contract?.content}</pre>
+          </CardContent>
+        </Card>
+
+        {/* Signing form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Dados do Assinante</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Nome completo *</Label>
+                <Input value={signerName} onChange={e => setSignerName(e.target.value)} placeholder="Seu nome completo" />
+              </div>
+              <div>
+                <Label>CPF</Label>
+                <Input value={signerDocument} onChange={e => setSignerDocument(e.target.value)} placeholder="000.000.000-00" />
+              </div>
+            </div>
+            <div>
+              <Label>E-mail</Label>
+              <Input value={signerEmail} onChange={e => setSignerEmail(e.target.value)} placeholder="seu@email.com" type="email" />
+            </div>
+
+            {/* Signature canvas */}
+            <div>
+              <Label>Assinatura (opcional)</Label>
+              <div className="border rounded-lg mt-1 bg-background">
+                <canvas
+                  ref={canvasRef}
+                  width={500}
+                  height={150}
+                  className="w-full cursor-crosshair touch-none"
+                  onMouseDown={startDraw}
+                  onMouseMove={draw}
+                  onMouseUp={endDraw}
+                  onMouseLeave={endDraw}
+                  onTouchStart={startDraw}
+                  onTouchMove={draw}
+                  onTouchEnd={endDraw}
+                />
+              </div>
+              {hasSignature && (
+                <Button variant="ghost" size="sm" onClick={clearCanvas} className="mt-1 text-xs">
+                  Limpar assinatura
+                </Button>
+              )}
+            </div>
+
+            {/* Acceptance */}
+            <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg border">
+              <Checkbox
+                id="accept"
+                checked={accepted}
+                onCheckedChange={v => setAccepted(v === true)}
+              />
+              <label htmlFor="accept" className="text-sm leading-relaxed cursor-pointer">
+                <strong>Li e aceito os termos deste contrato.</strong> Declaro que as informações prestadas são verdadeiras e que estou de acordo com todas as cláusulas acima descritas.
+              </label>
+            </div>
+
+            <Button onClick={handleSign} disabled={!accepted || !signerName.trim() || signing} className="w-full" size="lg">
+              {signing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+              Assinar Contrato
+            </Button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              <Shield className="h-3 w-3 inline mr-1" />
+              Assinatura eletrônica com validade jurídica conforme MP 2.200-2/2001. 
+              Todas as evidências são registradas e armazenadas de forma segura.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

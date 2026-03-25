@@ -22,6 +22,8 @@ import PlanosPacotesPage from "@/pages/PlanosPacotesPage";
 import KanbanPage from "@/pages/KanbanPage";
 import ChatbotPage from "@/pages/ChatbotPage";
 import TaxiPetPage from "@/pages/TaxiPetPage";
+import ContratosPage from "@/pages/ContratosPage";
+import ContractSignPage from "@/pages/ContractSignPage";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
@@ -47,6 +49,7 @@ import PortalManejoPage from "@/pages/portal/PortalManejoPage";
 import PortalChecklistPage from "@/pages/portal/PortalChecklistPage";
 import PortalTransportePage from "@/pages/portal/PortalTransportePage";
 import PortalEstouChegandoPage from "@/pages/portal/PortalEstouChegandoPage";
+import PortalContratosPage from "@/pages/portal/PortalContratosPage";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +67,7 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/cadastro/:empresaId" element={<CadastroPublicoPage />} />
+            <Route path="/assinar/:token" element={<ContractSignPage />} />
 
             {/* Portal do Cliente auth */}
             <Route path="/portal/login" element={<PortalLoginPage />} />
@@ -86,6 +90,7 @@ const App = () => (
               <Route path="notificacoes" element={<PortalNotificacoesPage />} />
               <Route path="solicitacoes" element={<PortalSolicitacoesPage />} />
               
+              <Route path="contratos" element={<PortalContratosPage />} />
               <Route path="estou-chegando" element={<PortalEstouChegandoPage />} />
               <Route path="transporte" element={<PortalTransportePage />} />
               <Route path="historico" element={<PortalHistoricoPage />} />
@@ -157,6 +162,17 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <TaxiPetPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/contratos"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ContratosPage />
                   </AppLayout>
                 </ProtectedRoute>
               }

@@ -21,6 +21,7 @@ import {
   Bot,
   Gift,
   Car,
+  FileSignature,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -40,6 +41,7 @@ export function AppSidebar() {
     { icon: Kanban, label: "Pipeline Vendas", path: "/kanban" },
     { icon: Bot, label: "Chatbot", path: "/chatbot" },
     { icon: Car, label: "TaxiPet", path: "/taxipet" },
+    { icon: FileSignature, label: "Contratos", path: "/contratos" },
   ];
 
   const cadastrosItems = [
