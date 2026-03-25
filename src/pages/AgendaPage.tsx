@@ -174,7 +174,14 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      <AgendaCalendar agendamentos={agendamentos} />
+      <AgendaCalendar agendamentos={agendamentos} onEditAgendamento={(a) => setEditingAgendamento(a as any)} />
+
+      <EditarAgendamentoDialog
+        agendamento={editingAgendamento}
+        open={!!editingAgendamento}
+        onOpenChange={(o) => { if (!o) setEditingAgendamento(null); }}
+        onSuccess={() => { setEditingAgendamento(null); fetchAgendamentos(); }}
+      />
     </div>
   );
 }
