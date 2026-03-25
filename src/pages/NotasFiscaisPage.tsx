@@ -701,7 +701,18 @@ export default function NotasFiscaisPage() {
                     </div>
                     <div>
                       <Label>CEP</Label>
-                      <Input value={fiscalForm.endereco_cep} onChange={(e) => setFiscalForm((p) => ({ ...p, endereco_cep: e.target.value.replace(/\D/g, "") }))} />
+                      <div className="relative">
+                        <Input
+                          value={fiscalForm.endereco_cep}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            setFiscalForm((p) => ({ ...p, endereco_cep: val }));
+                            if (val.length === 8) buscarCep(val);
+                          }}
+                          placeholder="Digite o CEP"
+                        />
+                        {cepLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                      </div>
                     </div>
                     <div>
                       <Label>Código Município (IBGE)</Label>
