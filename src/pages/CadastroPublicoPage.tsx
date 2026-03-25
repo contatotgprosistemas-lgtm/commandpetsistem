@@ -46,7 +46,9 @@ const schema = z.object({
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
   cpf: z.string().trim().min(1, "CPF é obrigatório").max(14),
+  cep: z.string().trim().max(10).optional().or(z.literal("")),
   endereco: z.string().trim().max(500).optional().or(z.literal("")),
+  numero: z.string().trim().max(20).optional().or(z.literal("")),
   como_conheceu: z.string().optional().or(z.literal("")),
   pets: z.array(petSchema),
 });
