@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
+import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 
 interface Agendamento {
@@ -186,6 +187,7 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground capitalize">{todayFormatted}</p>
           </div>
           <div className="flex items-center gap-2">
+            <EstouChegandoMapDialog />
             <OrcamentoDialog />
             <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
           </div>

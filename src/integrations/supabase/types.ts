@@ -1230,6 +1230,64 @@ export type Database = {
         }
         Relationships: []
       }
+      estou_chegando: {
+        Row: {
+          active: boolean
+          cliente_id: string
+          created_at: string
+          empresa_id: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          pet_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          cliente_id: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          pet_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          cliente_id?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          pet_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estou_chegando_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estou_chegando_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estou_chegando_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funil_vendas: {
         Row: {
           cliente_id: string
