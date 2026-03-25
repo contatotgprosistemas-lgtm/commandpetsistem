@@ -3,21 +3,21 @@ import { useParams } from "react-router-dom";
 import { z } from "zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, differenceInYears, differenceInMonths } from "date-fns";
-import { PawPrint, Plus, Trash2, CheckCircle2, Building2, CalendarIcon, Loader2 } from "lucide-react";
+import { differenceInYears, differenceInMonths } from "date-fns";
+import { PawPrint, Plus, Trash2, CheckCircle2, Building2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-function calcularIdade(nascimento: Date): string {
-  const anos = differenceInYears(new Date(), nascimento);
+function calcularIdade(nascimento: string): string {
+  if (!nascimento) return "";
+  const date = new Date(nascimento + "T00:00:00");
+  if (isNaN(date.getTime())) return "";
+  const anos = differenceInYears(new Date(), date);
   if (anos >= 1) return `${anos} ano${anos > 1 ? "s" : ""}`;
-  const meses = differenceInMonths(new Date(), nascimento);
+  const meses = differenceInMonths(new Date(), date);
   return `${meses} ${meses === 1 ? "mês" : "meses"}`;
 }
 
@@ -27,22 +27,22 @@ const petSchema = z.object({
   raca: z.string().trim().max(100).optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
-  data_nascimento: z.date().optional(),
+  data_nascimento: z.string().optional().or(z.literal("")),
   pelagem: z.string().optional().or(z.literal("")),
   comportamento: z.string().optional().or(z.literal("")),
   restricoes_alimentares: z.string().trim().max(500).optional().or(z.literal("")),
   medicacoes: z.string().trim().max(500).optional().or(z.literal("")),
   antiparasitario: z.string().optional().or(z.literal("")),
-  antiparasitario_data: z.date().optional(),
+  antiparasitario_data: z.string().optional().or(z.literal("")),
   v10: z.string().optional().or(z.literal("")),
-  v10_data: z.date().optional(),
+  v10_data: z.string().optional().or(z.literal("")),
   raiva: z.string().optional().or(z.literal("")),
-  raiva_data: z.date().optional(),
+  raiva_data: z.string().optional().or(z.literal("")),
 });
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome é obrigatório").max(100),
-  data_nascimento: z.date().optional(),
+  data_nascimento: z.string().optional().or(z.literal("")),
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
   cpf: z.string().trim().min(1, "CPF é obrigatório").max(14),
@@ -69,19 +69,9 @@ function PetVacinasFields({ control, idx }: { control: any; idx: number }) {
           <span className="text-sm font-medium text-foreground">{v.label}</span>
           <FormField control={control} name={v.dataName} render={({ field }) => (
             <FormItem>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                      {field.value ? format(field.value, "dd/MM/yyyy") : <span>Data aplicação</span>}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(d) => d > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} />
-                </PopoverContent>
-              </Popover>
+              <FormControl>
+                <Input type="date" placeholder="dd/mm/aaaa" {...field} />
+              </FormControl>
             </FormItem>
           )} />
         </div>
@@ -139,11 +129,11 @@ export default function CadastroPublicoPage() {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const pets = data.pets.filter(p => p.nome.trim().length > 0).map(p => ({
         ...p,
-        data_nascimento: p.data_nascimento ? format(p.data_nascimento, "yyyy-MM-dd") : null,
+        data_nascimento: p.data_nascimento || null,
         idade: p.data_nascimento ? calcularIdade(p.data_nascimento) : null,
-        antiparasitario_data: p.antiparasitario_data ? format(p.antiparasitario_data, "yyyy-MM-dd") : null,
-        v10_data: p.v10_data ? format(p.v10_data, "yyyy-MM-dd") : null,
-        raiva_data: p.raiva_data ? format(p.raiva_data, "yyyy-MM-dd") : null,
+        antiparasitario_data: p.antiparasitario_data || null,
+        v10_data: p.v10_data || null,
+        raiva_data: p.raiva_data || null,
         vacinas: [p.antiparasitario, p.v10, p.raiva].filter(Boolean).join(", ") || null,
       }));
 
@@ -156,7 +146,7 @@ export default function CadastroPublicoPage() {
             empresa_id: empresaId,
             cliente: {
               nome: data.nome,
-              data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
+              data_nascimento: data.data_nascimento || null,
               whatsapp: data.whatsapp || null,
               email: data.email || null,
               cpf: data.cpf || null,
@@ -214,21 +204,11 @@ export default function CadastroPublicoPage() {
               )} />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField control={form.control} name="data_nascimento" render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Data de Nascimento</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                            {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -434,21 +414,11 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch }: { control: an
       {/* Data nascimento + idade */}
       <div className="grid grid-cols-2 gap-3">
         <FormField control={control} name={`pets.${idx}.data_nascimento`} render={({ field }) => (
-          <FormItem className="flex flex-col">
+          <FormItem>
             <FormLabel>Data de Nascimento</FormLabel>
-            <Popover>
-              <PopoverTrigger asChild>
-                <FormControl>
-                  <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                    {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione</span>}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(d) => d > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} />
-              </PopoverContent>
-            </Popover>
+            <FormControl>
+              <Input type="date" {...field} />
+            </FormControl>
           </FormItem>
         )} />
         <FormItem className="flex flex-col">
