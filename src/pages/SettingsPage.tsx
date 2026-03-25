@@ -646,6 +646,7 @@ export default function SettingsPage() {
           <TabsTrigger value="notificacoes" className="gap-1.5"><Bell className="h-4 w-4" /> Notificações</TabsTrigger>
           <TabsTrigger value="seguranca" className="gap-1.5"><Shield className="h-4 w-4" /> Segurança</TabsTrigger>
           <TabsTrigger value="integracoes" className="gap-1.5"><Settings className="h-4 w-4" /> Integrações</TabsTrigger>
+          <TabsTrigger value="operacional" className="gap-1.5"><Wrench className="h-4 w-4" /> Operacional</TabsTrigger>
         </TabsList>
 
         <TabsContent value="empresa"><EmpresaTab /></TabsContent>
@@ -653,6 +654,7 @@ export default function SettingsPage() {
         <TabsContent value="notificacoes"><NotificacoesTab /></TabsContent>
         <TabsContent value="seguranca"><SegurancaTab /></TabsContent>
         <TabsContent value="integracoes"><IntegracoesTab /></TabsContent>
+        <TabsContent value="operacional"><OperacionalTab /></TabsContent>
       </Tabs>
     </div>
   );
