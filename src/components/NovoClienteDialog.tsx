@@ -87,6 +87,7 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
       if (error) throw error;
       toast({ title: "Cliente cadastrado com sucesso!" });
       form.reset();
+      setFotoUrl(null);
       setOpen(false);
       onSuccess?.();
     } catch (err: any) {
