@@ -146,7 +146,7 @@ export default function CadastroPublicoPage() {
             empresa_id: empresaId,
             cliente: {
               nome: data.nome,
-              data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
+              data_nascimento: data.data_nascimento || null,
               whatsapp: data.whatsapp || null,
               email: data.email || null,
               cpf: data.cpf || null,
