@@ -219,13 +219,13 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-card rounded-lg p-5 shadow-card">
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Faturamento Semanal</h2>
-          <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">Sem dados para exibir</div>
+          <div className="flex items-center justify-center h-[220px] text-[13px] text-muted-foreground">Sem dados para exibir</div>
         </div>
-        <div className="bg-card rounded-lg p-5 shadow-card">
+        <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
-          <div className="flex items-center justify-center h-[160px] text-sm text-muted-foreground">Nenhuma atividade recente</div>
+          <div className="flex items-center justify-center h-[160px] text-[13px] text-muted-foreground">Nenhuma atividade recente</div>
         </div>
       </div>
 
