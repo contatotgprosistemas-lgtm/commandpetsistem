@@ -1,7 +1,7 @@
-  <html lan<html lang="pt-BR" class="notranslate" translate="no">
-<head>
-  <meta name="google" content="notranslate" />
-</head>g="pt-BR" class="notranslate" translate="no">
-<head>
-  <meta name="google" content="notranslate" />
-</head>
+import { Navigate } from "react-router-dom";
+
+const Index = () => {
+  return <Navigate to="/" replace />;
+};
+
+export default Index;
