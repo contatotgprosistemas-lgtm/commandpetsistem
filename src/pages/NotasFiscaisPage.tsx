@@ -26,6 +26,7 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -374,6 +375,22 @@ export default function NotasFiscaisPage() {
     onError: () => toast.error("Erro ao cancelar nota"),
   });
 
+  // Excluir registro com erro
+  const excluirMutation = useMutation({
+    mutationFn: async (notaId: string) => {
+      const { error } = await supabase
+        .from("notas_fiscais")
+        .delete()
+        .eq("id", notaId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Registro excluído!");
+      queryClient.invalidateQueries({ queryKey: ["notas_fiscais"] });
+    },
+    onError: () => toast.error("Erro ao excluir registro"),
+  });
+
   const filteredNotas = notas.filter(
     (n) =>
       !searchTerm ||
@@ -620,6 +637,21 @@ export default function NotasFiscaisPage() {
                                 disabled={cancelarMutation.isPending}
                               >
                                 <XCircle className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                            {(nota.status === "rejeitada" || nota.status === "pendente" || nota.status === "processando") && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                title="Excluir registro"
+                                onClick={() => {
+                                  if (confirm("Excluir este registro?")) {
+                                    excluirMutation.mutate(nota.id);
+                                  }
+                                }}
+                                disabled={excluirMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             )}
                           </div>
