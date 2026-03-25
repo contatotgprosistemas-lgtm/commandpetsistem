@@ -26,6 +26,7 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 
