@@ -14,6 +14,7 @@ import { Plus, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { PhotoUpload } from "@/components/PhotoUpload";
 
 function calcularIdade(nascimento: Date): string {
   const anos = differenceInYears(new Date(), nascimento);
