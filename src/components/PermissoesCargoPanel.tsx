@@ -24,10 +24,13 @@ interface ModuleConfig {
 
 const MODULES: ModuleConfig[] = [
   { key: "dashboard", label: "Dashboard" },
-  { key: "crm", label: "CRM / Inbox" },
-  { key: "kanban", label: "Kanban" },
-  { key: "chatbot", label: "Chatbot" },
   { key: "agenda", label: "Agenda" },
+  { key: "crm", label: "CRM WhatsApp" },
+  { key: "kanban", label: "Pipeline Vendas" },
+  { key: "chatbot", label: "Chatbot" },
+  { key: "taxipet", label: "TaxiPet" },
+  { key: "contratos", label: "Contratos" },
+  { key: "notas_fiscais", label: "Notas Fiscais" },
   { key: "clientes", label: "Clientes" },
   { key: "pets", label: "Pets" },
   { key: "servicos", label: "Serviços" },
