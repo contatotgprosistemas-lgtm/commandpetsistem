@@ -2423,6 +2423,155 @@ export type Database = {
           },
         ]
       }
+      ponto_configuracoes: {
+        Row: {
+          created_at: string
+          dias_trabalho: number[]
+          empresa_id: string
+          id: string
+          intervalo_min: number
+          jornada_diaria_min: number
+          tolerancia_min: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dias_trabalho?: number[]
+          empresa_id: string
+          id?: string
+          intervalo_min?: number
+          jornada_diaria_min?: number
+          tolerancia_min?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dias_trabalho?: number[]
+          empresa_id?: string
+          id?: string
+          intervalo_min?: number
+          jornada_diaria_min?: number
+          tolerancia_min?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ponto_configuracoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ponto_jornadas: {
+        Row: {
+          created_at: string
+          data: string
+          empresa_id: string
+          horas_esperadas_min: number | null
+          horas_trabalhadas_min: number | null
+          id: string
+          operational_user_id: string
+          saldo_min: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          empresa_id: string
+          horas_esperadas_min?: number | null
+          horas_trabalhadas_min?: number | null
+          id?: string
+          operational_user_id: string
+          saldo_min?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          empresa_id?: string
+          horas_esperadas_min?: number | null
+          horas_trabalhadas_min?: number | null
+          id?: string
+          operational_user_id?: string
+          saldo_min?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ponto_jornadas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ponto_jornadas_operational_user_id_fkey"
+            columns: ["operational_user_id"]
+            isOneToOne: false
+            referencedRelation: "operational_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ponto_registros: {
+        Row: {
+          created_at: string
+          data_hora: string
+          empresa_id: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          observacao: string | null
+          operational_user_id: string
+          selfie_url: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          data_hora?: string
+          empresa_id: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          observacao?: string | null
+          operational_user_id: string
+          selfie_url?: string | null
+          tipo?: string
+        }
+        Update: {
+          created_at?: string
+          data_hora?: string
+          empresa_id?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          observacao?: string | null
+          operational_user_id?: string
+          selfie_url?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ponto_registros_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ponto_registros_operational_user_id_fkey"
+            columns: ["operational_user_id"]
+            isOneToOne: false
+            referencedRelation: "operational_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           ativo: boolean
@@ -3493,6 +3642,7 @@ export type Database = {
         Returns: Json
       }
       get_operational_empresa_id: { Args: never; Returns: string }
+      get_operational_user_id: { Args: never; Returns: string }
       get_user_cliente_id: { Args: never; Returns: string }
       get_user_empresa_id: { Args: never; Returns: string }
       has_role: {

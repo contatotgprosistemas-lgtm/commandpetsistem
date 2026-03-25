@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, CalendarDays, Users, PawPrint, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, PawPrint, LogOut, Menu, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useOperationalAuth } from "@/hooks/useOperationalAuth";
@@ -12,6 +12,7 @@ const navItems = [
   { path: "/operacional/agenda", label: "Agenda", icon: CalendarDays },
   { path: "/operacional/clientes", label: "Clientes", icon: Users },
   { path: "/operacional/pets", label: "Pets", icon: PawPrint },
+  { path: "/operacional/ponto", label: "Ponto", icon: Clock },
 ];
 
 export function OperacionalLayout() {

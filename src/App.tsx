@@ -25,6 +25,7 @@ import TaxiPetPage from "@/pages/TaxiPetPage";
 import ContratosPage from "@/pages/ContratosPage";
 import NotasFiscaisPage from "@/pages/NotasFiscaisPage";
 import ContractSignPage from "@/pages/ContractSignPage";
+import PontoPage from "@/pages/PontoPage";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
@@ -38,6 +39,7 @@ import OperacionalDashboard from "@/pages/operacional/OperacionalDashboard";
 import OperacionalAgendaPage from "@/pages/operacional/OperacionalAgendaPage";
 import OperacionalClientesPage from "@/pages/operacional/OperacionalClientesPage";
 import OperacionalPetsPage from "@/pages/operacional/OperacionalPetsPage";
+import OperacionalPontoPage from "@/pages/operacional/OperacionalPontoPage";
 import { OperacionalLayout } from "@/components/operacional/OperacionalLayout";
 import { OperacionalProtectedRoute } from "@/components/operacional/OperacionalProtectedRoute";
 import { OperationalAuthProvider } from "@/hooks/useOperationalAuth";
@@ -267,6 +269,17 @@ const App = () => (
             />
 
             <Route
+              path="/ponto"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <PontoPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/configuracoes"
               element={
                 <ProtectedRoute>
@@ -306,6 +319,7 @@ const App = () => (
               <Route path="agenda" element={<OperacionalAgendaPage />} />
               <Route path="clientes" element={<OperacionalClientesPage />} />
               <Route path="pets" element={<OperacionalPetsPage />} />
+              <Route path="ponto" element={<OperacionalPontoPage />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
