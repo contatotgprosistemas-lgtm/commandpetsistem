@@ -160,7 +160,7 @@ export default function CadastroPublicoPage() {
               whatsapp: data.whatsapp || null,
               email: data.email || null,
               cpf: data.cpf || null,
-              endereco: data.endereco || null,
+              endereco: data.numero ? `${data.endereco}, ${data.numero}` : (data.endereco || null),
               como_conheceu: data.como_conheceu || null,
             },
             pets,
