@@ -166,48 +166,15 @@ export default function AgendaPage() {
     <div className="p-6 space-y-5 max-w-[1400px]">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            AÇÕES DE HOJE
-            <span className="text-sm font-normal text-muted-foreground">Todos</span>
-          </h1>
+          <h1 className="text-lg font-semibold text-foreground">Agenda</h1>
           <p className="text-xs text-muted-foreground capitalize">{todayFormatted}</p>
         </div>
         <div className="flex items-center gap-2">
-          <OrcamentoDialog />
           <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
         </div>
       </div>
 
-      <Tabs defaultValue="hoje" className="w-full">
-        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4">
-          <TabsTrigger value="hoje" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-            Reserva Hoje ({reservaHoje.length})
-          </TabsTrigger>
-          <TabsTrigger value="proximas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-            Próximas Reservas ({proximasReservas.length})
-          </TabsTrigger>
-          <TabsTrigger value="calendario" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-            Calendário
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="hoje">
-          <AgendamentoList items={reservaHoje} loading={loading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
-        </TabsContent>
-        <TabsContent value="proximas">
-          <AgendamentoList items={proximasReservas} loading={loading} onEdit={setEditingAgendamento} showDelete onDelete={handleDelete} />
-        </TabsContent>
-        <TabsContent value="calendario">
-          <AgendaCalendar agendamentos={agendamentos} />
-        </TabsContent>
-      </Tabs>
-
-      <EditarAgendamentoDialog
-        agendamento={editingAgendamento}
-        open={!!editingAgendamento}
-        onOpenChange={(o) => { if (!o) setEditingAgendamento(null); }}
-        onSuccess={() => { setEditingAgendamento(null); fetchAgendamentos(); }}
-      />
+      <AgendaCalendar agendamentos={agendamentos} />
     </div>
   );
 }
