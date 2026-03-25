@@ -383,6 +383,8 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch, fotoUrl, onFoto
         )}
       </div>
 
+      <PublicPhotoUpload value={fotoUrl} onChange={onFotoChange} folder="pets" size="sm" />
+
       <FormField control={control} name={`pets.${idx}.nome`} render={({ field }) => (
         <FormItem>
           <FormLabel>Nome do pet *</FormLabel>
