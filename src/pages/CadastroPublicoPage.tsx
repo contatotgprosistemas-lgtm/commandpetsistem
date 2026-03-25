@@ -92,6 +92,8 @@ export default function CadastroPublicoPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [clienteFotoUrl, setClienteFotoUrl] = useState<string | null>(null);
+  const [petFotos, setPetFotos] = useState<Record<number, string | null>>({});
 
   async function buscarCep(cep: string) {
     const clean = cep.replace(/\D/g, "");
