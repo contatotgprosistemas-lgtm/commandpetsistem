@@ -42,11 +42,11 @@ interface Contract {
 }
 
 const statusMap: Record<string, { label: string; color: string }> = {
-  rascunho: { label: "Rascunho", color: "bg-muted text-muted-foreground" },
-  enviado: { label: "Enviado", color: "bg-amber-100 text-amber-800" },
-  assinado: { label: "Assinado", color: "bg-emerald-100 text-emerald-800" },
+  rascunho: { label: "Não concluído", color: "bg-muted text-muted-foreground" },
+  enviado: { label: "Não concluído", color: "bg-amber-100 text-amber-800" },
+  assinado: { label: "Concluído", color: "bg-emerald-100 text-emerald-800" },
   cancelado: { label: "Cancelado", color: "bg-red-100 text-red-800" },
-  expirado: { label: "Expirado", color: "bg-gray-100 text-gray-800" },
+  expirado: { label: "Não concluído", color: "bg-gray-100 text-gray-800" },
 };
 
 const DEFAULT_TEMPLATE = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
@@ -263,12 +263,6 @@ export default function ContratosPage() {
         </TabsList>
 
         <TabsContent value="contratos" className="space-y-4">
-          <div className="flex justify-end">
-            <Button onClick={() => setShowContractDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Novo Contrato
-            </Button>
-          </div>
-
           <Card>
             <CardContent className="p-0">
               <Table>
