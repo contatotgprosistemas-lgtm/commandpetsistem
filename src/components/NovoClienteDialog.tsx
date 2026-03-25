@@ -81,6 +81,7 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
         endereco: enderecoCompleto || null,
         como_conheceu: data.como_conheceu || null,
         notas: data.notas || null,
+        foto_url: fotoUrl,
       } as any);
 
       if (error) throw error;
