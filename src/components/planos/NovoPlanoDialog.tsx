@@ -143,18 +143,14 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
               <Input type="number" value={minLoyalty} onChange={e => setMinLoyalty(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Taxa cancelamento (R$)</Label>
-              <Input type="number" value={cancellationFee} onChange={e => setCancellationFee(e.target.value)} />
+              <Label>Taxa cancelamento (%)</Label>
+              <Input type="number" min="0" max="100" value={cancellationFee} onChange={e => setCancellationFee(e.target.value)} placeholder="0" />
             </div>
           </div>
           <div className="flex gap-6">
             <div className="flex items-center gap-2">
               <Switch checked={autoRenew} onCheckedChange={setAutoRenew} />
               <Label>Renovação automática</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={rollover} onCheckedChange={setRollover} />
-              <Label>Rollover de saldo</Label>
             </div>
           </div>
 
