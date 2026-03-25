@@ -129,11 +129,11 @@ export default function CadastroPublicoPage() {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const pets = data.pets.filter(p => p.nome.trim().length > 0).map(p => ({
         ...p,
-        data_nascimento: p.data_nascimento ? format(p.data_nascimento, "yyyy-MM-dd") : null,
+        data_nascimento: p.data_nascimento || null,
         idade: p.data_nascimento ? calcularIdade(p.data_nascimento) : null,
-        antiparasitario_data: p.antiparasitario_data ? format(p.antiparasitario_data, "yyyy-MM-dd") : null,
-        v10_data: p.v10_data ? format(p.v10_data, "yyyy-MM-dd") : null,
-        raiva_data: p.raiva_data ? format(p.raiva_data, "yyyy-MM-dd") : null,
+        antiparasitario_data: p.antiparasitario_data || null,
+        v10_data: p.v10_data || null,
+        raiva_data: p.raiva_data || null,
         vacinas: [p.antiparasitario, p.v10, p.raiva].filter(Boolean).join(", ") || null,
       }));
 
