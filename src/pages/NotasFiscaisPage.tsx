@@ -266,8 +266,8 @@ export default function NotasFiscaisPage() {
         cliente_cpf_cnpj: form.cliente_cpf_cnpj,
         descricao: form.descricao,
         valor_total: valor,
-        dados_envio: dados as unknown as Record<string, unknown>,
-        resposta_api: focusResult as unknown as Record<string, unknown>,
+        dados_envio: JSON.parse(JSON.stringify(dados)),
+        resposta_api: JSON.parse(JSON.stringify(focusResult)),
         mensagem_erro: focusResult?.erros
           ? JSON.stringify(focusResult.erros)
           : null,
