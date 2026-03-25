@@ -1,5 +1,7 @@
-import { Navigate } from "react-router-dom";
-
-export default function Index() {
-  return <div>FUNCIONOU</div>;
-}
+  <html lan<html lang="pt-BR" class="notranslate" translate="no">
+<head>
+  <meta name="google" content="notranslate" />
+</head>g="pt-BR" class="notranslate" translate="no">
+<head>
+  <meta name="google" content="notranslate" />
+</head>
