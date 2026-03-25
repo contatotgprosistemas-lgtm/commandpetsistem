@@ -67,6 +67,7 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/cadastro/:empresaId" element={<CadastroPublicoPage />} />
+            <Route path="/assinar/:token" element={<ContractSignPage />} />
 
             {/* Portal do Cliente auth */}
             <Route path="/portal/login" element={<PortalLoginPage />} />
