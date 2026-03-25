@@ -110,6 +110,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
       if (error) throw error;
       toast({ title: "Pet cadastrado com sucesso!" });
       form.reset();
+      setFotoUrl(null);
       setOpen(false);
       onSuccess?.();
     } catch (err: any) {
