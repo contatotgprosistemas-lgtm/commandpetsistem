@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Package, Plus, Loader2 } from "lucide-react";
+import { Package, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +19,9 @@ const ServicosPage = () => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [tipo, setTipo] = useState("");
@@ -55,11 +59,51 @@ const ServicosPage = () => {
     onError: () => toast.error("Erro ao adicionar serviço."),
   });
 
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("servicos").update({
+        descricao,
+        valor: parseFloat(valor) || 0,
+        tipo,
+      }).eq("id", editId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["servicos"] });
+      toast.success("Serviço atualizado!");
+      resetForm();
+      setEditOpen(false);
+    },
+    onError: () => toast.error("Erro ao atualizar serviço."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("servicos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["servicos"] });
+      toast.success("Serviço excluído!");
+      setDeleteId(null);
+    },
+    onError: () => toast.error("Erro ao excluir serviço."),
+  });
+
   const resetForm = () => {
     setDescricao("");
     setValor("");
     setTipo("");
     setOpen(false);
+    setEditId(null);
+  };
+
+  const openEdit = (s: { id: string; descricao: string; valor: number; tipo: string }) => {
+    setEditId(s.id);
+    setDescricao(s.descricao);
+    setValor(String(s.valor));
+    setTipo(s.tipo);
+    setEditOpen(true);
   };
 
   return (
@@ -121,6 +165,7 @@ const ServicosPage = () => {
               <TableHead>Descrição</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -129,6 +174,16 @@ const ServicosPage = () => {
                 <TableCell>{s.descricao}</TableCell>
                 <TableCell>{s.tipo}</TableCell>
                 <TableCell className="text-right">R$ {Number(s.valor).toFixed(2)}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(s.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -136,6 +191,60 @@ const ServicosPage = () => {
       ) : (
         <p className="text-center text-muted-foreground py-8">Nenhum serviço cadastrado.</p>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) resetForm(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Serviço</DialogTitle>
+            <DialogDescription>Altere os dados do serviço.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Valor (R$)</Label>
+              <Input type="number" min="0" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo do Serviço</Label>
+              <Select value={tipo} onValueChange={setTipo}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TIPOS_SERVICO.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditOpen(false); resetForm(); }}>Cancelar</Button>
+            <Button onClick={() => editMutation.mutate()} disabled={!descricao || !tipo || editMutation.isPending}>
+              {editMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir serviço?</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
