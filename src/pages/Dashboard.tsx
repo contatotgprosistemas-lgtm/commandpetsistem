@@ -69,7 +69,7 @@ export default function Dashboard() {
     setAgendaLoading(true);
     const { data } = await supabase
       .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
+      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
       .order("data_hora", { ascending: true });
     if (data) setAgendamentos(data as any);
     setAgendaLoading(false);
