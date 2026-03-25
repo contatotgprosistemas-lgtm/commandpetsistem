@@ -481,6 +481,149 @@ function IntegracoesTab() {
   );
 }
 
+// ─── Usuários Operacionais ──────────────────────────────────────────
+function OperacionalTab() {
+  const { profile } = useAuth();
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState({ nome: "", email: "", password: "" });
+  const [saving, setSaving] = useState(false);
+
+  const fetchUsers = async () => {
+    if (!profile?.empresa_id) return;
+    const { data } = await supabase.from("operational_users").select("*").eq("empresa_id", profile.empresa_id).order("nome");
+    setUsers(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchUsers(); }, [profile?.empresa_id]);
+
+  const handleCreate = async () => {
+    if (!profile?.empresa_id || !form.nome || !form.email || !form.password) {
+      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+
+    // Create auth user first
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: { data: { nome: form.nome } },
+    });
+
+    if (authError || !authData.user) {
+      toast({ title: "Erro ao criar usuário", description: authError?.message, variant: "destructive" });
+      setSaving(false);
+      return;
+    }
+
+    // Create operational user record
+    const { error } = await supabase.from("operational_users").insert({
+      nome: form.nome,
+      email: form.email,
+      empresa_id: profile.empresa_id,
+      user_id: authData.user.id,
+    });
+
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Usuário operacional criado!" });
+      setForm({ nome: "", email: "", password: "" });
+      setDialogOpen(false);
+      fetchUsers();
+    }
+    setSaving(false);
+  };
+
+  const handleToggle = async (id: string, ativo: boolean) => {
+    await supabase.from("operational_users").update({ ativo: !ativo }).eq("id", id);
+    fetchUsers();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Excluir este usuário operacional?")) return;
+    await supabase.from("operational_users").delete().eq("id", id);
+    fetchUsers();
+    toast({ title: "Usuário removido." });
+  };
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-base">Usuários Operacionais</CardTitle>
+          <CardDescription>Gerencie os acessos ao portal operacional (/operacional/login)</CardDescription>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="gap-1.5"><UserPlus className="h-4 w-4" /> Novo</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Novo Usuário Operacional</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nome</Label>
+                <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome completo" />
+              </div>
+              <div className="space-y-2">
+                <Label>E-mail</Label>
+                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@exemplo.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Senha</Label>
+                <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" />
+              </div>
+              <Button onClick={handleCreate} disabled={saving} className="w-full">
+                {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Criar Usuário
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {users.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">Nenhum usuário operacional cadastrado.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>E-mail</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-24">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((u) => (
+                <TableRow key={u.id}>
+                  <TableCell className="font-medium">{u.nome}</TableCell>
+                  <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={u.ativo ? "default" : "secondary"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Switch checked={u.ativo} onCheckedChange={() => handleToggle(u.id, u.ativo)} />
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id)} className="h-8 w-8 text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Página Principal ───────────────────────────────────────────────
 export default function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
