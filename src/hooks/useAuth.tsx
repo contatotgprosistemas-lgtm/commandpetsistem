@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
-type UserRole = "admin" | "gerente" | "atendente" | "financeiro" | "operacional" | "cliente";
+type UserRole = "admin" | "gerente" | "atendente" | "financeiro" | "operacional" | "cliente" | "super_admin";
 
 type AuthUser = {
   role?: UserRole | null;
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setUser({ ...currentSession.user, role: primaryRole });
     setProfile(profileData ?? null);
-    setIsSuperAdmin(roles.includes("admin"));
+    setIsSuperAdmin(roles.includes("super_admin"));
     setLoading(false);
   }, []);
 
