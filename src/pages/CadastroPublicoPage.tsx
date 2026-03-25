@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, differenceInYears, differenceInMonths } from "date-fns";
-import { PawPrint, Plus, Trash2, CheckCircle2, Building2, CalendarIcon } from "lucide-react";
+import { PawPrint, Plus, Trash2, CheckCircle2, Building2, CalendarIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -46,7 +46,9 @@ const schema = z.object({
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
   cpf: z.string().trim().min(1, "CPF é obrigatório").max(14),
+  cep: z.string().trim().max(10).optional().or(z.literal("")),
   endereco: z.string().trim().max(500).optional().or(z.literal("")),
+  numero: z.string().trim().max(20).optional().or(z.literal("")),
   como_conheceu: z.string().optional().or(z.literal("")),
   pets: z.array(petSchema),
 });
@@ -98,11 +100,32 @@ export default function CadastroPublicoPage() {
   const { empresaId } = useParams<{ empresaId: string }>();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+
+  async function buscarCep(cep: string) {
+    const clean = cep.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        form.setValue("endereco", `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`);
+      } else {
+        form.setValue("endereco", "");
+        toast.error("CEP não encontrado. Preencha o endereço manualmente.");
+      }
+    } catch {
+      toast.error("Erro ao buscar CEP. Preencha o endereço manualmente.");
+    } finally {
+      setCepLoading(false);
+    }
+  }
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      nome: "", whatsapp: "", email: "", cpf: "", endereco: "", como_conheceu: "",
+      nome: "", whatsapp: "", email: "", cpf: "", cep: "", endereco: "", numero: "", como_conheceu: "",
       pets: [{ ...defaultPet }],
     },
   });
@@ -137,7 +160,7 @@ export default function CadastroPublicoPage() {
               whatsapp: data.whatsapp || null,
               email: data.email || null,
               cpf: data.cpf || null,
-              endereco: data.endereco || null,
+              endereco: data.numero ? `${data.endereco}, ${data.numero}` : (data.endereco || null),
               como_conheceu: data.como_conheceu || null,
             },
             pets,
@@ -233,10 +256,38 @@ export default function CadastroPublicoPage() {
                   </FormItem>
                 )} />
               </div>
-              <FormField control={form.control} name="endereco" render={({ field }) => (
+              <div className="grid grid-cols-3 gap-4">
+                <FormField control={form.control} name="cep" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CEP</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          placeholder="00000-000"
+                          {...field}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            buscarCep(e.target.value);
+                          }}
+                        />
+                        {cepLoading && <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="endereco" render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Endereço</FormLabel>
+                    <FormControl><Input placeholder="Rua, bairro, cidade" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={form.control} name="numero" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Endereço</FormLabel>
-                  <FormControl><Input placeholder="Rua, número, bairro, cidade" {...field} /></FormControl>
+                  <FormLabel>Número</FormLabel>
+                  <FormControl><Input placeholder="Nº da casa/apto" className="w-32" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
