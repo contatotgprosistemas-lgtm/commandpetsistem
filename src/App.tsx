@@ -22,6 +22,8 @@ import PlanosPacotesPage from "@/pages/PlanosPacotesPage";
 import KanbanPage from "@/pages/KanbanPage";
 import ChatbotPage from "@/pages/ChatbotPage";
 import TaxiPetPage from "@/pages/TaxiPetPage";
+import ContratosPage from "@/pages/ContratosPage";
+import ContractSignPage from "@/pages/ContractSignPage";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
