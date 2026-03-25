@@ -187,6 +187,7 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground capitalize">{todayFormatted}</p>
           </div>
           <div className="flex items-center gap-2">
+            <EstouChegandoMapDialog />
             <OrcamentoDialog />
             <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
           </div>
