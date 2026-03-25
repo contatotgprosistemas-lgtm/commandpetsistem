@@ -4,12 +4,13 @@ import { z } from "zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { differenceInYears, differenceInMonths } from "date-fns";
-import { PawPrint, Plus, Trash2, CheckCircle2, Building2, Loader2 } from "lucide-react";
+import { PawPrint, Plus, Trash2, CheckCircle2, Building2, Loader2, Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 function calcularIdade(nascimento: string): string {
   if (!nascimento) return "";
