@@ -17,6 +17,7 @@ import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
 import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
+import { GerarContratoButton } from "@/components/contracts/GerarContratoButton";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 
 interface Agendamento {
