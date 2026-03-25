@@ -162,10 +162,10 @@ export default function Dashboard() {
   const todayFormatted = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px]">
+    <div className="p-6 md:p-8 space-y-6 max-w-[1400px]">
       <div>
-        <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Visão geral do dia — {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</p>
+        <h1 className="text-lg font-semibold text-foreground tracking-tight">Dashboard</h1>
+        <p className="text-[13px] text-muted-foreground mt-0.5">Visão geral do dia — {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
