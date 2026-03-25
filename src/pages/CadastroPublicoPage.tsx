@@ -42,7 +42,7 @@ const petSchema = z.object({
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome é obrigatório").max(100),
-  data_nascimento: z.date().optional(),
+  data_nascimento: z.string().optional().or(z.literal("")),
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
   cpf: z.string().trim().min(1, "CPF é obrigatório").max(14),
