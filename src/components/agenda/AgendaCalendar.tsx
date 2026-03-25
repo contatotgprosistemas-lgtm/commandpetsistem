@@ -13,9 +13,10 @@ import {
   isToday,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter, X, Clock, PawPrint, User, Phone, MessageCircle, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 interface Agendamento {
@@ -23,9 +24,17 @@ interface Agendamento {
   data_hora: string;
   tipo_servico: string;
   status: string;
+  notas?: string | null;
+  valor?: number | null;
+  baia?: string | null;
   subscription_id?: string | null;
-  pet: { id: string; nome: string; raca: string | null; especie: string } | null;
-  cliente: { id: string; nome: string; whatsapp: string | null } | null;
+  pet: { id: string; nome: string; raca: string | null; especie: string; foto_url?: string | null } | null;
+  cliente: { id: string; nome: string; whatsapp: string | null; foto_url?: string | null } | null;
+}
+
+interface AgendaCalendarProps {
+  agendamentos: Agendamento[];
+  onEditAgendamento?: (agendamento: Agendamento) => void;
 }
 
 const WEEKDAYS = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
@@ -46,11 +55,33 @@ function getServiceColor(tipo: string) {
   return SERVICE_COLORS[tipo] || "bg-primary/70 text-primary-foreground";
 }
 
-export function AgendaCalendar({ agendamentos }: { agendamentos: Agendamento[] }) {
+function statusLabel(status: string) {
+  const map: Record<string, string> = {
+    pendente: "Pendente",
+    confirmado: "Confirmado",
+    na_empresa: "Na Empresa",
+    concluido: "Concluído",
+    cancelado: "Cancelado",
+  };
+  return map[status] || status;
+}
+
+function statusBadgeColor(status: string) {
+  switch (status) {
+    case "confirmado": return "bg-emerald-100 text-emerald-800";
+    case "pendente": return "bg-amber-100 text-amber-800";
+    case "na_empresa": return "bg-sky-100 text-sky-800";
+    case "concluido": return "bg-primary/10 text-primary";
+    case "cancelado": return "bg-red-100 text-red-800";
+    default: return "bg-muted text-muted-foreground";
+  }
+}
+
+export function AgendaCalendar({ agendamentos, onEditAgendamento }: AgendaCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-  // Extract unique service types
   const serviceTypes = useMemo(() => {
     const types = new Set<string>();
     agendamentos.forEach(a => {
@@ -91,6 +122,14 @@ export function AgendaCalendar({ agendamentos }: { agendamentos: Agendamento[] }
     });
     return map;
   }, [filteredAgendamentos]);
+
+  const selectedDayItems = useMemo(() => {
+    if (!selectedDay) return [];
+    const key = format(selectedDay, "yyyy-MM-dd");
+    return (agendamentosByDay.get(key) || []).sort(
+      (a, b) => new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime()
+    );
+  }, [selectedDay, agendamentosByDay]);
 
   return (
     <div className="mt-4 space-y-4">
@@ -142,7 +181,6 @@ export function AgendaCalendar({ agendamentos }: { agendamentos: Agendamento[] }
 
       {/* Calendar grid */}
       <div className="border border-border rounded-lg overflow-hidden">
-        {/* Header */}
         <div className="grid grid-cols-7 bg-primary/80">
           {WEEKDAYS.map(d => (
             <div key={d} className="text-center text-xs font-semibold text-primary-foreground py-2 border-r border-primary/30 last:border-r-0">
@@ -151,21 +189,23 @@ export function AgendaCalendar({ agendamentos }: { agendamentos: Agendamento[] }
           ))}
         </div>
 
-        {/* Days grid */}
         <div className="grid grid-cols-7">
           {calendarDays.map((day, idx) => {
             const key = format(day, "yyyy-MM-dd");
             const dayItems = agendamentosByDay.get(key) || [];
             const inMonth = isSameMonth(day, currentMonth);
             const today = isToday(day);
+            const isSelected = selectedDay && isSameDay(day, selectedDay);
 
             return (
               <div
                 key={idx}
+                onClick={() => setSelectedDay(isSelected ? null : day)}
                 className={cn(
-                  "min-h-[120px] border-r border-b border-border last:border-r-0 p-1",
+                  "min-h-[120px] border-r border-b border-border last:border-r-0 p-1 cursor-pointer transition-colors",
                   !inMonth && "bg-muted/30",
-                  today && "bg-primary/5"
+                  today && !isSelected && "bg-primary/5",
+                  isSelected && "bg-primary/10 ring-2 ring-primary ring-inset"
                 )}
               >
                 <div className={cn(
@@ -179,17 +219,107 @@ export function AgendaCalendar({ agendamentos }: { agendamentos: Agendamento[] }
                   )}
                 </div>
                 <div className="space-y-0.5 overflow-y-auto max-h-[200px]">
-                  {dayItems
-                    .sort((a, b) => new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime())
-                    .map(item => (
-                      <CalendarEvent key={item.id} item={item} />
-                    ))}
+                  {dayItems.map(item => (
+                    <CalendarEvent key={item.id} item={item} />
+                  ))}
                 </div>
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* Day detail panel */}
+      {selectedDay && (
+        <div className="border border-border rounded-lg bg-card shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <h3 className="text-sm font-semibold text-foreground capitalize">
+              {format(selectedDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+              <span className="ml-2 text-muted-foreground font-normal">
+                ({selectedDayItems.length} {selectedDayItems.length === 1 ? "agendamento" : "agendamentos"})
+              </span>
+            </h3>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedDay(null)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {selectedDayItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <PawPrint className="h-8 w-8 text-muted-foreground/30 mb-2" strokeWidth={1.5} />
+              <p className="text-sm text-muted-foreground">Nenhum agendamento neste dia</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {selectedDayItems.map(item => (
+                <DayListItem key={item.id} item={item} onEdit={onEditAgendamento} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DayListItem({ item, onEdit }: { item: Agendamento; onEdit?: (a: Agendamento) => void }) {
+  const hora = format(new Date(item.data_hora), "HH:mm");
+  const petName = item.pet?.nome ?? "Pet";
+  const petBreed = item.pet?.raca;
+  const clientName = item.cliente?.nome ?? "—";
+  const clientWhatsapp = item.cliente?.whatsapp;
+  const initials = petName.slice(0, 2).toUpperCase();
+  const colorClass = getServiceColor(item.tipo_servico);
+
+  return (
+    <div
+      className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer"
+      onClick={() => onEdit?.(item)}
+    >
+      {/* Avatars */}
+      <div className="flex items-center -space-x-2 shrink-0">
+        <Avatar className="h-10 w-10 border-2 border-card z-10">
+          {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}
+          <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
+        </Avatar>
+        <Avatar className="h-7 w-7 border-2 border-card">
+          {item.cliente?.foto_url && <AvatarImage src={item.cliente.foto_url} alt={clientName} />}
+          <AvatarFallback className="bg-primary/10 text-primary text-[9px] font-semibold">{clientName.slice(0, 2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
+          {petBreed && <span className="text-xs text-muted-foreground">({petBreed})</span>}
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+          <Clock className="h-3 w-3 shrink-0" />
+          <span>{hora}</span>
+          <span>|</span>
+          <span className="truncate">{clientName}</span>
+          {clientWhatsapp && <MessageCircle className="h-3 w-3 text-emerald-500 shrink-0" />}
+        </div>
+      </div>
+
+      {/* Service badge */}
+      <Badge className={cn("text-[10px] shrink-0", colorClass)}>{item.tipo_servico}</Badge>
+
+      {/* Status */}
+      <Badge className={cn("text-[10px] shrink-0", statusBadgeColor(item.status))}>
+        {statusLabel(item.status)}
+      </Badge>
+
+      {/* Value */}
+      {item.valor != null && (
+        <span className="text-sm font-medium text-foreground tabular-nums shrink-0">
+          R$ {item.valor.toFixed(2)}
+        </span>
+      )}
+
+      {/* Edit icon */}
+      <Pencil className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-primary shrink-0" />
     </div>
   );
 }
@@ -197,27 +327,22 @@ export function AgendaCalendar({ agendamentos }: { agendamentos: Agendamento[] }
 function CalendarEvent({ item }: { item: Agendamento }) {
   const hora = format(new Date(item.data_hora), "HH:mm");
   const petName = item.pet?.nome ?? "Pet";
-  const petBreed = item.pet?.raca;
-  const clientName = item.cliente?.nome;
-
   const isFromPlan = !!item.subscription_id;
   const colorClass = getServiceColor(item.tipo_servico);
 
   return (
-    <div className={cn(
-      "rounded px-1.5 py-1 text-[10px] leading-tight cursor-default transition-colors",
-      isFromPlan
-        ? "border border-primary/30 " + colorClass
-        : colorClass
-    )}>
+    <div
+      className={cn(
+        "rounded px-1.5 py-0.5 text-[10px] leading-tight transition-colors",
+        isFromPlan ? "border border-primary/30 " + colorClass : colorClass
+      )}
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="font-bold flex items-center gap-1">
         <span>{hora}</span>
         <span className="truncate">{petName}</span>
         {isFromPlan && <span className="opacity-70">📋</span>}
       </div>
-      {clientName && (
-        <div className="opacity-80 truncate">{clientName}</div>
-      )}
       <div className="opacity-70 truncate">{item.tipo_servico}</div>
     </div>
   );
