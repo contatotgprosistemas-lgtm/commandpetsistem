@@ -123,6 +123,7 @@ const App = () => (
               }
             />
 
+            <Route
               path="/crm"
               element={
                 <ProtectedRoute>
