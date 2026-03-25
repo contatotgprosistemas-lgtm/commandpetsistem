@@ -8,7 +8,7 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
-const authRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/cadastro"];
+const authRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/cadastro", "/operacional"];
 
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();

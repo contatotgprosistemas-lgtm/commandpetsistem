@@ -32,6 +32,16 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import CadastroPublicoPage from "@/pages/CadastroPublicoPage";
 import NotFound from "@/pages/NotFound";
 
+// Operacional pages
+import OperacionalLoginPage from "@/pages/operacional/OperacionalLoginPage";
+import OperacionalDashboard from "@/pages/operacional/OperacionalDashboard";
+import OperacionalAgendaPage from "@/pages/operacional/OperacionalAgendaPage";
+import OperacionalClientesPage from "@/pages/operacional/OperacionalClientesPage";
+import OperacionalPetsPage from "@/pages/operacional/OperacionalPetsPage";
+import { OperacionalLayout } from "@/components/operacional/OperacionalLayout";
+import { OperacionalProtectedRoute } from "@/components/operacional/OperacionalProtectedRoute";
+import { OperationalAuthProvider } from "@/hooks/useOperationalAuth";
+
 // Portal pages
 import PortalLoginPage from "@/pages/portal/PortalLoginPage";
 import PortalForgotPasswordPage from "@/pages/portal/PortalForgotPasswordPage";
@@ -277,6 +287,26 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
+            {/* Operacional auth */}
+            <Route path="/operacional/login" element={<OperationalAuthProvider><OperacionalLoginPage /></OperationalAuthProvider>} />
+
+            {/* Operacional portal (protected) */}
+            <Route
+              path="/operacional"
+              element={
+                <OperationalAuthProvider>
+                  <OperacionalProtectedRoute>
+                    <OperacionalLayout />
+                  </OperacionalProtectedRoute>
+                </OperationalAuthProvider>
+              }
+            >
+              <Route index element={<OperacionalDashboard />} />
+              <Route path="agenda" element={<OperacionalAgendaPage />} />
+              <Route path="clientes" element={<OperacionalClientesPage />} />
+              <Route path="pets" element={<OperacionalPetsPage />} />
+            </Route>
 
             <Route path="*" element={<NotFound />} />
           </Routes>
