@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2 } from "lucide-react";
+import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
 import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
+import { GerarContratoButton } from "@/components/contracts/GerarContratoButton";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 
 interface Agendamento {
@@ -341,6 +342,7 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
             <Phone className="h-3.5 w-3.5 text-emerald-600" />
           </Button>
         )}
+        <GerarContratoButton agendamento={item} />
         {showDelete && (
           <>
             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Excluir" onClick={() => setConfirmOpen(true)}>
@@ -425,6 +427,7 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Serviço" onClick={() => onFicha(item)}>
                 <FileText className="h-3.5 w-3.5 text-primary" />
               </Button>
+              <GerarContratoButton agendamento={item} />
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Manejo" onClick={() => onManejo(item)}>
                 <Stethoscope className="h-3.5 w-3.5 text-primary" />
               </Button>
