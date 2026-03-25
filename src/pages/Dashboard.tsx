@@ -370,7 +370,7 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
     </div>
   );
   return (
-    <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
+    <div className="bg-card rounded-xl border border-border/60 shadow-card mt-4 divide-y divide-border/60">
       {items.map(item => {
         const petName = item.pet?.nome ?? "Pet";
         const initials = petName.slice(0, 2).toUpperCase();

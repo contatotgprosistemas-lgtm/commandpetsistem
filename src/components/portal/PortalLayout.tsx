@@ -82,7 +82,7 @@ export function PortalLayout() {
 
       <div className="flex flex-1">
         {/* Sidebar desktop */}
-        <aside className="hidden md:flex flex-col w-56 bg-card border-r border-border p-3 gap-1">
+        <aside className="hidden md:flex flex-col w-56 bg-card border-r border-border/60 p-3 gap-0.5">
           {navItems.map((item) => (
             <button
               key={item.path}
