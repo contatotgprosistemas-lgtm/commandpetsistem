@@ -45,7 +45,7 @@ export function AppSidebar() {
     { icon: Bot, label: "Chatbot", path: "/chatbot" },
     { icon: Car, label: "TaxiPet", path: "/taxipet" },
     { icon: FileSignature, label: "Contratos", path: "/contratos" },
-  ];
+    { icon: Receipt, label: "Notas Fiscais", path: "/notas-fiscais" },
 
   const cadastrosItems = [
     { icon: Users, label: "Clientes", path: "/clientes" },
