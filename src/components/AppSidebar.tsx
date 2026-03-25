@@ -23,6 +23,7 @@ import {
   Car,
   FileSignature,
   CalendarDays,
+  Receipt,
 } from "lucide-react";
 
 export function AppSidebar() {
