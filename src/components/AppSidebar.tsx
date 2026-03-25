@@ -24,6 +24,7 @@ import {
   FileSignature,
   CalendarDays,
   Receipt,
+  Clock,
 } from "lucide-react";
 
 export function AppSidebar() {
