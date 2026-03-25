@@ -2157,6 +2157,50 @@ export type Database = {
           },
         ]
       }
+      operational_users: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          email: string
+          empresa_id: string
+          id: string
+          nome: string
+          pin: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          email: string
+          empresa_id: string
+          id?: string
+          nome: string
+          pin?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          email?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          pin?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_users_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_media: {
         Row: {
           caption: string | null
@@ -3448,6 +3492,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_operational_empresa_id: { Args: never; Returns: string }
       get_user_cliente_id: { Args: never; Returns: string }
       get_user_empresa_id: { Args: never; Returns: string }
       has_role: {
