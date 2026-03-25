@@ -414,21 +414,11 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch }: { control: an
       {/* Data nascimento + idade */}
       <div className="grid grid-cols-2 gap-3">
         <FormField control={control} name={`pets.${idx}.data_nascimento`} render={({ field }) => (
-          <FormItem className="flex flex-col">
+          <FormItem>
             <FormLabel>Data de Nascimento</FormLabel>
-            <Popover>
-              <PopoverTrigger asChild>
-                <FormControl>
-                  <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                    {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione</span>}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(d) => d > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} />
-              </PopoverContent>
-            </Popover>
+            <FormControl>
+              <Input type="date" {...field} />
+            </FormControl>
           </FormItem>
         )} />
         <FormItem className="flex flex-col">
