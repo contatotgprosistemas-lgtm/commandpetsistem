@@ -27,17 +27,17 @@ const petSchema = z.object({
   raca: z.string().trim().max(100).optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
-  data_nascimento: z.date().optional(),
+  data_nascimento: z.string().optional().or(z.literal("")),
   pelagem: z.string().optional().or(z.literal("")),
   comportamento: z.string().optional().or(z.literal("")),
   restricoes_alimentares: z.string().trim().max(500).optional().or(z.literal("")),
   medicacoes: z.string().trim().max(500).optional().or(z.literal("")),
   antiparasitario: z.string().optional().or(z.literal("")),
-  antiparasitario_data: z.date().optional(),
+  antiparasitario_data: z.string().optional().or(z.literal("")),
   v10: z.string().optional().or(z.literal("")),
-  v10_data: z.date().optional(),
+  v10_data: z.string().optional().or(z.literal("")),
   raiva: z.string().optional().or(z.literal("")),
-  raiva_data: z.date().optional(),
+  raiva_data: z.string().optional().or(z.literal("")),
 });
 
 const schema = z.object({
