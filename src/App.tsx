@@ -167,6 +167,17 @@ const App = () => (
               }
             />
 
+            <Route
+              path="/contratos"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ContratosPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
 
             <Route
               path="/financeiro"
