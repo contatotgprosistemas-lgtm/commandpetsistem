@@ -156,6 +156,7 @@ export default function CadastroPublicoPage() {
               cpf: data.cpf || null,
               endereco: data.numero ? `${data.endereco}, ${data.numero}` : (data.endereco || null),
               como_conheceu: data.como_conheceu || null,
+              foto_url: clienteFotoUrl || null,
             },
             pets,
           }),
