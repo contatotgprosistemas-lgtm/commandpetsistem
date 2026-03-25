@@ -55,6 +55,31 @@ export default function NotasFiscaisPage() {
   const [emitirOpen, setEmitirOpen] = useState(false);
   const [tipoNota, setTipoNota] = useState<"nfse" | "nfe">("nfse");
   const [searchTerm, setSearchTerm] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
+
+  const buscarCep = useCallback(async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const resp = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await resp.json();
+      if (!data.erro) {
+        setFiscalForm((p) => ({
+          ...p,
+          endereco_logradouro: data.logradouro || p.endereco_logradouro,
+          endereco_bairro: data.bairro || p.endereco_bairro,
+          endereco_complemento: data.complemento || p.endereco_complemento,
+          uf: data.uf || p.uf,
+          codigo_municipio: data.ibge || p.codigo_municipio,
+        }));
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setCepLoading(false);
+    }
+  }, []);
 
   // NFS-e form state
   const [nfseForm, setNfseForm] = useState({
