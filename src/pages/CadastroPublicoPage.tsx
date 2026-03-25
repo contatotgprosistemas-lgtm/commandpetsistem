@@ -100,6 +100,27 @@ export default function CadastroPublicoPage() {
   const { empresaId } = useParams<{ empresaId: string }>();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+
+  async function buscarCep(cep: string) {
+    const clean = cep.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        form.setValue("endereco", `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`);
+      } else {
+        form.setValue("endereco", "");
+        toast.error("CEP não encontrado. Preencha o endereço manualmente.");
+      }
+    } catch {
+      toast.error("Erro ao buscar CEP. Preencha o endereço manualmente.");
+    } finally {
+      setCepLoading(false);
+    }
+  }
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
