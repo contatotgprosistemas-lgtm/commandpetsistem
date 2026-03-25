@@ -12,6 +12,7 @@ const navItems = [
   { path: "/operacional/agenda", label: "Agenda", icon: CalendarDays },
   { path: "/operacional/clientes", label: "Clientes", icon: Users },
   { path: "/operacional/pets", label: "Pets", icon: PawPrint },
+  { path: "/operacional/ponto", label: "Ponto", icon: Clock },
 ];
 
 export function OperacionalLayout() {

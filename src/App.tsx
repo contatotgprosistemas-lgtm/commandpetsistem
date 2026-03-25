@@ -319,6 +319,7 @@ const App = () => (
               <Route path="agenda" element={<OperacionalAgendaPage />} />
               <Route path="clientes" element={<OperacionalClientesPage />} />
               <Route path="pets" element={<OperacionalPetsPage />} />
+              <Route path="ponto" element={<OperacionalPontoPage />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
