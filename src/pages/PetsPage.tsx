@@ -22,7 +22,7 @@ export default function PetsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pets")
-        .select("*, cliente:clientes(id, nome)")
+        .select("*, cliente:clientes(id, nome, foto_url)")
         .order("nome", { ascending: true });
       if (error) throw error;
       return data;
