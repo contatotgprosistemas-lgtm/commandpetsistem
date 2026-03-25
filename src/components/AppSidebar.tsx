@@ -22,6 +22,29 @@ import {
   Gift,
   Car,
   FileSignature,
+  CalendarDays,
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  LayoutDashboard,
+  MessageSquare,
+  PawPrint,
+  DollarSign,
+  Users,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Shield,
+  LogOut,
+  ClipboardList,
+  Package,
+  ShoppingBag,
+  Kanban,
+  Bot,
+  Gift,
+  Car,
+  FileSignature,
 } from "lucide-react";
 
 export function AppSidebar() {
