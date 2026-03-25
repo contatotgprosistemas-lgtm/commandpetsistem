@@ -226,6 +226,43 @@ const ServicosPage = () => {
           ))}
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) resetForm(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Serviço</DialogTitle>
+            <DialogDescription>Atualize as informações do serviço</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Descrição</Label>
+              <Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição" />
+            </div>
+            <div>
+              <Label>Valor</Label>
+              <Input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Valor" />
+            </div>
+            <div>
+              <Label>Tipo</Label>
+              <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border rounded-md p-2">
+                <option value="">Selecione</option>
+                {TIPOS_SERVICO.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditOpen(false); resetForm(); }}>Cancelar</Button>
+            <Button onClick={() => editMutation.mutate()} disabled={!descricao || !tipo || editMutation.isPending}>
+              {editMutation.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
