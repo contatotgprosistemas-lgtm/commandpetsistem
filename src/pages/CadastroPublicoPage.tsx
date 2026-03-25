@@ -200,6 +200,7 @@ export default function CadastroPublicoPage() {
             {/* Client Info */}
             <div className="bg-card rounded-lg shadow-card p-5 space-y-4">
               <h2 className="text-sm font-medium text-foreground">Seus Dados</h2>
+              <PublicPhotoUpload value={clienteFotoUrl} onChange={setClienteFotoUrl} folder="clientes" />
               <FormField control={form.control} name="nome" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome completo *</FormLabel>
