@@ -130,7 +130,7 @@ export default function CadastroPublicoPage() {
     setLoading(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const pets = data.pets.filter(p => p.nome.trim().length > 0).map(p => ({
+      const pets = data.pets.filter(p => p.nome.trim().length > 0).map((p, idx) => ({
         ...p,
         data_nascimento: p.data_nascimento || null,
         idade: p.data_nascimento ? calcularIdade(p.data_nascimento) : null,
@@ -138,6 +138,7 @@ export default function CadastroPublicoPage() {
         v10_data: p.v10_data || null,
         raiva_data: p.raiva_data || null,
         vacinas: [p.antiparasitario, p.v10, p.raiva].filter(Boolean).join(", ") || null,
+        foto_url: petFotos[idx] || null,
       }));
 
       const res = await fetch(
