@@ -40,10 +40,8 @@ export default function LoginPage() {
       <div className="w-full max-w-[400px]">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary mb-4">
-            <PawPrint className="h-6 w-6 text-primary-foreground" strokeWidth={2} />
-          </div>
-          <h1 className="text-xl font-semibold text-foreground tracking-tight">PetCommand</h1>
+          <img src={logo} alt="Nosso Lar Resort Pet" className="mx-auto h-28 w-28 mb-4" />
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">Nosso Lar Resort Pet</h1>
           <p className="text-sm text-muted-foreground mt-1">Acesse sua conta</p>
         </div>
 
