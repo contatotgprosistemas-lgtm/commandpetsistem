@@ -11,10 +11,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
-function calcularIdade(nascimento: Date): string {
-  const anos = differenceInYears(new Date(), nascimento);
+function calcularIdade(nascimento: string): string {
+  if (!nascimento) return "";
+  const date = new Date(nascimento + "T00:00:00");
+  if (isNaN(date.getTime())) return "";
+  const anos = differenceInYears(new Date(), date);
   if (anos >= 1) return `${anos} ano${anos > 1 ? "s" : ""}`;
-  const meses = differenceInMonths(new Date(), nascimento);
+  const meses = differenceInMonths(new Date(), date);
   return `${meses} ${meses === 1 ? "mês" : "meses"}`;
 }
 
