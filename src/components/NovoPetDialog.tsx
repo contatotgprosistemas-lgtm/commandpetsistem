@@ -104,6 +104,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
         raiva_data: data.raiva_data ? format(data.raiva_data, "yyyy-MM-dd") : null,
         restricoes_alimentares: data.restricoes_alimentares || null,
         medicacoes: data.medicacoes || null,
+        foto_url: fotoUrl,
       } as any);
 
       if (error) throw error;
