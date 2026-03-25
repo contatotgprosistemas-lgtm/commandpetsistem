@@ -280,7 +280,7 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showD
     </div>
   );
   return (
-    <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
+    <div className="bg-card rounded-xl border border-border/60 shadow-card mt-4 divide-y divide-border/60">
       {items.map(item => <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} showDelete={showDelete} onDelete={onDelete} />)}
     </div>
   );
