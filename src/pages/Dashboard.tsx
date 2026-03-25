@@ -427,6 +427,7 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Serviço" onClick={() => onFicha(item)}>
                 <FileText className="h-3.5 w-3.5 text-primary" />
               </Button>
+              <GerarContratoButton agendamento={item} />
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Manejo" onClick={() => onManejo(item)}>
                 <Stethoscope className="h-3.5 w-3.5 text-primary" />
               </Button>
