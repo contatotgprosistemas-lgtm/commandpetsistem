@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.cadastro-publico]
 verify_jwt = false
+
+[functions.contract-pdf]
+verify_jwt = false
