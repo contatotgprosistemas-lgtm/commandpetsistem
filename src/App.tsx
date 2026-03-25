@@ -113,6 +113,16 @@ const App = () => (
             />
 
             <Route
+              path="/agenda"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <AgendaPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
               path="/crm"
               element={
                 <ProtectedRoute>
