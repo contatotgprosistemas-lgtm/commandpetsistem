@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { PhotoUpload } from "@/components/PhotoUpload";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
@@ -32,6 +33,7 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -79,11 +81,13 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
         endereco: enderecoCompleto || null,
         como_conheceu: data.como_conheceu || null,
         notas: data.notas || null,
+        foto_url: fotoUrl,
       } as any);
 
       if (error) throw error;
       toast({ title: "Cliente cadastrado com sucesso!" });
       form.reset();
+      setFotoUrl(null);
       setOpen(false);
       onSuccess?.();
     } catch (err: any) {
@@ -107,6 +111,9 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="flex justify-center">
+              <PhotoUpload value={fotoUrl} onChange={setFotoUrl} folder="clientes" />
+            </div>
             <FormField control={form.control} name="nome" render={({ field }) => (
               <FormItem>
                 <FormLabel>Nome *</FormLabel>

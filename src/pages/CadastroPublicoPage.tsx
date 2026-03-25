@@ -4,12 +4,13 @@ import { z } from "zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { differenceInYears, differenceInMonths } from "date-fns";
-import { PawPrint, Plus, Trash2, CheckCircle2, Building2, Loader2 } from "lucide-react";
+import { PawPrint, Plus, Trash2, CheckCircle2, Building2, Loader2, Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 function calcularIdade(nascimento: string): string {
   if (!nascimento) return "";
@@ -91,6 +92,8 @@ export default function CadastroPublicoPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
+  const [clienteFotoUrl, setClienteFotoUrl] = useState<string | null>(null);
+  const [petFotos, setPetFotos] = useState<Record<number, string | null>>({});
 
   async function buscarCep(cep: string) {
     const clean = cep.replace(/\D/g, "");
@@ -127,7 +130,7 @@ export default function CadastroPublicoPage() {
     setLoading(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const pets = data.pets.filter(p => p.nome.trim().length > 0).map(p => ({
+      const pets = data.pets.filter(p => p.nome.trim().length > 0).map((p, idx) => ({
         ...p,
         data_nascimento: p.data_nascimento || null,
         idade: p.data_nascimento ? calcularIdade(p.data_nascimento) : null,
@@ -135,6 +138,7 @@ export default function CadastroPublicoPage() {
         v10_data: p.v10_data || null,
         raiva_data: p.raiva_data || null,
         vacinas: [p.antiparasitario, p.v10, p.raiva].filter(Boolean).join(", ") || null,
+        foto_url: petFotos[idx] || null,
       }));
 
       const res = await fetch(
@@ -152,6 +156,7 @@ export default function CadastroPublicoPage() {
               cpf: data.cpf || null,
               endereco: data.numero ? `${data.endereco}, ${data.numero}` : (data.endereco || null),
               como_conheceu: data.como_conheceu || null,
+              foto_url: clienteFotoUrl || null,
             },
             pets,
           }),
@@ -195,6 +200,7 @@ export default function CadastroPublicoPage() {
             {/* Client Info */}
             <div className="bg-card rounded-lg shadow-card p-5 space-y-4">
               <h2 className="text-sm font-medium text-foreground">Seus Dados</h2>
+              <PublicPhotoUpload value={clienteFotoUrl} onChange={setClienteFotoUrl} folder="clientes" />
               <FormField control={form.control} name="nome" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome completo *</FormLabel>
@@ -299,7 +305,7 @@ export default function CadastroPublicoPage() {
               </div>
 
               {fields.map((field, idx) => (
-                <PetFormCard key={field.id} control={form.control} idx={idx} canRemove={fields.length > 1} onRemove={() => remove(idx)} watch={form.watch} />
+                <PetFormCard key={field.id} control={form.control} idx={idx} canRemove={fields.length > 1} onRemove={() => remove(idx)} watch={form.watch} fotoUrl={petFotos[idx] || null} onFotoChange={(url) => setPetFotos(prev => ({ ...prev, [idx]: url }))} />
               ))}
             </div>
 
@@ -313,7 +319,53 @@ export default function CadastroPublicoPage() {
   );
 }
 
-function PetFormCard({ control, idx, canRemove, onRemove, watch }: { control: any; idx: number; canRemove: boolean; onRemove: () => void; watch: any }) {
+function PublicPhotoUpload({ value, onChange, folder, size = "md" }: { value: string | null; onChange: (url: string | null) => void; folder: string; size?: "sm" | "md" }) {
+  const [uploading, setUploading] = useState(false);
+  const dimensions = size === "sm" ? "h-16 w-16" : "h-20 w-20";
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Selecione uma imagem válida"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Imagem deve ter no máximo 5MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const fileName = `${folder}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("profile-photos").upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("profile-photos").getPublicUrl(fileName);
+      onChange(urlData.publicUrl);
+    } catch (err: any) {
+      toast.error("Erro ao enviar foto: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <label className={`${dimensions} rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center overflow-hidden relative cursor-pointer hover:border-primary/50 transition-colors`}>
+        {uploading ? (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        ) : value ? (
+          <>
+            <img src={value} alt="Foto" className="h-full w-full object-cover" />
+            <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(null); }} className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-sm">
+              <X className="h-3 w-3" />
+            </button>
+          </>
+        ) : (
+          <Camera className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+        )}
+        <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
+      </label>
+      <span className="text-xs text-muted-foreground">{value ? "Alterar foto" : "Adicionar foto"}</span>
+    </div>
+  );
+}
+
+function PetFormCard({ control, idx, canRemove, onRemove, watch, fotoUrl, onFotoChange }: { control: any; idx: number; canRemove: boolean; onRemove: () => void; watch: any; fotoUrl: string | null; onFotoChange: (url: string | null) => void }) {
   const dataNascimento = watch(`pets.${idx}.data_nascimento`);
   const idadeCalculada = dataNascimento ? calcularIdade(dataNascimento) : "";
 
@@ -330,6 +382,8 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch }: { control: an
           </button>
         )}
       </div>
+
+      <PublicPhotoUpload value={fotoUrl} onChange={onFotoChange} folder="pets" size="sm" />
 
       <FormField control={control} name={`pets.${idx}.nome`} render={({ field }) => (
         <FormItem>

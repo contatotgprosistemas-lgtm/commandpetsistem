@@ -14,6 +14,7 @@ import { Plus, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { PhotoUpload } from "@/components/PhotoUpload";
 
 function calcularIdade(nascimento: Date): string {
   const anos = differenceInYears(new Date(), nascimento);
@@ -48,6 +49,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -102,11 +104,13 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
         raiva_data: data.raiva_data ? format(data.raiva_data, "yyyy-MM-dd") : null,
         restricoes_alimentares: data.restricoes_alimentares || null,
         medicacoes: data.medicacoes || null,
+        foto_url: fotoUrl,
       } as any);
 
       if (error) throw error;
       toast({ title: "Pet cadastrado com sucesso!" });
       form.reset();
+      setFotoUrl(null);
       setOpen(false);
       onSuccess?.();
     } catch (err: any) {
@@ -130,6 +134,9 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="flex justify-center">
+              <PhotoUpload value={fotoUrl} onChange={setFotoUrl} folder="pets" size="sm" />
+            </div>
             <FormField control={form.control} name="nome" render={({ field }) => (
               <FormItem>
                 <FormLabel>Nome do Pet *</FormLabel>

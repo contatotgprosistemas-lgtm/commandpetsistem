@@ -394,6 +394,7 @@ export type Database = {
           email: string | null
           empresa_id: string
           endereco: string | null
+          foto_url: string | null
           id: string
           nome: string
           notas: string | null
@@ -412,6 +413,7 @@ export type Database = {
           email?: string | null
           empresa_id: string
           endereco?: string | null
+          foto_url?: string | null
           id?: string
           nome: string
           notas?: string | null
@@ -430,6 +432,7 @@ export type Database = {
           email?: string | null
           empresa_id?: string
           endereco?: string | null
+          foto_url?: string | null
           id?: string
           nome?: string
           notas?: string | null
@@ -1736,6 +1739,7 @@ export type Database = {
           data_nascimento: string | null
           empresa_id: string
           especie: string
+          foto_url: string | null
           id: string
           idade: string | null
           medicacoes: string | null
@@ -1758,6 +1762,7 @@ export type Database = {
           data_nascimento?: string | null
           empresa_id: string
           especie?: string
+          foto_url?: string | null
           id?: string
           idade?: string | null
           medicacoes?: string | null
@@ -1780,6 +1785,7 @@ export type Database = {
           data_nascimento?: string | null
           empresa_id?: string
           especie?: string
+          foto_url?: string | null
           id?: string
           idade?: string | null
           medicacoes?: string | null
