@@ -297,9 +297,16 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
 
   return (
     <div className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
-      <Avatar className="h-11 w-11 border border-border">
-        <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
-      </Avatar>
+      <div className="flex items-center gap-1 -space-x-2">
+        <Avatar className="h-11 w-11 border-2 border-card z-10">
+          {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}
+          <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
+        </Avatar>
+        <Avatar className="h-8 w-8 border-2 border-card">
+          {item.cliente?.foto_url && <AvatarImage src={item.cliente.foto_url} alt={clientName} />}
+          <AvatarFallback className="bg-primary/10 text-primary text-[9px] font-semibold">{clientName.slice(0, 2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+      </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
