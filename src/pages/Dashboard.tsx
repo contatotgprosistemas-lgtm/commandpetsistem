@@ -162,10 +162,10 @@ export default function Dashboard() {
   const todayFormatted = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px]">
+    <div className="p-6 md:p-8 space-y-6 max-w-[1400px]">
       <div>
-        <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Visão geral do dia — {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</p>
+        <h1 className="text-lg font-semibold text-foreground tracking-tight">Dashboard</h1>
+        <p className="text-[13px] text-muted-foreground mt-0.5">Visão geral do dia — {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -219,13 +219,13 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-card rounded-lg p-5 shadow-card">
+        <div className="lg:col-span-2 bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Faturamento Semanal</h2>
-          <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">Sem dados para exibir</div>
+          <div className="flex items-center justify-center h-[220px] text-[13px] text-muted-foreground">Sem dados para exibir</div>
         </div>
-        <div className="bg-card rounded-lg p-5 shadow-card">
+        <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
-          <div className="flex items-center justify-center h-[160px] text-sm text-muted-foreground">Nenhuma atividade recente</div>
+          <div className="flex items-center justify-center h-[160px] text-[13px] text-muted-foreground">Nenhuma atividade recente</div>
         </div>
       </div>
 
@@ -280,7 +280,7 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showD
     </div>
   );
   return (
-    <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
+    <div className="bg-card rounded-xl border border-border/60 shadow-card mt-4 divide-y divide-border/60">
       {items.map(item => <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} showDelete={showDelete} onDelete={onDelete} />)}
     </div>
   );
@@ -370,7 +370,7 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
     </div>
   );
   return (
-    <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
+    <div className="bg-card rounded-xl border border-border/60 shadow-card mt-4 divide-y divide-border/60">
       {items.map(item => {
         const petName = item.pet?.nome ?? "Pet";
         const initials = petName.slice(0, 2).toUpperCase();
