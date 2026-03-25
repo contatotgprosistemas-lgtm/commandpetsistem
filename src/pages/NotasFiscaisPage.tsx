@@ -639,6 +639,21 @@ export default function NotasFiscaisPage() {
                                 <XCircle className="h-4 w-4 text-destructive" />
                               </Button>
                             )}
+                            {(nota.status === "rejeitada" || nota.status === "pendente" || nota.status === "processando") && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                title="Excluir registro"
+                                onClick={() => {
+                                  if (confirm("Excluir este registro?")) {
+                                    excluirMutation.mutate(nota.id);
+                                  }
+                                }}
+                                disabled={excluirMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
