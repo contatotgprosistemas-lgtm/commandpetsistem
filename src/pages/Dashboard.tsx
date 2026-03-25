@@ -36,8 +36,8 @@ interface Agendamento {
   subscription_id: string | null;
   data_entrada: string | null;
   hora_entrada: string | null;
-  pet: { id: string; nome: string; raca: string | null; especie: string } | null;
-  cliente: { id: string; nome: string; whatsapp: string | null } | null;
+  pet: { id: string; nome: string; raca: string | null; especie: string; foto_url: string | null } | null;
+  cliente: { id: string; nome: string; whatsapp: string | null; foto_url: string | null } | null;
 }
 
 function statusColor(status: string) {
