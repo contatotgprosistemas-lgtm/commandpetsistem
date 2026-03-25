@@ -288,6 +288,26 @@ const App = () => (
               }
             />
 
+            {/* Operacional auth */}
+            <Route path="/operacional/login" element={<OperationalAuthProvider><OperacionalLoginPage /></OperationalAuthProvider>} />
+
+            {/* Operacional portal (protected) */}
+            <Route
+              path="/operacional"
+              element={
+                <OperationalAuthProvider>
+                  <OperacionalProtectedRoute>
+                    <OperacionalLayout />
+                  </OperacionalProtectedRoute>
+                </OperationalAuthProvider>
+              }
+            >
+              <Route index element={<OperacionalDashboard />} />
+              <Route path="agenda" element={<OperacionalAgendaPage />} />
+              <Route path="clientes" element={<OperacionalClientesPage />} />
+              <Route path="pets" element={<OperacionalPetsPage />} />
+            </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
