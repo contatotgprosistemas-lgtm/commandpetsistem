@@ -375,6 +375,22 @@ export default function NotasFiscaisPage() {
     onError: () => toast.error("Erro ao cancelar nota"),
   });
 
+  // Excluir registro com erro
+  const excluirMutation = useMutation({
+    mutationFn: async (notaId: string) => {
+      const { error } = await supabase
+        .from("notas_fiscais")
+        .delete()
+        .eq("id", notaId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Registro excluído!");
+      queryClient.invalidateQueries({ queryKey: ["notas_fiscais"] });
+    },
+    onError: () => toast.error("Erro ao excluir registro"),
+  });
+
   const filteredNotas = notas.filter(
     (n) =>
       !searchTerm ||
