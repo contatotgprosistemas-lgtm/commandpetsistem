@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
         endereco: cliente.endereco?.trim().slice(0, 500) || null,
         cpf: cliente.cpf?.trim().slice(0, 14) || null,
         como_conheceu: cliente.como_conheceu?.trim().slice(0, 100) || null,
+        foto_url: cliente.foto_url?.trim().slice(0, 1000) || null,
       })
       .select("id")
       .single();
