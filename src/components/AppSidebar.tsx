@@ -60,6 +60,7 @@ export function AppSidebar() {
 
   const mainItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+    { icon: CalendarDays, label: "Agenda", path: "/agenda" },
     { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
     { icon: Kanban, label: "Pipeline Vendas", path: "/kanban" },
     { icon: Bot, label: "Chatbot", path: "/chatbot" },
