@@ -269,6 +269,17 @@ const App = () => (
             />
 
             <Route
+              path="/ponto"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <PontoPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/configuracoes"
               element={
                 <ProtectedRoute>
