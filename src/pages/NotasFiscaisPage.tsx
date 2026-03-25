@@ -255,7 +255,7 @@ export default function NotasFiscaisPage() {
       if (focusError) throw focusError;
 
       // Save to DB
-      const { error: dbError } = await supabase.from("notas_fiscais").insert({
+      const { error: dbError } = await supabase.from("notas_fiscais").insert([{
         empresa_id: empresaId!,
         tipo: tipoNota,
         referencia: ref,
