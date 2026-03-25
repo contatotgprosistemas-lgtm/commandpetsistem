@@ -319,7 +319,53 @@ export default function CadastroPublicoPage() {
   );
 }
 
-function PetFormCard({ control, idx, canRemove, onRemove, watch }: { control: any; idx: number; canRemove: boolean; onRemove: () => void; watch: any }) {
+function PublicPhotoUpload({ value, onChange, folder, size = "md" }: { value: string | null; onChange: (url: string | null) => void; folder: string; size?: "sm" | "md" }) {
+  const [uploading, setUploading] = useState(false);
+  const dimensions = size === "sm" ? "h-16 w-16" : "h-20 w-20";
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Selecione uma imagem válida"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Imagem deve ter no máximo 5MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const fileName = `${folder}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("profile-photos").upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("profile-photos").getPublicUrl(fileName);
+      onChange(urlData.publicUrl);
+    } catch (err: any) {
+      toast.error("Erro ao enviar foto: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <label className={`${dimensions} rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center overflow-hidden relative cursor-pointer hover:border-primary/50 transition-colors`}>
+        {uploading ? (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        ) : value ? (
+          <>
+            <img src={value} alt="Foto" className="h-full w-full object-cover" />
+            <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(null); }} className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-sm">
+              <X className="h-3 w-3" />
+            </button>
+          </>
+        ) : (
+          <Camera className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+        )}
+        <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
+      </label>
+      <span className="text-xs text-muted-foreground">{value ? "Alterar foto" : "Adicionar foto"}</span>
+    </div>
+  );
+}
+
+function PetFormCard({ control, idx, canRemove, onRemove, watch, fotoUrl, onFotoChange }: { control: any; idx: number; canRemove: boolean; onRemove: () => void; watch: any; fotoUrl: string | null; onFotoChange: (url: string | null) => void }) {
   const dataNascimento = watch(`pets.${idx}.data_nascimento`);
   const idadeCalculada = dataNascimento ? calcularIdade(dataNascimento) : "";
 
