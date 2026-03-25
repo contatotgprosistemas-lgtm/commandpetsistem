@@ -305,7 +305,7 @@ export default function CadastroPublicoPage() {
               </div>
 
               {fields.map((field, idx) => (
-                <PetFormCard key={field.id} control={form.control} idx={idx} canRemove={fields.length > 1} onRemove={() => remove(idx)} watch={form.watch} />
+                <PetFormCard key={field.id} control={form.control} idx={idx} canRemove={fields.length > 1} onRemove={() => remove(idx)} watch={form.watch} fotoUrl={petFotos[idx] || null} onFotoChange={(url) => setPetFotos(prev => ({ ...prev, [idx]: url }))} />
               ))}
             </div>
 
