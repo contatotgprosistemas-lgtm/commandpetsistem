@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
 import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,8 +36,8 @@ interface Agendamento {
   subscription_id: string | null;
   data_entrada: string | null;
   hora_entrada: string | null;
-  pet: { id: string; nome: string; raca: string | null; especie: string } | null;
-  cliente: { id: string; nome: string; whatsapp: string | null } | null;
+  pet: { id: string; nome: string; raca: string | null; especie: string; foto_url: string | null } | null;
+  cliente: { id: string; nome: string; whatsapp: string | null; foto_url: string | null } | null;
 }
 
 function statusColor(status: string) {
@@ -69,7 +69,7 @@ export default function Dashboard() {
     setAgendaLoading(true);
     const { data } = await supabase
       .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie), cliente:clientes(id, nome, whatsapp)")
+      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
       .order("data_hora", { ascending: true });
     if (data) setAgendamentos(data as any);
     setAgendaLoading(false);
@@ -297,9 +297,16 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
 
   return (
     <div className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
-      <Avatar className="h-11 w-11 border border-border">
-        <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
-      </Avatar>
+      <div className="flex items-center gap-1 -space-x-2">
+        <Avatar className="h-11 w-11 border-2 border-card z-10">
+          {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}
+          <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
+        </Avatar>
+        <Avatar className="h-8 w-8 border-2 border-card">
+          {item.cliente?.foto_url && <AvatarImage src={item.cliente.foto_url} alt={clientName} />}
+          <AvatarFallback className="bg-primary/10 text-primary text-[9px] font-semibold">{clientName.slice(0, 2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+      </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
@@ -377,9 +384,16 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
         const clientWhatsapp = item.cliente?.whatsapp;
         return (
           <div key={item.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
-            <Avatar className="h-11 w-11 border border-border">
-              <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
-            </Avatar>
+            <div className="flex items-center gap-1 -space-x-2">
+              <Avatar className="h-11 w-11 border-2 border-card z-10">
+                {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}
+                <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
+              </Avatar>
+              <Avatar className="h-8 w-8 border-2 border-card">
+                {item.cliente?.foto_url && <AvatarImage src={item.cliente.foto_url} alt={item.cliente?.nome || ""} />}
+                <AvatarFallback className="bg-primary/10 text-primary text-[9px] font-semibold">{(item.cliente?.nome || "—").slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm text-foreground truncate">{petName}</span>

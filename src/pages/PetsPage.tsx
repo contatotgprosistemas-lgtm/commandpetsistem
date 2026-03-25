@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PawPrint, Search, Trash2, Pencil } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NovoPetDialog } from "@/components/NovoPetDialog";
 import { PetMediaUploadDialog } from "@/components/PetMediaUploadDialog";
 import { ImportPetsDialog } from "@/components/ImportPetsDialog";
@@ -21,7 +22,7 @@ export default function PetsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("pets")
-        .select("*, cliente:clientes(id, nome)")
+        .select("*, cliente:clientes(id, nome, foto_url)")
         .order("nome", { ascending: true });
       if (error) throw error;
       return data;
@@ -98,9 +99,21 @@ export default function PetsPage() {
           ) : (
             filtered.map(p => (
               <div key={p.id} className="grid grid-cols-[1fr_1fr_1fr_80px_80px_80px] px-5 py-3 items-center hover:bg-muted/50 transition-colors">
-                <span className="text-sm font-medium text-foreground">{p.nome}</span>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8 border border-border shrink-0">
+                    {(p as any).foto_url && <AvatarImage src={(p as any).foto_url} alt={p.nome} />}
+                    <AvatarFallback className="bg-accent/10 text-accent text-xs font-semibold">{p.nome.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-foreground">{p.nome}</span>
+                </div>
                 <span className="text-sm text-muted-foreground">{p.raca || "—"}</span>
-                <span className="text-sm text-muted-foreground">{(p.cliente as any)?.nome || "—"}</span>
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6 border border-border shrink-0">
+                    {(p.cliente as any)?.foto_url && <AvatarImage src={(p.cliente as any).foto_url} alt={(p.cliente as any)?.nome} />}
+                    <AvatarFallback className="bg-primary/10 text-primary text-[9px] font-semibold">{((p.cliente as any)?.nome || "—").slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm text-muted-foreground">{(p.cliente as any)?.nome || "—"}</span>
+                </div>
                 <span className="text-sm text-muted-foreground">{p.especie}</span>
                 <span className="text-sm text-muted-foreground tabular-nums">{p.peso ? `${p.peso}kg` : "—"}</span>
                 <div className="flex justify-end gap-1">

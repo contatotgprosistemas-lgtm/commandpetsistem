@@ -7,6 +7,7 @@ import { NovoClienteDialog } from "@/components/NovoClienteDialog";
 import { ImportContatosDialog } from "@/components/ImportContatosDialog";
 import { EditarClienteDialog } from "@/components/EditarClienteDialog";
 import { Search, Phone, Mail, Trash2, Users, Link2, MessageCircle, Pencil, KeyRound, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -169,7 +170,11 @@ export default function ClientsPage() {
           ) : (
             filtered.map(c => (
               <div key={c.id} className="grid grid-cols-[1fr_150px_200px_120px_120px] px-5 py-3 items-center hover:bg-muted/50 transition-colors">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8 border border-border shrink-0">
+                    {(c as any).foto_url && <AvatarImage src={(c as any).foto_url} alt={c.nome} />}
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{c.nome.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
                   <span className="text-sm font-medium text-foreground">{c.nome}</span>
                   {c.user_id && (
                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">
