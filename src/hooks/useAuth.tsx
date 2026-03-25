@@ -17,6 +17,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isSuperAdmin: boolean;
+  isApproved: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadAuthData = useCallback(async (currentSession: Session | null) => {
@@ -35,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setProfile(null);
       setIsSuperAdmin(false);
+      setIsApproved(false);
       setLoading(false);
       return;
     }
@@ -58,10 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const roles = rolesData?.map((row) => row.role) ?? [];
     const primaryRole = roles[0] ?? null;
+    const superAdmin = roles.includes("super_admin");
 
     setUser({ ...currentSession.user, role: primaryRole });
     setProfile(profileData ?? null);
-    setIsSuperAdmin(roles.includes("super_admin"));
+    setIsSuperAdmin(superAdmin);
+    setIsApproved(superAdmin || (profileData?.aprovado === true));
     setLoading(false);
   }, []);
 
@@ -85,11 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setIsSuperAdmin(false);
+    setIsApproved(false);
   }, []);
 
   const value = useMemo(
-    () => ({ user, session, profile, loading, isSuperAdmin, signOut }),
-    [user, session, profile, loading, isSuperAdmin, signOut],
+    () => ({ user, session, profile, loading, isSuperAdmin, isApproved, signOut }),
+    [user, session, profile, loading, isSuperAdmin, isApproved, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

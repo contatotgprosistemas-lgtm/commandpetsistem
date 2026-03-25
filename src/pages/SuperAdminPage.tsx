@@ -3,14 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, UserPlus, Search, Loader2, Shield, Clock, Activity } from "lucide-react";
+import { Users, UserCheck, UserX, Search, Loader2, Shield, Activity, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ProfileRow {
   id: string;
@@ -19,6 +18,7 @@ interface ProfileRow {
   empresa_id: string | null;
   cargo: string | null;
   status: string;
+  aprovado: boolean;
   created_at: string;
   user_id: string;
 }
@@ -36,14 +36,6 @@ export default function SuperAdminPage() {
   const [search, setSearch] = useState("");
   const [filterCargo, setFilterCargo] = useState("todos");
   const [filterStatus, setFilterStatus] = useState("todos");
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  // New user form
-  const [newNome, setNewNome] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [newCargo, setNewCargo] = useState("atendente");
-  const [newStatus, setNewStatus] = useState("ativo");
-  const [creating, setCreating] = useState(false);
 
   const fetchProfiles = async () => {
     setLoading(true);
@@ -85,7 +77,36 @@ export default function SuperAdminPage() {
     }
   };
 
-  const filtered = profiles.filter((p) => {
+  const approveUser = async (profileId: string) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ aprovado: true })
+      .eq("id", profileId);
+    if (error) {
+      toast({ title: "Erro ao aprovar usuário", variant: "destructive" });
+    } else {
+      toast({ title: "Usuário aprovado com sucesso!" });
+      fetchProfiles();
+    }
+  };
+
+  const rejectUser = async (profileId: string) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ aprovado: false, status: "bloqueado" })
+      .eq("id", profileId);
+    if (error) {
+      toast({ title: "Erro ao rejeitar usuário", variant: "destructive" });
+    } else {
+      toast({ title: "Usuário rejeitado e bloqueado" });
+      fetchProfiles();
+    }
+  };
+
+  const pendingProfiles = profiles.filter((p) => !p.aprovado && p.status !== "bloqueado");
+  const approvedProfiles = profiles.filter((p) => p.aprovado);
+
+  const filtered = approvedProfiles.filter((p) => {
     const matchSearch = p.nome.toLowerCase().includes(search.toLowerCase()) || (p.email || "").toLowerCase().includes(search.toLowerCase());
     const matchCargo = filterCargo === "todos" || p.cargo === filterCargo;
     const matchStatus = filterStatus === "todos" || p.status === filterStatus;
@@ -93,8 +114,8 @@ export default function SuperAdminPage() {
   });
 
   const totalUsers = profiles.length;
-  const activeUsers = profiles.filter((p) => p.status === "ativo").length;
-  const inactiveUsers = profiles.filter((p) => p.status !== "ativo").length;
+  const activeUsers = profiles.filter((p) => p.status === "ativo" && p.aprovado).length;
+  const pendingCount = pendingProfiles.length;
   const recentUsers = profiles.filter((p) => {
     const d = new Date(p.created_at);
     const now = new Date();
@@ -132,19 +153,19 @@ export default function SuperAdminPage() {
               <UserCheck className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Ativos</p>
+              <p className="text-sm text-muted-foreground">Aprovados Ativos</p>
               <p className="text-2xl font-bold">{activeUsers}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <UserX className="h-5 w-5 text-red-600" />
+            <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <Clock className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Inativos</p>
-              <p className="text-2xl font-bold">{inactiveUsers}</p>
+              <p className="text-sm text-muted-foreground">Pendentes</p>
+              <p className="text-2xl font-bold">{pendingCount}</p>
             </div>
           </CardContent>
         </Card>
@@ -161,119 +182,197 @@ export default function SuperAdminPage() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar por nome ou email..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-            <Select value={filterCargo} onValueChange={setFilterCargo}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Cargo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os cargos</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="gerente">Gerente</SelectItem>
-                <SelectItem value="atendente">Atendente</SelectItem>
-                <SelectItem value="financeiro">Financeiro</SelectItem>
-                <SelectItem value="operacional">Operacional</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os status</SelectItem>
-                <SelectItem value="ativo">Ativo</SelectItem>
-                <SelectItem value="suspenso">Suspenso</SelectItem>
-                <SelectItem value="bloqueado">Bloqueado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue={pendingCount > 0 ? "pendentes" : "aprovados"}>
+        <TabsList>
+          <TabsTrigger value="pendentes" className="gap-2">
+            <Clock className="h-4 w-4" />
+            Pendentes
+            {pendingCount > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">{pendingCount}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="aprovados" className="gap-2">
+            <UserCheck className="h-4 w-4" />
+            Aprovados
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Users Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Usuários ({filtered.length})</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Cargo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Criado em</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-medium">{p.nome}</TableCell>
-                      <TableCell className="text-muted-foreground">{p.email || "—"}</TableCell>
-                      <TableCell>
-                        <Select defaultValue={p.cargo || "atendente"} onValueChange={(v) => updateCargo(p.id, v)}>
-                          <SelectTrigger className="h-8 w-[130px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="gerente">Gerente</SelectItem>
-                            <SelectItem value="atendente">Atendente</SelectItem>
-                            <SelectItem value="financeiro">Financeiro</SelectItem>
-                            <SelectItem value="operacional">Operacional</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Select defaultValue={p.status} onValueChange={(v) => updateStatus(p.id, v)}>
-                          <SelectTrigger className="h-8 w-[120px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ativo">Ativo</SelectItem>
-                            <SelectItem value="suspenso">Suspenso</SelectItem>
-                            <SelectItem value="bloqueado">Bloqueado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {new Date(p.created_at).toLocaleDateString("pt-BR")}
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => updateStatus(p.id, "bloqueado")}>
-                          Bloquear
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filtered.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                        Nenhum usuário encontrado
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Pending Users Tab */}
+        <TabsContent value="pendentes">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Usuários Aguardando Aprovação ({pendingCount})</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : pendingCount === 0 ? (
+                <div className="text-center text-muted-foreground py-12">
+                  Nenhum usuário pendente de aprovação
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Cargo</TableHead>
+                        <TableHead>Cadastrado em</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingProfiles.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-medium">{p.nome}</TableCell>
+                          <TableCell className="text-muted-foreground">{p.email || "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{p.cargo || "—"}</Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="default" className="gap-1" onClick={() => approveUser(p.id)}>
+                                <CheckCircle className="h-4 w-4" />
+                                Aprovar
+                              </Button>
+                              <Button size="sm" variant="destructive" className="gap-1" onClick={() => rejectUser(p.id)}>
+                                <XCircle className="h-4 w-4" />
+                                Rejeitar
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Approved Users Tab */}
+        <TabsContent value="aprovados">
+          {/* Filters */}
+          <Card className="mb-4">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Buscar por nome ou email..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+                </div>
+                <Select value={filterCargo} onValueChange={setFilterCargo}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Cargo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os cargos</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="gerente">Gerente</SelectItem>
+                    <SelectItem value="atendente">Atendente</SelectItem>
+                    <SelectItem value="financeiro">Financeiro</SelectItem>
+                    <SelectItem value="operacional">Operacional</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os status</SelectItem>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="suspenso">Suspenso</SelectItem>
+                    <SelectItem value="bloqueado">Bloqueado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Usuários Aprovados ({filtered.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Cargo</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Criado em</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-medium">{p.nome}</TableCell>
+                          <TableCell className="text-muted-foreground">{p.email || "—"}</TableCell>
+                          <TableCell>
+                            <Select defaultValue={p.cargo || "atendente"} onValueChange={(v) => updateCargo(p.id, v)}>
+                              <SelectTrigger className="h-8 w-[130px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="gerente">Gerente</SelectItem>
+                                <SelectItem value="atendente">Atendente</SelectItem>
+                                <SelectItem value="financeiro">Financeiro</SelectItem>
+                                <SelectItem value="operacional">Operacional</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Select defaultValue={p.status} onValueChange={(v) => updateStatus(p.id, v)}>
+                              <SelectTrigger className="h-8 w-[120px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="ativo">Ativo</SelectItem>
+                                <SelectItem value="suspenso">Suspenso</SelectItem>
+                                <SelectItem value="bloqueado">Bloqueado</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => updateStatus(p.id, "bloqueado")}>
+                              Bloquear
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {filtered.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                            Nenhum usuário encontrado
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
