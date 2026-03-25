@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setUser({ ...currentSession.user, role: primaryRole });
     setProfile(profileData ?? null);
-    setIsSuperAdmin(roles.includes("admin"));
+    setIsSuperAdmin(roles.includes("super_admin"));
     setLoading(false);
   }, []);
 
