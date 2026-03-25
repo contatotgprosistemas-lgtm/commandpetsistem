@@ -23,6 +23,7 @@ import {
   Car,
   FileSignature,
   CalendarDays,
+  Receipt,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -44,8 +45,8 @@ export function AppSidebar() {
     { icon: Bot, label: "Chatbot", path: "/chatbot" },
     { icon: Car, label: "TaxiPet", path: "/taxipet" },
     { icon: FileSignature, label: "Contratos", path: "/contratos" },
+    { icon: Receipt, label: "Notas Fiscais", path: "/notas-fiscais" },
   ];
-
   const cadastrosItems = [
     { icon: Users, label: "Clientes", path: "/clientes" },
     { icon: PawPrint, label: "Pets", path: "/pets" },
