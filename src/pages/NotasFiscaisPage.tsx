@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -55,6 +55,31 @@ export default function NotasFiscaisPage() {
   const [emitirOpen, setEmitirOpen] = useState(false);
   const [tipoNota, setTipoNota] = useState<"nfse" | "nfe">("nfse");
   const [searchTerm, setSearchTerm] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
+
+  const buscarCep = useCallback(async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const resp = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await resp.json();
+      if (!data.erro) {
+        setFiscalForm((p) => ({
+          ...p,
+          endereco_logradouro: data.logradouro || p.endereco_logradouro,
+          endereco_bairro: data.bairro || p.endereco_bairro,
+          endereco_complemento: data.complemento || p.endereco_complemento,
+          uf: data.uf || p.uf,
+          codigo_municipio: data.ibge || p.codigo_municipio,
+        }));
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setCepLoading(false);
+    }
+  }, []);
 
   // NFS-e form state
   const [nfseForm, setNfseForm] = useState({
@@ -676,7 +701,18 @@ export default function NotasFiscaisPage() {
                     </div>
                     <div>
                       <Label>CEP</Label>
-                      <Input value={fiscalForm.endereco_cep} onChange={(e) => setFiscalForm((p) => ({ ...p, endereco_cep: e.target.value.replace(/\D/g, "") }))} />
+                      <div className="relative">
+                        <Input
+                          value={fiscalForm.endereco_cep}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            setFiscalForm((p) => ({ ...p, endereco_cep: val }));
+                            if (val.length === 8) buscarCep(val);
+                          }}
+                          placeholder="Digite o CEP"
+                        />
+                        {cepLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                      </div>
                     </div>
                     <div>
                       <Label>Código Município (IBGE)</Label>
