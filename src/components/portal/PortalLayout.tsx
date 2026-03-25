@@ -88,7 +88,7 @@ export function PortalLayout() {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left",
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all text-left",
                 isActive(item.path)
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
