@@ -1394,6 +1394,80 @@ export type Database = {
           },
         ]
       }
+      dados_fiscais_empresa: {
+        Row: {
+          cnpj: string | null
+          codigo_municipio: string | null
+          created_at: string
+          email: string | null
+          empresa_id: string
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_complemento: string | null
+          endereco_logradouro: string | null
+          endereco_numero: string | null
+          id: string
+          inscricao_estadual: string | null
+          inscricao_municipal: string | null
+          nome_fantasia: string | null
+          razao_social: string | null
+          regime_tributario: string | null
+          telefone: string | null
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          codigo_municipio?: string | null
+          created_at?: string
+          email?: string | null
+          empresa_id: string
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_complemento?: string | null
+          endereco_logradouro?: string | null
+          endereco_numero?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          nome_fantasia?: string | null
+          razao_social?: string | null
+          regime_tributario?: string | null
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          codigo_municipio?: string | null
+          created_at?: string
+          email?: string | null
+          empresa_id?: string
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_complemento?: string | null
+          endereco_logradouro?: string | null
+          endereco_numero?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          nome_fantasia?: string | null
+          razao_social?: string | null
+          regime_tributario?: string | null
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dados_fiscais_empresa_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           created_at: string
@@ -1979,6 +2053,103 @@ export type Database = {
           },
           {
             foreignKeyName: "notas_contato_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notas_fiscais: {
+        Row: {
+          agendamento_id: string | null
+          chave_acesso: string | null
+          cliente_cpf_cnpj: string | null
+          cliente_id: string | null
+          cliente_nome: string | null
+          created_at: string
+          dados_envio: Json | null
+          data_emissao: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          mensagem_erro: string | null
+          numero: string | null
+          referencia: string
+          resposta_api: Json | null
+          serie: string | null
+          status: string
+          tipo: string
+          updated_at: string
+          url_pdf: string | null
+          url_xml: string | null
+          valor_total: number
+        }
+        Insert: {
+          agendamento_id?: string | null
+          chave_acesso?: string | null
+          cliente_cpf_cnpj?: string | null
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          created_at?: string
+          dados_envio?: Json | null
+          data_emissao?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          mensagem_erro?: string | null
+          numero?: string | null
+          referencia: string
+          resposta_api?: Json | null
+          serie?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          url_pdf?: string | null
+          url_xml?: string | null
+          valor_total?: number
+        }
+        Update: {
+          agendamento_id?: string | null
+          chave_acesso?: string | null
+          cliente_cpf_cnpj?: string | null
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          created_at?: string
+          dados_envio?: Json | null
+          data_emissao?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          mensagem_erro?: string | null
+          numero?: string | null
+          referencia?: string
+          resposta_api?: Json | null
+          serie?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          url_pdf?: string | null
+          url_xml?: string | null
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_fiscais_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_fiscais_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_fiscais_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
