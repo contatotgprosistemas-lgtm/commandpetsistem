@@ -8,11 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-
-const TIPOS_SERVICO = ["Daycare", "Hotel", "TaxiDog", "Banho e Tosa"];
 
 const ProdutosPage = () => {
   const { profile } = useAuth();
@@ -20,7 +17,6 @@ const ProdutosPage = () => {
   const [open, setOpen] = useState(false);
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
-  const [tipo, setTipo] = useState("");
 
   const empresaId = profile?.empresa_id;
 
@@ -43,7 +39,6 @@ const ProdutosPage = () => {
         empresa_id: empresaId!,
         descricao,
         valor: parseFloat(valor) || 0,
-        tipo,
       });
       if (error) throw error;
     },
@@ -58,7 +53,6 @@ const ProdutosPage = () => {
   const resetForm = () => {
     setDescricao("");
     setValor("");
-    setTipo("");
     setOpen(false);
   };
 
@@ -87,21 +81,10 @@ const ProdutosPage = () => {
                 <Label>Valor (R$)</Label>
                 <Input type="number" min="0" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" />
               </div>
-              <div className="space-y-2">
-                <Label>Tipo do Serviço</Label>
-                <Select value={tipo} onValueChange={setTipo}>
-                  <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
-                  <SelectContent>
-                    {TIPOS_SERVICO.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button onClick={() => addMutation.mutate()} disabled={!descricao || !tipo || addMutation.isPending}>
+              <Button onClick={() => addMutation.mutate()} disabled={!descricao || addMutation.isPending}>
                 {addMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Salvar
               </Button>
@@ -119,7 +102,6 @@ const ProdutosPage = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Descrição</TableHead>
-              <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Valor</TableHead>
             </TableRow>
           </TableHeader>
@@ -127,7 +109,6 @@ const ProdutosPage = () => {
             {produtos.map((p) => (
               <TableRow key={p.id}>
                 <TableCell>{p.descricao}</TableCell>
-                <TableCell>{p.tipo}</TableCell>
                 <TableCell className="text-right">R$ {Number(p.valor).toFixed(2)}</TableCell>
               </TableRow>
             ))}

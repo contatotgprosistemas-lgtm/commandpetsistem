@@ -13,78 +13,72 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-
-// 🔥 VERSÃO BLINDADA
-
-const TIPOS_SERVICO = ["Daycare", "Hotel", "TaxiDog", "Banho e Tosa"];
 
 const ServicosPage = () => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-
   const empresaId = profile?.empresa_id;
 
+  // Serviços state
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
-
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [tipo, setTipo] = useState("");
 
-  // 🔒 QUERY BLINDADA
-  const {
-    data: servicos,
-    isLoading,
-    error,
-  } = useQuery({
+  // Tipos state
+  const [tipoOpen, setTipoOpen] = useState(false);
+  const [tipoEditOpen, setTipoEditOpen] = useState(false);
+  const [tipoEditId, setTipoEditId] = useState<string | null>(null);
+  const [tipoNome, setTipoNome] = useState("");
+
+  // Queries
+  const { data: servicos, isLoading } = useQuery({
     queryKey: ["servicos", empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("servicos")
         .select("*")
-        .eq("empresa_id", empresaId)
+        .eq("empresa_id", empresaId!)
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       return data;
     },
     enabled: !!empresaId,
   });
 
-  // 🔒 ADD
+  const { data: tiposServico, isLoading: tiposLoading } = useQuery({
+    queryKey: ["tipos_servico", empresaId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tipos_servico" as any)
+        .select("*")
+        .eq("empresa_id", empresaId!)
+        .order("nome");
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!empresaId,
+  });
+
+  const tiposList = (tiposServico || []).filter((t: any) => t.ativo).map((t: any) => t.nome);
+
+  // Serviço mutations
   const addMutation = useMutation({
     mutationFn: async () => {
-      try {
-        const { error } = await supabase.from("servicos").insert({
-          empresa_id: empresaId!,
-          descricao,
-          valor: parseFloat(valor) || 0,
-          tipo,
-        });
-
-        if (error) throw error;
-      } catch (err) {
-        console.error(err);
-        throw err;
-      }
+      const { error } = await supabase.from("servicos").insert({
+        empresa_id: empresaId!,
+        descricao,
+        valor: parseFloat(valor) || 0,
+        tipo,
+      });
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["servicos"] });
@@ -94,24 +88,13 @@ const ServicosPage = () => {
     onError: () => toast.error("Erro ao adicionar serviço."),
   });
 
-  // 🔒 EDIT
   const editMutation = useMutation({
     mutationFn: async () => {
-      try {
-        const { error } = await supabase
-          .from("servicos")
-          .update({
-            descricao,
-            valor: parseFloat(valor) || 0,
-            tipo,
-          })
-          .eq("id", editId!);
-
-        if (error) throw error;
-      } catch (err) {
-        console.error(err);
-        throw err;
-      }
+      const { error } = await supabase
+        .from("servicos")
+        .update({ descricao, valor: parseFloat(valor) || 0, tipo })
+        .eq("id", editId!);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["servicos"] });
@@ -124,21 +107,62 @@ const ServicosPage = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      try {
-        const { error } = await supabase.from("servicos").delete().eq("id", id);
-
-        if (error) throw error;
-      } catch (err) {
-        console.error(err);
-        throw err;
-      }
+      const { error } = await supabase.from("servicos").delete().eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["servicos"] });
       toast.success("Serviço excluído!");
-      setDeleteId(null);
     },
     onError: () => toast.error("Erro ao excluir serviço."),
+  });
+
+  // Tipo mutations
+  const addTipoMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("tipos_servico" as any).insert({
+        empresa_id: empresaId!,
+        nome: tipoNome,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tipos_servico"] });
+      toast.success("Tipo de serviço criado!");
+      setTipoNome("");
+      setTipoOpen(false);
+    },
+    onError: () => toast.error("Erro ao criar tipo de serviço."),
+  });
+
+  const editTipoMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("tipos_servico" as any)
+        .update({ nome: tipoNome } as any)
+        .eq("id", tipoEditId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tipos_servico"] });
+      toast.success("Tipo atualizado!");
+      setTipoNome("");
+      setTipoEditId(null);
+      setTipoEditOpen(false);
+    },
+    onError: () => toast.error("Erro ao atualizar tipo."),
+  });
+
+  const deleteTipoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("tipos_servico" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tipos_servico"] });
+      toast.success("Tipo excluído!");
+    },
+    onError: () => toast.error("Erro ao excluir tipo."),
   });
 
   const resetForm = () => {
@@ -157,108 +181,196 @@ const ServicosPage = () => {
     setEditOpen(true);
   };
 
+  const openEditTipo = (t: any) => {
+    setTipoEditId(t.id);
+    setTipoNome(t.nome);
+    setTipoEditOpen(true);
+  };
+
   return (
-    <div className="p-6 space-y-6 notranslate">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Serviços</h1>
-
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>Adicionar Serviço</Button>
-          </DialogTrigger>
-
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Novo Serviço</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição" />
-
-              <Input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Valor" />
-
-              {/* 🔥 SELECT NATIVO (BLINDADO) */}
-              <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border rounded-md p-2">
-                <option value="">Selecione</option>
-                {TIPOS_SERVICO.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancelar
-              </Button>
-
-              <Button onClick={() => addMutation.mutate()} disabled={!descricao || !tipo || addMutation.isPending}>
-                {addMutation.isPending ? "Salvando..." : "Salvar"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <Package className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold text-foreground">Serviços</h1>
       </div>
 
-      {/* 🔒 ESTADOS */}
-      {isLoading && <p>Carregando...</p>}
-      {error && <p className="text-red-500">Erro ao carregar dados</p>}
+      <Tabs defaultValue="servicos" className="w-full">
+        <TabsList>
+          <TabsTrigger value="servicos">Serviços</TabsTrigger>
+          <TabsTrigger value="tipos">Tipos de Serviço</TabsTrigger>
+        </TabsList>
 
-      {!isLoading && (!servicos || servicos.length === 0) && <p>Nenhum serviço cadastrado.</p>}
+        {/* ─── Serviços Tab ─── */}
+        <TabsContent value="servicos" className="space-y-4">
+          <div className="flex justify-end">
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button><Plus className="mr-2 h-4 w-4" />Adicionar Serviço</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Novo Serviço</DialogTitle>
+                  <DialogDescription>Preencha os dados do serviço</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Descrição</Label>
+                    <Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição do serviço" />
+                  </div>
+                  <div>
+                    <Label>Valor (R$)</Label>
+                    <Input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" />
+                  </div>
+                  <div>
+                    <Label>Tipo</Label>
+                    <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border border-border rounded-md p-2 bg-background text-foreground">
+                      <option value="">Selecione</option>
+                      {tiposList.map((t: string) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+                  <Button onClick={() => addMutation.mutate()} disabled={!descricao || !tipo || addMutation.isPending}>
+                    {addMutation.isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
 
-      {servicos && servicos.length > 0 && (
-        <div className="space-y-2">
-          {servicos.map((s) => (
-            <div key={s.id} className="flex justify-between border p-3 rounded-md">
-              <div>
-                <p>{s.descricao}</p>
-                <p className="text-sm text-muted-foreground">{s.tipo}</p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button onClick={() => openEdit(s)}>Editar</Button>
-                <Button variant="destructive" onClick={() => deleteMutation.mutate(s.id)}>
-                  Excluir
-                </Button>
-              </div>
+          {isLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : servicos && servicos.length > 0 ? (
+            <div className="space-y-2">
+              {servicos.map((s) => (
+                <div key={s.id} className="flex items-center justify-between border border-border p-3 rounded-lg bg-card">
+                  <div>
+                    <p className="font-medium text-foreground">{s.descricao}</p>
+                    <p className="text-sm text-muted-foreground">{s.tipo} — R$ {Number(s.valor).toFixed(2)}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => openEdit(s)}>
+                      <Pencil className="h-3.5 w-3.5 mr-1" />Editar
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => deleteMutation.mutate(s.id)}>
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />Excluir
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          ) : (
+            <p className="text-center text-muted-foreground py-8">Nenhum serviço cadastrado.</p>
+          )}
+        </TabsContent>
 
-      {/* Edit Dialog */}
+        {/* ─── Tipos de Serviço Tab ─── */}
+        <TabsContent value="tipos" className="space-y-4">
+          <div className="flex justify-end">
+            <Dialog open={tipoOpen} onOpenChange={setTipoOpen}>
+              <DialogTrigger asChild>
+                <Button><Plus className="mr-2 h-4 w-4" />Novo Tipo</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Novo Tipo de Serviço</DialogTitle>
+                  <DialogDescription>Crie um tipo de serviço personalizado</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Nome</Label>
+                    <Input value={tipoNome} onChange={(e) => setTipoNome(e.target.value)} placeholder="Ex: Daycare, Hotel, Banho e Tosa..." />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setTipoOpen(false)}>Cancelar</Button>
+                  <Button onClick={() => addTipoMutation.mutate()} disabled={!tipoNome || addTipoMutation.isPending}>
+                    {addTipoMutation.isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {tiposLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : tiposServico && tiposServico.length > 0 ? (
+            <div className="space-y-2">
+              {tiposServico.map((t: any) => (
+                <div key={t.id} className="flex items-center justify-between border border-border p-3 rounded-lg bg-card">
+                  <p className="font-medium text-foreground">{t.nome}</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => openEditTipo(t)}>
+                      <Pencil className="h-3.5 w-3.5 mr-1" />Editar
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => deleteTipoMutation.mutate(t.id)}>
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />Excluir
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">Nenhum tipo de serviço cadastrado. Crie o primeiro!</p>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Edit Serviço Dialog */}
       <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) resetForm(); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Serviço</DialogTitle>
             <DialogDescription>Atualize as informações do serviço</DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4">
             <div>
               <Label>Descrição</Label>
-              <Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição" />
+              <Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} />
             </div>
             <div>
-              <Label>Valor</Label>
-              <Input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Valor" />
+              <Label>Valor (R$)</Label>
+              <Input type="number" value={valor} onChange={(e) => setValor(e.target.value)} />
             </div>
             <div>
               <Label>Tipo</Label>
-              <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border rounded-md p-2">
+              <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border border-border rounded-md p-2 bg-background text-foreground">
                 <option value="">Selecione</option>
-                {TIPOS_SERVICO.map((t) => (
+                {tiposList.map((t: string) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
             </div>
           </div>
-
           <DialogFooter>
             <Button variant="outline" onClick={() => { setEditOpen(false); resetForm(); }}>Cancelar</Button>
             <Button onClick={() => editMutation.mutate()} disabled={!descricao || !tipo || editMutation.isPending}>
               {editMutation.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Tipo Dialog */}
+      <Dialog open={tipoEditOpen} onOpenChange={(o) => { setTipoEditOpen(o); if (!o) { setTipoNome(""); setTipoEditId(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tipo de Serviço</DialogTitle>
+            <DialogDescription>Atualize o nome do tipo</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Nome</Label>
+              <Input value={tipoNome} onChange={(e) => setTipoNome(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setTipoEditOpen(false); setTipoNome(""); setTipoEditId(null); }}>Cancelar</Button>
+            <Button onClick={() => editTipoMutation.mutate()} disabled={!tipoNome || editTipoMutation.isPending}>
+              {editTipoMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
