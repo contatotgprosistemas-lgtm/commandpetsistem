@@ -21,6 +21,7 @@ import {
   Bot,
   Gift,
   Car,
+  FileSignature,
 } from "lucide-react";
 
 export function AppSidebar() {
