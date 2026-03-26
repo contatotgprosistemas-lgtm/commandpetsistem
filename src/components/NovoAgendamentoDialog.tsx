@@ -87,8 +87,13 @@ function DatePickerField({
   );
 }
 
-export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void }) {
-  const [open, setOpen] = useState(false);
+export function NovoAgendamentoDialog({ onSuccess, externalOpen, onExternalOpenChange }: { onSuccess?: () => void; externalOpen?: boolean; onExternalOpenChange?: (open: boolean) => void }) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (onExternalOpenChange) onExternalOpenChange(v);
+    else setInternalOpen(v);
+  };
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
   const [pets, setPets] = useState<{ id: string; nome: string; cliente_id: string }[]>([]);

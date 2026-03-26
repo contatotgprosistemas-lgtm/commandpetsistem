@@ -236,7 +236,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <EstouChegandoMapDialog />
             <OrcamentoDialog />
-            <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
+            <NovoAgendamentoDialog onSuccess={fetchAgendamentos} externalOpen={novoAgendamentoOpen} onExternalOpenChange={setNovoAgendamentoOpen} />
           </div>
         </div>
 
