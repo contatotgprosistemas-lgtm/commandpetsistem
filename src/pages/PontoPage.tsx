@@ -51,7 +51,7 @@ export default function PontoPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [punches, setPunches] = useState<any[]>([]);
   const [jornadas, setJornadas] = useState<any[]>([]);
-  const [config, setConfig] = useState<any>(null);
+  const [configs, setConfigs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -60,7 +60,10 @@ export default function PontoPage() {
   const [filterDate, setFilterDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
   // Config form
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [editingConfig, setEditingConfig] = useState<any>(null);
   const [configForm, setConfigForm] = useState({
+    nome: "Jornada Padrão",
     jornada_diaria_min: 480,
     intervalo_min: 60,
     tolerancia_min: 10,
@@ -76,20 +79,12 @@ export default function PontoPage() {
     setLoading(true);
 
     const [empRes, configRes] = await Promise.all([
-      supabase.from("operational_users").select("id, nome, email, ativo").eq("empresa_id", empresaId),
-      supabase.from("ponto_configuracoes").select("*").eq("empresa_id", empresaId).maybeSingle(),
+      supabase.from("operational_users").select("id, nome, email, ativo, jornada_id, pin").eq("empresa_id", empresaId),
+      supabase.from("ponto_configuracoes").select("*").eq("empresa_id", empresaId).order("nome"),
     ]);
 
     setEmployees(empRes.data || []);
-    if (configRes.data) {
-      setConfig(configRes.data);
-      setConfigForm({
-        jornada_diaria_min: configRes.data.jornada_diaria_min,
-        intervalo_min: configRes.data.intervalo_min,
-        tolerancia_min: configRes.data.tolerancia_min,
-        dias_trabalho: configRes.data.dias_trabalho || [1, 2, 3, 4, 5],
-      });
-    }
+    setConfigs(configRes.data || []);
     setLoading(false);
   }, [empresaId]);
 
@@ -171,30 +166,54 @@ export default function PontoPage() {
     bankByEmployee[key].days += 1;
   });
 
+  const openNewConfig = () => {
+    setEditingConfig(null);
+    setConfigForm({ nome: "", jornada_diaria_min: 480, intervalo_min: 60, tolerancia_min: 10, dias_trabalho: [1, 2, 3, 4, 5] });
+    setConfigDialogOpen(true);
+  };
+
+  const openEditConfig = (c: any) => {
+    setEditingConfig(c);
+    setConfigForm({
+      nome: c.nome,
+      jornada_diaria_min: c.jornada_diaria_min,
+      intervalo_min: c.intervalo_min,
+      tolerancia_min: c.tolerancia_min,
+      dias_trabalho: c.dias_trabalho || [1, 2, 3, 4, 5],
+    });
+    setConfigDialogOpen(true);
+  };
+
   const handleSaveConfig = async () => {
-    if (!empresaId) return;
+    if (!empresaId || !configForm.nome.trim()) {
+      toast.error("Nome da jornada é obrigatório.");
+      return;
+    }
     setSavingConfig(true);
     try {
-      if (config) {
-        await supabase.from("ponto_configuracoes").update(configForm).eq("id", config.id);
+      if (editingConfig) {
+        await supabase.from("ponto_configuracoes").update(configForm).eq("id", editingConfig.id);
       } else {
         await supabase.from("ponto_configuracoes").insert({ ...configForm, empresa_id: empresaId });
       }
-      toast.success("Configurações salvas!");
+      toast.success("Jornada salva!");
+      setConfigDialogOpen(false);
       fetchData();
     } catch {
-      toast.error("Erro ao salvar configurações.");
+      toast.error("Erro ao salvar jornada.");
     }
     setSavingConfig(false);
   };
 
-  const toggleDay = (day: number) => {
-    setConfigForm(prev => ({
-      ...prev,
-      dias_trabalho: prev.dias_trabalho.includes(day)
-        ? prev.dias_trabalho.filter(d => d !== day)
-        : [...prev.dias_trabalho, day].sort(),
-    }));
+  const handleDeleteConfig = async (id: string) => {
+    const linked = employees.filter(e => e.jornada_id === id).length;
+    if (linked > 0) {
+      toast.error(`Essa jornada está vinculada a ${linked} colaborador(es). Desvincule primeiro.`);
+      return;
+    }
+    const { error } = await supabase.from("ponto_configuracoes").delete().eq("id", id);
+    if (error) toast.error("Erro ao excluir.");
+    else { toast.success("Jornada excluída."); fetchData(); }
   };
 
   if (loading) {
@@ -476,72 +495,149 @@ export default function PontoPage() {
 
         {/* COLABORADORES TAB */}
         <TabsContent value="colaboradores">
-          <ColaboradoresTab employees={employees} empresaId={empresaId!} onRefresh={fetchData} />
+          <ColaboradoresTab employees={employees} empresaId={empresaId!} onRefresh={fetchData} configs={configs} />
         </TabsContent>
 
         {/* CONFIGURAÇÕES TAB */}
         <TabsContent value="config" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Configurações de Jornada</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <Label>Jornada diária (horas)</Label>
-                  <Input
-                    type="number"
-                    step="0.5"
-                    value={configForm.jornada_diaria_min / 60}
-                    onChange={e => setConfigForm(prev => ({ ...prev, jornada_diaria_min: Math.round(parseFloat(e.target.value || "0") * 60) }))}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">{formatMinutes(configForm.jornada_diaria_min)}</p>
-                </div>
-                <div>
-                  <Label>Intervalo (minutos)</Label>
-                  <Input
-                    type="number"
-                    value={configForm.intervalo_min}
-                    onChange={e => setConfigForm(prev => ({ ...prev, intervalo_min: parseInt(e.target.value || "0") }))}
-                  />
-                </div>
-                <div>
-                  <Label>Tolerância (minutos)</Label>
-                  <Input
-                    type="number"
-                    value={configForm.tolerancia_min}
-                    onChange={e => setConfigForm(prev => ({ ...prev, tolerancia_min: parseInt(e.target.value || "0") }))}
-                  />
-                </div>
-              </div>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Jornadas de Trabalho</h2>
+            <Button onClick={openNewConfig} className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              Nova Jornada
+            </Button>
+          </div>
 
-              <div>
-                <Label>Dias de trabalho</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {DAY_LABELS.map((label, i) => (
-                    <button
-                      key={i}
-                      onClick={() => toggleDay(i)}
-                      className={`h-10 w-12 rounded-lg text-sm font-medium border transition-colors ${
-                        configForm.dias_trabalho.includes(i)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card text-muted-foreground border-border hover:border-primary/50"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <Button onClick={handleSaveConfig} disabled={savingConfig} className="gap-2">
-                {savingConfig ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Salvar Configurações
-              </Button>
-            </CardContent>
-          </Card>
+          {configs.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                Nenhuma jornada cadastrada. Crie a primeira jornada.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {configs.map((c: any) => {
+                const linkedCount = employees.filter(e => e.jornada_id === c.id).length;
+                return (
+                  <Card key={c.id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">{c.nome}</CardTitle>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => openEditConfig(c)}>
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteConfig(c.id)}>
+                            ✕
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Jornada</p>
+                          <p className="font-medium">{formatMinutes(c.jornada_diaria_min)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Intervalo</p>
+                          <p className="font-medium">{c.intervalo_min}min</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Tolerância</p>
+                          <p className="font-medium">{c.tolerancia_min}min</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {DAY_LABELS.map((label, i) => (
+                          <Badge
+                            key={i}
+                            variant={c.dias_trabalho?.includes(i) ? "default" : "outline"}
+                            className="text-xs"
+                          >
+                            {label}
+                          </Badge>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{linkedCount} colaborador(es) vinculado(s)</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
+
+      {/* Config dialog */}
+      <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingConfig ? "Editar Jornada" : "Nova Jornada"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Nome da Jornada *</Label>
+              <Input value={configForm.nome} onChange={e => setConfigForm(prev => ({ ...prev, nome: e.target.value }))} placeholder="Ex: Jornada 8h, Meio Período..." />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Jornada (horas)</Label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  value={configForm.jornada_diaria_min / 60}
+                  onChange={e => setConfigForm(prev => ({ ...prev, jornada_diaria_min: Math.round(parseFloat(e.target.value || "0") * 60) }))}
+                />
+                <p className="text-xs text-muted-foreground mt-1">{formatMinutes(configForm.jornada_diaria_min)}</p>
+              </div>
+              <div>
+                <Label>Intervalo (min)</Label>
+                <Input
+                  type="number"
+                  value={configForm.intervalo_min}
+                  onChange={e => setConfigForm(prev => ({ ...prev, intervalo_min: parseInt(e.target.value || "0") }))}
+                />
+              </div>
+              <div>
+                <Label>Tolerância (min)</Label>
+                <Input
+                  type="number"
+                  value={configForm.tolerancia_min}
+                  onChange={e => setConfigForm(prev => ({ ...prev, tolerancia_min: parseInt(e.target.value || "0") }))}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Dias de trabalho</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {DAY_LABELS.map((label, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setConfigForm(prev => ({
+                      ...prev,
+                      dias_trabalho: prev.dias_trabalho.includes(i)
+                        ? prev.dias_trabalho.filter(d => d !== i)
+                        : [...prev.dias_trabalho, i].sort(),
+                    }))}
+                    className={`h-10 w-12 rounded-lg text-sm font-medium border transition-colors ${
+                      configForm.dias_trabalho.includes(i)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-muted-foreground border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Button onClick={handleSaveConfig} disabled={savingConfig} className="w-full gap-2">
+              {savingConfig ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {editingConfig ? "Salvar Alterações" : "Criar Jornada"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Selfie preview dialog */}
       <Dialog open={!!selfieUrl} onOpenChange={() => setSelfieUrl(null)}>
