@@ -121,7 +121,7 @@ export function AppSidebar() {
               exit={{ opacity: 0, width: 0 }}
               className="ml-3 text-sm font-semibold text-sidebar-foreground whitespace-nowrap overflow-hidden tracking-tight"
             >
-              PetCommand
+              PetControl System
             </motion.span>
           )}
         </AnimatePresence>
