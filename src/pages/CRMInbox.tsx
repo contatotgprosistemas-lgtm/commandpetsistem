@@ -5,12 +5,14 @@ import { useConversations } from "@/hooks/useConversations";
 import { ConversationList } from "@/components/chat/ConversationList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { CRMPanel } from "@/components/chat/CRMPanel";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
 
 export default function CRMInbox() {
   const { profile } = useAuth();
   const { data: conversas, isLoading } = useConversations();
   const [selectedConversaId, setSelectedConversaId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [showCRM, setShowCRM] = useState(true);
 
   useEffect(() => {
     const phone = searchParams.get("phone");
@@ -31,7 +33,7 @@ export default function CRMInbox() {
   const clienteId = selectedConversa?.cliente_id || null;
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen relative">
       <ConversationList
         conversas={conversas}
         selectedId={selectedConversaId}
@@ -39,8 +41,8 @@ export default function CRMInbox() {
         profileId={profile?.id}
         isLoading={isLoading}
       />
-      <ChatWindow conversa={selectedConversa} />
-      <CRMPanel clienteId={clienteId} telefone={selectedConversa?.contato_telefone} />
+      <ChatWindow conversa={selectedConversa} onToggleCRM={() => setShowCRM(v => !v)} showCRM={showCRM} />
+      {showCRM && <CRMPanel clienteId={clienteId} telefone={selectedConversa?.contato_telefone} />}
     </div>
   );
 }
