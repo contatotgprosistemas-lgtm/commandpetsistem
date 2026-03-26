@@ -82,19 +82,24 @@ export default function OperacionalDashboard() {
     window.location.reload();
   };
 
-  const allAgendamentos = useMemo(() => {
-    // We store agendamentos for voice command access
-    return petsNaEmpresa;
-  }, [petsNaEmpresa]);
+  const findPetByName = (name: string | undefined, list: any[]) => {
+    if (!name) return list[0] || null;
+    const norm = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    return list.find(a => {
+      const petNorm = (a.pet?.nome || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      return petNorm === norm || petNorm.includes(norm) || norm.includes(petNorm);
+    }) || null;
+  };
 
   const voiceCommands: VoiceCommand[] = useMemo(() => [
-    { keywords: ["check-in", "checkin", "entrada", "chegou"], description: "Check-in (primeiro pendente)", action: () => {
+    { keywords: ["check-in", "checkin", "entrada", "chegou"], description: "Check-in", extractSuffix: true, action: (petName?: string) => {
       toast.info("Navegando para Agenda para realizar check-in...");
       navigate("/operacional/agenda");
     }},
-    { keywords: ["check-out", "checkout", "saída", "saida", "liberar"], description: "Check-out (primeiro pet na empresa)", action: () => {
-      if (petsNaEmpresa.length > 0) handleCheckout(petsNaEmpresa[0]);
-      else toast.info("Nenhum pet na empresa para check-out.");
+    { keywords: ["check-out", "checkout", "saída", "saida", "liberar"], description: "Check-out", extractSuffix: true, action: (petName?: string) => {
+      const match = findPetByName(petName, petsNaEmpresa);
+      if (match) handleCheckout(match);
+      else toast.info(petName ? `Pet "${petName}" não encontrado na empresa.` : "Nenhum pet na empresa para check-out.");
     }},
     { keywords: ["agenda", "agendamento", "reserva"], description: "Ir para Agenda", action: () => navigate("/operacional/agenda") },
     { keywords: ["clientes", "tutores", "cliente"], description: "Ir para Clientes", action: () => navigate("/operacional/clientes") },
