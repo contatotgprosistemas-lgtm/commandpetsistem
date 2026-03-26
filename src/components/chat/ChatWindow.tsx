@@ -187,9 +187,6 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
         </div>
         <div className="flex items-center gap-1">
           <ChatStatusTag status={conversa.status as any} />
-          <button onClick={handleArchive} className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground">
-            <Archive className="h-[18px] w-[18px]" strokeWidth={1.5} />
-          </button>
           <button className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground">
             <Phone className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </button>
