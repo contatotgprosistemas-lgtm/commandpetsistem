@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { UserPlus, Pencil, Loader2, Search } from "lucide-react";
 
@@ -15,29 +16,36 @@ interface Props {
   employees: any[];
   empresaId: string;
   onRefresh: () => void;
+  configs: any[];
 }
 
-export default function ColaboradoresTab({ employees, empresaId, onRefresh }: Props) {
+export default function ColaboradoresTab({ employees, empresaId, onRefresh, configs }: Props) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const [form, setForm] = useState({ nome: "", email: "", pin: "" });
+  const [form, setForm] = useState({ nome: "", email: "", pin: "", jornada_id: "" });
 
   const filtered = employees.filter(e =>
     e.nome?.toLowerCase().includes(search.toLowerCase()) ||
     e.email?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const getJornadaNome = (jornadaId: string | null) => {
+    if (!jornadaId) return "—";
+    const c = configs.find((c: any) => c.id === jornadaId);
+    return c?.nome || "—";
+  };
+
   const openNew = () => {
     setEditing(null);
-    setForm({ nome: "", email: "", pin: "" });
+    setForm({ nome: "", email: "", pin: "", jornada_id: "" });
     setOpen(true);
   };
 
   const openEdit = (emp: any) => {
     setEditing(emp);
-    setForm({ nome: emp.nome, email: emp.email, pin: emp.pin || "" });
+    setForm({ nome: emp.nome, email: emp.email, pin: emp.pin || "", jornada_id: emp.jornada_id || "" });
     setOpen(true);
   };
 
@@ -48,17 +56,23 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh }: Pr
     }
     setSaving(true);
     try {
+      const payload = {
+        nome: form.nome.trim(),
+        email: form.email.trim(),
+        pin: form.pin || null,
+        jornada_id: form.jornada_id || null,
+      };
       if (editing) {
         const { error } = await supabase
           .from("operational_users")
-          .update({ nome: form.nome.trim(), email: form.email.trim(), pin: form.pin || null })
+          .update(payload)
           .eq("id", editing.id);
         if (error) throw error;
         toast.success("Colaborador atualizado!");
       } else {
         const { error } = await supabase
           .from("operational_users")
-          .insert({ empresa_id: empresaId, nome: form.nome.trim(), email: form.email.trim(), pin: form.pin || null });
+          .insert({ ...payload, empresa_id: empresaId });
         if (error) throw error;
         toast.success("Colaborador cadastrado!");
       }
@@ -111,6 +125,7 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh }: Pr
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>E-mail</TableHead>
+                <TableHead>Jornada</TableHead>
                 <TableHead>PIN</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-24">Ações</TableHead>
@@ -119,7 +134,7 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh }: Pr
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     Nenhum colaborador encontrado.
                   </TableCell>
                 </TableRow>
@@ -128,6 +143,9 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh }: Pr
                   <TableRow key={emp.id}>
                     <TableCell className="font-medium">{emp.nome}</TableCell>
                     <TableCell className="text-muted-foreground">{emp.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">{getJornadaNome(emp.jornada_id)}</Badge>
+                    </TableCell>
                     <TableCell>{emp.pin || "—"}</TableCell>
                     <TableCell>
                       <Badge
@@ -166,6 +184,18 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh }: Pr
             <div>
               <Label>E-mail *</Label>
               <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Jornada de Trabalho</Label>
+              <Select value={form.jornada_id} onValueChange={v => setForm(f => ({ ...f, jornada_id: v === "none" ? "" : v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione uma jornada" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
+                  {configs.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>PIN (opcional)</Label>
