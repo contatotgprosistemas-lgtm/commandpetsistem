@@ -194,7 +194,15 @@ export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) 
           </button>
           <ConversationTagManager conversaId={conversa.id} />
           <ConversationActions conversaId={conversa.id} currentAtendenteId={conversa.atendente_id} currentStatus={conversa.status} />
-        </div>
+          {onToggleCRM && (
+            <button
+              onClick={onToggleCRM}
+              className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground transition-colors"
+              title={showCRM ? "Recolher detalhes" : "Expandir detalhes"}
+            >
+              {showCRM ? <PanelRightClose className="h-[18px] w-[18px]" strokeWidth={1.5} /> : <PanelRightOpen className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+            </button>
+          )}
       </div>
 
       {/* Tags bar */}
