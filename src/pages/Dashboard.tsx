@@ -63,12 +63,34 @@ export default function Dashboard() {
   const [agendaLoading, setAgendaLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
   const [transportBookings, setTransportBookings] = useState<any[]>([]);
+  const [novoAgendamentoOpen, setNovoAgendamentoOpen] = useState(false);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
   const [checklistOpen, setChecklistOpen] = useState<Agendamento | null>(null);
   const [fichaOpen, setFichaOpen] = useState<Agendamento | null>(null);
   const [editOpen, setEditOpen] = useState<Agendamento | null>(null);
+
+  const voiceCommands: VoiceCommand[] = useMemo(() => [
+    { keywords: ["novo agendamento", "agendar", "nova reserva", "marcar"], description: "Novo agendamento", action: () => setNovoAgendamentoOpen(true) },
+    { keywords: ["check-in", "checkin", "entrada", "chegou"], description: "Check-in (primeiro pet pendente)", action: () => {
+      const hoje = startOfDay(new Date());
+      const amanha = new Date(hoje); amanha.setDate(amanha.getDate() + 1);
+      const pendente = agendamentos.find(a => {
+        const d = startOfDay(new Date(a.data_hora));
+        return d >= hoje && d < amanha && (a.status === "pendente" || a.status === "confirmado");
+      });
+      if (pendente) handleCheckin(pendente);
+      else toast.info("Nenhum pet pendente de check-in hoje.");
+    }},
+    { keywords: ["check-out", "checkout", "saída", "saida", "liberar"], description: "Check-out (primeiro pet na empresa)", action: () => {
+      const naEmpresa = agendamentos.find(a => a.status === "na_empresa");
+      if (naEmpresa) handleCheckout(naEmpresa);
+      else toast.info("Nenhum pet na empresa para check-out.");
+    }},
+  ], [agendamentos]);
+
+  const { isListening, transcript, supported, startListening, stopListening } = useVoiceCommands({ commands: voiceCommands });
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
