@@ -1,0 +1,1 @@
+UPDATE clientes SET tags = array_remove(array_remove(tags, 'vip'), 'pet-shop') WHERE tags IS NOT NULL AND (tags @> ARRAY['vip'] OR tags @> ARRAY['pet-shop']);
