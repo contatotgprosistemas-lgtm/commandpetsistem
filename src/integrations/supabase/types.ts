@@ -2164,6 +2164,7 @@ export type Database = {
           email: string
           empresa_id: string
           id: string
+          jornada_id: string | null
           nome: string
           pin: string | null
           updated_at: string | null
@@ -2175,6 +2176,7 @@ export type Database = {
           email: string
           empresa_id: string
           id?: string
+          jornada_id?: string | null
           nome: string
           pin?: string | null
           updated_at?: string | null
@@ -2186,6 +2188,7 @@ export type Database = {
           email?: string
           empresa_id?: string
           id?: string
+          jornada_id?: string | null
           nome?: string
           pin?: string | null
           updated_at?: string | null
@@ -2197,6 +2200,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_users_jornada_id_fkey"
+            columns: ["jornada_id"]
+            isOneToOne: false
+            referencedRelation: "ponto_configuracoes"
             referencedColumns: ["id"]
           },
         ]
@@ -2431,6 +2441,7 @@ export type Database = {
           id: string
           intervalo_min: number
           jornada_diaria_min: number
+          nome: string
           tolerancia_min: number
           updated_at: string
         }
@@ -2441,6 +2452,7 @@ export type Database = {
           id?: string
           intervalo_min?: number
           jornada_diaria_min?: number
+          nome?: string
           tolerancia_min?: number
           updated_at?: string
         }
@@ -2451,6 +2463,7 @@ export type Database = {
           id?: string
           intervalo_min?: number
           jornada_diaria_min?: number
+          nome?: string
           tolerancia_min?: number
           updated_at?: string
         }
