@@ -214,7 +214,8 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
                 })()}
               </div>
             </button>
-          ))
+            );
+          })
         )}
       </div>
     </div>
