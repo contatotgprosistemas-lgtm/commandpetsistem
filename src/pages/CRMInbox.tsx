@@ -5,14 +5,16 @@ import { useConversations } from "@/hooks/useConversations";
 import { ConversationList } from "@/components/chat/ConversationList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { CRMPanel } from "@/components/chat/CRMPanel";
-import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 export default function CRMInbox() {
   const { profile } = useAuth();
   const { data: conversas, isLoading } = useConversations();
   const [selectedConversaId, setSelectedConversaId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [showCRM, setShowCRM] = useState(true);
+  const [showCRM, setShowCRM] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const phone = searchParams.get("phone");
@@ -32,8 +34,10 @@ export default function CRMInbox() {
   const selectedConversa = conversas?.find(c => c.id === selectedConversaId) ?? null;
   const clienteId = selectedConversa?.cliente_id || null;
 
+  const crmPanel = <CRMPanel clienteId={clienteId} telefone={selectedConversa?.contato_telefone} />;
+
   return (
-    <div className="flex h-screen relative">
+    <div className="flex h-[calc(100vh-3.5rem)] relative overflow-hidden">
       <ConversationList
         conversas={conversas}
         selectedId={selectedConversaId}
@@ -42,7 +46,16 @@ export default function CRMInbox() {
         isLoading={isLoading}
       />
       <ChatWindow conversa={selectedConversa} onToggleCRM={() => setShowCRM(v => !v)} showCRM={showCRM} />
-      {showCRM && <CRMPanel clienteId={clienteId} telefone={selectedConversa?.contato_telefone} />}
+      {isMobile ? (
+        <Sheet open={showCRM} onOpenChange={setShowCRM}>
+          <SheetContent side="right" className="w-80 p-0">
+            <SheetTitle className="sr-only">Detalhes do contato</SheetTitle>
+            {crmPanel}
+          </SheetContent>
+        </Sheet>
+      ) : (
+        showCRM && crmPanel
+      )}
     </div>
   );
 }
