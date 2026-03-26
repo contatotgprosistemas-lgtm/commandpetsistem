@@ -169,6 +169,10 @@ export default function Dashboard() {
     const d = startOfDay(new Date(a.data_hora));
     return isAfter(d, today) && a.status !== "cancelado";
   });
+  const transportHoje = transportBookings.filter(b => {
+    const d = startOfDay(new Date(b.scheduled_date + "T00:00:00"));
+    return d >= today && d < tomorrow && b.status !== "cancelado";
+  });
   const todayFormatted = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   return (
