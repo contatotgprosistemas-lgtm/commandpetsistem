@@ -169,7 +169,7 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
 
                 {/* Preview + unread */}
                 <div className="flex items-center justify-between mt-0.5">
-                  <p className="text-xs text-muted-foreground truncate flex-1">
+                  <p className={`text-xs truncate flex-1 ${hasUnread ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
                     {conv.last_message_preview || conv.contato_telefone}
                   </p>
                   <div className="flex items-center gap-1 ml-2 shrink-0">
