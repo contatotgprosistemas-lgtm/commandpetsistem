@@ -107,7 +107,8 @@ Deno.serve(async (req) => {
 
       for (const msg of messages) {
         const key = msg.key;
-        if (!key || key.fromMe) continue;
+        if (!key) continue;
+        const isFromMe = !!key.fromMe;
 
         const remoteJid = key.remoteJid || "";
 
