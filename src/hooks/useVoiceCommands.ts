@@ -116,6 +116,10 @@ export function useVoiceCommands({
     setIsListening(false);
   }, []);
 
+  // Use ref so wake listener always calls the latest startListening
+  const startListeningRef = useRef(startListening);
+  useEffect(() => { startListeningRef.current = startListening; }, [startListening]);
+
   // Wake word background listener
   const startWakeListener = useCallback(() => {
     if (!wakeEnabledRef.current) return;
@@ -132,27 +136,25 @@ export function useVoiceCommands({
         if (t.includes(normalizedWake)) {
           rec.abort();
           toast("🎤 Olá Sistema! Ouvindo comando...", { duration: 2000 });
-          setTimeout(() => startListening(), 300);
+          setTimeout(() => startListeningRef.current(), 300);
           return;
         }
       }
     };
     rec.onerror = (e: any) => {
       if (e.error === "no-speech" || e.error === "aborted") {
-        // Restart silently
         if (wakeEnabledRef.current) setTimeout(() => startWakeListener(), 500);
       }
     };
     rec.onend = () => {
-      // Auto-restart if still enabled
-      if (wakeEnabledRef.current && !commandRecRef.current?.running) {
+      if (wakeEnabledRef.current) {
         setTimeout(() => startWakeListener(), 500);
       }
     };
     wakeRecRef.current = rec;
     setIsWakeListening(true);
     try { rec.start(); } catch {}
-  }, [createRecognition, wakeWord, startListening]);
+  }, [createRecognition, wakeWord]);
 
   const stopWakeListener = useCallback(() => {
     wakeEnabledRef.current = false;
