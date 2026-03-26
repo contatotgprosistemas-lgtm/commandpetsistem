@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,8 +11,6 @@ import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { format, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import { useVoiceCommands, VoiceCommand } from "@/hooks/useVoiceCommands";
-import { VoiceCommandButton } from "@/components/VoiceCommandButton";
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
@@ -81,34 +79,6 @@ export default function OperacionalDashboard() {
     toast.success("Check-out realizado!");
     window.location.reload();
   };
-
-  const findPetByName = (name: string | undefined, list: any[]) => {
-    if (!name) return list[0] || null;
-    const norm = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    return list.find(a => {
-      const petNorm = (a.pet?.nome || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      return petNorm === norm || petNorm.includes(norm) || norm.includes(petNorm);
-    }) || null;
-  };
-
-  const voiceCommands: VoiceCommand[] = useMemo(() => [
-    { keywords: ["check-in", "checkin", "entrada", "chegou"], description: "Check-in", extractSuffix: true, action: (petName?: string) => {
-      toast.info("Navegando para Agenda para realizar check-in...");
-      navigate("/operacional/agenda");
-    }},
-    { keywords: ["check-out", "checkout", "saída", "saida", "liberar"], description: "Check-out", extractSuffix: true, action: (petName?: string) => {
-      const match = findPetByName(petName, petsNaEmpresa);
-      if (match) handleCheckout(match);
-      else toast.info(petName ? `Pet "${petName}" não encontrado na empresa.` : "Nenhum pet na empresa para check-out.");
-    }},
-    { keywords: ["agenda", "agendamento", "reserva"], description: "Ir para Agenda", action: () => navigate("/operacional/agenda") },
-    { keywords: ["clientes", "tutores", "cliente"], description: "Ir para Clientes", action: () => navigate("/operacional/clientes") },
-    { keywords: ["pets", "animais", "bichos"], description: "Ir para Pets", action: () => navigate("/operacional/pets") },
-    { keywords: ["ponto", "bater ponto", "registrar ponto"], description: "Ir para Ponto", action: () => navigate("/operacional/ponto") },
-  ], [petsNaEmpresa, navigate]);
-
-  const [wakeWordEnabled, setWakeWordEnabled] = useState(false);
-  const { isListening, isWakeListening, transcript, supported, startListening, stopListening, startWakeListener, stopWakeListener } = useVoiceCommands({ commands: voiceCommands, enableWakeWord: wakeWordEnabled });
 
   if (loading) {
     return (
@@ -182,18 +152,6 @@ export default function OperacionalDashboard() {
           </div>
         </div>
       )}
-      <VoiceCommandButton
-        isListening={isListening}
-        isWakeListening={isWakeListening}
-        transcript={transcript}
-        supported={supported}
-        onStart={startListening}
-        onStop={stopListening}
-        onToggleWake={(enabled) => {
-          setWakeWordEnabled(enabled);
-          if (!enabled) stopWakeListener();
-        }}
-      />
     </div>
   );
 }

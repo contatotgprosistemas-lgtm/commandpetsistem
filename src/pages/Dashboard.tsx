@@ -1,8 +1,6 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
 import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car } from "lucide-react";
-import { useVoiceCommands, VoiceCommand } from "@/hooks/useVoiceCommands";
-import { VoiceCommandButton } from "@/components/VoiceCommandButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -63,46 +61,12 @@ export default function Dashboard() {
   const [agendaLoading, setAgendaLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
   const [transportBookings, setTransportBookings] = useState<any[]>([]);
-  const [novoAgendamentoOpen, setNovoAgendamentoOpen] = useState(false);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
   const [checklistOpen, setChecklistOpen] = useState<Agendamento | null>(null);
   const [fichaOpen, setFichaOpen] = useState<Agendamento | null>(null);
   const [editOpen, setEditOpen] = useState<Agendamento | null>(null);
-
-  const findPetByName = useCallback((name: string | undefined, list: Agendamento[]) => {
-    if (!name) return list[0] || null;
-    const norm = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    return list.find(a => {
-      const petNorm = (a.pet?.nome || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      return petNorm === norm || petNorm.includes(norm) || norm.includes(petNorm);
-    }) || null;
-  }, []);
-
-  const voiceCommands: VoiceCommand[] = useMemo(() => [
-    { keywords: ["novo agendamento", "agendar", "nova reserva", "marcar"], description: "Novo agendamento", action: () => setNovoAgendamentoOpen(true) },
-    { keywords: ["check-in", "checkin", "entrada", "chegou"], description: "Check-in", extractSuffix: true, action: (petName?: string) => {
-      const hoje = startOfDay(new Date());
-      const amanha = new Date(hoje); amanha.setDate(amanha.getDate() + 1);
-      const pendentes = agendamentos.filter(a => {
-        const d = startOfDay(new Date(a.data_hora));
-        return d >= hoje && d < amanha && (a.status === "pendente" || a.status === "confirmado");
-      });
-      const match = findPetByName(petName, pendentes);
-      if (match) handleCheckin(match);
-      else toast.info(petName ? `Pet "${petName}" não encontrado nos pendentes de hoje.` : "Nenhum pet pendente de check-in hoje.");
-    }},
-    { keywords: ["check-out", "checkout", "saída", "saida", "liberar"], description: "Check-out", extractSuffix: true, action: (petName?: string) => {
-      const naEmpresa = agendamentos.filter(a => a.status === "na_empresa");
-      const match = findPetByName(petName, naEmpresa);
-      if (match) handleCheckout(match);
-      else toast.info(petName ? `Pet "${petName}" não encontrado na empresa.` : "Nenhum pet na empresa para check-out.");
-    }},
-  ], [agendamentos, findPetByName]);
-
-  const [wakeWordEnabled, setWakeWordEnabled] = useState(false);
-  const { isListening, isWakeListening, transcript, supported, startListening, stopListening, startWakeListener, stopWakeListener } = useVoiceCommands({ commands: voiceCommands, enableWakeWord: wakeWordEnabled });
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
@@ -248,7 +212,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <EstouChegandoMapDialog />
             <OrcamentoDialog />
-            <NovoAgendamentoDialog onSuccess={fetchAgendamentos} externalOpen={novoAgendamentoOpen} onExternalOpenChange={setNovoAgendamentoOpen} />
+            <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
           </div>
         </div>
 
@@ -332,18 +296,6 @@ export default function Dashboard() {
         open={!!editingAgendamento || !!editOpen}
         onOpenChange={(o) => { if (!o) { setEditingAgendamento(null); setEditOpen(null); } }}
         onSuccess={() => { setEditingAgendamento(null); setEditOpen(null); fetchAgendamentos(); }}
-      />
-      <VoiceCommandButton
-        isListening={isListening}
-        isWakeListening={isWakeListening}
-        transcript={transcript}
-        supported={supported}
-        onStart={startListening}
-        onStop={stopListening}
-        onToggleWake={(enabled) => {
-          setWakeWordEnabled(enabled);
-          if (!enabled) stopWakeListener();
-        }}
       />
     </div>
   );
