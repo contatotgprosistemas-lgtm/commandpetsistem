@@ -47,7 +47,7 @@ export function VoiceCommandButton({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-50" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
             </span>
-            <p className="text-[10px] text-muted-foreground">Diga <strong>"Olá PetControl"</strong></p>
+            <p className="text-[10px] text-muted-foreground">Diga <strong>"Olá Sistema"</strong></p>
           </div>
         </div>
       )}
