@@ -187,14 +187,6 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
         </div>
         <div className="flex items-center gap-1">
           <ChatStatusTag status={conversa.status as any} />
-          <button
-            onClick={handleToggleFavorite}
-            className={`h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center transition-colors ${
-              conversa.is_favorited ? "text-warning" : "text-muted-foreground"
-            }`}
-          >
-            <Star className="h-[18px] w-[18px]" fill={conversa.is_favorited ? "currentColor" : "none"} strokeWidth={1.5} />
-          </button>
           <button onClick={handleArchive} className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground">
             <Archive className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </button>
