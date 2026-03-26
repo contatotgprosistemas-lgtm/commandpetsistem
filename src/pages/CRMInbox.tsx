@@ -37,7 +37,7 @@ export default function CRMInbox() {
   const crmPanel = <CRMPanel clienteId={clienteId} telefone={selectedConversa?.contato_telefone} />;
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
+    <div className="flex h-[calc(100vh-3.5rem)] relative overflow-hidden">
       <ConversationList
         conversas={conversas}
         selectedId={selectedConversaId}
@@ -54,7 +54,7 @@ export default function CRMInbox() {
           </SheetContent>
         </Sheet>
       ) : (
-        showCRM && <div className="h-full overflow-y-auto">{crmPanel}</div>
+        showCRM && crmPanel
       )}
     </div>
   );
