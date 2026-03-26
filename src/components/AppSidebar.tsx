@@ -111,9 +111,7 @@ export function AppSidebar() {
     >
       {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-sidebar-border/60">
-        <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
-          <PawPrint className="h-4 w-4 text-sidebar-primary-foreground" strokeWidth={2} />
-        </div>
+        <img src={logoTg} alt="Logo" className="h-8 w-8 rounded-lg object-cover shrink-0" />
         <AnimatePresence>
           {!collapsed && (
             <motion.span
