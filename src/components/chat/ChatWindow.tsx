@@ -22,9 +22,11 @@ import type { ConversaWithRelations } from "@/hooks/useConversations";
 
 interface ChatWindowProps {
   conversa: ConversaWithRelations | null;
+  onToggleCRM?: () => void;
+  showCRM?: boolean;
 }
 
-export function ChatWindow({ conversa }: ChatWindowProps) {
+export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) {
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
