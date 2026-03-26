@@ -71,24 +71,35 @@ export default function Dashboard() {
   const [fichaOpen, setFichaOpen] = useState<Agendamento | null>(null);
   const [editOpen, setEditOpen] = useState<Agendamento | null>(null);
 
+  const findPetByName = useCallback((name: string | undefined, list: Agendamento[]) => {
+    if (!name) return list[0] || null;
+    const norm = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    return list.find(a => {
+      const petNorm = (a.pet?.nome || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      return petNorm === norm || petNorm.includes(norm) || norm.includes(petNorm);
+    }) || null;
+  }, []);
+
   const voiceCommands: VoiceCommand[] = useMemo(() => [
     { keywords: ["novo agendamento", "agendar", "nova reserva", "marcar"], description: "Novo agendamento", action: () => setNovoAgendamentoOpen(true) },
-    { keywords: ["check-in", "checkin", "entrada", "chegou"], description: "Check-in (primeiro pet pendente)", action: () => {
+    { keywords: ["check-in", "checkin", "entrada", "chegou"], description: "Check-in", extractSuffix: true, action: (petName?: string) => {
       const hoje = startOfDay(new Date());
       const amanha = new Date(hoje); amanha.setDate(amanha.getDate() + 1);
-      const pendente = agendamentos.find(a => {
+      const pendentes = agendamentos.filter(a => {
         const d = startOfDay(new Date(a.data_hora));
         return d >= hoje && d < amanha && (a.status === "pendente" || a.status === "confirmado");
       });
-      if (pendente) handleCheckin(pendente);
-      else toast.info("Nenhum pet pendente de check-in hoje.");
+      const match = findPetByName(petName, pendentes);
+      if (match) handleCheckin(match);
+      else toast.info(petName ? `Pet "${petName}" não encontrado nos pendentes de hoje.` : "Nenhum pet pendente de check-in hoje.");
     }},
-    { keywords: ["check-out", "checkout", "saída", "saida", "liberar"], description: "Check-out (primeiro pet na empresa)", action: () => {
-      const naEmpresa = agendamentos.find(a => a.status === "na_empresa");
-      if (naEmpresa) handleCheckout(naEmpresa);
-      else toast.info("Nenhum pet na empresa para check-out.");
+    { keywords: ["check-out", "checkout", "saída", "saida", "liberar"], description: "Check-out", extractSuffix: true, action: (petName?: string) => {
+      const naEmpresa = agendamentos.filter(a => a.status === "na_empresa");
+      const match = findPetByName(petName, naEmpresa);
+      if (match) handleCheckout(match);
+      else toast.info(petName ? `Pet "${petName}" não encontrado na empresa.` : "Nenhum pet na empresa para check-out.");
     }},
-  ], [agendamentos]);
+  ], [agendamentos, findPetByName]);
 
   const { isListening, transcript, supported, startListening, stopListening } = useVoiceCommands({ commands: voiceCommands });
 
