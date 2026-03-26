@@ -82,6 +82,28 @@ export default function OperacionalDashboard() {
     window.location.reload();
   };
 
+  const allAgendamentos = useMemo(() => {
+    // We store agendamentos for voice command access
+    return petsNaEmpresa;
+  }, [petsNaEmpresa]);
+
+  const voiceCommands: VoiceCommand[] = useMemo(() => [
+    { keywords: ["check-in", "checkin", "entrada", "chegou"], description: "Check-in (primeiro pendente)", action: () => {
+      toast.info("Navegando para Agenda para realizar check-in...");
+      navigate("/operacional/agenda");
+    }},
+    { keywords: ["check-out", "checkout", "saída", "saida", "liberar"], description: "Check-out (primeiro pet na empresa)", action: () => {
+      if (petsNaEmpresa.length > 0) handleCheckout(petsNaEmpresa[0]);
+      else toast.info("Nenhum pet na empresa para check-out.");
+    }},
+    { keywords: ["agenda", "agendamento", "reserva"], description: "Ir para Agenda", action: () => navigate("/operacional/agenda") },
+    { keywords: ["clientes", "tutores", "cliente"], description: "Ir para Clientes", action: () => navigate("/operacional/clientes") },
+    { keywords: ["pets", "animais", "bichos"], description: "Ir para Pets", action: () => navigate("/operacional/pets") },
+    { keywords: ["ponto", "bater ponto", "registrar ponto"], description: "Ir para Ponto", action: () => navigate("/operacional/ponto") },
+  ], [petsNaEmpresa, navigate]);
+
+  const { isListening, transcript, supported, startListening, stopListening } = useVoiceCommands({ commands: voiceCommands });
+
   if (loading) {
     return (
       <div className="space-y-6">
