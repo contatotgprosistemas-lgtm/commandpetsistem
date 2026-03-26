@@ -22,7 +22,7 @@ function normalize(text: string) {
 export function useVoiceCommands({
   commands,
   language = "pt-BR",
-  wakeWord = "olá petcontrol",
+  wakeWord = "olá sistema",
   enableWakeWord = false,
 }: UseVoiceCommandsOptions) {
   const [isListening, setIsListening] = useState(false);
