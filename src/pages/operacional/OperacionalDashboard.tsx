@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
