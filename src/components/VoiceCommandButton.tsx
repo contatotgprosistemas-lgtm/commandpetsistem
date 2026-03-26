@@ -9,7 +9,7 @@ interface VoiceCommandButtonProps {
   supported: boolean;
   onStart: () => void;
   onStop: () => void;
-  commands: VoiceCommand[];
+  
 }
 
 export function VoiceCommandButton({ isListening, transcript, supported, onStart, onStop }: VoiceCommandButtonProps) {
