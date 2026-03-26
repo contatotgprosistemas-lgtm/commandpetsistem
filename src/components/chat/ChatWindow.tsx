@@ -40,6 +40,19 @@ export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) 
   const { data: allConversaTags } = useConversaTags();
   const currentTags = allConversaTags?.filter(ct => ct.conversa_id === conversa?.id) ?? [];
 
+  // Reset unread count when conversation is opened
+  useEffect(() => {
+    if (conversa?.id && (conversa.unread_count ?? 0) > 0) {
+      supabase
+        .from("conversas")
+        .update({ unread_count: 0 })
+        .eq("id", conversa.id)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ["conversas"] });
+        });
+    }
+  }, [conversa?.id]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensagens]);

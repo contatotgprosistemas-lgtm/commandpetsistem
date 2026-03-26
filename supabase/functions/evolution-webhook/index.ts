@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
         // Find or create conversation
         let { data: conversa } = await supabase
           .from("conversas")
-          .select("id, status")
+          .select("id, status, unread_count")
           .eq("empresa_id", empresaId)
           .eq("contato_telefone", phone)
           .single();
@@ -248,12 +248,22 @@ Deno.serve(async (req) => {
           tipo: messageType,
         });
 
-        // Update conversation timestamp
+        // Update conversation timestamp, unread count, and preview
+        const preview = content.length > 100 ? content.substring(0, 100) + "..." : content;
+        // For media messages, show a friendly preview
+        const displayPreview = messageType === "imagem" ? "📷 Imagem" 
+          : messageType === "audio" ? "🎵 Áudio"
+          : messageType === "documento" ? "📄 Documento"
+          : messageType === "midia" ? "🎥 Vídeo"
+          : preview;
+
         await supabase
           .from("conversas")
           .update({
             ultima_mensagem_at: new Date().toISOString(),
             status: "novo",
+            unread_count: (conversa as any).unread_count ? (conversa as any).unread_count + 1 : 1,
+            last_message_preview: displayPreview,
           })
           .eq("id", conversa.id);
 
