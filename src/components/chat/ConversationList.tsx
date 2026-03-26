@@ -4,6 +4,7 @@ import { format, isToday, isYesterday } from "date-fns";
 import { ChatStatusTag } from "@/components/ChatStatusTag";
 import { WhatsAppStatusIndicator } from "@/components/chat/WhatsAppStatusIndicator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useConversaTags } from "@/hooks/useConversationTags";
 import type { ConversaWithRelations } from "@/hooks/useConversations";
 
 type QueueFilter = "todas" | "nao_lidas" | "minhas" | "aguardando" | "finalizadas";
