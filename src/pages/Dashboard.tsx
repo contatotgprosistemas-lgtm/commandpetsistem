@@ -60,6 +60,7 @@ export default function Dashboard() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [agendaLoading, setAgendaLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
+  const [transportBookings, setTransportBookings] = useState<any[]>([]);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
@@ -69,11 +70,18 @@ export default function Dashboard() {
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
-    const { data } = await supabase
-      .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
-      .order("data_hora", { ascending: true });
+    const [{ data }, { data: bookings }] = await Promise.all([
+      supabase
+        .from("agendamentos")
+        .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
+        .order("data_hora", { ascending: true }),
+      supabase
+        .from("transport_bookings")
+        .select("*, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url), transport_type:transport_types(name, color), driver:drivers(name)")
+        .order("scheduled_date", { ascending: true }),
+    ]);
     if (data) setAgendamentos(data as any);
+    setTransportBookings(bookings ?? []);
     setAgendaLoading(false);
   }
 
