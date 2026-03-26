@@ -1,7 +1,7 @@
 import { Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { VoiceCommand } from "@/hooks/useVoiceCommands";
+
 
 interface VoiceCommandButtonProps {
   isListening: boolean;
