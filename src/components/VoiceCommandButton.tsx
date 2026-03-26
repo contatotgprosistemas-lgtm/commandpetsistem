@@ -42,37 +42,6 @@ export function VoiceCommandButton({ isListening, transcript, supported, onStart
       )}
 
       <div className="flex items-center gap-2">
-        {/* Help popover */}
-        <Popover open={helpOpen} onOpenChange={setHelpOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 rounded-full shadow-lg bg-card"
-            >
-              <span className="text-xs font-bold">?</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-72">
-            <div className="space-y-2">
-              <h4 className="font-semibold text-sm">Comandos de voz disponíveis</h4>
-              <div className="space-y-1.5">
-                {commands.map((cmd, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <Mic className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-                    <div>
-                      <p className="text-xs font-medium text-foreground">{cmd.description}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        Diga: "{cmd.keywords[0]}{cmd.extractSuffix ? " + nome do pet" : ""}"
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-
         {/* Main mic button */}
         <Button
           size="icon"
