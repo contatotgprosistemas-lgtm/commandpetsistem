@@ -107,7 +107,8 @@ export default function OperacionalDashboard() {
     { keywords: ["ponto", "bater ponto", "registrar ponto"], description: "Ir para Ponto", action: () => navigate("/operacional/ponto") },
   ], [petsNaEmpresa, navigate]);
 
-  const { isListening, transcript, supported, startListening, stopListening } = useVoiceCommands({ commands: voiceCommands });
+  const [wakeWordEnabled, setWakeWordEnabled] = useState(false);
+  const { isListening, isWakeListening, transcript, supported, startListening, stopListening, startWakeListener, stopWakeListener } = useVoiceCommands({ commands: voiceCommands, enableWakeWord: wakeWordEnabled });
 
   if (loading) {
     return (
