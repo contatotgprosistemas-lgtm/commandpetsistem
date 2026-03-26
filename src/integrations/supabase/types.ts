@@ -995,6 +995,52 @@ export type Database = {
           },
         ]
       }
+      conversa_tags: {
+        Row: {
+          conversa_id: string
+          created_at: string
+          empresa_id: string
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          conversa_id: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          conversa_id?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversa_tags_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "conversas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversa_tags_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversa_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversas: {
         Row: {
           atendente_id: string | null
@@ -1049,6 +1095,38 @@ export type Database = {
           },
           {
             foreignKeyName: "conversas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_tags: {
+        Row: {
+          color: string
+          created_at: string
+          empresa_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_tags_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"

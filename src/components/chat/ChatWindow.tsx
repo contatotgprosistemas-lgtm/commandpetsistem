@@ -11,7 +11,9 @@ import { MediaUploadMenu } from "@/components/chat/MediaUploadMenu";
 import { EmojiPicker } from "@/components/chat/EmojiPicker";
 import { QuickRepliesMenu } from "@/components/chat/QuickRepliesMenu";
 import { ConversationActions } from "@/components/chat/ConversationActions";
+import { ConversationTagManager } from "@/components/chat/ConversationTagManager";
 import { ChatStatusTag } from "@/components/ChatStatusTag";
+import { useConversaTags } from "@/hooks/useConversationTags";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Send, Smile, Phone, Loader2, MessageSquare, Star, Archive } from "lucide-react";
 import { format } from "date-fns";
@@ -33,6 +35,8 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: mensagens, isLoading: loadingMessages } = useMessages(conversa?.id ?? null);
+  const { data: allConversaTags } = useConversaTags();
+  const currentTags = allConversaTags?.filter(ct => ct.conversa_id === conversa?.id) ?? [];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -197,9 +201,25 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
           <button className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground">
             <Phone className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </button>
+          <ConversationTagManager conversaId={conversa.id} />
           <ConversationActions conversaId={conversa.id} currentAtendenteId={conversa.atendente_id} currentStatus={conversa.status} />
         </div>
       </div>
+
+      {/* Tags bar */}
+      {currentTags.length > 0 && (
+        <div className="px-4 py-1.5 border-b border-border bg-card flex items-center gap-1 flex-wrap">
+          {currentTags.map(ct => (
+            <span
+              key={ct.id}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
+              style={{ backgroundColor: ct.tag?.color || '#6b7280' }}
+            >
+              {ct.tag?.name}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Messages */}
       <div

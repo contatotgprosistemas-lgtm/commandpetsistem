@@ -4,6 +4,7 @@ import { format, isToday, isYesterday } from "date-fns";
 import { ChatStatusTag } from "@/components/ChatStatusTag";
 import { WhatsAppStatusIndicator } from "@/components/chat/WhatsAppStatusIndicator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useConversaTags } from "@/hooks/useConversationTags";
 import type { ConversaWithRelations } from "@/hooks/useConversations";
 
 type QueueFilter = "todas" | "nao_lidas" | "minhas" | "aguardando" | "finalizadas";
@@ -28,6 +29,7 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
   const [searchQuery, setSearchQuery] = useState("");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("todas");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const { data: allConversaTags } = useConversaTags();
 
   const getInitials = (name: string) =>
     name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
@@ -185,6 +187,27 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
                     </span>
                   )}
                 </div>
+                {/* Tags */}
+                {(() => {
+                  const tags = allConversaTags?.filter(ct => ct.conversa_id === conv.id) ?? [];
+                  if (!tags.length) return null;
+                  return (
+                    <div className="flex gap-0.5 mt-0.5 flex-wrap">
+                      {tags.slice(0, 3).map(ct => (
+                        <span
+                          key={ct.id}
+                          className="inline-block px-1.5 py-px rounded-full text-[9px] font-medium text-white"
+                          style={{ backgroundColor: ct.tag?.color || '#6b7280' }}
+                        >
+                          {ct.tag?.name}
+                        </span>
+                      ))}
+                      {tags.length > 3 && (
+                        <span className="text-[9px] text-muted-foreground">+{tags.length - 3}</span>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </button>
           ))
