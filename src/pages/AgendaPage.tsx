@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Calculator, PawPrint, Phone, MessageCircle, Pencil, LogIn, Trash2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Calculator, PawPrint, Phone, MessageCircle, Pencil, LogIn, Trash2, CalendarDays, List } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
@@ -55,19 +57,17 @@ export default function AgendaPage() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
+  const [view, setView] = useState<"calendar" | "list">("calendar");
+
+  // List filters
+  const [filterDate, setFilterDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [filterService, setFilterService] = useState("all");
 
   async function handleDelete(id: string) {
-    // Find the agendamento to get cliente_id and date for matching contas_receber
     const agendamento = agendamentos.find(a => a.id === id);
-    
-    // Delete related historico_servicos
     await supabase.from("historico_servicos").delete().eq("agendamento_id", id);
-    
-    // Delete related checklist/manejo
     await supabase.from("checklist_registros").delete().eq("agendamento_id", id);
     await supabase.from("manejo_registros").delete().eq("agendamento_id", id);
-    
-    // Delete related contas_receber (matched by cliente_id + descricao containing tipo_servico)
     if (agendamento) {
       const petName = agendamento.pet?.nome || "";
       const searchDesc = `${agendamento.tipo_servico} — ${petName}`;
@@ -77,7 +77,6 @@ export default function AgendaPage() {
         .eq("cliente_id", agendamento.cliente_id)
         .eq("descricao", searchDesc);
     }
-    
     const { error } = await supabase.from("agendamentos").delete().eq("id", id);
     if (error) {
       toast.error("Erro ao excluir: " + error.message);
@@ -100,7 +99,6 @@ export default function AgendaPage() {
 
   useEffect(() => { fetchAgendamentos(); }, []);
 
-  // Auto-refresh at midnight
   useEffect(() => {
     const scheduleRefresh = () => {
       const now = new Date();
@@ -109,7 +107,6 @@ export default function AgendaPage() {
       const ms = midnight.getTime() - now.getTime();
       return setTimeout(() => {
         fetchAgendamentos();
-        // Schedule next midnight refresh
         const id = scheduleRefresh();
         return id;
       }, ms);
@@ -121,7 +118,6 @@ export default function AgendaPage() {
   async function handleCheckin(item: Agendamento) {
     const now = new Date();
     const horaEntrada = format(now, "HH:mm");
-    // Update status to na_empresa and record entry time
     const { error } = await supabase.from("agendamentos").update({
       status: "na_empresa",
       data_entrada: now.toISOString(),
@@ -131,8 +127,6 @@ export default function AgendaPage() {
       toast.error("Erro ao fazer check-in: " + error.message);
       return;
     }
-
-    // Save to service history
     await supabase.from("historico_servicos" as any).insert({
       empresa_id: item.empresa_id,
       cliente_id: item.cliente_id,
@@ -143,22 +137,24 @@ export default function AgendaPage() {
       agendamento_id: item.id,
       notas: `Check-in realizado em ${format(now, "dd/MM/yyyy")} às ${horaEntrada}`,
     } as any);
-
     toast.success("Check-in realizado! Pet aparecerá no Dashboard.");
     fetchAgendamentos();
   }
 
-  const today = startOfDay(new Date());
+  // Unique service types for filter
+  const serviceTypes = useMemo(() => {
+    const types = new Set(agendamentos.map(a => a.tipo_servico));
+    return Array.from(types).sort();
+  }, [agendamentos]);
 
-  const reservaHoje = agendamentos.filter(a => {
-    const d = new Date(a.data_hora);
-    return isToday(d) && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido";
-  });
-
-  const proximasReservas = agendamentos.filter(a => {
-    const d = startOfDay(new Date(a.data_hora));
-    return isAfter(d, today) && a.status !== "cancelado";
-  });
+  // Filtered list for "Lista" view
+  const filteredList = useMemo(() => {
+    return agendamentos.filter(a => {
+      const dateMatch = format(new Date(a.data_hora), "yyyy-MM-dd") === filterDate;
+      const serviceMatch = filterService === "all" || a.tipo_servico === filterService;
+      return dateMatch && serviceMatch;
+    });
+  }, [agendamentos, filterDate, filterService]);
 
   const todayFormatted = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
@@ -174,7 +170,63 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      <AgendaCalendar agendamentos={agendamentos} onEditAgendamento={(a) => setEditingAgendamento(a as any)} />
+      <Tabs value={view} onValueChange={v => setView(v as any)}>
+        <TabsList>
+          <TabsTrigger value="calendar" className="gap-1.5">
+            <CalendarDays className="h-4 w-4" />
+            Calendário
+          </TabsTrigger>
+          <TabsTrigger value="list" className="gap-1.5">
+            <List className="h-4 w-4" />
+            Lista
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="calendar" className="mt-4">
+          <AgendaCalendar agendamentos={agendamentos} onEditAgendamento={(a) => setEditingAgendamento(a as any)} />
+        </TabsContent>
+
+        <TabsContent value="list" className="mt-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Data</label>
+              <Input
+                type="date"
+                value={filterDate}
+                onChange={e => setFilterDate(e.target.value)}
+                className="w-[160px] h-9"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Serviço</label>
+              <Select value={filterService} onValueChange={setFilterService}>
+                <SelectTrigger className="w-[200px] h-9">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os serviços</SelectItem>
+                  {serviceTypes.map(s => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="pt-5">
+              <Badge variant="secondary">{filteredList.length} agendamento(s)</Badge>
+            </div>
+          </div>
+
+          <AgendamentoList
+            items={filteredList}
+            loading={loading}
+            showCheckin
+            onCheckin={handleCheckin}
+            onEdit={a => setEditingAgendamento(a)}
+            showDelete
+            onDelete={handleDelete}
+          />
+        </TabsContent>
+      </Tabs>
 
       <EditarAgendamentoDialog
         agendamento={editingAgendamento}
@@ -185,7 +237,6 @@ export default function AgendaPage() {
     </div>
   );
 }
-
 function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showDelete, onDelete }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void }) {
   if (loading) {
     return (
