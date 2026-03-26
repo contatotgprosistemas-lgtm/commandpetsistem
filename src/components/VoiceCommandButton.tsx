@@ -1,8 +1,6 @@
-import { Mic, MicOff, X } from "lucide-react";
+import { Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VoiceCommand } from "@/hooks/useVoiceCommands";
 
 interface VoiceCommandButtonProps {
