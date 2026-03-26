@@ -428,12 +428,24 @@ function SegurancaTab() {
 function AsaasIntegrationPanel() {
   const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/asaas-webhook`;
   const [copied, setCopied] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(webhookUrl);
     setCopied(true);
     toast({ title: "URL copiada!" });
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) {
+      toast({ title: "Informe a API Key", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    toast({ title: "API Key informada", description: "Entre em contato com o suporte para finalizar a configuração com esta chave." });
+    setSaving(false);
   };
 
   return (
@@ -446,11 +458,18 @@ function AsaasIntegrationPanel() {
         <div className="space-y-2">
           <Label>API Key do Asaas</Label>
           <p className="text-xs text-muted-foreground">
-            A chave já está configurada no sistema. Para alterá-la, entre em contato com o suporte.
+            Cole aqui a API Key encontrada no painel Asaas em <strong>Configurações → Integrações → API</strong>.
           </p>
           <div className="flex items-center gap-2">
-            <Input value="••••••••••••••••••••" disabled className="font-mono" />
-            <Badge variant="outline" className="whitespace-nowrap text-green-600 border-green-600">Configurada</Badge>
+            <Input
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Cole sua API Key do Asaas aqui"
+              className="font-mono text-xs"
+            />
+            <Button variant="outline" size="sm" onClick={handleSaveApiKey} disabled={saving} className="whitespace-nowrap">
+              Salvar
+            </Button>
           </div>
         </div>
 
