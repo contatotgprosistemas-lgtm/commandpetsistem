@@ -44,10 +44,6 @@ export function AppSidebar() {
     { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
     { icon: Kanban, label: "Pipeline Vendas", path: "/kanban" },
     { icon: Bot, label: "Chatbot", path: "/chatbot" },
-    { icon: Car, label: "TaxiPet", path: "/taxipet" },
-    { icon: FileSignature, label: "Contratos", path: "/contratos" },
-    { icon: Receipt, label: "Notas Fiscais", path: "/notas-fiscais" },
-    { icon: Clock, label: "Ponto", path: "/ponto" },
   ];
   const cadastrosItems = [
     { icon: Users, label: "Clientes", path: "/clientes" },
@@ -57,8 +53,15 @@ export function AppSidebar() {
     { icon: Gift, label: "Planos e Pacotes", path: "/planos-pacotes" },
   ];
 
-  const bottomItems = [
+  const afterCadastrosItems = [
     { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
+    { icon: Car, label: "TaxiPet", path: "/taxipet" },
+    { icon: FileSignature, label: "Contratos", path: "/contratos" },
+    { icon: Receipt, label: "Notas Fiscais", path: "/notas-fiscais" },
+    { icon: Clock, label: "Ponto", path: "/ponto" },
+  ];
+
+  const bottomItems = [
     ...(isSuperAdmin
       ? [{ icon: Shield, label: "Super Admin", path: "/admin" }]
       : []),
