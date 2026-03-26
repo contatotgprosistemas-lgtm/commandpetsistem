@@ -17,8 +17,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Clock, Users, AlertTriangle, TrendingUp, TrendingDown,
   MapPin, Camera, CalendarDays, Settings, BarChart3, ClipboardList,
-  ChevronLeft, ChevronRight, Loader2, Save, Eye
+  ChevronLeft, ChevronRight, Loader2, Save, Eye, UserPlus
 } from "lucide-react";
+import ColaboradoresTab from "@/components/ponto/ColaboradoresTab";
 
 const PUNCH_LABELS: Record<string, string> = {
   entrada: "Entrada",
