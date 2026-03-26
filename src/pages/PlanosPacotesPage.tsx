@@ -52,6 +52,10 @@ export default function PlanosPacotesPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     const table = deleteTarget.type === "plan" ? "service_plans" : deleteTarget.type === "package" ? "service_packages" : "customer_pet_subscriptions";
+    // Se for contratação, excluir agendamentos vinculados antes
+    if (deleteTarget.type === "subscription") {
+      await supabase.from("agendamentos").delete().eq("subscription_id", deleteTarget.id);
+    }
     await supabase.from(table as any).delete().eq("id", deleteTarget.id);
     toast.success("Removido com sucesso");
     setDeleteTarget(null);
