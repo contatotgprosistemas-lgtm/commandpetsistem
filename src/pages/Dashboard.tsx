@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature } from "lucide-react";
+import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,7 @@ export default function Dashboard() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [agendaLoading, setAgendaLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
+  const [transportBookings, setTransportBookings] = useState<any[]>([]);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
@@ -69,11 +70,18 @@ export default function Dashboard() {
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
-    const { data } = await supabase
-      .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
-      .order("data_hora", { ascending: true });
+    const [{ data }, { data: bookings }] = await Promise.all([
+      supabase
+        .from("agendamentos")
+        .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
+        .order("data_hora", { ascending: true }),
+      supabase
+        .from("transport_bookings")
+        .select("*, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url), transport_type:transport_types(name, color), driver:drivers(name)")
+        .order("scheduled_date", { ascending: true }),
+    ]);
     if (data) setAgendamentos(data as any);
+    setTransportBookings(bookings ?? []);
     setAgendaLoading(false);
   }
 
@@ -161,6 +169,10 @@ export default function Dashboard() {
     const d = startOfDay(new Date(a.data_hora));
     return isAfter(d, today) && a.status !== "cancelado";
   });
+  const transportHoje = transportBookings.filter(b => {
+    const d = startOfDay(new Date(b.scheduled_date + "T00:00:00"));
+    return d >= today && d < tomorrow && b.status !== "cancelado";
+  });
   const todayFormatted = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   return (
@@ -202,6 +214,9 @@ export default function Dashboard() {
             <TabsTrigger value="hoje" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
               Reservas Hoje ({reservasHoje.length})
             </TabsTrigger>
+            <TabsTrigger value="taxipet" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
+              <Car className="h-3.5 w-3.5 mr-1" /> TaxiPet ({transportHoje.length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="na_empresa">
@@ -217,6 +232,9 @@ export default function Dashboard() {
           </TabsContent>
           <TabsContent value="hoje">
             <AgendamentoList items={reservasHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
+          </TabsContent>
+          <TabsContent value="taxipet">
+            <TaxiPetTodayList items={transportHoje} loading={agendaLoading} />
           </TabsContent>
         </Tabs>
       </div>
@@ -332,7 +350,7 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
       </div>
       <div className="flex items-center gap-1 shrink-0 ml-2"><StatusDot status={item.status} /></div>
       <div className="flex items-center gap-1 shrink-0">
-        {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && (
+        {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && !["taxipet", "taxi pet", "transporte", "taxi-pet"].includes(item.tipo_servico.toLowerCase()) && (
           <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => onCheckin?.(item)}>
             <LogIn className="h-3.5 w-3.5" />Check-in
           </Button>
@@ -439,6 +457,84 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
                 Checkout
               </Button>
             </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }) {
+  if (loading) return <div className="space-y-3 mt-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}</div>;
+  if (items.length === 0) return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <Car className="h-10 w-10 text-muted-foreground/30 mb-3" strokeWidth={1.5} />
+      <p className="text-sm text-muted-foreground">Nenhuma corrida TaxiPet para hoje</p>
+    </div>
+  );
+
+  const statusMap: Record<string, { label: string; color: string }> = {
+    agendado: { label: "Agendado", color: "bg-amber-100 text-amber-800" },
+    confirmado: { label: "Confirmado", color: "bg-emerald-100 text-emerald-800" },
+    em_transito: { label: "Em Trânsito", color: "bg-sky-100 text-sky-800" },
+    concluido: { label: "Concluído", color: "bg-primary/10 text-primary" },
+    cancelado: { label: "Cancelado", color: "bg-red-100 text-red-800" },
+  };
+
+  return (
+    <div className="bg-card rounded-xl border border-border/60 shadow-card mt-4 divide-y divide-border/60">
+      {items.map(item => {
+        const petName = item.pet?.nome ?? "Pet";
+        const initials = petName.slice(0, 2).toUpperCase();
+        const clientName = item.cliente?.nome ?? "—";
+        const clientWhatsapp = item.cliente?.whatsapp;
+        const tripLabel = item.trip_type === "ida" ? "Ida" : item.trip_type === "volta" ? "Volta" : "Ida e Volta";
+        const st = statusMap[item.status] || { label: item.status, color: "bg-muted text-muted-foreground" };
+
+        return (
+          <div key={item.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+            <div className="flex items-center -space-x-2">
+              <Avatar className="h-11 w-11 border-2 border-card z-10">
+                {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}
+                <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
+              </Avatar>
+              <Avatar className="h-8 w-8 border-2 border-card">
+                {item.cliente?.foto_url && <AvatarImage src={item.cliente.foto_url} alt={clientName} />}
+                <AvatarFallback className="bg-primary/10 text-primary text-[9px] font-semibold">{clientName.slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
+                {item.pet?.raca && <span className="text-xs text-muted-foreground">({item.pet.raca})</span>}
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                <Car className="h-3 w-3 shrink-0" />
+                <span>{item.transport_type?.name ?? "Transporte"}</span>
+                <span>·</span>
+                <span>{tripLabel}</span>
+                <span>|</span>
+                <span className="truncate">{clientName}</span>
+                {clientWhatsapp && <MessageCircle className="h-3 w-3 text-emerald-500 shrink-0" />}
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-sm font-medium text-foreground tabular-nums">
+                {item.scheduled_pickup_time ? item.scheduled_pickup_time.slice(0, 5) : "—"}
+              </p>
+              {item.driver?.name && <p className="text-xs text-muted-foreground">{item.driver.name}</p>}
+            </div>
+            <Badge className={`text-[10px] shrink-0 ${st.color}`}>{st.label}</Badge>
+            {item.final_price > 0 && (
+              <span className="text-sm font-medium text-foreground tabular-nums shrink-0">
+                R$ {Number(item.final_price).toFixed(2)}
+              </span>
+            )}
+            {clientWhatsapp && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="WhatsApp" onClick={() => window.open(`https://wa.me/${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}>
+                <Phone className="h-3.5 w-3.5 text-emerald-600" />
+              </Button>
+            )}
           </div>
         );
       })}
