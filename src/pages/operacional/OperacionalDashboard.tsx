@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,8 @@ import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { format, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { useVoiceCommands, VoiceCommand } from "@/hooks/useVoiceCommands";
+import { VoiceCommandButton } from "@/components/VoiceCommandButton";
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
@@ -79,6 +81,28 @@ export default function OperacionalDashboard() {
     toast.success("Check-out realizado!");
     window.location.reload();
   };
+
+  const allAgendamentos = useMemo(() => {
+    // We store agendamentos for voice command access
+    return petsNaEmpresa;
+  }, [petsNaEmpresa]);
+
+  const voiceCommands: VoiceCommand[] = useMemo(() => [
+    { keywords: ["check-in", "checkin", "entrada", "chegou"], description: "Check-in (primeiro pendente)", action: () => {
+      toast.info("Navegando para Agenda para realizar check-in...");
+      navigate("/operacional/agenda");
+    }},
+    { keywords: ["check-out", "checkout", "saída", "saida", "liberar"], description: "Check-out (primeiro pet na empresa)", action: () => {
+      if (petsNaEmpresa.length > 0) handleCheckout(petsNaEmpresa[0]);
+      else toast.info("Nenhum pet na empresa para check-out.");
+    }},
+    { keywords: ["agenda", "agendamento", "reserva"], description: "Ir para Agenda", action: () => navigate("/operacional/agenda") },
+    { keywords: ["clientes", "tutores", "cliente"], description: "Ir para Clientes", action: () => navigate("/operacional/clientes") },
+    { keywords: ["pets", "animais", "bichos"], description: "Ir para Pets", action: () => navigate("/operacional/pets") },
+    { keywords: ["ponto", "bater ponto", "registrar ponto"], description: "Ir para Ponto", action: () => navigate("/operacional/ponto") },
+  ], [petsNaEmpresa, navigate]);
+
+  const { isListening, transcript, supported, startListening, stopListening } = useVoiceCommands({ commands: voiceCommands });
 
   if (loading) {
     return (
@@ -152,6 +176,14 @@ export default function OperacionalDashboard() {
           </div>
         </div>
       )}
+      <VoiceCommandButton
+        isListening={isListening}
+        transcript={transcript}
+        supported={supported}
+        onStart={startListening}
+        onStop={stopListening}
+        commands={voiceCommands}
+      />
     </div>
   );
 }

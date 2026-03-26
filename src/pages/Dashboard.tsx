@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
 import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car } from "lucide-react";
+import { useVoiceCommands, VoiceCommand } from "@/hooks/useVoiceCommands";
+import { VoiceCommandButton } from "@/components/VoiceCommandButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -61,12 +63,34 @@ export default function Dashboard() {
   const [agendaLoading, setAgendaLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
   const [transportBookings, setTransportBookings] = useState<any[]>([]);
+  const [novoAgendamentoOpen, setNovoAgendamentoOpen] = useState(false);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
   const [checklistOpen, setChecklistOpen] = useState<Agendamento | null>(null);
   const [fichaOpen, setFichaOpen] = useState<Agendamento | null>(null);
   const [editOpen, setEditOpen] = useState<Agendamento | null>(null);
+
+  const voiceCommands: VoiceCommand[] = useMemo(() => [
+    { keywords: ["novo agendamento", "agendar", "nova reserva", "marcar"], description: "Novo agendamento", action: () => setNovoAgendamentoOpen(true) },
+    { keywords: ["check-in", "checkin", "entrada", "chegou"], description: "Check-in (primeiro pet pendente)", action: () => {
+      const hoje = startOfDay(new Date());
+      const amanha = new Date(hoje); amanha.setDate(amanha.getDate() + 1);
+      const pendente = agendamentos.find(a => {
+        const d = startOfDay(new Date(a.data_hora));
+        return d >= hoje && d < amanha && (a.status === "pendente" || a.status === "confirmado");
+      });
+      if (pendente) handleCheckin(pendente);
+      else toast.info("Nenhum pet pendente de check-in hoje.");
+    }},
+    { keywords: ["check-out", "checkout", "saída", "saida", "liberar"], description: "Check-out (primeiro pet na empresa)", action: () => {
+      const naEmpresa = agendamentos.find(a => a.status === "na_empresa");
+      if (naEmpresa) handleCheckout(naEmpresa);
+      else toast.info("Nenhum pet na empresa para check-out.");
+    }},
+  ], [agendamentos]);
+
+  const { isListening, transcript, supported, startListening, stopListening } = useVoiceCommands({ commands: voiceCommands });
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
@@ -212,7 +236,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <EstouChegandoMapDialog />
             <OrcamentoDialog />
-            <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
+            <NovoAgendamentoDialog onSuccess={fetchAgendamentos} externalOpen={novoAgendamentoOpen} onExternalOpenChange={setNovoAgendamentoOpen} />
           </div>
         </div>
 
@@ -296,6 +320,14 @@ export default function Dashboard() {
         open={!!editingAgendamento || !!editOpen}
         onOpenChange={(o) => { if (!o) { setEditingAgendamento(null); setEditOpen(null); } }}
         onSuccess={() => { setEditingAgendamento(null); setEditOpen(null); fetchAgendamentos(); }}
+      />
+      <VoiceCommandButton
+        isListening={isListening}
+        transcript={transcript}
+        supported={supported}
+        onStart={startListening}
+        onStop={stopListening}
+        commands={voiceCommands}
       />
     </div>
   );
