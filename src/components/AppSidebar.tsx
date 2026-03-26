@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import logoTg from "@/assets/logo-tg.jpg";
 import {
   LayoutDashboard,
   MessageSquare,
