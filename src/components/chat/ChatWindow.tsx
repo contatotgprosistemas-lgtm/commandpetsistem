@@ -45,13 +45,13 @@ export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) 
     if (conversa?.id && (conversa.unread_count ?? 0) > 0) {
       supabase
         .from("conversas")
-        .update({ unread_count: 0 })
+        .update({ unread_count: 0 } as any)
         .eq("id", conversa.id)
         .then(() => {
-          queryClient.invalidateQueries({ queryKey: ["conversas"] });
+          queryClient.invalidateQueries({ queryKey: ["conversas", empresaId] });
         });
     }
-  }, [conversa?.id]);
+  }, [conversa?.id, empresaId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
