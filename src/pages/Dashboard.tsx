@@ -161,18 +161,28 @@ export default function Dashboard() {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const petsNaEmpresa = agendamentos.filter(a => a.status === "na_empresa");
+  const isTransportService = (tipo: string) => {
+    const t = tipo.toLowerCase();
+    return t.includes("taxi") || t.includes("transporte") || t.includes("leva") || t.includes("busca");
+  };
   const reservasHoje = agendamentos.filter(a => {
     const d = startOfDay(new Date(a.data_hora));
-    return d >= today && d < tomorrow && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido";
+    return d >= today && d < tomorrow && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido" && !isTransportService(a.tipo_servico);
   });
-  const proximasReservas = agendamentos.filter(a => {
+  const agendamentosTransporteHoje = agendamentos.filter(a => {
     const d = startOfDay(new Date(a.data_hora));
-    return isAfter(d, today) && a.status !== "cancelado";
+    return d >= today && d < tomorrow && a.status !== "cancelado" && isTransportService(a.tipo_servico);
   });
-  const transportHoje = transportBookings.filter(b => {
+  const transportBookingsHoje = transportBookings.filter(b => {
     const d = startOfDay(new Date(b.scheduled_date + "T00:00:00"));
     return d >= today && d < tomorrow && b.status !== "cancelado";
   });
+  const transportHoje = [...transportBookingsHoje, ...agendamentosTransporteHoje.map(a => ({
+    id: a.id, scheduled_date: format(new Date(a.data_hora), "yyyy-MM-dd"),
+    scheduled_pickup_time: format(new Date(a.data_hora), "HH:mm"), trip_type: a.tipo_servico,
+    status: a.status, final_price: a.valor || 0, cliente_nome: a.cliente?.nome || "—",
+    pet_nome: a.pet?.nome || "—", driver_nome: null, type_nome: a.tipo_servico, source: "agendamento",
+  }))];
   const todayFormatted = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   return (
