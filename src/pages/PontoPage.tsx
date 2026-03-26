@@ -166,30 +166,54 @@ export default function PontoPage() {
     bankByEmployee[key].days += 1;
   });
 
+  const openNewConfig = () => {
+    setEditingConfig(null);
+    setConfigForm({ nome: "", jornada_diaria_min: 480, intervalo_min: 60, tolerancia_min: 10, dias_trabalho: [1, 2, 3, 4, 5] });
+    setConfigDialogOpen(true);
+  };
+
+  const openEditConfig = (c: any) => {
+    setEditingConfig(c);
+    setConfigForm({
+      nome: c.nome,
+      jornada_diaria_min: c.jornada_diaria_min,
+      intervalo_min: c.intervalo_min,
+      tolerancia_min: c.tolerancia_min,
+      dias_trabalho: c.dias_trabalho || [1, 2, 3, 4, 5],
+    });
+    setConfigDialogOpen(true);
+  };
+
   const handleSaveConfig = async () => {
-    if (!empresaId) return;
+    if (!empresaId || !configForm.nome.trim()) {
+      toast.error("Nome da jornada é obrigatório.");
+      return;
+    }
     setSavingConfig(true);
     try {
-      if (config) {
-        await supabase.from("ponto_configuracoes").update(configForm).eq("id", config.id);
+      if (editingConfig) {
+        await supabase.from("ponto_configuracoes").update(configForm).eq("id", editingConfig.id);
       } else {
         await supabase.from("ponto_configuracoes").insert({ ...configForm, empresa_id: empresaId });
       }
-      toast.success("Configurações salvas!");
+      toast.success("Jornada salva!");
+      setConfigDialogOpen(false);
       fetchData();
     } catch {
-      toast.error("Erro ao salvar configurações.");
+      toast.error("Erro ao salvar jornada.");
     }
     setSavingConfig(false);
   };
 
-  const toggleDay = (day: number) => {
-    setConfigForm(prev => ({
-      ...prev,
-      dias_trabalho: prev.dias_trabalho.includes(day)
-        ? prev.dias_trabalho.filter(d => d !== day)
-        : [...prev.dias_trabalho, day].sort(),
-    }));
+  const handleDeleteConfig = async (id: string) => {
+    const linked = employees.filter(e => e.jornada_id === id).length;
+    if (linked > 0) {
+      toast.error(`Essa jornada está vinculada a ${linked} colaborador(es). Desvincule primeiro.`);
+      return;
+    }
+    const { error } = await supabase.from("ponto_configuracoes").delete().eq("id", id);
+    if (error) toast.error("Erro ao excluir.");
+    else { toast.success("Jornada excluída."); fetchData(); }
   };
 
   if (loading) {
