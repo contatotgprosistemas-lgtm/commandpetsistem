@@ -201,9 +201,25 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
           <button className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground">
             <Phone className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </button>
+          <ConversationTagManager conversaId={conversa.id} />
           <ConversationActions conversaId={conversa.id} currentAtendenteId={conversa.atendente_id} currentStatus={conversa.status} />
         </div>
       </div>
+
+      {/* Tags bar */}
+      {currentTags.length > 0 && (
+        <div className="px-4 py-1.5 border-b border-border bg-card flex items-center gap-1 flex-wrap">
+          {currentTags.map(ct => (
+            <span
+              key={ct.id}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
+              style={{ backgroundColor: ct.tag?.color || '#6b7280' }}
+            >
+              {ct.tag?.name}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Messages */}
       <div
