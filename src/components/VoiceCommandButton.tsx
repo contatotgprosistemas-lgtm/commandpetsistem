@@ -47,7 +47,7 @@ export function VoiceCommandButton({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-50" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
             </span>
-            <p className="text-[10px] text-muted-foreground">Diga <strong>"Olá PetControl"</strong></p>
+            <p className="text-[10px] text-muted-foreground">Diga <strong>"Olá Sistema"</strong></p>
           </div>
         </div>
       )}
@@ -64,7 +64,7 @@ export function VoiceCommandButton({
               : "bg-card text-muted-foreground"
           )}
           onClick={() => onToggleWake(!isWakeListening)}
-          title={isWakeListening ? 'Desativar "Olá PetControl"' : 'Ativar "Olá PetControl"'}
+          title={isWakeListening ? 'Desativar "Olá Sistema"' : 'Ativar "Olá Sistema"'}
         >
           <Radio className="h-4 w-4" />
         </Button>
