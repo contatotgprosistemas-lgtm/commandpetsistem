@@ -63,7 +63,7 @@ export function VoiceCommandButton({ isListening, transcript, supported, onStart
                     <div>
                       <p className="text-xs font-medium text-foreground">{cmd.description}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        Diga: "{cmd.keywords[0]}"
+                        Diga: "{cmd.keywords[0]}{cmd.extractSuffix ? " + nome do pet" : ""}"
                       </p>
                     </div>
                   </div>
