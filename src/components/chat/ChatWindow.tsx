@@ -203,7 +203,7 @@ export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) 
               {showCRM ? <PanelRightClose className="h-[18px] w-[18px]" strokeWidth={1.5} /> : <PanelRightOpen className="h-[18px] w-[18px]" strokeWidth={1.5} />}
             </button>
           )}
-      </div>
+        </div>
 
       {/* Tags bar */}
       {currentTags.length > 0 && (
