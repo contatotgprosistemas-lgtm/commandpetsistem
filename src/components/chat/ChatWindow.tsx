@@ -15,7 +15,7 @@ import { ConversationTagManager } from "@/components/chat/ConversationTagManager
 import { ChatStatusTag } from "@/components/ChatStatusTag";
 import { useConversaTags } from "@/hooks/useConversationTags";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Smile, Phone, Loader2, MessageSquare, Star, Archive } from "lucide-react";
+import { Send, Smile, Phone, Loader2, MessageSquare, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import type { ConversaWithRelations } from "@/hooks/useConversations";
