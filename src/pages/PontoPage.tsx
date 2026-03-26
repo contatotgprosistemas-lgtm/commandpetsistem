@@ -51,7 +51,7 @@ export default function PontoPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [punches, setPunches] = useState<any[]>([]);
   const [jornadas, setJornadas] = useState<any[]>([]);
-  const [config, setConfig] = useState<any>(null);
+  const [configs, setConfigs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -60,7 +60,10 @@ export default function PontoPage() {
   const [filterDate, setFilterDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
   // Config form
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [editingConfig, setEditingConfig] = useState<any>(null);
   const [configForm, setConfigForm] = useState({
+    nome: "Jornada Padrão",
     jornada_diaria_min: 480,
     intervalo_min: 60,
     tolerancia_min: 10,
