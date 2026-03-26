@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
 import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car } from "lucide-react";
+import { useVoiceCommands, VoiceCommand } from "@/hooks/useVoiceCommands";
+import { VoiceCommandButton } from "@/components/VoiceCommandButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
