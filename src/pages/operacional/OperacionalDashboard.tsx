@@ -176,6 +176,14 @@ export default function OperacionalDashboard() {
           </div>
         </div>
       )}
+      <VoiceCommandButton
+        isListening={isListening}
+        transcript={transcript}
+        supported={supported}
+        onStart={startListening}
+        onStop={stopListening}
+        commands={voiceCommands}
+      />
     </div>
   );
 }
