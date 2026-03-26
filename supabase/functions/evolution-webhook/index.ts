@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
         // Find or create conversation
         let { data: conversa } = await supabase
           .from("conversas")
-          .select("id, status")
+          .select("id, status, unread_count")
           .eq("empresa_id", empresaId)
           .eq("contato_telefone", phone)
           .single();
