@@ -15,16 +15,18 @@ import { ConversationTagManager } from "@/components/chat/ConversationTagManager
 import { ChatStatusTag } from "@/components/ChatStatusTag";
 import { useConversaTags } from "@/hooks/useConversationTags";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Smile, Phone, Loader2, MessageSquare, Star, Archive } from "lucide-react";
+import { Send, Smile, Phone, Loader2, MessageSquare, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import type { ConversaWithRelations } from "@/hooks/useConversations";
 
 interface ChatWindowProps {
   conversa: ConversaWithRelations | null;
+  onToggleCRM?: () => void;
+  showCRM?: boolean;
 }
 
-export function ChatWindow({ conversa }: ChatWindowProps) {
+export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) {
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
@@ -192,6 +194,15 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
           </button>
           <ConversationTagManager conversaId={conversa.id} />
           <ConversationActions conversaId={conversa.id} currentAtendenteId={conversa.atendente_id} currentStatus={conversa.status} />
+          {onToggleCRM && (
+            <button
+              onClick={onToggleCRM}
+              className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground transition-colors"
+              title={showCRM ? "Recolher detalhes" : "Expandir detalhes"}
+            >
+              {showCRM ? <PanelRightClose className="h-[18px] w-[18px]" strokeWidth={1.5} /> : <PanelRightOpen className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+            </button>
+          )}
         </div>
       </div>
 
