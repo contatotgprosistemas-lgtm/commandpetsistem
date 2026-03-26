@@ -178,6 +178,8 @@ export function AppSidebar() {
 
         {collapsed && cadastrosItems.map(renderNavItem)}
 
+        {afterCadastrosItems.map(renderNavItem)}
+
         <div className="pt-2 mt-2 border-t border-sidebar-border/40 space-y-0.5">
           {bottomItems.map(renderNavItem)}
         </div>
