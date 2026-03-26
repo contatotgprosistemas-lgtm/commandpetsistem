@@ -64,7 +64,7 @@ export function VoiceCommandButton({
               : "bg-card text-muted-foreground"
           )}
           onClick={() => onToggleWake(!isWakeListening)}
-          title={isWakeListening ? 'Desativar "Olá PetControl"' : 'Ativar "Olá PetControl"'}
+          title={isWakeListening ? 'Desativar "Olá Sistema"' : 'Ativar "Olá Sistema"'}
         >
           <Radio className="h-4 w-4" />
         </Button>

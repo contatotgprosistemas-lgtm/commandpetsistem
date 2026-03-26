@@ -131,7 +131,7 @@ export function useVoiceCommands({
         const t = normalize(event.results[i][0].transcript);
         if (t.includes(normalizedWake)) {
           rec.abort();
-          toast("🎤 Olá PetControl! Ouvindo comando...", { duration: 2000 });
+          toast("🎤 Olá Sistema! Ouvindo comando...", { duration: 2000 });
           setTimeout(() => startListening(), 300);
           return;
         }
