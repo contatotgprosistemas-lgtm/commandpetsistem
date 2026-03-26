@@ -11,6 +11,8 @@ import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { format, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { useVoiceCommands, VoiceCommand } from "@/hooks/useVoiceCommands";
+import { VoiceCommandButton } from "@/components/VoiceCommandButton";
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
