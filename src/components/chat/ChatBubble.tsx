@@ -11,8 +11,8 @@ interface ChatBubbleProps {
 
 export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }: ChatBubbleProps) {
   const isAgent = remetente === "agente";
-  const isImage = tipo === "imagem" || (tipo === "midia" && /\.(jpg|jpeg|png|gif|webp)/i.test(conteudo));
-  const isAudio = tipo === "audio" || conteudo.endsWith(".webm") || conteudo.endsWith(".ogg") || conteudo.endsWith(".mp3");
+  const isImage = tipo === "imagem" || (tipo === "midia" && /\.(jpg|jpeg|png|gif|webp)/i.test(conteudo)) || conteudo.startsWith("data:image/");
+  const isAudio = tipo === "audio" || conteudo.startsWith("data:audio/") || conteudo.endsWith(".webm") || conteudo.endsWith(".ogg") || conteudo.endsWith(".mp3");
   const isDocument = tipo === "documento" || (tipo === "midia" && /\.(pdf|doc|docx|xls|xlsx|csv|txt|zip)/i.test(conteudo));
   const isMedia = isImage || isAudio || isDocument;
 

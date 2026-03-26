@@ -110,15 +110,94 @@ Deno.serve(async (req) => {
         if (!key || key.fromMe) continue;
 
         const remoteJid = key.remoteJid || "";
-        const phone = remoteJid.replace("@s.whatsapp.net", "").replace("@g.us", "");
+
+        // Ignore group messages
+        if (remoteJid.endsWith("@g.us")) {
+          console.log("Ignoring group message from:", remoteJid);
+          continue;
+        }
+
+        const phone = remoteJid.replace("@s.whatsapp.net", "");
         const pushName = msg.pushName || phone;
-        const content = msg.message?.conversation
-          || msg.message?.extendedTextMessage?.text
-          || msg.message?.imageMessage?.caption
-          || "[mídia]";
-        const messageType = msg.message?.conversation || msg.message?.extendedTextMessage
-          ? "texto"
-          : "midia";
+
+        // Determine message type and content
+        let content = "";
+        let messageType = "texto";
+        const msgData = msg.message;
+
+        if (msgData?.conversation) {
+          content = msgData.conversation;
+          messageType = "texto";
+        } else if (msgData?.extendedTextMessage?.text) {
+          content = msgData.extendedTextMessage.text;
+          messageType = "texto";
+        } else if (msgData?.imageMessage) {
+          messageType = "imagem";
+          content = msgData.imageMessage.caption || "";
+          // Try to get media URL from Evolution API
+          if (EVOLUTION_API_URL && EVOLUTION_API_KEY && key.id) {
+            try {
+              const baseUrl = EVOLUTION_API_URL.replace(/\/$/, "");
+              const mediaRes = await fetch(`${baseUrl}/chat/getBase64FromMediaMessage/${instance}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
+                body: JSON.stringify({ message: { key }, convertToMp4: false }),
+              });
+              if (mediaRes.ok) {
+                const mediaData = await mediaRes.json();
+                if (mediaData.base64) {
+                  const mimeType = msgData.imageMessage.mimetype || "image/jpeg";
+                  content = `data:${mimeType};base64,${mediaData.base64}`;
+                }
+              }
+            } catch (mediaErr) {
+              console.error("Failed to download media:", mediaErr);
+            }
+          }
+          if (!content) content = "[imagem]";
+        } else if (msgData?.audioMessage || msgData?.pttMessage) {
+          messageType = "audio";
+          if (EVOLUTION_API_URL && EVOLUTION_API_KEY && key.id) {
+            try {
+              const baseUrl = EVOLUTION_API_URL.replace(/\/$/, "");
+              const mediaRes = await fetch(`${baseUrl}/chat/getBase64FromMediaMessage/${instance}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
+                body: JSON.stringify({ message: { key }, convertToMp4: false }),
+              });
+              if (mediaRes.ok) {
+                const mediaData = await mediaRes.json();
+                if (mediaData.base64) {
+                  const mimeType = (msgData.audioMessage || msgData.pttMessage)?.mimetype || "audio/ogg";
+                  content = `data:${mimeType};base64,${mediaData.base64}`;
+                }
+              }
+            } catch (mediaErr) {
+              console.error("Failed to download audio:", mediaErr);
+            }
+          }
+          if (!content) content = "[áudio]";
+        } else if (msgData?.videoMessage) {
+          messageType = "midia";
+          content = msgData.videoMessage.caption || "[vídeo]";
+        } else if (msgData?.documentMessage || msgData?.documentWithCaptionMessage) {
+          messageType = "documento";
+          const docMsg = msgData.documentMessage || msgData.documentWithCaptionMessage?.message?.documentMessage;
+          content = docMsg?.fileName || "[documento]";
+        } else if (msgData?.stickerMessage) {
+          messageType = "texto";
+          content = "🏷️ Figurinha";
+        } else if (msgData?.contactMessage || msgData?.contactsArrayMessage) {
+          messageType = "texto";
+          content = "👤 Contato compartilhado";
+        } else if (msgData?.locationMessage || msgData?.liveLocationMessage) {
+          messageType = "texto";
+          const loc = msgData.locationMessage || msgData.liveLocationMessage;
+          content = `📍 Localização: ${loc?.degreesLatitude || ""},${loc?.degreesLongitude || ""}`;
+        } else {
+          content = "[mídia não suportada]";
+          messageType = "texto";
+        }
 
         // Find or create conversation
         let { data: conversa } = await supabase
