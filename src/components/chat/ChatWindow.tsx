@@ -85,13 +85,16 @@ export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) 
     setShowEmoji(false);
 
     try {
+      const signature = profile?.nome ? `\n\n— *${profile.nome}*` : "";
+      const textWithSignature = text + signature;
+
       const phone = conversa.contato_telefone.replace(/\D/g, "");
       if (phone.length >= 10) {
-        await whatsappService.sendMessage({ phone, content: text }).catch(() => {});
+        await whatsappService.sendMessage({ phone, content: textWithSignature }).catch(() => {});
       }
 
       await supabase.from("mensagens").insert({
-        conversa_id: conversa.id, empresa_id: empresaId, conteudo: text, remetente: "agente", tipo: "texto",
+        conversa_id: conversa.id, empresa_id: empresaId, conteudo: textWithSignature, remetente: "agente", tipo: "texto",
       });
 
       const updates: Record<string, unknown> = {
