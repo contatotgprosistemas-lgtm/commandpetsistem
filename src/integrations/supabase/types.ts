@@ -1050,8 +1050,12 @@ export type Database = {
           created_at: string
           empresa_id: string
           id: string
+          is_archived: boolean
+          is_favorited: boolean
+          last_message_preview: string | null
           status: string
           ultima_mensagem_at: string | null
+          unread_count: number
           updated_at: string
         }
         Insert: {
@@ -1062,8 +1066,12 @@ export type Database = {
           created_at?: string
           empresa_id: string
           id?: string
+          is_archived?: boolean
+          is_favorited?: boolean
+          last_message_preview?: string | null
           status?: string
           ultima_mensagem_at?: string | null
+          unread_count?: number
           updated_at?: string
         }
         Update: {
@@ -1074,8 +1082,12 @@ export type Database = {
           created_at?: string
           empresa_id?: string
           id?: string
+          is_archived?: boolean
+          is_favorited?: boolean
+          last_message_preview?: string | null
           status?: string
           ultima_mensagem_at?: string | null
+          unread_count?: number
           updated_at?: string
         }
         Relationships: [
