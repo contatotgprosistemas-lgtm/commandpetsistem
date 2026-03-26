@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const tagColors: Record<string, string> = {
-  VIP: "bg-accent/10 text-accent",
   Frequente: "bg-primary/10 text-primary",
   Novo: "bg-success/10 text-success",
   Hotel: "bg-warning/10 text-warning",
