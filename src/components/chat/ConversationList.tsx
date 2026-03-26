@@ -29,6 +29,7 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
   const [searchQuery, setSearchQuery] = useState("");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("todas");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const { data: allConversaTags } = useConversaTags();
 
   const getInitials = (name: string) =>
     name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
