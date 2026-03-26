@@ -22,7 +22,7 @@ function normalize(text: string) {
 export function useVoiceCommands({
   commands,
   language = "pt-BR",
-  wakeWord = "hey pet",
+  wakeWord = "olá petcontrol",
   enableWakeWord = false,
 }: UseVoiceCommandsOptions) {
   const [isListening, setIsListening] = useState(false);
@@ -131,7 +131,7 @@ export function useVoiceCommands({
         const t = normalize(event.results[i][0].transcript);
         if (t.includes(normalizedWake)) {
           rec.abort();
-          toast("🎤 Hey Pet! Ouvindo comando...", { duration: 2000 });
+          toast("🎤 Olá PetControl! Ouvindo comando...", { duration: 2000 });
           setTimeout(() => startListening(), 300);
           return;
         }
