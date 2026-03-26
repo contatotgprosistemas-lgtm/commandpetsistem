@@ -273,8 +273,8 @@ Deno.serve(async (req) => {
           .update(updateData)
           .eq("id", conversa.id);
 
-        // ─── CHATBOT AUTO-REPLY LOGIC ──────────────────────
-        if (EVOLUTION_API_URL && EVOLUTION_API_KEY) {
+        // ─── CHATBOT AUTO-REPLY LOGIC (only for incoming messages) ──────────────────────
+        if (!isFromMe && EVOLUTION_API_URL && EVOLUTION_API_KEY) {
           const baseUrl = EVOLUTION_API_URL.replace(/\/$/, "");
           const apiHeaders = { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY };
 
