@@ -29,12 +29,16 @@ export function useVoiceCommands({
   const [isWakeListening, setIsWakeListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [supported, setSupported] = useState(true);
+
   const commandRecRef = useRef<any>(null);
   const wakeRecRef = useRef<any>(null);
   const wakeEnabledRef = useRef(enableWakeWord);
+  const startWakeRef = useRef<() => void>(() => {});
+  const commandsRef = useRef(commands);
 
-  // Keep ref in sync
+  // Keep refs in sync
   useEffect(() => { wakeEnabledRef.current = enableWakeWord; }, [enableWakeWord]);
+  useEffect(() => { commandsRef.current = commands; }, [commands]);
 
   const createRecognition = useCallback(() => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -48,7 +52,7 @@ export function useVoiceCommands({
   // Process commands
   const processCommand = useCallback((text: string) => {
     const norm = normalize(text);
-    for (const cmd of commands) {
+    for (const cmd of commandsRef.current) {
       for (const keyword of cmd.keywords) {
         const normKeyword = normalize(keyword);
         if (norm.includes(normKeyword)) {
@@ -66,7 +70,30 @@ export function useVoiceCommands({
       }
     }
     toast.info(`Comando não reconhecido: "${text}"`, { duration: 3000 });
-  }, [commands]);
+  }, []);
+
+  // Start command listening
+  const startListening = useCallback(() => {
+    if (!commandRecRef.current) {
+      toast.error("Reconhecimento de voz não suportado.");
+      return;
+    }
+    try { wakeRecRef.current?.abort(); } catch {}
+    setTranscript("");
+    setIsListening(true);
+    try { commandRecRef.current.start(); } catch { setIsListening(false); }
+  }, []);
+
+  const stopListening = useCallback(() => {
+    commandRecRef.current?.stop();
+    setIsListening(false);
+  }, []);
+
+  const stopWakeListener = useCallback(() => {
+    wakeEnabledRef.current = false;
+    setIsWakeListening(false);
+    try { wakeRecRef.current?.abort(); } catch {}
+  }, []);
 
   // Setup command recognition
   useEffect(() => {
@@ -92,85 +119,65 @@ export function useVoiceCommands({
     };
     rec.onend = () => {
       setIsListening(false);
-      // Restart wake word listener if enabled
-      if (wakeEnabledRef.current) startWakeListener();
+      if (wakeEnabledRef.current) {
+        setTimeout(() => startWakeRef.current(), 300);
+      }
     };
     commandRecRef.current = rec;
-  }, [language, processCommand]);
+  }, [language, createRecognition, processCommand]);
 
-  // Start command listening (after wake word or manual click)
-  const startListening = useCallback(() => {
-    if (!commandRecRef.current) {
-      toast.error("Reconhecimento de voz não suportado.");
-      return;
-    }
-    // Stop wake listener while command listening
-    try { wakeRecRef.current?.abort(); } catch {}
-    setTranscript("");
-    setIsListening(true);
-    try { commandRecRef.current.start(); } catch { setIsListening(false); }
-  }, []);
-
-  const stopListening = useCallback(() => {
-    commandRecRef.current?.stop();
-    setIsListening(false);
-  }, []);
-
-  // Use ref so wake listener always calls the latest startListening
-  const startListeningRef = useRef(startListening);
-  useEffect(() => { startListeningRef.current = startListening; }, [startListening]);
-
-  // Wake word background listener
-  const startWakeListener = useCallback(() => {
-    if (!wakeEnabledRef.current) return;
-    const rec = createRecognition();
-    if (!rec) return;
-    rec.continuous = true;
-    rec.interimResults = true;
-
+  // Setup wake word listener function via ref to avoid circular deps
+  useEffect(() => {
     const normalizedWake = normalize(wakeWord);
 
-    rec.onresult = (event: any) => {
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = normalize(event.results[i][0].transcript);
-        if (t.includes(normalizedWake)) {
-          rec.abort();
-          toast("🎤 Olá Sistema! Ouvindo comando...", { duration: 2000 });
-          setTimeout(() => startListeningRef.current(), 300);
-          return;
+    const doStartWake = () => {
+      if (!wakeEnabledRef.current) return;
+      const rec = createRecognition();
+      if (!rec) return;
+      rec.continuous = true;
+      rec.interimResults = true;
+
+      rec.onresult = (event: any) => {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const t = normalize(event.results[i][0].transcript);
+          if (t.includes(normalizedWake)) {
+            rec.abort();
+            toast("🎤 Olá Sistema! Ouvindo comando...", { duration: 2000 });
+            setTimeout(() => startListening(), 300);
+            return;
+          }
         }
-      }
+      };
+      rec.onerror = (e: any) => {
+        if (e.error === "no-speech" || e.error === "aborted") {
+          if (wakeEnabledRef.current) setTimeout(() => doStartWake(), 500);
+        }
+      };
+      rec.onend = () => {
+        if (wakeEnabledRef.current) setTimeout(() => doStartWake(), 500);
+      };
+      wakeRecRef.current = rec;
+      setIsWakeListening(true);
+      try { rec.start(); } catch {}
     };
-    rec.onerror = (e: any) => {
-      if (e.error === "no-speech" || e.error === "aborted") {
-        if (wakeEnabledRef.current) setTimeout(() => startWakeListener(), 500);
-      }
-    };
-    rec.onend = () => {
-      if (wakeEnabledRef.current) {
-        setTimeout(() => startWakeListener(), 500);
-      }
-    };
-    wakeRecRef.current = rec;
-    setIsWakeListening(true);
-    try { rec.start(); } catch {}
-  }, [createRecognition, wakeWord]);
 
-  const stopWakeListener = useCallback(() => {
-    wakeEnabledRef.current = false;
-    setIsWakeListening(false);
-    try { wakeRecRef.current?.abort(); } catch {}
-  }, []);
+    startWakeRef.current = doStartWake;
+  }, [createRecognition, wakeWord, startListening]);
 
-  // Auto-start wake listener
+  // Auto-start/stop wake listener when toggle changes
   useEffect(() => {
     if (enableWakeWord) {
-      startWakeListener();
-    }
-    return () => {
+      startWakeRef.current();
+    } else {
       try { wakeRecRef.current?.abort(); } catch {}
-    };
+      setIsWakeListening(false);
+    }
+    return () => { try { wakeRecRef.current?.abort(); } catch {} };
   }, [enableWakeWord]);
+
+  const startWakeListener = useCallback(() => {
+    startWakeRef.current();
+  }, []);
 
   return {
     isListening,
