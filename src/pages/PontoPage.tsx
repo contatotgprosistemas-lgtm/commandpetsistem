@@ -79,20 +79,12 @@ export default function PontoPage() {
     setLoading(true);
 
     const [empRes, configRes] = await Promise.all([
-      supabase.from("operational_users").select("id, nome, email, ativo").eq("empresa_id", empresaId),
-      supabase.from("ponto_configuracoes").select("*").eq("empresa_id", empresaId).maybeSingle(),
+      supabase.from("operational_users").select("id, nome, email, ativo, jornada_id, pin").eq("empresa_id", empresaId),
+      supabase.from("ponto_configuracoes").select("*").eq("empresa_id", empresaId).order("nome"),
     ]);
 
     setEmployees(empRes.data || []);
-    if (configRes.data) {
-      setConfig(configRes.data);
-      setConfigForm({
-        jornada_diaria_min: configRes.data.jornada_diaria_min,
-        intervalo_min: configRes.data.intervalo_min,
-        tolerancia_min: configRes.data.tolerancia_min,
-        dias_trabalho: configRes.data.dias_trabalho || [1, 2, 3, 4, 5],
-      });
-    }
+    setConfigs(configRes.data || []);
     setLoading(false);
   }, [empresaId]);
 
