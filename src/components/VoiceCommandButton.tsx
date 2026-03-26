@@ -12,8 +12,7 @@ interface VoiceCommandButtonProps {
   commands: VoiceCommand[];
 }
 
-export function VoiceCommandButton({ isListening, transcript, supported, onStart, onStop, commands }: VoiceCommandButtonProps) {
-  const [helpOpen, setHelpOpen] = useState(false);
+export function VoiceCommandButton({ isListening, transcript, supported, onStart, onStop }: VoiceCommandButtonProps) {
 
   if (!supported) return null;
 
