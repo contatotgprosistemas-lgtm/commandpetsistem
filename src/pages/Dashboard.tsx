@@ -321,6 +321,14 @@ export default function Dashboard() {
         onOpenChange={(o) => { if (!o) { setEditingAgendamento(null); setEditOpen(null); } }}
         onSuccess={() => { setEditingAgendamento(null); setEditOpen(null); fetchAgendamentos(); }}
       />
+      <VoiceCommandButton
+        isListening={isListening}
+        transcript={transcript}
+        supported={supported}
+        onStart={startListening}
+        onStop={stopListening}
+        commands={voiceCommands}
+      />
     </div>
   );
 }
