@@ -191,15 +191,16 @@ const Sidebar = React.forwardRef<
         )}
       />
       <div
-  className={cn(
-    "fixed inset-y-0 z-20 hidden h-svh w-[--sidebar-width] transition-all duration-200 ease-linear md:flex",
-    "data-[state=collapsed]:pointer-events-none", // 🔥 impede bloqueio
-    side === "left"
-      ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-      : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-    className
-  )}
-      <div
+        className={cn(
+          "fixed inset-y-0 z-20 hidden h-svh w-[--sidebar-width] transition-all duration-200 ease-linear md:flex",
+          "data-[state=collapsed]:pointer-events-none",
+          side === "left"
+            ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
+            : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+          className
+        )}
+      >
+        <div
           data-sidebar="sidebar"
           className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
         >
