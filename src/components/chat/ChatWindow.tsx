@@ -35,6 +35,8 @@ export function ChatWindow({ conversa }: ChatWindowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: mensagens, isLoading: loadingMessages } = useMessages(conversa?.id ?? null);
+  const { data: allConversaTags } = useConversaTags();
+  const currentTags = allConversaTags?.filter(ct => ct.conversa_id === conversa?.id) ?? [];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
