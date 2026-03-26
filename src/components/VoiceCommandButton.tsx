@@ -1,19 +1,20 @@
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-
 interface VoiceCommandButtonProps {
   isListening: boolean;
+  isWakeListening: boolean;
   transcript: string;
   supported: boolean;
   onStart: () => void;
   onStop: () => void;
-  
+  onToggleWake: (enabled: boolean) => void;
 }
 
-export function VoiceCommandButton({ isListening, transcript, supported, onStart, onStop }: VoiceCommandButtonProps) {
-
+export function VoiceCommandButton({
+  isListening, isWakeListening, transcript, supported, onStart, onStop, onToggleWake,
+}: VoiceCommandButtonProps) {
   if (!supported) return null;
 
   return (
@@ -38,7 +39,36 @@ export function VoiceCommandButton({ isListening, transcript, supported, onStart
         </div>
       )}
 
+      {/* Wake word indicator */}
+      {isWakeListening && !isListening && (
+        <div className="bg-card border border-border rounded-xl px-3 py-1.5 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-50" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+            </span>
+            <p className="text-[10px] text-muted-foreground">Diga <strong>"Hey Pet"</strong></p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
+        {/* Wake word toggle */}
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            "h-10 w-10 rounded-full shadow-lg transition-all",
+            isWakeListening
+              ? "bg-primary/10 border-primary text-primary"
+              : "bg-card text-muted-foreground"
+          )}
+          onClick={() => onToggleWake(!isWakeListening)}
+          title={isWakeListening ? 'Desativar "Hey Pet"' : 'Ativar "Hey Pet"'}
+        >
+          <Radio className="h-4 w-4" />
+        </Button>
+
         {/* Main mic button */}
         <Button
           size="icon"
