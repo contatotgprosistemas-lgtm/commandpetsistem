@@ -107,7 +107,8 @@ Deno.serve(async (req) => {
 
       for (const msg of messages) {
         const key = msg.key;
-        if (!key || key.fromMe) continue;
+        if (!key) continue;
+        const isFromMe = !!key.fromMe;
 
         const remoteJid = key.remoteJid || "";
 
@@ -244,31 +245,36 @@ Deno.serve(async (req) => {
           conversa_id: conversa.id,
           empresa_id: empresaId,
           conteudo: content,
-          remetente: "cliente",
+          remetente: isFromMe ? "atendente" : "cliente",
           tipo: messageType,
         });
 
         // Update conversation timestamp, unread count, and preview
         const preview = content.length > 100 ? content.substring(0, 100) + "..." : content;
-        // For media messages, show a friendly preview
         const displayPreview = messageType === "imagem" ? "📷 Imagem" 
           : messageType === "audio" ? "🎵 Áudio"
           : messageType === "documento" ? "📄 Documento"
           : messageType === "midia" ? "🎥 Vídeo"
           : preview;
 
+        const updateData: Record<string, any> = {
+          ultima_mensagem_at: new Date().toISOString(),
+          last_message_preview: isFromMe ? `Você: ${displayPreview}` : displayPreview,
+        };
+
+        // Only increment unread and set status for incoming messages
+        if (!isFromMe) {
+          updateData.status = "novo";
+          updateData.unread_count = (conversa as any).unread_count ? (conversa as any).unread_count + 1 : 1;
+        }
+
         await supabase
           .from("conversas")
-          .update({
-            ultima_mensagem_at: new Date().toISOString(),
-            status: "novo",
-            unread_count: (conversa as any).unread_count ? (conversa as any).unread_count + 1 : 1,
-            last_message_preview: displayPreview,
-          })
+          .update(updateData)
           .eq("id", conversa.id);
 
-        // ─── CHATBOT AUTO-REPLY LOGIC ──────────────────────
-        if (EVOLUTION_API_URL && EVOLUTION_API_KEY) {
+        // ─── CHATBOT AUTO-REPLY LOGIC (only for incoming messages) ──────────────────────
+        if (!isFromMe && EVOLUTION_API_URL && EVOLUTION_API_KEY) {
           const baseUrl = EVOLUTION_API_URL.replace(/\/$/, "");
           const apiHeaders = { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY };
 
