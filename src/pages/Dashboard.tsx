@@ -338,7 +338,7 @@ export default function Dashboard() {
         supported={supported}
         onStart={startListening}
         onStop={stopListening}
-        commands={voiceCommands}
+        
       />
     </div>
   );

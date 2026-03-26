@@ -187,7 +187,7 @@ export default function OperacionalDashboard() {
         supported={supported}
         onStart={startListening}
         onStop={stopListening}
-        commands={voiceCommands}
+        
       />
     </div>
   );
