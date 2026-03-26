@@ -1,0 +1,96 @@
+import { Mic, MicOff, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { VoiceCommand } from "@/hooks/useVoiceCommands";
+
+interface VoiceCommandButtonProps {
+  isListening: boolean;
+  transcript: string;
+  supported: boolean;
+  onStart: () => void;
+  onStop: () => void;
+  commands: VoiceCommand[];
+}
+
+export function VoiceCommandButton({ isListening, transcript, supported, onStart, onStop, commands }: VoiceCommandButtonProps) {
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  if (!supported) return null;
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2 md:bottom-8 md:right-8">
+      {/* Transcript bubble */}
+      {isListening && transcript && (
+        <div className="bg-card border border-border rounded-xl px-4 py-2 shadow-lg max-w-[260px] animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <p className="text-sm text-foreground italic">"{transcript}"</p>
+        </div>
+      )}
+
+      {/* Listening indicator */}
+      {isListening && (
+        <div className="bg-card border border-border rounded-xl px-4 py-2 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive" />
+            </span>
+            <p className="text-xs text-muted-foreground">Ouvindo... Fale um comando</p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        {/* Help popover */}
+        <Popover open={helpOpen} onOpenChange={setHelpOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-full shadow-lg bg-card"
+            >
+              <span className="text-xs font-bold">?</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-72">
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm">Comandos de voz disponíveis</h4>
+              <div className="space-y-1.5">
+                {commands.map((cmd, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <Mic className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-foreground">{cmd.description}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        Diga: "{cmd.keywords[0]}"
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Main mic button */}
+        <Button
+          size="icon"
+          className={cn(
+            "h-14 w-14 rounded-full shadow-xl transition-all duration-200",
+            isListening
+              ? "bg-destructive hover:bg-destructive/90 animate-pulse"
+              : "bg-primary hover:bg-primary/90"
+          )}
+          onClick={isListening ? onStop : onStart}
+        >
+          {isListening ? (
+            <MicOff className="h-6 w-6 text-destructive-foreground" />
+          ) : (
+            <Mic className="h-6 w-6 text-primary-foreground" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
