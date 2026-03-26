@@ -184,11 +184,15 @@ export default function OperacionalDashboard() {
       )}
       <VoiceCommandButton
         isListening={isListening}
+        isWakeListening={isWakeListening}
         transcript={transcript}
         supported={supported}
         onStart={startListening}
         onStop={stopListening}
-        
+        onToggleWake={(enabled) => {
+          setWakeWordEnabled(enabled);
+          if (!enabled) stopWakeListener();
+        }}
       />
     </div>
   );
