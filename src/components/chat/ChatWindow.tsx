@@ -204,6 +204,7 @@ export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) 
             </button>
           )}
         </div>
+      </div>
 
       {/* Tags bar */}
       {currentTags.length > 0 && (
