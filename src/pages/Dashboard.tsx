@@ -214,6 +214,9 @@ export default function Dashboard() {
             <TabsTrigger value="hoje" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
               Reservas Hoje ({reservasHoje.length})
             </TabsTrigger>
+            <TabsTrigger value="taxipet" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
+              <Car className="h-3.5 w-3.5 mr-1" /> TaxiPet ({transportHoje.length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="na_empresa">
@@ -229,6 +232,9 @@ export default function Dashboard() {
           </TabsContent>
           <TabsContent value="hoje">
             <AgendamentoList items={reservasHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
+          </TabsContent>
+          <TabsContent value="taxipet">
+            <TaxiPetTodayList items={transportHoje} loading={agendaLoading} />
           </TabsContent>
         </Tabs>
       </div>
