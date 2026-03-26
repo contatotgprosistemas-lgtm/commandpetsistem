@@ -132,17 +132,21 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
             <p className="text-sm text-muted-foreground text-center">Nenhuma conversa encontrada</p>
           </div>
         ) : (
-          filtered.map(conv => (
+          filtered.map(conv => {
+            const hasUnread = (conv.unread_count ?? 0) > 0;
+            return (
             <button
               key={conv.id}
               onClick={() => onSelect(conv.id)}
               className={`w-full px-3 py-3 flex items-center gap-3 text-left transition-colors hover:bg-muted/50 ${
-                selectedId === conv.id ? "bg-muted" : ""
+                selectedId === conv.id ? "bg-muted" : hasUnread ? "bg-primary/5 border-l-2 border-l-primary" : ""
               }`}
             >
               {/* Avatar */}
               <div className="relative">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary shrink-0">
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-medium shrink-0 ${
+                  hasUnread ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
+                }`}>
                   {getInitials(conv.contato_nome)}
                 </div>
                 {conv.is_favorited && (
@@ -153,7 +157,7 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
               <div className="flex-1 min-w-0">
                 {/* Name + time */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground truncate">{conv.contato_nome}</span>
+                  <span className={`text-sm truncate ${hasUnread ? "font-bold text-foreground" : "font-medium text-foreground"}`}>{conv.contato_nome}</span>
                   {conv.ultima_mensagem_at && (
                     <span className={`font-mono text-[11px] ml-2 shrink-0 ${
                       (conv.unread_count ?? 0) > 0 ? "text-primary font-semibold" : "text-muted-foreground"
