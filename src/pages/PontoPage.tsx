@@ -17,8 +17,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Clock, Users, AlertTriangle, TrendingUp, TrendingDown,
   MapPin, Camera, CalendarDays, Settings, BarChart3, ClipboardList,
-  ChevronLeft, ChevronRight, Loader2, Save, Eye
+  ChevronLeft, ChevronRight, Loader2, Save, Eye, UserPlus
 } from "lucide-react";
+import ColaboradoresTab from "@/components/ponto/ColaboradoresTab";
 
 const PUNCH_LABELS: Record<string, string> = {
   entrada: "Entrada",
@@ -211,10 +212,11 @@ export default function PontoPage() {
       </div>
 
       <Tabs defaultValue="painel" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="painel" className="gap-1.5"><BarChart3 className="h-4 w-4" />Painel</TabsTrigger>
           <TabsTrigger value="registros" className="gap-1.5"><ClipboardList className="h-4 w-4" />Registros</TabsTrigger>
           <TabsTrigger value="banco" className="gap-1.5"><TrendingUp className="h-4 w-4" />Banco de Horas</TabsTrigger>
+          <TabsTrigger value="colaboradores" className="gap-1.5"><Users className="h-4 w-4" />Colaboradores</TabsTrigger>
           <TabsTrigger value="config" className="gap-1.5"><Settings className="h-4 w-4" />Configurações</TabsTrigger>
         </TabsList>
 
@@ -470,6 +472,11 @@ export default function PontoPage() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* COLABORADORES TAB */}
+        <TabsContent value="colaboradores">
+          <ColaboradoresTab employees={employees} empresaId={empresaId!} onRefresh={fetchData} />
         </TabsContent>
 
         {/* CONFIGURAÇÕES TAB */}
