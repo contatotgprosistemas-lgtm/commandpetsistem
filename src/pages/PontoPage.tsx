@@ -474,6 +474,11 @@ export default function PontoPage() {
           )}
         </TabsContent>
 
+        {/* COLABORADORES TAB */}
+        <TabsContent value="colaboradores">
+          <ColaboradoresTab employees={employees} empresaId={empresaId!} onRefresh={fetchData} />
+        </TabsContent>
+
         {/* CONFIGURAÇÕES TAB */}
         <TabsContent value="config" className="space-y-4">
           <Card>
