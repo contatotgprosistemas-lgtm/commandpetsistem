@@ -85,8 +85,8 @@ export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) 
     setShowEmoji(false);
 
     try {
-      const signature = profile?.nome ? `\n\n— *${profile.nome}*` : "";
-      const textWithSignature = text + signature;
+      const prefix = profile?.nome ? `*${profile.nome}:*\n` : "";
+      const textWithSignature = prefix + text;
 
       const phone = conversa.contato_telefone.replace(/\D/g, "");
       if (phone.length >= 10) {
