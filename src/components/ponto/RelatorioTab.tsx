@@ -32,6 +32,7 @@ interface Props {
   empresaId: string;
   employees: any[];
   configs: any[];
+  defaultMonth?: string;
 }
 
 interface DayReport {
@@ -53,8 +54,8 @@ interface EmployeeReport {
   days: DayReport[];
 }
 
-export default function RelatorioTab({ empresaId, employees, configs }: Props) {
-  const [filterMonth, setFilterMonth] = useState(() => format(new Date(), "yyyy-MM"));
+export default function RelatorioTab({ empresaId, employees, configs, defaultMonth }: Props) {
+  const [filterMonth, setFilterMonth] = useState(() => defaultMonth || format(new Date(), "yyyy-MM"));
   const [filterEmployee, setFilterEmployee] = useState("all");
   const [loading, setLoading] = useState(false);
   const [reports, setReports] = useState<EmployeeReport[]>([]);

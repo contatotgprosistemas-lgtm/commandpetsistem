@@ -497,7 +497,7 @@ export default function PontoPage() {
 
         {/* RELATÓRIO TAB */}
         <TabsContent value="relatorio">
-          <RelatorioTab empresaId={empresaId!} employees={employees} configs={configs} />
+          <RelatorioTab empresaId={empresaId!} employees={employees} configs={configs} defaultMonth={filterMonth} />
         </TabsContent>
 
         {/* COLABORADORES TAB */}
