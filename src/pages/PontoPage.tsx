@@ -619,6 +619,24 @@ export default function PontoPage() {
                           <p className="font-medium">{c.tolerancia_min}min</p>
                         </div>
                       </div>
+                      <div className="grid grid-cols-4 gap-2 text-sm mt-2">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Entrada</p>
+                          <p className="font-medium">{c.horario_entrada?.slice(0, 5) || "08:00"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Pausa</p>
+                          <p className="font-medium">{c.horario_pausa?.slice(0, 5) || "12:00"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Retorno</p>
+                          <p className="font-medium">{c.horario_retorno?.slice(0, 5) || "13:00"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Saída</p>
+                          <p className="font-medium">{c.horario_saida?.slice(0, 5) || "17:00"}</p>
+                        </div>
+                      </div>
                       <div className="flex flex-wrap gap-1">
                         {DAY_LABELS.map((label, i) => (
                           <Badge
