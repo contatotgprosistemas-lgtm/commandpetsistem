@@ -2528,6 +2528,10 @@ export type Database = {
           created_at: string
           dias_trabalho: number[]
           empresa_id: string
+          horario_entrada: string | null
+          horario_pausa: string | null
+          horario_retorno: string | null
+          horario_saida: string | null
           id: string
           intervalo_min: number
           jornada_diaria_min: number
@@ -2539,6 +2543,10 @@ export type Database = {
           created_at?: string
           dias_trabalho?: number[]
           empresa_id: string
+          horario_entrada?: string | null
+          horario_pausa?: string | null
+          horario_retorno?: string | null
+          horario_saida?: string | null
           id?: string
           intervalo_min?: number
           jornada_diaria_min?: number
@@ -2550,6 +2558,10 @@ export type Database = {
           created_at?: string
           dias_trabalho?: number[]
           empresa_id?: string
+          horario_entrada?: string | null
+          horario_pausa?: string | null
+          horario_retorno?: string | null
+          horario_saida?: string | null
           id?: string
           intervalo_min?: number
           jornada_diaria_min?: number
