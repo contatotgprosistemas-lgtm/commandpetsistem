@@ -402,53 +402,64 @@ export default function PontoPage() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Colaborador</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Horário</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Selfie</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {punches.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum registro encontrado.</TableCell></TableRow>
-                  ) : (
-                    punches.map((p: any) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="font-medium">{p.operational_users?.nome || "—"}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className={PUNCH_COLORS[p.tipo] || ""}>
-                            {PUNCH_LABELS[p.tipo] || p.tipo}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{format(new Date(p.data_hora), "HH:mm:ss")}</TableCell>
-                        <TableCell>
-                          {p.latitude ? (
-                            <a
-                              href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline flex items-center gap-1 text-xs"
-                            >
-                              <MapPin className="h-3 w-3" />Ver mapa
-                            </a>
-                          ) : "—"}
-                        </TableCell>
-                        <TableCell>
-                          {p.selfie_url ? (
-                            <button onClick={() => setSelfieUrl(p.selfie_url)}>
-                              <img src={p.selfie_url} alt="" className="h-8 w-8 rounded object-cover border border-border cursor-pointer hover:opacity-80" />
-                            </button>
-                          ) : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                   <TableRow>
+                     <TableHead>Colaborador</TableHead>
+                     <TableHead>Tipo</TableHead>
+                     <TableHead>Horário</TableHead>
+                     <TableHead>Localização</TableHead>
+                     <TableHead>Selfie</TableHead>
+                     <TableHead className="w-20">Ações</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {punches.length === 0 ? (
+                     <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum registro encontrado.</TableCell></TableRow>
+                   ) : (
+                     punches.map((p: any) => (
+                       <TableRow key={p.id}>
+                         <TableCell className="font-medium">{p.operational_users?.nome || "—"}</TableCell>
+                         <TableCell>
+                           <Badge variant="secondary" className={PUNCH_COLORS[p.tipo] || ""}>
+                             {PUNCH_LABELS[p.tipo] || p.tipo}
+                           </Badge>
+                         </TableCell>
+                         <TableCell>{format(new Date(p.data_hora), "HH:mm:ss")}</TableCell>
+                         <TableCell>
+                           {p.latitude ? (
+                             <a
+                               href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="text-primary hover:underline flex items-center gap-1 text-xs"
+                             >
+                               <MapPin className="h-3 w-3" />Ver mapa
+                             </a>
+                           ) : "—"}
+                         </TableCell>
+                         <TableCell>
+                           {p.selfie_url ? (
+                             <button onClick={() => setSelfieUrl(p.selfie_url)}>
+                               <img src={p.selfie_url} alt="" className="h-8 w-8 rounded object-cover border border-border cursor-pointer hover:opacity-80" />
+                             </button>
+                           ) : "—"}
+                         </TableCell>
+                         <TableCell>
+                           <div className="flex gap-1">
+                             <Button variant="ghost" size="sm" onClick={() => openEditPunch(p)} title="Editar">
+                               <Pencil className="h-3.5 w-3.5" />
+                             </Button>
+                             <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeletePunch(p.id)} title="Excluir">
+                               ✕
+                             </Button>
+                           </div>
+                         </TableCell>
+                       </TableRow>
+                     ))
+                   )}
+                 </TableBody>
+               </Table>
+             </CardContent>
+           </Card>
         </TabsContent>
 
         {/* BANCO DE HORAS TAB */}
