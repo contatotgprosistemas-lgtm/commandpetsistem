@@ -495,6 +495,11 @@ export default function PontoPage() {
           )}
         </TabsContent>
 
+        {/* RELATÓRIO TAB */}
+        <TabsContent value="relatorio">
+          <RelatorioTab empresaId={empresaId!} employees={employees} configs={configs} />
+        </TabsContent>
+
         {/* COLABORADORES TAB */}
         <TabsContent value="colaboradores">
           <ColaboradoresTab employees={employees} empresaId={empresaId!} onRefresh={fetchData} configs={configs} />
