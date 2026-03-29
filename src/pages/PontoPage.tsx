@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Clock, Users, AlertTriangle, TrendingUp, TrendingDown,
   MapPin, Camera, CalendarDays, Settings, BarChart3, ClipboardList,
-  ChevronLeft, ChevronRight, Loader2, Save, Eye, UserPlus
+  ChevronLeft, ChevronRight, Loader2, Save, Eye, UserPlus, Pencil
 } from "lucide-react";
 import ColaboradoresTab from "@/components/ponto/ColaboradoresTab";
 import RelatorioTab from "@/components/ponto/RelatorioTab";
