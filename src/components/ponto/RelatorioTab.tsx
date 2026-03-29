@@ -60,6 +60,13 @@ interface EmployeeReport {
 export default function RelatorioTab({ empresaId, employees, configs, defaultMonth }: Props) {
   const [filterMonth, setFilterMonth] = useState(() => defaultMonth || format(new Date(), "yyyy-MM"));
   const [filterEmployee, setFilterEmployee] = useState("all");
+
+  // Sync with parent month when it changes
+  useEffect(() => {
+    if (defaultMonth && defaultMonth !== filterMonth) {
+      setFilterMonth(defaultMonth);
+    }
+  }, [defaultMonth]);
   const [loading, setLoading] = useState(false);
   const [reports, setReports] = useState<EmployeeReport[]>([]);
   const [expandedEmployee, setExpandedEmployee] = useState<string | null>(null);
