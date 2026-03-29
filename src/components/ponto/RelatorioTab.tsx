@@ -82,7 +82,14 @@ export default function RelatorioTab({ empresaId, employees, configs, defaultMon
     if (!empresaId) return;
     setLoading(true);
 
-    const monthStart = startOfMonth(new Date(filterMonth + "-01"));
+    const [year, month] = filterMonth.split("-").map(Number);
+    if (!year || !month) {
+      setReports([]);
+      setLoading(false);
+      return;
+    }
+
+    const monthStart = startOfMonth(new Date(year, month - 1, 1));
     const monthEnd = endOfMonth(monthStart);
     const startStr = format(monthStart, "yyyy-MM-dd");
     const endStr = format(monthEnd, "yyyy-MM-dd");
