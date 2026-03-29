@@ -92,6 +92,11 @@ export default function RelatorioTab({ empresaId, employees, configs, defaultMon
 
     const empIds = targetEmployees.map(e => e.id);
 
+    // Use date strings to avoid timezone conversion issues
+    const nextDay = new Date(monthEnd);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayStr = format(nextDay, "yyyy-MM-dd");
+
     const [jornadasRes, punchesRes] = await Promise.all([
       supabase
         .from("ponto_jornadas")
@@ -104,8 +109,8 @@ export default function RelatorioTab({ empresaId, employees, configs, defaultMon
         .from("ponto_registros")
         .select("*")
         .eq("empresa_id", empresaId)
-        .gte("data_hora", monthStart.toISOString())
-        .lte("data_hora", monthEnd.toISOString())
+        .gte("data_hora", startStr + "T00:00:00")
+        .lt("data_hora", nextDayStr + "T00:00:00")
         .in("operational_user_id", empIds)
         .order("data_hora", { ascending: true }),
     ]);

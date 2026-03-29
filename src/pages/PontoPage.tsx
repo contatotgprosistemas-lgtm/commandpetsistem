@@ -77,6 +77,10 @@ export default function PontoPage() {
     intervalo_min: 60,
     tolerancia_min: 10,
     dias_trabalho: [1, 2, 3, 4, 5] as number[],
+    horario_entrada: "08:00",
+    horario_pausa: "12:00",
+    horario_retorno: "13:00",
+    horario_saida: "17:00",
   });
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -177,7 +181,7 @@ export default function PontoPage() {
 
   const openNewConfig = () => {
     setEditingConfig(null);
-    setConfigForm({ nome: "", jornada_diaria_min: 480, intervalo_min: 60, tolerancia_min: 10, dias_trabalho: [1, 2, 3, 4, 5] });
+    setConfigForm({ nome: "", jornada_diaria_min: 480, intervalo_min: 60, tolerancia_min: 10, dias_trabalho: [1, 2, 3, 4, 5], horario_entrada: "08:00", horario_pausa: "12:00", horario_retorno: "13:00", horario_saida: "17:00" });
     setConfigDialogOpen(true);
   };
 
@@ -189,6 +193,10 @@ export default function PontoPage() {
       intervalo_min: c.intervalo_min,
       tolerancia_min: c.tolerancia_min,
       dias_trabalho: c.dias_trabalho || [1, 2, 3, 4, 5],
+      horario_entrada: c.horario_entrada || "08:00",
+      horario_pausa: c.horario_pausa || "12:00",
+      horario_retorno: c.horario_retorno || "13:00",
+      horario_saida: c.horario_saida || "17:00",
     });
     setConfigDialogOpen(true);
   };
@@ -611,6 +619,24 @@ export default function PontoPage() {
                           <p className="font-medium">{c.tolerancia_min}min</p>
                         </div>
                       </div>
+                      <div className="grid grid-cols-4 gap-2 text-sm mt-2">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Entrada</p>
+                          <p className="font-medium">{c.horario_entrada?.slice(0, 5) || "08:00"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Pausa</p>
+                          <p className="font-medium">{c.horario_pausa?.slice(0, 5) || "12:00"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Retorno</p>
+                          <p className="font-medium">{c.horario_retorno?.slice(0, 5) || "13:00"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Saída</p>
+                          <p className="font-medium">{c.horario_saida?.slice(0, 5) || "17:00"}</p>
+                        </div>
+                      </div>
                       <div className="flex flex-wrap gap-1">
                         {DAY_LABELS.map((label, i) => (
                           <Badge
@@ -669,6 +695,27 @@ export default function PontoPage() {
                   value={configForm.tolerancia_min}
                   onChange={e => setConfigForm(prev => ({ ...prev, tolerancia_min: parseInt(e.target.value || "0") }))}
                 />
+              </div>
+            </div>
+            <div>
+              <Label>Horários da Jornada</Label>
+              <div className="grid grid-cols-4 gap-3 mt-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Entrada</Label>
+                  <Input type="time" value={configForm.horario_entrada} onChange={e => setConfigForm(prev => ({ ...prev, horario_entrada: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Pausa</Label>
+                  <Input type="time" value={configForm.horario_pausa} onChange={e => setConfigForm(prev => ({ ...prev, horario_pausa: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Retorno</Label>
+                  <Input type="time" value={configForm.horario_retorno} onChange={e => setConfigForm(prev => ({ ...prev, horario_retorno: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Saída</Label>
+                  <Input type="time" value={configForm.horario_saida} onChange={e => setConfigForm(prev => ({ ...prev, horario_saida: e.target.value }))} />
+                </div>
               </div>
             </div>
             <div>
