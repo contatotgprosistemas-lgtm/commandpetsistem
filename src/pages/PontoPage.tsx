@@ -81,6 +81,7 @@ export default function PontoPage() {
     horario_pausa: "12:00",
     horario_retorno: "13:00",
     horario_saida: "17:00",
+    regime_horas: "banco_horas" as string,
   });
   const [savingConfig, setSavingConfig] = useState(false);
 
