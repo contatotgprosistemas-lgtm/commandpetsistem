@@ -698,6 +698,27 @@ export default function PontoPage() {
               </div>
             </div>
             <div>
+              <Label>Horários da Jornada</Label>
+              <div className="grid grid-cols-4 gap-3 mt-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Entrada</Label>
+                  <Input type="time" value={configForm.horario_entrada} onChange={e => setConfigForm(prev => ({ ...prev, horario_entrada: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Pausa</Label>
+                  <Input type="time" value={configForm.horario_pausa} onChange={e => setConfigForm(prev => ({ ...prev, horario_pausa: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Retorno</Label>
+                  <Input type="time" value={configForm.horario_retorno} onChange={e => setConfigForm(prev => ({ ...prev, horario_retorno: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Saída</Label>
+                  <Input type="time" value={configForm.horario_saida} onChange={e => setConfigForm(prev => ({ ...prev, horario_saida: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+            <div>
               <Label>Dias de trabalho</Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {DAY_LABELS.map((label, i) => (
