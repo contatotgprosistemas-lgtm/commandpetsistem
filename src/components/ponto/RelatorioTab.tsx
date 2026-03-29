@@ -274,7 +274,8 @@ export default function RelatorioTab({ empresaId, employees, configs, defaultMon
     const margin = 14;
     let y = 20;
 
-    const monthLabel = format(parseISO(filterMonth + "-01"), "MMMM yyyy", { locale: ptBR });
+    const [pdfYear, pdfMonth] = filterMonth.split("-").map(Number);
+    const monthLabel = format(new Date(pdfYear, (pdfMonth || 1) - 1, 1), "MMMM yyyy", { locale: ptBR });
 
     // Header
     doc.setFontSize(16);
