@@ -69,6 +69,7 @@ export default function PontoPage() {
   const [editingPunch, setEditingPunch] = useState<any>(null);
   const [editPunchTime, setEditPunchTime] = useState("");
   const [editPunchType, setEditPunchType] = useState("");
+  const [editPunchMotivo, setEditPunchMotivo] = useState("");
   const [savingPunch, setSavingPunch] = useState(false);
 
   const [configForm, setConfigForm] = useState({
@@ -255,11 +256,16 @@ export default function PontoPage() {
     setEditingPunch(punch);
     setEditPunchTime(format(new Date(punch.data_hora), "HH:mm"));
     setEditPunchType(punch.tipo);
+    setEditPunchMotivo("");
     setEditPunchDialogOpen(true);
   };
 
   const handleSavePunch = async () => {
     if (!editingPunch || !editPunchTime) return;
+    if (!editPunchMotivo.trim()) {
+      toast.error("Informe o motivo da alteração.");
+      return;
+    }
     setSavingPunch(true);
     try {
       const origDate = new Date(editingPunch.data_hora);
@@ -268,7 +274,7 @@ export default function PontoPage() {
 
       const { error } = await supabase
         .from("ponto_registros")
-        .update({ data_hora: origDate.toISOString(), tipo: editPunchType })
+        .update({ data_hora: origDate.toISOString(), tipo: editPunchType, motivo_alteracao: editPunchMotivo.trim() })
         .eq("id", editingPunch.id);
 
       if (error) throw error;
@@ -903,6 +909,10 @@ export default function PontoPage() {
             <div>
               <Label>Horário</Label>
               <Input type="time" value={editPunchTime} onChange={e => setEditPunchTime(e.target.value)} step="60" />
+            </div>
+            <div>
+              <Label>Motivo da Alteração *</Label>
+              <Input value={editPunchMotivo} onChange={e => setEditPunchMotivo(e.target.value)} placeholder="Ex: Esqueceu de registrar, erro de horário..." />
             </div>
             <Button onClick={handleSavePunch} disabled={savingPunch} className="w-full gap-2">
               {savingPunch ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

@@ -1,0 +1,1 @@
+ALTER TABLE public.ponto_registros ADD COLUMN IF NOT EXISTS motivo_alteracao text;
