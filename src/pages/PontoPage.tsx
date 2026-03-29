@@ -225,7 +225,43 @@ export default function PontoPage() {
     else { toast.success("Jornada excluída."); fetchData(); }
   };
 
-  if (loading) {
+  const openEditPunch = (punch: any) => {
+    setEditingPunch(punch);
+    setEditPunchTime(format(new Date(punch.data_hora), "HH:mm"));
+    setEditPunchType(punch.tipo);
+    setEditPunchDialogOpen(true);
+  };
+
+  const handleSavePunch = async () => {
+    if (!editingPunch || !editPunchTime) return;
+    setSavingPunch(true);
+    try {
+      const origDate = new Date(editingPunch.data_hora);
+      const [h, m] = editPunchTime.split(":").map(Number);
+      origDate.setHours(h, m, 0, 0);
+
+      const { error } = await supabase
+        .from("ponto_registros")
+        .update({ data_hora: origDate.toISOString(), tipo: editPunchType })
+        .eq("id", editingPunch.id);
+
+      if (error) throw error;
+      toast.success("Registro atualizado!");
+      setEditPunchDialogOpen(false);
+      fetchPunches();
+    } catch {
+      toast.error("Erro ao atualizar registro.");
+    }
+    setSavingPunch(false);
+  };
+
+  const handleDeletePunch = async (id: string) => {
+    if (!confirm("Excluir este registro de ponto?")) return;
+    const { error } = await supabase.from("ponto_registros").delete().eq("id", id);
+    if (error) toast.error("Erro ao excluir.");
+    else { toast.success("Registro excluído."); fetchPunches(); }
+  };
+
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
 
