@@ -202,6 +202,7 @@ export default function PontoPage() {
       horario_pausa: c.horario_pausa || "12:00",
       horario_retorno: c.horario_retorno || "13:00",
       horario_saida: c.horario_saida || "17:00",
+      regime_horas: c.regime_horas || "banco_horas",
     });
     setConfigDialogOpen(true);
   };
