@@ -411,7 +411,7 @@ export default function RelatorioTab({ empresaId, employees, configs, month, onM
       doc.text("Data: ____/____/________", margin, y);
     }
 
-    doc.save(`relatorio-ponto-${report.nome.replace(/\s+/g, "-").toLowerCase()}-${filterMonth}.pdf`);
+    doc.save(`relatorio-ponto-${report.nome.replace(/\s+/g, "-").toLowerCase()}-${month}.pdf`);
     toast.success("PDF gerado com sucesso!");
   };
 
