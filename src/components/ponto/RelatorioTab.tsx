@@ -35,7 +35,8 @@ interface Props {
   empresaId: string;
   employees: any[];
   configs: any[];
-  defaultMonth?: string;
+  month: string;
+  onMonthChange: (month: string) => void;
 }
 
 interface DayReport {
