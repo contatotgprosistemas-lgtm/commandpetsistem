@@ -63,6 +63,14 @@ export default function PontoPage() {
   // Config form
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<any>(null);
+
+  // Edit punch
+  const [editPunchDialogOpen, setEditPunchDialogOpen] = useState(false);
+  const [editingPunch, setEditingPunch] = useState<any>(null);
+  const [editPunchTime, setEditPunchTime] = useState("");
+  const [editPunchType, setEditPunchType] = useState("");
+  const [savingPunch, setSavingPunch] = useState(false);
+
   const [configForm, setConfigForm] = useState({
     nome: "Jornada Padrão",
     jornada_diaria_min: 480,
