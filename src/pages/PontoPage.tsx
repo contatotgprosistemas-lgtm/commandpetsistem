@@ -578,7 +578,100 @@ export default function PontoPage() {
           )}
         </TabsContent>
 
-        {/* RELATÓRIO TAB */}
+        {/* HORA EXTRA TAB */}
+        <TabsContent value="hora_extra" className="space-y-4">
+          <div className="flex flex-wrap gap-3 items-end">
+            <div>
+              <Label className="text-xs">Mês</Label>
+              <Input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="w-44" />
+            </div>
+            <div>
+              <Label className="text-xs">Colaborador</Label>
+              <Select value={filterEmployee} onValueChange={setFilterEmployee}>
+                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {employees.map(e => (
+                    <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(extraByEmployee).map(([id, data]) => (
+              <Card key={id}>
+                <CardContent className="p-4">
+                  <p className="font-medium text-foreground">{data.nome}</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Dias registrados</p>
+                      <p className="font-semibold">{data.days}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Horas Extras</p>
+                      <p className={`font-semibold flex items-center gap-1 ${data.total > 0 ? "text-emerald-600" : data.total < 0 ? "text-red-500" : "text-muted-foreground"}`}>
+                        {data.total > 0 ? <TrendingUp className="h-3 w-3" /> : data.total < 0 ? <TrendingDown className="h-3 w-3" /> : null}
+                        {formatMinutes(Math.max(0, data.total))}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {Object.keys(extraByEmployee).length === 0 && (
+              <p className="text-sm text-muted-foreground col-span-full text-center py-8">Nenhum colaborador com regime de Hora Extra ou sem dados no período.</p>
+            )}
+          </div>
+
+          {/* Detailed table for hora extra */}
+          {jornadas.filter(j => employeeRegimeMap[j.operational_user_id] === "hora_extra").length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Detalhamento Diário — Hora Extra</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Colaborador</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Trabalhado</TableHead>
+                      <TableHead>Esperado</TableHead>
+                      <TableHead>Hora Extra</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {jornadas
+                      .filter(j => employeeRegimeMap[j.operational_user_id] === "hora_extra")
+                      .map((j: any) => {
+                        const extra = Math.max(0, j.saldo_min || 0);
+                        return (
+                          <TableRow key={j.id}>
+                            <TableCell className="font-medium">{j.operational_users?.nome || "—"}</TableCell>
+                            <TableCell>{format(parseISO(j.data), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>{formatMinutes(j.horas_trabalhadas_min)}</TableCell>
+                            <TableCell>{formatMinutes(j.horas_esperadas_min)}</TableCell>
+                            <TableCell className={extra > 0 ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
+                              {formatMinutes(extra)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">
+                                {j.status === "aberto" ? "Aberto" : j.status === "fechado" ? "Fechado" : j.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
         <TabsContent value="relatorio">
           <RelatorioTab empresaId={empresaId!} employees={employees} configs={configs} month={filterMonth} onMonthChange={setFilterMonth} />
         </TabsContent>
