@@ -537,10 +537,10 @@ export default function PontoPage() {
           </div>
 
           {/* Detailed table */}
-          {jornadas.length > 0 && (
+          {jornadas.filter(j => (employeeRegimeMap[j.operational_user_id] || "banco_horas") !== "hora_extra").length > 0 && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Detalhamento Diário</CardTitle>
+                <CardTitle className="text-base">Detalhamento Diário — Banco de Horas</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
@@ -555,7 +555,7 @@ export default function PontoPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {jornadas.map((j: any) => (
+                    {jornadas.filter(j => (employeeRegimeMap[j.operational_user_id] || "banco_horas") !== "hora_extra").map((j: any) => (
                       <TableRow key={j.id}>
                         <TableCell className="font-medium">{j.operational_users?.nome || "—"}</TableCell>
                         <TableCell>{format(parseISO(j.data), "dd/MM/yyyy")}</TableCell>
