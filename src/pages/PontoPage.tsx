@@ -850,6 +850,7 @@ export default function PontoPage() {
                   : "Horas excedentes/devidas são acumuladas no banco."}
               </p>
             </div>
+            <div>
               <Label>Dias de trabalho</Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {DAY_LABELS.map((label, i) => (
