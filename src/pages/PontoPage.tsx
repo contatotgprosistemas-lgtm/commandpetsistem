@@ -20,6 +20,7 @@ import {
   ChevronLeft, ChevronRight, Loader2, Save, Eye, UserPlus
 } from "lucide-react";
 import ColaboradoresTab from "@/components/ponto/ColaboradoresTab";
+import RelatorioTab from "@/components/ponto/RelatorioTab";
 
 const PUNCH_LABELS: Record<string, string> = {
   entrada: "Entrada",
