@@ -439,7 +439,7 @@ export default function RelatorioTab({ empresaId, employees, configs, month, onM
       <div className="flex flex-wrap gap-3 items-end">
         <div>
           <Label className="text-xs">Mês</Label>
-          <Input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="w-44" />
+          <Input type="month" value={month} onChange={e => onMonthChange(e.target.value)} className="w-44" />
         </div>
         <div>
           <Label className="text-xs">Colaborador</Label>
