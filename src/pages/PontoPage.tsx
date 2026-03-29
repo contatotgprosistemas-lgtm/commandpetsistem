@@ -69,6 +69,7 @@ export default function PontoPage() {
   const [editingPunch, setEditingPunch] = useState<any>(null);
   const [editPunchTime, setEditPunchTime] = useState("");
   const [editPunchType, setEditPunchType] = useState("");
+  const [editPunchMotivo, setEditPunchMotivo] = useState("");
   const [savingPunch, setSavingPunch] = useState(false);
 
   const [configForm, setConfigForm] = useState({

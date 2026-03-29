@@ -2644,6 +2644,7 @@ export type Database = {
           id: string
           latitude: number | null
           longitude: number | null
+          motivo_alteracao: string | null
           observacao: string | null
           operational_user_id: string
           selfie_url: string | null
@@ -2656,6 +2657,7 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          motivo_alteracao?: string | null
           observacao?: string | null
           operational_user_id: string
           selfie_url?: string | null
@@ -2668,6 +2670,7 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          motivo_alteracao?: string | null
           observacao?: string | null
           operational_user_id?: string
           selfie_url?: string | null
