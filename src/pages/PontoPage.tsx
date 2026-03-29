@@ -173,15 +173,27 @@ export default function PontoPage() {
   const activeNow = [...employeesWithEntry].filter(id => !employeesWithExit.has(id)).length;
   const totalActive = employees.filter(e => e.ativo).length;
 
-  // Bank hours totals
+  // Build regime map: employee -> regime
+  const employeeRegimeMap: Record<string, string> = {};
+  employees.forEach((e: any) => {
+    const cfg = configs.find((c: any) => c.id === e.jornada_id);
+    employeeRegimeMap[e.id] = cfg?.regime_horas || "banco_horas";
+  });
+
+  // Bank hours totals (only banco_horas regime)
   const bankByEmployee: Record<string, { nome: string; total: number; days: number }> = {};
+  // Hora extra totals (only hora_extra regime)
+  const extraByEmployee: Record<string, { nome: string; total: number; days: number }> = {};
+
   jornadas.forEach((j: any) => {
     const key = j.operational_user_id;
-    if (!bankByEmployee[key]) {
-      bankByEmployee[key] = { nome: j.operational_users?.nome || "—", total: 0, days: 0 };
+    const regime = employeeRegimeMap[key] || "banco_horas";
+    const target = regime === "hora_extra" ? extraByEmployee : bankByEmployee;
+    if (!target[key]) {
+      target[key] = { nome: j.operational_users?.nome || "—", total: 0, days: 0 };
     }
-    bankByEmployee[key].total += j.saldo_min || 0;
-    bankByEmployee[key].days += 1;
+    target[key].total += j.saldo_min || 0;
+    target[key].days += 1;
   });
 
   const openNewConfig = () => {
