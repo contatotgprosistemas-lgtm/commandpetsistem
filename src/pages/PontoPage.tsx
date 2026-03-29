@@ -291,10 +291,11 @@ export default function PontoPage() {
       </div>
 
       <Tabs defaultValue="painel" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="painel" className="gap-1.5"><BarChart3 className="h-4 w-4" />Painel</TabsTrigger>
           <TabsTrigger value="registros" className="gap-1.5"><ClipboardList className="h-4 w-4" />Registros</TabsTrigger>
           <TabsTrigger value="banco" className="gap-1.5"><TrendingUp className="h-4 w-4" />Banco de Horas</TabsTrigger>
+          <TabsTrigger value="hora_extra" className="gap-1.5"><Clock className="h-4 w-4" />Hora Extra</TabsTrigger>
           <TabsTrigger value="relatorio" className="gap-1.5"><CalendarDays className="h-4 w-4" />Relatório</TabsTrigger>
           <TabsTrigger value="colaboradores" className="gap-1.5"><Users className="h-4 w-4" />Colaboradores</TabsTrigger>
           <TabsTrigger value="config" className="gap-1.5"><Settings className="h-4 w-4" />Configurações</TabsTrigger>
