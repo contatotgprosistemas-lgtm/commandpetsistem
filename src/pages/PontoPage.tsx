@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Clock, Users, AlertTriangle, TrendingUp, TrendingDown,
   MapPin, Camera, CalendarDays, Settings, BarChart3, ClipboardList,
-  ChevronLeft, ChevronRight, Loader2, Save, Eye, UserPlus
+  ChevronLeft, ChevronRight, Loader2, Save, Eye, UserPlus, Pencil
 } from "lucide-react";
 import ColaboradoresTab from "@/components/ponto/ColaboradoresTab";
 import RelatorioTab from "@/components/ponto/RelatorioTab";
@@ -63,6 +63,14 @@ export default function PontoPage() {
   // Config form
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [editingConfig, setEditingConfig] = useState<any>(null);
+
+  // Edit punch
+  const [editPunchDialogOpen, setEditPunchDialogOpen] = useState(false);
+  const [editingPunch, setEditingPunch] = useState<any>(null);
+  const [editPunchTime, setEditPunchTime] = useState("");
+  const [editPunchType, setEditPunchType] = useState("");
+  const [savingPunch, setSavingPunch] = useState(false);
+
   const [configForm, setConfigForm] = useState({
     nome: "Jornada Padrão",
     jornada_diaria_min: 480,
@@ -217,12 +225,49 @@ export default function PontoPage() {
     else { toast.success("Jornada excluída."); fetchData(); }
   };
 
+  const openEditPunch = (punch: any) => {
+    setEditingPunch(punch);
+    setEditPunchTime(format(new Date(punch.data_hora), "HH:mm"));
+    setEditPunchType(punch.tipo);
+    setEditPunchDialogOpen(true);
+  };
+
+  const handleSavePunch = async () => {
+    if (!editingPunch || !editPunchTime) return;
+    setSavingPunch(true);
+    try {
+      const origDate = new Date(editingPunch.data_hora);
+      const [h, m] = editPunchTime.split(":").map(Number);
+      origDate.setHours(h, m, 0, 0);
+
+      const { error } = await supabase
+        .from("ponto_registros")
+        .update({ data_hora: origDate.toISOString(), tipo: editPunchType })
+        .eq("id", editingPunch.id);
+
+      if (error) throw error;
+      toast.success("Registro atualizado!");
+      setEditPunchDialogOpen(false);
+      fetchPunches();
+    } catch {
+      toast.error("Erro ao atualizar registro.");
+    }
+    setSavingPunch(false);
+  };
+
+  const handleDeletePunch = async (id: string) => {
+    if (!confirm("Excluir este registro de ponto?")) return;
+    const { error } = await supabase.from("ponto_registros").delete().eq("id", id);
+    if (error) toast.error("Erro ao excluir.");
+    else { toast.success("Registro excluído."); fetchPunches(); }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Clock className="h-6 w-6 text-primary" />
@@ -357,53 +402,64 @@ export default function PontoPage() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Colaborador</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Horário</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Selfie</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {punches.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum registro encontrado.</TableCell></TableRow>
-                  ) : (
-                    punches.map((p: any) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="font-medium">{p.operational_users?.nome || "—"}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className={PUNCH_COLORS[p.tipo] || ""}>
-                            {PUNCH_LABELS[p.tipo] || p.tipo}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{format(new Date(p.data_hora), "HH:mm:ss")}</TableCell>
-                        <TableCell>
-                          {p.latitude ? (
-                            <a
-                              href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline flex items-center gap-1 text-xs"
-                            >
-                              <MapPin className="h-3 w-3" />Ver mapa
-                            </a>
-                          ) : "—"}
-                        </TableCell>
-                        <TableCell>
-                          {p.selfie_url ? (
-                            <button onClick={() => setSelfieUrl(p.selfie_url)}>
-                              <img src={p.selfie_url} alt="" className="h-8 w-8 rounded object-cover border border-border cursor-pointer hover:opacity-80" />
-                            </button>
-                          ) : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                   <TableRow>
+                     <TableHead>Colaborador</TableHead>
+                     <TableHead>Tipo</TableHead>
+                     <TableHead>Horário</TableHead>
+                     <TableHead>Localização</TableHead>
+                     <TableHead>Selfie</TableHead>
+                     <TableHead className="w-20">Ações</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {punches.length === 0 ? (
+                     <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum registro encontrado.</TableCell></TableRow>
+                   ) : (
+                     punches.map((p: any) => (
+                       <TableRow key={p.id}>
+                         <TableCell className="font-medium">{p.operational_users?.nome || "—"}</TableCell>
+                         <TableCell>
+                           <Badge variant="secondary" className={PUNCH_COLORS[p.tipo] || ""}>
+                             {PUNCH_LABELS[p.tipo] || p.tipo}
+                           </Badge>
+                         </TableCell>
+                         <TableCell>{format(new Date(p.data_hora), "HH:mm:ss")}</TableCell>
+                         <TableCell>
+                           {p.latitude ? (
+                             <a
+                               href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="text-primary hover:underline flex items-center gap-1 text-xs"
+                             >
+                               <MapPin className="h-3 w-3" />Ver mapa
+                             </a>
+                           ) : "—"}
+                         </TableCell>
+                         <TableCell>
+                           {p.selfie_url ? (
+                             <button onClick={() => setSelfieUrl(p.selfie_url)}>
+                               <img src={p.selfie_url} alt="" className="h-8 w-8 rounded object-cover border border-border cursor-pointer hover:opacity-80" />
+                             </button>
+                           ) : "—"}
+                         </TableCell>
+                         <TableCell>
+                           <div className="flex gap-1">
+                             <Button variant="ghost" size="sm" onClick={() => openEditPunch(p)} title="Editar">
+                               <Pencil className="h-3.5 w-3.5" />
+                             </Button>
+                             <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeletePunch(p.id)} title="Excluir">
+                               ✕
+                             </Button>
+                           </div>
+                         </TableCell>
+                       </TableRow>
+                     ))
+                   )}
+                 </TableBody>
+               </Table>
+             </CardContent>
+           </Card>
         </TabsContent>
 
         {/* BANCO DE HORAS TAB */}
@@ -646,7 +702,37 @@ export default function PontoPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Selfie preview dialog */}
+      {/* Edit punch dialog */}
+      <Dialog open={editPunchDialogOpen} onOpenChange={setEditPunchDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Registro de Ponto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Tipo</Label>
+              <Select value={editPunchType} onValueChange={setEditPunchType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="entrada">Entrada</SelectItem>
+                  <SelectItem value="pausa_inicio">Início Pausa</SelectItem>
+                  <SelectItem value="pausa_fim">Fim Pausa</SelectItem>
+                  <SelectItem value="saida">Saída</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Horário</Label>
+              <Input type="time" value={editPunchTime} onChange={e => setEditPunchTime(e.target.value)} step="60" />
+            </div>
+            <Button onClick={handleSavePunch} disabled={savingPunch} className="w-full gap-2">
+              {savingPunch ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Salvar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!selfieUrl} onOpenChange={() => setSelfieUrl(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
