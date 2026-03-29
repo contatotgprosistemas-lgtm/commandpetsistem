@@ -836,6 +836,20 @@ export default function PontoPage() {
               </div>
             </div>
             <div>
+              <Label>Regime de Horas</Label>
+              <Select value={configForm.regime_horas} onValueChange={v => setConfigForm(prev => ({ ...prev, regime_horas: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="banco_horas">Banco de Horas</SelectItem>
+                  <SelectItem value="hora_extra">Hora Extra</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {configForm.regime_horas === "hora_extra"
+                  ? "Horas excedentes são pagas como hora extra."
+                  : "Horas excedentes/devidas são acumuladas no banco."}
+              </p>
+            </div>
               <Label>Dias de trabalho</Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {DAY_LABELS.map((label, i) => (
