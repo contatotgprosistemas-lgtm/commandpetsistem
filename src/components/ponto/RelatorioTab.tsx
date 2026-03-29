@@ -66,7 +66,7 @@ export default function RelatorioTab({ empresaId, employees, configs, defaultMon
     if (defaultMonth && defaultMonth !== filterMonth) {
       setFilterMonth(defaultMonth);
     }
-  }, [defaultMonth]);
+  }, [defaultMonth, filterMonth]);
   const [loading, setLoading] = useState(false);
   const [reports, setReports] = useState<EmployeeReport[]>([]);
   const [expandedEmployee, setExpandedEmployee] = useState<string | null>(null);
