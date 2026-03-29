@@ -760,7 +760,12 @@ export default function PontoPage() {
                           </Badge>
                         ))}
                       </div>
-                      <p className="text-xs text-muted-foreground">{linkedCount} colaborador(es) vinculado(s)</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {c.regime_horas === "hora_extra" ? "Hora Extra" : "Banco de Horas"}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">· {linkedCount} colaborador(es)</span>
+                      </div>
                     </CardContent>
                   </Card>
                 );
