@@ -256,6 +256,7 @@ export default function PontoPage() {
     setEditingPunch(punch);
     setEditPunchTime(format(new Date(punch.data_hora), "HH:mm"));
     setEditPunchType(punch.tipo);
+    setEditPunchMotivo("");
     setEditPunchDialogOpen(true);
   };
 
