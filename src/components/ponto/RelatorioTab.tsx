@@ -70,8 +70,16 @@ export default function RelatorioTab({ empresaId, employees, configs }: Props) {
     const endStr = format(monthEnd, "yyyy-MM-dd");
 
     const targetEmployees = filterEmployee === "all"
-      ? employees.filter(e => e.ativo)
+      ? employees
       : employees.filter(e => e.id === filterEmployee);
+
+    if (targetEmployees.length === 0) {
+      setReports([]);
+      setLoading(false);
+      return;
+    }
+
+    const empIds = targetEmployees.map(e => e.id);
 
     // Fetch jornadas and punches for the month
     const [jornadasRes, punchesRes] = await Promise.all([
@@ -81,14 +89,14 @@ export default function RelatorioTab({ empresaId, employees, configs }: Props) {
         .eq("empresa_id", empresaId)
         .gte("data", startStr)
         .lte("data", endStr)
-        .in("operational_user_id", targetEmployees.map(e => e.id)),
+        .in("operational_user_id", empIds),
       supabase
         .from("ponto_registros")
         .select("*")
         .eq("empresa_id", empresaId)
         .gte("data_hora", monthStart.toISOString())
         .lte("data_hora", monthEnd.toISOString())
-        .in("operational_user_id", targetEmployees.map(e => e.id))
+        .in("operational_user_id", empIds)
         .order("data_hora", { ascending: true }),
     ]);
 
