@@ -262,6 +262,10 @@ export default function PontoPage() {
 
   const handleSavePunch = async () => {
     if (!editingPunch || !editPunchTime) return;
+    if (!editPunchMotivo.trim()) {
+      toast.error("Informe o motivo da alteração.");
+      return;
+    }
     setSavingPunch(true);
     try {
       const origDate = new Date(editingPunch.data_hora);
@@ -270,7 +274,7 @@ export default function PontoPage() {
 
       const { error } = await supabase
         .from("ponto_registros")
-        .update({ data_hora: origDate.toISOString(), tipo: editPunchType })
+        .update({ data_hora: origDate.toISOString(), tipo: editPunchType, motivo_alteracao: editPunchMotivo.trim() })
         .eq("id", editingPunch.id);
 
       if (error) throw error;
