@@ -910,6 +910,10 @@ export default function PontoPage() {
               <Label>Horário</Label>
               <Input type="time" value={editPunchTime} onChange={e => setEditPunchTime(e.target.value)} step="60" />
             </div>
+            <div>
+              <Label>Motivo da Alteração *</Label>
+              <Input value={editPunchMotivo} onChange={e => setEditPunchMotivo(e.target.value)} placeholder="Ex: Esqueceu de registrar, erro de horário..." />
+            </div>
             <Button onClick={handleSavePunch} disabled={savingPunch} className="w-full gap-2">
               {savingPunch ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Salvar Alterações
