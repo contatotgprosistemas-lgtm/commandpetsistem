@@ -35,7 +35,8 @@ interface Props {
   empresaId: string;
   employees: any[];
   configs: any[];
-  defaultMonth?: string;
+  month: string;
+  onMonthChange: (month: string) => void;
 }
 
 interface DayReport {
@@ -57,16 +58,8 @@ interface EmployeeReport {
   days: DayReport[];
 }
 
-export default function RelatorioTab({ empresaId, employees, configs, defaultMonth }: Props) {
-  const [filterMonth, setFilterMonth] = useState(() => defaultMonth || format(new Date(), "yyyy-MM"));
+export default function RelatorioTab({ empresaId, employees, configs, month, onMonthChange }: Props) {
   const [filterEmployee, setFilterEmployee] = useState("all");
-
-  // Sync with parent month when it changes
-  useEffect(() => {
-    if (defaultMonth && defaultMonth !== filterMonth) {
-      setFilterMonth(defaultMonth);
-    }
-  }, [defaultMonth]);
   const [loading, setLoading] = useState(false);
   const [reports, setReports] = useState<EmployeeReport[]>([]);
   const [expandedEmployee, setExpandedEmployee] = useState<string | null>(null);
@@ -82,7 +75,14 @@ export default function RelatorioTab({ empresaId, employees, configs, defaultMon
     if (!empresaId) return;
     setLoading(true);
 
-    const monthStart = startOfMonth(new Date(filterMonth + "-01"));
+    const [year, selectedMonth] = month.split("-").map(Number);
+    if (!year || !selectedMonth) {
+      setReports([]);
+      setLoading(false);
+      return;
+    }
+
+    const monthStart = startOfMonth(new Date(year, selectedMonth - 1, 1));
     const monthEnd = endOfMonth(monthStart);
     const startStr = format(monthStart, "yyyy-MM-dd");
     const endStr = format(monthEnd, "yyyy-MM-dd");
@@ -187,7 +187,7 @@ export default function RelatorioTab({ empresaId, employees, configs, defaultMon
 
     setReports(results);
     setLoading(false);
-  }, [empresaId, filterMonth, filterEmployee, employees, configs]);
+  }, [empresaId, month, filterEmployee, employees, configs]);
 
   useEffect(() => { fetchReport(); }, [fetchReport]);
 
@@ -267,7 +267,8 @@ export default function RelatorioTab({ empresaId, employees, configs, defaultMon
     const margin = 14;
     let y = 20;
 
-    const monthLabel = format(parseISO(filterMonth + "-01"), "MMMM yyyy", { locale: ptBR });
+    const [pdfYear, pdfMonth] = month.split("-").map(Number);
+    const monthLabel = format(new Date(pdfYear, (pdfMonth || 1) - 1, 1), "MMMM yyyy", { locale: ptBR });
 
     // Header
     doc.setFontSize(16);
@@ -410,7 +411,7 @@ export default function RelatorioTab({ empresaId, employees, configs, defaultMon
       doc.text("Data: ____/____/________", margin, y);
     }
 
-    doc.save(`relatorio-ponto-${report.nome.replace(/\s+/g, "-").toLowerCase()}-${filterMonth}.pdf`);
+    doc.save(`relatorio-ponto-${report.nome.replace(/\s+/g, "-").toLowerCase()}-${month}.pdf`);
     toast.success("PDF gerado com sucesso!");
   };
 
@@ -438,7 +439,7 @@ export default function RelatorioTab({ empresaId, employees, configs, defaultMon
       <div className="flex flex-wrap gap-3 items-end">
         <div>
           <Label className="text-xs">Mês</Label>
-          <Input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="w-44" />
+          <Input type="month" value={month} onChange={e => onMonthChange(e.target.value)} className="w-44" />
         </div>
         <div>
           <Label className="text-xs">Colaborador</Label>
