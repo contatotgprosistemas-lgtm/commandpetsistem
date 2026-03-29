@@ -702,7 +702,37 @@ export default function PontoPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Selfie preview dialog */}
+      {/* Edit punch dialog */}
+      <Dialog open={editPunchDialogOpen} onOpenChange={setEditPunchDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Registro de Ponto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Tipo</Label>
+              <Select value={editPunchType} onValueChange={setEditPunchType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="entrada">Entrada</SelectItem>
+                  <SelectItem value="pausa_inicio">Início Pausa</SelectItem>
+                  <SelectItem value="pausa_fim">Fim Pausa</SelectItem>
+                  <SelectItem value="saida">Saída</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Horário</Label>
+              <Input type="time" value={editPunchTime} onChange={e => setEditPunchTime(e.target.value)} step="60" />
+            </div>
+            <Button onClick={handleSavePunch} disabled={savingPunch} className="w-full gap-2">
+              {savingPunch ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Salvar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!selfieUrl} onOpenChange={() => setSelfieUrl(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
