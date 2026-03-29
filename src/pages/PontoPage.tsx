@@ -186,7 +186,7 @@ export default function PontoPage() {
 
   const openNewConfig = () => {
     setEditingConfig(null);
-    setConfigForm({ nome: "", jornada_diaria_min: 480, intervalo_min: 60, tolerancia_min: 10, dias_trabalho: [1, 2, 3, 4, 5], horario_entrada: "08:00", horario_pausa: "12:00", horario_retorno: "13:00", horario_saida: "17:00" });
+    setConfigForm({ nome: "", jornada_diaria_min: 480, intervalo_min: 60, tolerancia_min: 10, dias_trabalho: [1, 2, 3, 4, 5], horario_entrada: "08:00", horario_pausa: "12:00", horario_retorno: "13:00", horario_saida: "17:00", regime_horas: "banco_horas" });
     setConfigDialogOpen(true);
   };
 
