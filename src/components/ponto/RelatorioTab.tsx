@@ -187,7 +187,7 @@ export default function RelatorioTab({ empresaId, employees, configs, month, onM
 
     setReports(results);
     setLoading(false);
-  }, [empresaId, filterMonth, filterEmployee, employees, configs]);
+  }, [empresaId, month, filterEmployee, employees, configs]);
 
   useEffect(() => { fetchReport(); }, [fetchReport]);
 
