@@ -1,0 +1,1 @@
+ALTER TABLE public.ponto_configuracoes ADD COLUMN IF NOT EXISTS regime_horas text NOT NULL DEFAULT 'banco_horas';

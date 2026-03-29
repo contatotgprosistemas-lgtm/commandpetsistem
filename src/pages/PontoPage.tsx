@@ -81,6 +81,7 @@ export default function PontoPage() {
     horario_pausa: "12:00",
     horario_retorno: "13:00",
     horario_saida: "17:00",
+    regime_horas: "banco_horas" as string,
   });
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -172,20 +173,32 @@ export default function PontoPage() {
   const activeNow = [...employeesWithEntry].filter(id => !employeesWithExit.has(id)).length;
   const totalActive = employees.filter(e => e.ativo).length;
 
-  // Bank hours totals
+  // Build regime map: employee -> regime
+  const employeeRegimeMap: Record<string, string> = {};
+  employees.forEach((e: any) => {
+    const cfg = configs.find((c: any) => c.id === e.jornada_id);
+    employeeRegimeMap[e.id] = cfg?.regime_horas || "banco_horas";
+  });
+
+  // Bank hours totals (only banco_horas regime)
   const bankByEmployee: Record<string, { nome: string; total: number; days: number }> = {};
+  // Hora extra totals (only hora_extra regime)
+  const extraByEmployee: Record<string, { nome: string; total: number; days: number }> = {};
+
   jornadas.forEach((j: any) => {
     const key = j.operational_user_id;
-    if (!bankByEmployee[key]) {
-      bankByEmployee[key] = { nome: j.operational_users?.nome || "—", total: 0, days: 0 };
+    const regime = employeeRegimeMap[key] || "banco_horas";
+    const target = regime === "hora_extra" ? extraByEmployee : bankByEmployee;
+    if (!target[key]) {
+      target[key] = { nome: j.operational_users?.nome || "—", total: 0, days: 0 };
     }
-    bankByEmployee[key].total += j.saldo_min || 0;
-    bankByEmployee[key].days += 1;
+    target[key].total += j.saldo_min || 0;
+    target[key].days += 1;
   });
 
   const openNewConfig = () => {
     setEditingConfig(null);
-    setConfigForm({ nome: "", jornada_diaria_min: 480, intervalo_min: 60, tolerancia_min: 10, dias_trabalho: [1, 2, 3, 4, 5], horario_entrada: "08:00", horario_pausa: "12:00", horario_retorno: "13:00", horario_saida: "17:00" });
+    setConfigForm({ nome: "", jornada_diaria_min: 480, intervalo_min: 60, tolerancia_min: 10, dias_trabalho: [1, 2, 3, 4, 5], horario_entrada: "08:00", horario_pausa: "12:00", horario_retorno: "13:00", horario_saida: "17:00", regime_horas: "banco_horas" });
     setConfigDialogOpen(true);
   };
 
@@ -201,6 +214,7 @@ export default function PontoPage() {
       horario_pausa: c.horario_pausa || "12:00",
       horario_retorno: c.horario_retorno || "13:00",
       horario_saida: c.horario_saida || "17:00",
+      regime_horas: c.regime_horas || "banco_horas",
     });
     setConfigDialogOpen(true);
   };
@@ -289,10 +303,11 @@ export default function PontoPage() {
       </div>
 
       <Tabs defaultValue="painel" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="painel" className="gap-1.5"><BarChart3 className="h-4 w-4" />Painel</TabsTrigger>
           <TabsTrigger value="registros" className="gap-1.5"><ClipboardList className="h-4 w-4" />Registros</TabsTrigger>
           <TabsTrigger value="banco" className="gap-1.5"><TrendingUp className="h-4 w-4" />Banco de Horas</TabsTrigger>
+          <TabsTrigger value="hora_extra" className="gap-1.5"><Clock className="h-4 w-4" />Hora Extra</TabsTrigger>
           <TabsTrigger value="relatorio" className="gap-1.5"><CalendarDays className="h-4 w-4" />Relatório</TabsTrigger>
           <TabsTrigger value="colaboradores" className="gap-1.5"><Users className="h-4 w-4" />Colaboradores</TabsTrigger>
           <TabsTrigger value="config" className="gap-1.5"><Settings className="h-4 w-4" />Configurações</TabsTrigger>
@@ -522,10 +537,10 @@ export default function PontoPage() {
           </div>
 
           {/* Detailed table */}
-          {jornadas.length > 0 && (
+          {jornadas.filter(j => (employeeRegimeMap[j.operational_user_id] || "banco_horas") !== "hora_extra").length > 0 && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Detalhamento Diário</CardTitle>
+                <CardTitle className="text-base">Detalhamento Diário — Banco de Horas</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
@@ -540,7 +555,7 @@ export default function PontoPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {jornadas.map((j: any) => (
+                    {jornadas.filter(j => (employeeRegimeMap[j.operational_user_id] || "banco_horas") !== "hora_extra").map((j: any) => (
                       <TableRow key={j.id}>
                         <TableCell className="font-medium">{j.operational_users?.nome || "—"}</TableCell>
                         <TableCell>{format(parseISO(j.data), "dd/MM/yyyy")}</TableCell>
@@ -563,7 +578,100 @@ export default function PontoPage() {
           )}
         </TabsContent>
 
-        {/* RELATÓRIO TAB */}
+        {/* HORA EXTRA TAB */}
+        <TabsContent value="hora_extra" className="space-y-4">
+          <div className="flex flex-wrap gap-3 items-end">
+            <div>
+              <Label className="text-xs">Mês</Label>
+              <Input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="w-44" />
+            </div>
+            <div>
+              <Label className="text-xs">Colaborador</Label>
+              <Select value={filterEmployee} onValueChange={setFilterEmployee}>
+                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {employees.map(e => (
+                    <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(extraByEmployee).map(([id, data]) => (
+              <Card key={id}>
+                <CardContent className="p-4">
+                  <p className="font-medium text-foreground">{data.nome}</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Dias registrados</p>
+                      <p className="font-semibold">{data.days}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Horas Extras</p>
+                      <p className={`font-semibold flex items-center gap-1 ${data.total > 0 ? "text-emerald-600" : data.total < 0 ? "text-red-500" : "text-muted-foreground"}`}>
+                        {data.total > 0 ? <TrendingUp className="h-3 w-3" /> : data.total < 0 ? <TrendingDown className="h-3 w-3" /> : null}
+                        {formatMinutes(Math.max(0, data.total))}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {Object.keys(extraByEmployee).length === 0 && (
+              <p className="text-sm text-muted-foreground col-span-full text-center py-8">Nenhum colaborador com regime de Hora Extra ou sem dados no período.</p>
+            )}
+          </div>
+
+          {/* Detailed table for hora extra */}
+          {jornadas.filter(j => employeeRegimeMap[j.operational_user_id] === "hora_extra").length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Detalhamento Diário — Hora Extra</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Colaborador</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Trabalhado</TableHead>
+                      <TableHead>Esperado</TableHead>
+                      <TableHead>Hora Extra</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {jornadas
+                      .filter(j => employeeRegimeMap[j.operational_user_id] === "hora_extra")
+                      .map((j: any) => {
+                        const extra = Math.max(0, j.saldo_min || 0);
+                        return (
+                          <TableRow key={j.id}>
+                            <TableCell className="font-medium">{j.operational_users?.nome || "—"}</TableCell>
+                            <TableCell>{format(parseISO(j.data), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>{formatMinutes(j.horas_trabalhadas_min)}</TableCell>
+                            <TableCell>{formatMinutes(j.horas_esperadas_min)}</TableCell>
+                            <TableCell className={extra > 0 ? "text-emerald-600 font-medium" : "text-muted-foreground"}>
+                              {formatMinutes(extra)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">
+                                {j.status === "aberto" ? "Aberto" : j.status === "fechado" ? "Fechado" : j.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
         <TabsContent value="relatorio">
           <RelatorioTab empresaId={empresaId!} employees={employees} configs={configs} month={filterMonth} onMonthChange={setFilterMonth} />
         </TabsContent>
@@ -652,7 +760,12 @@ export default function PontoPage() {
                           </Badge>
                         ))}
                       </div>
-                      <p className="text-xs text-muted-foreground">{linkedCount} colaborador(es) vinculado(s)</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {c.regime_horas === "hora_extra" ? "Hora Extra" : "Banco de Horas"}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">· {linkedCount} colaborador(es)</span>
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -721,6 +834,21 @@ export default function PontoPage() {
                   <Input type="time" value={configForm.horario_saida} onChange={e => setConfigForm(prev => ({ ...prev, horario_saida: e.target.value }))} />
                 </div>
               </div>
+            </div>
+            <div>
+              <Label>Regime de Horas</Label>
+              <Select value={configForm.regime_horas} onValueChange={v => setConfigForm(prev => ({ ...prev, regime_horas: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="banco_horas">Banco de Horas</SelectItem>
+                  <SelectItem value="hora_extra">Hora Extra</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {configForm.regime_horas === "hora_extra"
+                  ? "Horas excedentes são pagas como hora extra."
+                  : "Horas excedentes/devidas são acumuladas no banco."}
+              </p>
             </div>
             <div>
               <Label>Dias de trabalho</Label>

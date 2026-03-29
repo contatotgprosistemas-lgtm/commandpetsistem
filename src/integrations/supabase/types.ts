@@ -2536,6 +2536,7 @@ export type Database = {
           intervalo_min: number
           jornada_diaria_min: number
           nome: string
+          regime_horas: string
           tolerancia_min: number
           updated_at: string
         }
@@ -2551,6 +2552,7 @@ export type Database = {
           intervalo_min?: number
           jornada_diaria_min?: number
           nome?: string
+          regime_horas?: string
           tolerancia_min?: number
           updated_at?: string
         }
@@ -2566,6 +2568,7 @@ export type Database = {
           intervalo_min?: number
           jornada_diaria_min?: number
           nome?: string
+          regime_horas?: string
           tolerancia_min?: number
           updated_at?: string
         }
