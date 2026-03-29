@@ -126,7 +126,11 @@ export default function PontoPage() {
   // Fetch jornadas for selected month
   const fetchJornadas = useCallback(async () => {
     if (!empresaId) return;
-    const start = startOfMonth(new Date(filterMonth + "-01"));
+
+    const [year, month] = filterMonth.split("-").map(Number);
+    if (!year || !month) return;
+
+    const start = startOfMonth(new Date(year, month - 1, 1));
     const end = endOfMonth(start);
 
     let q = supabase
