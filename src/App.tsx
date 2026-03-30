@@ -75,6 +75,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Landing page pública */}
+            <Route path="/site" element={<LandingPage />} />
+
             {/* Admin auth */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
