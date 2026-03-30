@@ -1937,6 +1937,36 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          created_at: string
+          email: string
+          empresa: string | null
+          id: string
+          mensagem: string | null
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          empresa?: string | null
+          id?: string
+          mensagem?: string | null
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          empresa?: string | null
+          id?: string
+          mensagem?: string | null
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: []
+      }
       manejo_registros: {
         Row: {
           agendamento_id: string
