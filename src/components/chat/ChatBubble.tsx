@@ -58,7 +58,7 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
         {/* Document message */}
         {isDocument && (
           <a
-            href={conteudo}
+            href={resolvedUrl}
             target="_blank"
             rel="noopener noreferrer"
             className={`flex items-center gap-2 px-3 py-2 ${
@@ -72,7 +72,7 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">
-                {conteudo.split("/").pop()?.split("?")[0] || "Documento"}
+                {resolvedUrl.split("/").pop()?.split("?")[0] || "Documento"}
               </p>
               <p className={`text-[10px] ${isAgent ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                 Documento
