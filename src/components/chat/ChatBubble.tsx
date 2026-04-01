@@ -1,5 +1,6 @@
 import { CheckCheck, FileText, Play, Pause } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { resolveMediaUrl } from "@/lib/storage";
 
 interface ChatBubbleProps {
   conteudo: string;
