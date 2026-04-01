@@ -3803,6 +3803,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      verify_operational_pin: {
+        Args: { p_email: string; p_empresa_id: string; p_pin: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role:
