@@ -204,8 +204,10 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh, conf
             </div>
             <div>
               <Label>PIN (opcional)</Label>
-              <Input value={form.pin} onChange={e => setForm(f => ({ ...f, pin: e.target.value }))} maxLength={6} placeholder="Ex: 1234" />
-              <p className="text-xs text-muted-foreground mt-1">PIN numérico para acesso rápido no portal operacional.</p>
+              <Input value={form.pin} onChange={e => setForm(f => ({ ...f, pin: e.target.value }))} maxLength={6} placeholder={editing ? "Deixe vazio para manter o atual" : "Ex: 1234"} />
+              <p className="text-xs text-muted-foreground mt-1">
+                {editing ? "Deixe em branco para manter o PIN atual." : "PIN numérico para acesso rápido no portal operacional."}
+              </p>
             </div>
             <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
