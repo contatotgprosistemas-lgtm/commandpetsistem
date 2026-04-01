@@ -19,8 +19,12 @@ export function MediaUploadMenu({ onMediaUploaded, disabled }: MediaUploadMenuPr
     setUploading(true);
     setOpen(false);
 
+    // Get empresa_id for tenant-scoped storage path
+    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
+    const empresaId = profile?.empresa_id || "unknown";
+
     const ext = file.name.split(".").pop() || "bin";
-    const fileName = `${type}_${Date.now()}.${ext}`;
+    const fileName = `${empresaId}/${type}_${Date.now()}.${ext}`;
     const { error } = await supabase.storage
       .from("chat-media")
       .upload(fileName, file, { contentType: file.type });

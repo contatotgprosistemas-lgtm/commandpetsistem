@@ -45,7 +45,7 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh, conf
 
   const openEdit = (emp: any) => {
     setEditing(emp);
-    setForm({ nome: emp.nome, email: emp.email, pin: emp.pin || "", jornada_id: emp.jornada_id || "" });
+    setForm({ nome: emp.nome, email: emp.email, pin: "", jornada_id: emp.jornada_id || "" });
     setOpen(true);
   };
 
@@ -56,12 +56,17 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh, conf
     }
     setSaving(true);
     try {
-      const payload = {
+      const payload: any = {
         nome: form.nome.trim(),
         email: form.email.trim(),
-        pin: form.pin || null,
         jornada_id: form.jornada_id || null,
       };
+      // Only send PIN if user entered a new one
+      if (form.pin) {
+        payload.pin = form.pin;
+      } else if (!editing) {
+        payload.pin = null;
+      }
       if (editing) {
         const { error } = await supabase
           .from("operational_users")
@@ -146,7 +151,7 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh, conf
                     <TableCell>
                       <Badge variant="outline" className="text-xs">{getJornadaNome(emp.jornada_id)}</Badge>
                     </TableCell>
-                    <TableCell>{emp.pin || "—"}</TableCell>
+                    <TableCell>{emp.pin ? "••••" : "—"}</TableCell>
                     <TableCell>
                       <Badge
                         variant="secondary"
@@ -199,8 +204,10 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh, conf
             </div>
             <div>
               <Label>PIN (opcional)</Label>
-              <Input value={form.pin} onChange={e => setForm(f => ({ ...f, pin: e.target.value }))} maxLength={6} placeholder="Ex: 1234" />
-              <p className="text-xs text-muted-foreground mt-1">PIN numérico para acesso rápido no portal operacional.</p>
+              <Input value={form.pin} onChange={e => setForm(f => ({ ...f, pin: e.target.value }))} maxLength={6} placeholder={editing ? "Deixe vazio para manter o atual" : "Ex: 1234"} />
+              <p className="text-xs text-muted-foreground mt-1">
+                {editing ? "Deixe em branco para manter o PIN atual." : "PIN numérico para acesso rápido no portal operacional."}
+              </p>
             </div>
             <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}

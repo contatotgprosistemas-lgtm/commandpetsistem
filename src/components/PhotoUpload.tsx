@@ -34,8 +34,11 @@ export function PhotoUpload({ value, onChange, folder = "clientes", size = "md",
 
     setUploading(true);
     try {
+      // Get empresa_id for tenant-scoped storage path
+      const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
+      const empresaId = profile?.empresa_id || "unknown";
       const ext = file.name.split(".").pop() || "jpg";
-      const fileName = `${folder}/${crypto.randomUUID()}.${ext}`;
+      const fileName = `${empresaId}/${folder}/${crypto.randomUUID()}.${ext}`;
 
       const { error } = await supabase.storage
         .from("profile-photos")
