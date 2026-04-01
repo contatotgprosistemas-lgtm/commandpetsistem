@@ -1,5 +1,6 @@
 import { CheckCheck, FileText, Play, Pause } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { resolveMediaUrl } from "@/lib/storage";
 
 interface ChatBubbleProps {
   conteudo: string;
@@ -16,6 +17,16 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
   const isDocument = tipo === "documento" || (tipo === "midia" && /\.(pdf|doc|docx|xls|xlsx|csv|txt|zip)/i.test(conteudo));
   const isMedia = isImage || isAudio || isDocument;
 
+  // Resolve signed URLs for private bucket media
+  const [resolvedUrl, setResolvedUrl] = useState(conteudo);
+  useEffect(() => {
+    if (isMedia && conteudo) {
+      resolveMediaUrl(conteudo).then(setResolvedUrl);
+    } else {
+      setResolvedUrl(conteudo);
+    }
+  }, [conteudo, isMedia]);
+
   return (
     <div className={`flex ${isAgent ? "justify-end" : "justify-start"} mb-1`}>
       <div
@@ -29,10 +40,10 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
         {isImage && (
           <div className="p-1">
             <img
-              src={conteudo}
+              src={resolvedUrl}
               alt="Imagem"
               className="rounded-md max-w-[300px] max-h-[300px] object-cover cursor-pointer"
-              onClick={() => window.open(conteudo, "_blank")}
+              onClick={() => window.open(resolvedUrl, "_blank")}
             />
           </div>
         )}
@@ -40,14 +51,14 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
         {/* Audio message */}
         {isAudio && (
           <div className="px-3 py-2">
-            <AudioPlayer src={conteudo} isAgent={isAgent} />
+            <AudioPlayer src={resolvedUrl} isAgent={isAgent} />
           </div>
         )}
 
         {/* Document message */}
         {isDocument && (
           <a
-            href={conteudo}
+            href={resolvedUrl}
             target="_blank"
             rel="noopener noreferrer"
             className={`flex items-center gap-2 px-3 py-2 ${
@@ -61,7 +72,7 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">
-                {conteudo.split("/").pop()?.split("?")[0] || "Documento"}
+                {resolvedUrl.split("/").pop()?.split("?")[0] || "Documento"}
               </p>
               <p className={`text-[10px] ${isAgent ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                 Documento

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { SignedImage } from "@/components/SignedImage";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -380,9 +381,9 @@ export default function PontoPage() {
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {todayPunches.map((p: any) => (
                     <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-card">
-                      {p.selfie_url && (
+                       {p.selfie_url && (
                         <button onClick={() => setSelfieUrl(p.selfie_url)} className="shrink-0">
-                          <img src={p.selfie_url} alt="" className="h-10 w-10 rounded-full object-cover border-2 border-border" />
+                          <SignedImage src={p.selfie_url} alt="" className="h-10 w-10 rounded-full object-cover border-2 border-border" />
                         </button>
                       )}
                       <div className="flex-1 min-w-0">
@@ -471,9 +472,9 @@ export default function PontoPage() {
                          </TableCell>
                          <TableCell>
                            {p.selfie_url ? (
-                             <button onClick={() => setSelfieUrl(p.selfie_url)}>
-                               <img src={p.selfie_url} alt="" className="h-8 w-8 rounded object-cover border border-border cursor-pointer hover:opacity-80" />
-                             </button>
+                              <button onClick={() => setSelfieUrl(p.selfie_url)}>
+                                <SignedImage src={p.selfie_url} alt="" className="h-8 w-8 rounded object-cover border border-border cursor-pointer hover:opacity-80" />
+                              </button>
                            ) : "—"}
                          </TableCell>
                          <TableCell>
@@ -927,7 +928,7 @@ export default function PontoPage() {
           <DialogHeader>
             <DialogTitle>Selfie do Registro</DialogTitle>
           </DialogHeader>
-          {selfieUrl && <img src={selfieUrl} alt="Selfie" className="w-full rounded-lg" />}
+          {selfieUrl && <SignedImage src={selfieUrl} alt="Selfie" className="w-full rounded-lg" />}
         </DialogContent>
       </Dialog>
     </div>

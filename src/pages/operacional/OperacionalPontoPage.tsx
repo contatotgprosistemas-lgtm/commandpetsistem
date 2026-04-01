@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { SignedImage } from "@/components/SignedImage";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -226,7 +227,8 @@ export default function OperacionalPontoPage() {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage.from("ponto-selfies").getPublicUrl(fileName);
+      // Store the file path for signed URL resolution later
+      const { data: signedData } = await supabase.storage.from("ponto-selfies").createSignedUrl(fileName, 3600);
 
       // Insert punch record
       const { error: insertError } = await supabase.from("ponto_registros").insert({
@@ -236,7 +238,7 @@ export default function OperacionalPontoPage() {
         data_hora: new Date().toISOString(),
         latitude: pendingGeo.lat,
         longitude: pendingGeo.lng,
-        selfie_url: urlData.publicUrl,
+        selfie_url: signedData?.signedUrl || fileName,
       });
 
       if (insertError) throw insertError;
@@ -482,7 +484,7 @@ export default function OperacionalPontoPage() {
                 return (
                   <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/60">
                     {p.selfie_url && (
-                      <img src={p.selfie_url} alt="" className="h-10 w-10 rounded-full object-cover border-2 border-border shrink-0" />
+                      <SignedImage src={p.selfie_url} alt="" className="h-10 w-10 rounded-full object-cover border-2 border-border shrink-0" />
                     )}
                     <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                     <div className="flex-1 min-w-0">

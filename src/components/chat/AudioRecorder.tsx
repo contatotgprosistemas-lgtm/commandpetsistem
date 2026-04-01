@@ -50,13 +50,13 @@ export function AudioRecorder({ onSend, disabled }: AudioRecorderProps) {
           return;
         }
 
-        const { data: urlData } = supabase.storage
+        const { data: signedData } = await supabase.storage
           .from("chat-media")
-          .getPublicUrl(fileName);
+          .createSignedUrl(fileName, 3600);
 
         setUploading(false);
         setDuration(0);
-        onSend(urlData.publicUrl);
+        onSend(signedData?.signedUrl || fileName);
       };
 
       mediaRecorder.start();

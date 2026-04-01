@@ -35,12 +35,13 @@ export function MediaUploadMenu({ onMediaUploaded, disabled }: MediaUploadMenuPr
       return;
     }
 
-    const { data: urlData } = supabase.storage
+    // Store the file path for signed URL resolution later
+    const { data: signedData } = await supabase.storage
       .from("chat-media")
-      .getPublicUrl(fileName);
+      .createSignedUrl(fileName, 3600);
 
     setUploading(false);
-    onMediaUploaded(urlData.publicUrl, type, file.name);
+    onMediaUploaded(signedData?.signedUrl || fileName, type, file.name);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "document") => {
