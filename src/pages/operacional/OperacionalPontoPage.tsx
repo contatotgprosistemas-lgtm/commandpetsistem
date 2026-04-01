@@ -226,7 +226,8 @@ export default function OperacionalPontoPage() {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage.from("ponto-selfies").getPublicUrl(fileName);
+      // Store the file path for signed URL resolution later
+      const { data: signedData } = await supabase.storage.from("ponto-selfies").createSignedUrl(fileName, 3600);
 
       // Insert punch record
       const { error: insertError } = await supabase.from("ponto_registros").insert({
@@ -236,7 +237,7 @@ export default function OperacionalPontoPage() {
         data_hora: new Date().toISOString(),
         latitude: pendingGeo.lat,
         longitude: pendingGeo.lng,
-        selfie_url: urlData.publicUrl,
+        selfie_url: signedData?.signedUrl || fileName,
       });
 
       if (insertError) throw insertError;
