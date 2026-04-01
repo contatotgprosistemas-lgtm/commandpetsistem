@@ -151,7 +151,7 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh, conf
                     <TableCell>
                       <Badge variant="outline" className="text-xs">{getJornadaNome(emp.jornada_id)}</Badge>
                     </TableCell>
-                    <TableCell>{emp.pin || "—"}</TableCell>
+                    <TableCell>{emp.pin ? "••••" : "—"}</TableCell>
                     <TableCell>
                       <Badge
                         variant="secondary"
