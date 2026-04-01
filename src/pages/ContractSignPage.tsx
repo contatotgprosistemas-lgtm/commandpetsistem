@@ -58,25 +58,21 @@ export default function ContractSignPage() {
 
   async function loadContract() {
     setLoading(true);
-    // Use anon key query
-    const { data, error: err } = await supabase
-      .from("contracts")
-      .select("id, title, content, content_hash, status, empresa_id, token_expires_at, signed_at")
-      .eq("signing_token", token!)
-      .single();
+    const { data, error: err } = await supabase.functions.invoke("sign-contract", {
+      body: {
+        action: "load",
+        signing_token: token,
+        signer_user_agent: navigator.userAgent,
+      },
+    });
 
-    if (err || !data) {
-      setError("Contrato não encontrado ou link expirado.");
+    if (err || !data?.contract) {
+      setError(data?.error || "Contrato não encontrado ou link expirado.");
       setLoading(false);
       return;
     }
 
-    const c = data as ContractData;
-    if (c.token_expires_at && new Date(c.token_expires_at) < new Date()) {
-      setError("Este link de assinatura expirou.");
-      setLoading(false);
-      return;
-    }
+    const c = data.contract as ContractData;
 
     if (c.status === "assinado") {
       setSigned(true);
@@ -84,16 +80,6 @@ export default function ContractSignPage() {
 
     setContract(c);
     setLoading(false);
-
-    // Log view event
-    await supabase.from("contract_events").insert({
-      contract_id: c.id,
-      empresa_id: c.empresa_id,
-      event_type: "visualizado",
-      description: "Contrato visualizado pelo assinante",
-      ip_address: null,
-      user_agent: navigator.userAgent,
-    });
   }
 
   // Canvas drawing
@@ -171,49 +157,28 @@ export default function ContractSignPage() {
     const isMobile = /Mobile|Android|iPhone/i.test(ua);
     const device = isMobile ? "Mobile" : "Desktop";
 
-    // Insert signature evidence
-    const { error: sigError } = await supabase.from("contract_signatures").insert({
-      contract_id: contract.id,
-      empresa_id: contract.empresa_id,
-      signer_name: signerName.trim(),
-      signer_email: signerEmail.trim() || null,
-      signer_document: signerDocument.trim() || null,
-      signer_user_agent: ua,
-      signer_device: device,
-      signer_latitude: geo?.lat || null,
-      signer_longitude: geo?.lng || null,
-      signature_image: signatureImage,
-      content_hash: contentHash,
-      acceptance_text: "Li e aceito os termos deste contrato",
+    const { data: result, error: signErr } = await supabase.functions.invoke("sign-contract", {
+      body: {
+        action: "sign",
+        signing_token: token,
+        signer_name: signerName.trim(),
+        signer_email: signerEmail.trim() || null,
+        signer_document: signerDocument.trim() || null,
+        signer_user_agent: ua,
+        signer_device: device,
+        signer_latitude: geo?.lat || null,
+        signer_longitude: geo?.lng || null,
+        signature_image: signatureImage,
+        content_hash: contentHash,
+        acceptance_text: "Li e aceito os termos deste contrato",
+      },
     });
 
-    if (sigError) {
-      toast.error("Erro ao registrar assinatura");
+    if (signErr || result?.error) {
+      toast.error(result?.error || "Erro ao registrar assinatura");
       setSigning(false);
       return;
     }
-
-    // Update contract status
-    await supabase.from("contracts").update({
-      status: "assinado",
-      signed_at: new Date().toISOString(),
-    }).eq("id", contract.id);
-
-    // Log event
-    await supabase.from("contract_events").insert({
-      contract_id: contract.id,
-      empresa_id: contract.empresa_id,
-      event_type: "assinado",
-      description: `Contrato assinado por ${signerName.trim()}`,
-      user_agent: ua,
-      metadata: {
-        signer_name: signerName.trim(),
-        signer_email: signerEmail.trim(),
-        device,
-        geo: geo || null,
-        content_hash: contentHash,
-      },
-    });
 
     setSigned(true);
     setSigning(false);
