@@ -51,7 +51,7 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
         {/* Audio message */}
         {isAudio && (
           <div className="px-3 py-2">
-            <AudioPlayer src={conteudo} isAgent={isAgent} />
+            <AudioPlayer src={resolvedUrl} isAgent={isAgent} />
           </div>
         )}
 
