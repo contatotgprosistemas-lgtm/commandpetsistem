@@ -56,12 +56,17 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh, conf
     }
     setSaving(true);
     try {
-      const payload = {
+      const payload: any = {
         nome: form.nome.trim(),
         email: form.email.trim(),
-        pin: form.pin || null,
         jornada_id: form.jornada_id || null,
       };
+      // Only send PIN if user entered a new one
+      if (form.pin) {
+        payload.pin = form.pin;
+      } else if (!editing) {
+        payload.pin = null;
+      }
       if (editing) {
         const { error } = await supabase
           .from("operational_users")
