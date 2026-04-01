@@ -58,25 +58,21 @@ export default function ContractSignPage() {
 
   async function loadContract() {
     setLoading(true);
-    // Use anon key query
-    const { data, error: err } = await supabase
-      .from("contracts")
-      .select("id, title, content, content_hash, status, empresa_id, token_expires_at, signed_at")
-      .eq("signing_token", token!)
-      .single();
+    const { data, error: err } = await supabase.functions.invoke("sign-contract", {
+      body: {
+        action: "load",
+        signing_token: token,
+        signer_user_agent: navigator.userAgent,
+      },
+    });
 
-    if (err || !data) {
-      setError("Contrato não encontrado ou link expirado.");
+    if (err || !data?.contract) {
+      setError(data?.error || "Contrato não encontrado ou link expirado.");
       setLoading(false);
       return;
     }
 
-    const c = data as ContractData;
-    if (c.token_expires_at && new Date(c.token_expires_at) < new Date()) {
-      setError("Este link de assinatura expirou.");
-      setLoading(false);
-      return;
-    }
+    const c = data.contract as ContractData;
 
     if (c.status === "assinado") {
       setSigned(true);
@@ -84,16 +80,6 @@ export default function ContractSignPage() {
 
     setContract(c);
     setLoading(false);
-
-    // Log view event
-    await supabase.from("contract_events").insert({
-      contract_id: c.id,
-      empresa_id: c.empresa_id,
-      event_type: "visualizado",
-      description: "Contrato visualizado pelo assinante",
-      ip_address: null,
-      user_agent: navigator.userAgent,
-    });
   }
 
   // Canvas drawing
