@@ -40,10 +40,10 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
         {isImage && (
           <div className="p-1">
             <img
-              src={conteudo}
+              src={resolvedUrl}
               alt="Imagem"
               className="rounded-md max-w-[300px] max-h-[300px] object-cover cursor-pointer"
-              onClick={() => window.open(conteudo, "_blank")}
+              onClick={() => window.open(resolvedUrl, "_blank")}
             />
           </div>
         )}
