@@ -36,7 +36,10 @@ export function AudioRecorder({ onSend, disabled }: AudioRecorderProps) {
         if (blob.size < 1000) return; // too short
 
         setUploading(true);
-        const fileName = `audio_${Date.now()}.webm`;
+        // Get empresa_id for tenant-scoped storage path
+        const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
+        const empresaId = profile?.empresa_id || "unknown";
+        const fileName = `${empresaId}/audio_${Date.now()}.webm`;
         const { error } = await supabase.storage
           .from("chat-media")
           .upload(fileName, blob, { contentType: "audio/webm" });
