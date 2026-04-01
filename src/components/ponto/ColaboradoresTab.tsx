@@ -45,7 +45,7 @@ export default function ColaboradoresTab({ employees, empresaId, onRefresh, conf
 
   const openEdit = (emp: any) => {
     setEditing(emp);
-    setForm({ nome: emp.nome, email: emp.email, pin: emp.pin || "", jornada_id: emp.jornada_id || "" });
+    setForm({ nome: emp.nome, email: emp.email, pin: "", jornada_id: emp.jornada_id || "" });
     setOpen(true);
   };
 
