@@ -472,9 +472,9 @@ export default function PontoPage() {
                          </TableCell>
                          <TableCell>
                            {p.selfie_url ? (
-                             <button onClick={() => setSelfieUrl(p.selfie_url)}>
-                               <img src={p.selfie_url} alt="" className="h-8 w-8 rounded object-cover border border-border cursor-pointer hover:opacity-80" />
-                             </button>
+                              <button onClick={() => setSelfieUrl(p.selfie_url)}>
+                                <SignedImage src={p.selfie_url} alt="" className="h-8 w-8 rounded object-cover border border-border cursor-pointer hover:opacity-80" />
+                              </button>
                            ) : "—"}
                          </TableCell>
                          <TableCell>
