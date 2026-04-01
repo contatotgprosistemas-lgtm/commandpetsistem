@@ -331,7 +331,7 @@ function PublicPhotoUpload({ value, onChange, folder, size = "md" }: { value: st
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() || "jpg";
-      const fileName = `${folder}/${crypto.randomUUID()}.${ext}`;
+      const fileName = `public-cadastro/${folder}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("profile-photos").upload(fileName, file, { upsert: true });
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("profile-photos").getPublicUrl(fileName);
