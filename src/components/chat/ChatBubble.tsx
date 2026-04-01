@@ -17,6 +17,16 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
   const isDocument = tipo === "documento" || (tipo === "midia" && /\.(pdf|doc|docx|xls|xlsx|csv|txt|zip)/i.test(conteudo));
   const isMedia = isImage || isAudio || isDocument;
 
+  // Resolve signed URLs for private bucket media
+  const [resolvedUrl, setResolvedUrl] = useState(conteudo);
+  useEffect(() => {
+    if (isMedia && conteudo) {
+      resolveMediaUrl(conteudo).then(setResolvedUrl);
+    } else {
+      setResolvedUrl(conteudo);
+    }
+  }, [conteudo, isMedia]);
+
   return (
     <div className={`flex ${isAgent ? "justify-end" : "justify-start"} mb-1`}>
       <div
