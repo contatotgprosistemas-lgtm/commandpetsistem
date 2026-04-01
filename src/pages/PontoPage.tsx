@@ -381,9 +381,9 @@ export default function PontoPage() {
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {todayPunches.map((p: any) => (
                     <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/60 bg-card">
-                      {p.selfie_url && (
+                       {p.selfie_url && (
                         <button onClick={() => setSelfieUrl(p.selfie_url)} className="shrink-0">
-                          <img src={p.selfie_url} alt="" className="h-10 w-10 rounded-full object-cover border-2 border-border" />
+                          <SignedImage src={p.selfie_url} alt="" className="h-10 w-10 rounded-full object-cover border-2 border-border" />
                         </button>
                       )}
                       <div className="flex-1 min-w-0">
