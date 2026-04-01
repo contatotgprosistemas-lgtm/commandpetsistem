@@ -928,7 +928,7 @@ export default function PontoPage() {
           <DialogHeader>
             <DialogTitle>Selfie do Registro</DialogTitle>
           </DialogHeader>
-          {selfieUrl && <img src={selfieUrl} alt="Selfie" className="w-full rounded-lg" />}
+          {selfieUrl && <SignedImage src={selfieUrl} alt="Selfie" className="w-full rounded-lg" />}
         </DialogContent>
       </Dialog>
     </div>
