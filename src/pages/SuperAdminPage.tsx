@@ -282,6 +282,7 @@ export default function SuperAdminPage() {
                         <TableRow key={p.id}>
                           <TableCell className="font-medium">{p.nome}</TableCell>
                           <TableCell className="text-muted-foreground">{p.email || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{p.empresa_nome || "—"}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{p.cargo || "—"}</Badge>
                           </TableCell>
