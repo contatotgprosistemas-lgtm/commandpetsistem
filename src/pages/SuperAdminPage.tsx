@@ -22,6 +22,7 @@ interface ProfileRow {
   aprovado: boolean;
   created_at: string;
   user_id: string;
+  empresa_nome: string | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -42,9 +43,14 @@ export default function SuperAdminPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select("*, empresas(nome_empresa)")
       .order("created_at", { ascending: false });
-    if (!error && data) setProfiles(data as ProfileRow[]);
+    if (!error && data) {
+      setProfiles(data.map((p: any) => ({
+        ...p,
+        empresa_nome: p.empresas?.nome_empresa || null,
+      })) as ProfileRow[]);
+    }
     setLoading(false);
   };
 
@@ -265,6 +271,7 @@ export default function SuperAdminPage() {
                       <TableRow>
                         <TableHead>Nome</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Empresa</TableHead>
                         <TableHead>Cargo</TableHead>
                         <TableHead>Cadastrado em</TableHead>
                         <TableHead>Ações</TableHead>
@@ -275,6 +282,7 @@ export default function SuperAdminPage() {
                         <TableRow key={p.id}>
                           <TableCell className="font-medium">{p.nome}</TableCell>
                           <TableCell className="text-muted-foreground">{p.email || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{p.empresa_nome || "—"}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{p.cargo || "—"}</Badge>
                           </TableCell>
@@ -357,6 +365,7 @@ export default function SuperAdminPage() {
                       <TableRow>
                         <TableHead>Nome</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Empresa</TableHead>
                         <TableHead>Cargo</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Criado em</TableHead>
@@ -368,6 +377,7 @@ export default function SuperAdminPage() {
                         <TableRow key={p.id}>
                           <TableCell className="font-medium">{p.nome}</TableCell>
                           <TableCell className="text-muted-foreground">{p.email || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{p.empresa_nome || "—"}</TableCell>
                           <TableCell>
                             <Select defaultValue={p.cargo || "atendente"} onValueChange={(v) => updateCargo(p.id, v)}>
                               <SelectTrigger className="h-8 w-[130px]">
@@ -433,7 +443,7 @@ export default function SuperAdminPage() {
                       ))}
                       {filtered.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                             Nenhum usuário encontrado
                           </TableCell>
                         </TableRow>
