@@ -55,7 +55,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      nome: "", especie: "Cachorro", raca: "", sexo: "", peso: "", cliente_id: "",
+      nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", cliente_id: "",
       pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "",
       antiparasitario: "", v10: "", raiva: "",
     },
