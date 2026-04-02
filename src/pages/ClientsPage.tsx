@@ -182,7 +182,7 @@ export default function ClientsPage() {
                 </div>
                 <span className="font-mono-tabular text-sm text-muted-foreground flex items-center gap-1.5">
                   <Phone className="h-3 w-3" strokeWidth={1.5} />
-                  {c.whatsapp || "—"}
+                  {c.whatsapp || c.telefone || "—"}
                 </span>
                 <span className="text-sm text-muted-foreground flex items-center gap-1.5 truncate">
                   <Mail className="h-3 w-3 shrink-0" strokeWidth={1.5} />
