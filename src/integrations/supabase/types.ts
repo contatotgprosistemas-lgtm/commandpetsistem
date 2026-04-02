@@ -2394,6 +2394,7 @@ export type Database = {
           antiparasitario_data: string | null
           cliente_id: string
           comportamento: string | null
+          cor: string | null
           created_at: string
           data_nascimento: string | null
           empresa_id: string
@@ -2417,6 +2418,7 @@ export type Database = {
           antiparasitario_data?: string | null
           cliente_id: string
           comportamento?: string | null
+          cor?: string | null
           created_at?: string
           data_nascimento?: string | null
           empresa_id: string
@@ -2440,6 +2442,7 @@ export type Database = {
           antiparasitario_data?: string | null
           cliente_id?: string
           comportamento?: string | null
+          cor?: string | null
           created_at?: string
           data_nascimento?: string | null
           empresa_id?: string
