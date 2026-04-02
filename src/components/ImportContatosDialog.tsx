@@ -43,65 +43,80 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
     setErrors([]);
   };
 
+  const parseCSVText = (text: string) => {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) {
+      setErrors(["Arquivo vazio ou sem dados."]);
+      return;
+    }
+
+    const sep = lines[0].includes(";") ? ";" : ",";
+    const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/"/g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+
+    const nameIdx = headers.findIndex(h => ["nome", "name", "contato"].includes(h));
+    const cpfIdx = headers.findIndex(h => ["cpf", "documento", "doc"].includes(h));
+    const whatsIdx = headers.findIndex(h => ["whatsapp", "whattsapp", "whatsap", "whatssapp", "wpp", "zap", "telefone", "phone", "tel", "fone"].includes(h));
+    const emailIdx = headers.findIndex(h => ["email", "e-mail"].includes(h));
+    const cepIdx = headers.findIndex(h => ["cep", "zip", "zipcode", "codigo_postal"].includes(h));
+    const addrIdx = headers.findIndex(h => ["endereco", "endereço", "address"].includes(h));
+    const nascIdx = headers.findIndex(h => ["data_nascimento", "nascimento", "aniversario", "aniversário"].includes(h));
+    const comoIdx = headers.findIndex(h => ["como_conheceu", "origem", "indicacao", "indicação"].includes(h));
+    const notasIdx = headers.findIndex(h => ["notas", "observacoes", "observações", "obs"].includes(h));
+
+    if (nameIdx === -1) {
+      setErrors(["Coluna 'nome' não encontrada. Use: nome;cpf;whatsapp;email;cep;endereco"]);
+      return;
+    }
+
+    const contacts: ParsedContact[] = [];
+    const errs: string[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
+      const nome = cols[nameIdx]?.trim();
+      if (!nome || nome.length < 2) {
+        errs.push(`Linha ${i + 1}: nome inválido`);
+        continue;
+      }
+      contacts.push({
+        nome,
+        cpf: cpfIdx >= 0 ? cols[cpfIdx] || undefined : undefined,
+        whatsapp: whatsIdx >= 0 ? cols[whatsIdx] || undefined : undefined,
+        email: emailIdx >= 0 ? cols[emailIdx] || undefined : undefined,
+        cep: cepIdx >= 0 ? cols[cepIdx] || undefined : undefined,
+        endereco: addrIdx >= 0 ? cols[addrIdx] || undefined : undefined,
+        data_nascimento: nascIdx >= 0 ? cols[nascIdx] || undefined : undefined,
+        como_conheceu: comoIdx >= 0 ? cols[comoIdx] || undefined : undefined,
+        notas: notasIdx >= 0 ? cols[notasIdx] || undefined : undefined,
+      });
+    }
+
+    setParsed(contacts);
+    if (errs.length) setErrors(errs);
+  };
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     resetState();
 
+    // Try UTF-8 first; if garbled (replacement char), fall back to Latin-1
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
       if (!text) return;
 
-      const lines = text.split(/\r?\n/).filter(l => l.trim());
-      if (lines.length < 2) {
-        setErrors(["Arquivo vazio ou sem dados."]);
-        return;
+      if (text.includes("\uFFFD")) {
+        // Contains replacement characters → re-read as Latin-1
+        const reader2 = new FileReader();
+        reader2.onload = (ev2) => {
+          const text2 = ev2.target?.result as string;
+          if (text2) parseCSVText(text2);
+        };
+        reader2.readAsText(file, "ISO-8859-1");
+      } else {
+        parseCSVText(text);
       }
-
-      const sep = lines[0].includes(";") ? ";" : ",";
-      const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/"/g, ""));
-
-      const nameIdx = headers.findIndex(h => ["nome", "name", "contato"].includes(h));
-      const cpfIdx = headers.findIndex(h => ["cpf", "documento", "doc"].includes(h));
-      const whatsIdx = headers.findIndex(h => ["whatsapp", "whattsapp", "whatsap", "whatssapp", "wpp", "zap", "telefone", "phone", "tel", "fone"].includes(h));
-      const emailIdx = headers.findIndex(h => ["email", "e-mail"].includes(h));
-      const cepIdx = headers.findIndex(h => ["cep", "zip", "zipcode", "codigo_postal"].includes(h));
-      const addrIdx = headers.findIndex(h => ["endereco", "endereço", "address"].includes(h));
-      const nascIdx = headers.findIndex(h => ["data_nascimento", "nascimento", "aniversario", "aniversário"].includes(h));
-      const comoIdx = headers.findIndex(h => ["como_conheceu", "origem", "indicacao", "indicação"].includes(h));
-      const notasIdx = headers.findIndex(h => ["notas", "observacoes", "observações", "obs"].includes(h));
-
-      if (nameIdx === -1) {
-        setErrors(["Coluna 'nome' não encontrada. Use: nome;cpf;whatsapp;email;cep;endereco"]);
-        return;
-      }
-
-      const contacts: ParsedContact[] = [];
-      const errs: string[] = [];
-
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
-        const nome = cols[nameIdx]?.trim();
-        if (!nome || nome.length < 2) {
-          errs.push(`Linha ${i + 1}: nome inválido`);
-          continue;
-        }
-        contacts.push({
-          nome,
-          cpf: cpfIdx >= 0 ? cols[cpfIdx] || undefined : undefined,
-          whatsapp: whatsIdx >= 0 ? cols[whatsIdx] || undefined : undefined,
-          email: emailIdx >= 0 ? cols[emailIdx] || undefined : undefined,
-          cep: cepIdx >= 0 ? cols[cepIdx] || undefined : undefined,
-          endereco: addrIdx >= 0 ? cols[addrIdx] || undefined : undefined,
-          data_nascimento: nascIdx >= 0 ? cols[nascIdx] || undefined : undefined,
-          como_conheceu: comoIdx >= 0 ? cols[comoIdx] || undefined : undefined,
-          notas: notasIdx >= 0 ? cols[notasIdx] || undefined : undefined,
-        });
-      }
-
-      setParsed(contacts);
-      if (errs.length) setErrors(errs);
     };
     reader.readAsText(file, "UTF-8");
   };
