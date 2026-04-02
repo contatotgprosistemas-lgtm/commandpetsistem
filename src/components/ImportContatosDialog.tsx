@@ -11,10 +11,24 @@ interface ParsedContact {
   cpf?: string;
   whatsapp?: string;
   email?: string;
+  cep?: string;
   endereco?: string;
   data_nascimento?: string;
   como_conheceu?: string;
   notas?: string;
+}
+
+async function buscarCep(cep: string): Promise<string | null> {
+  const clean = cep.replace(/\D/g, "");
+  if (clean.length !== 8) return null;
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+    const data = await res.json();
+    if (!data.erro) {
+      return `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+    }
+  } catch {}
+  return null;
 }
 
 export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) {
@@ -52,13 +66,14 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
       const cpfIdx = headers.findIndex(h => ["cpf", "documento", "doc"].includes(h));
       const whatsIdx = headers.findIndex(h => ["whatsapp", "wpp", "zap", "telefone", "phone", "tel", "fone"].includes(h));
       const emailIdx = headers.findIndex(h => ["email", "e-mail"].includes(h));
+      const cepIdx = headers.findIndex(h => ["cep", "zip", "zipcode", "codigo_postal"].includes(h));
       const addrIdx = headers.findIndex(h => ["endereco", "endereço", "address"].includes(h));
       const nascIdx = headers.findIndex(h => ["data_nascimento", "nascimento", "aniversario", "aniversário"].includes(h));
       const comoIdx = headers.findIndex(h => ["como_conheceu", "origem", "indicacao", "indicação"].includes(h));
       const notasIdx = headers.findIndex(h => ["notas", "observacoes", "observações", "obs"].includes(h));
 
       if (nameIdx === -1) {
-        setErrors(["Coluna 'nome' não encontrada. Use: nome, telefone, whatsapp, email, endereco"]);
+        setErrors(["Coluna 'nome' não encontrada. Use: nome;cpf;whatsapp;email;cep;endereco"]);
         return;
       }
 
@@ -77,6 +92,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
           cpf: cpfIdx >= 0 ? cols[cpfIdx] || undefined : undefined,
           whatsapp: whatsIdx >= 0 ? cols[whatsIdx] || undefined : undefined,
           email: emailIdx >= 0 ? cols[emailIdx] || undefined : undefined,
+          cep: cepIdx >= 0 ? cols[cepIdx] || undefined : undefined,
           endereco: addrIdx >= 0 ? cols[addrIdx] || undefined : undefined,
           data_nascimento: nascIdx >= 0 ? cols[nascIdx] || undefined : undefined,
           como_conheceu: comoIdx >= 0 ? cols[comoIdx] || undefined : undefined,
@@ -109,19 +125,39 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
       const { data: prof } = await supabase.from("profiles").select("empresa_id").single();
       if (!prof?.empresa_id) throw new Error("Empresa não encontrada");
 
-      const rows = parsed.map(c => ({
-        empresa_id: prof.empresa_id!,
-        nome: c.nome,
-        cpf: c.cpf || null,
-        whatsapp: c.whatsapp || null,
-        email: c.email || null,
-        endereco: c.endereco || null,
-        data_nascimento: formatDate(c.data_nascimento),
-        como_conheceu: c.como_conheceu || null,
-        notas: c.notas || null,
-      }));
+      // Resolve CEPs to addresses in parallel (batch of 10 to avoid rate-limiting)
+      const cepsToResolve = new Map<string, string | null>();
+      const uniqueCeps = [...new Set(
+        parsed.filter(c => c.cep && !c.endereco).map(c => c.cep!.replace(/\D/g, "")).filter(c => c.length === 8)
+      )];
 
-      // Insert in batches of 100
+      for (let i = 0; i < uniqueCeps.length; i += 10) {
+        const batch = uniqueCeps.slice(i, i + 10);
+        const results = await Promise.all(batch.map(cep => buscarCep(cep)));
+        batch.forEach((cep, idx) => cepsToResolve.set(cep, results[idx]));
+      }
+
+      const rows = parsed.map(c => {
+        let endereco = c.endereco || null;
+        if (!endereco && c.cep) {
+          const cleanCep = c.cep.replace(/\D/g, "");
+          const resolved = cepsToResolve.get(cleanCep);
+          if (resolved) endereco = resolved;
+        }
+
+        return {
+          empresa_id: prof.empresa_id!,
+          nome: c.nome,
+          cpf: c.cpf || null,
+          whatsapp: c.whatsapp || null,
+          email: c.email || null,
+          endereco,
+          data_nascimento: formatDate(c.data_nascimento),
+          como_conheceu: c.como_conheceu || null,
+          notas: c.notas || null,
+        };
+      });
+
       for (let i = 0; i < rows.length; i += 100) {
         const batch = rows.slice(i, i + 100);
         const { error } = await supabase.from("clientes").insert(batch);
@@ -153,15 +189,13 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Instructions */}
           <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Formato esperado (CSV):</p>
-            <p className="font-mono break-all text-[10px] leading-relaxed">nome;cpf;whatsapp;email;endereco;data_nascimento;como_conheceu;notas</p>
+            <p className="font-mono break-all text-[10px] leading-relaxed">nome;cpf;whatsapp;email;cep;endereco;data_nascimento;como_conheceu;notas</p>
             <p>Separador: <strong>;</strong> ou <strong>,</strong> — Codificação: UTF-8</p>
-            <p className="text-muted-foreground">Apenas a coluna <strong>nome</strong> é obrigatória.</p>
+            <p className="text-muted-foreground">Apenas a coluna <strong>nome</strong> é obrigatória. Se informar o <strong>CEP</strong>, o endereço será preenchido automaticamente.</p>
           </div>
 
-          {/* File input */}
           <div>
             <input
               ref={fileRef}
@@ -180,7 +214,6 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
             </Button>
           </div>
 
-          {/* Errors */}
           {errors.length > 0 && (
             <div className="bg-destructive/10 rounded-md p-3 space-y-1">
               {errors.map((err, i) => (
@@ -192,7 +225,6 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
             </div>
           )}
 
-          {/* Preview */}
           {parsed.length > 0 && (
             <>
               <div className="flex items-center gap-2 text-sm">
@@ -204,7 +236,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
                   {parsed.slice(0, 50).map((c, i) => (
                     <div key={i} className="flex items-center justify-between text-xs px-2 py-1.5 rounded hover:bg-muted/50">
                       <span className="font-medium text-foreground">{c.nome}</span>
-                      <span className="text-muted-foreground font-mono">{c.whatsapp || "—"}</span>
+                      <span className="text-muted-foreground font-mono">{c.whatsapp || c.cep || "—"}</span>
                     </div>
                   ))}
                   {parsed.length > 50 && (
@@ -217,7 +249,6 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
             </>
           )}
 
-          {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button
