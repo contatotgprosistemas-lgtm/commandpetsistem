@@ -78,6 +78,7 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
         data_nascimento: data.data_nascimento || null,
         whatsapp: data.whatsapp || null,
         email: data.email || null,
+        cep: data.cep || null,
         endereco: enderecoCompleto || null,
         como_conheceu: data.como_conheceu || null,
         notas: data.notas || null,

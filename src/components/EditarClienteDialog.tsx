@@ -119,6 +119,7 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         data_nascimento: data.data_nascimento || null,
         whatsapp: data.whatsapp || null,
         email: data.email || null,
+        cep: data.cep || null,
         endereco: enderecoFinal,
         como_conheceu: data.como_conheceu || null,
         notas: data.notas || null,
