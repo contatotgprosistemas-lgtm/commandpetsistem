@@ -50,10 +50,14 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
       const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/"/g, ""));
 
       const nameIdx = headers.findIndex(h => ["nome", "name", "contato"].includes(h));
+      const cpfIdx = headers.findIndex(h => ["cpf", "documento", "doc"].includes(h));
       const phoneIdx = headers.findIndex(h => ["telefone", "phone", "tel", "fone"].includes(h));
       const whatsIdx = headers.findIndex(h => ["whatsapp", "wpp", "zap"].includes(h));
       const emailIdx = headers.findIndex(h => ["email", "e-mail"].includes(h));
       const addrIdx = headers.findIndex(h => ["endereco", "endereço", "address"].includes(h));
+      const nascIdx = headers.findIndex(h => ["data_nascimento", "nascimento", "aniversario", "aniversário"].includes(h));
+      const comoIdx = headers.findIndex(h => ["como_conheceu", "origem", "indicacao", "indicação"].includes(h));
+      const notasIdx = headers.findIndex(h => ["notas", "observacoes", "observações", "obs"].includes(h));
 
       if (nameIdx === -1) {
         setErrors(["Coluna 'nome' não encontrada. Use: nome, telefone, whatsapp, email, endereco"]);
