@@ -59,9 +59,14 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
       const weightIdx = headers.findIndex(h => ["peso", "weight", "kg"].includes(h));
       const ageIdx = headers.findIndex(h => ["idade", "age"].includes(h));
       const tutorIdx = headers.findIndex(h => ["tutor", "dono", "proprietario", "proprietário", "cliente", "owner"].includes(h));
+      const pelagemIdx = headers.findIndex(h => ["pelagem", "pelo", "coat"].includes(h));
+      const nascIdx = headers.findIndex(h => ["data_nascimento", "nascimento", "aniversario"].includes(h));
+      const compIdx = headers.findIndex(h => ["comportamento", "temperamento"].includes(h));
+      const medIdx = headers.findIndex(h => ["medicacoes", "medicações", "remedios", "remédios"].includes(h));
+      const restIdx = headers.findIndex(h => ["restricoes_alimentares", "restrições", "restricoes", "alimentacao"].includes(h));
 
       if (nameIdx === -1) {
-        setErrors(["Coluna 'nome' não encontrada. Use: nome, especie, raca, sexo, peso, idade, tutor"]);
+        setErrors(["Coluna 'nome' não encontrada. Use: nome, especie, raca, sexo, peso, idade, tutor, pelagem, data_nascimento, comportamento, medicacoes, restricoes_alimentares"]);
         return;
       }
 
