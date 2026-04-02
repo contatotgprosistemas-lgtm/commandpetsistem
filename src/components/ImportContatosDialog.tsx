@@ -204,7 +204,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
                   {parsed.slice(0, 50).map((c, i) => (
                     <div key={i} className="flex items-center justify-between text-xs px-2 py-1.5 rounded hover:bg-muted/50">
                       <span className="font-medium text-foreground">{c.nome}</span>
-                      <span className="text-muted-foreground font-mono">{c.whatsapp || c.telefone || "—"}</span>
+                      <span className="text-muted-foreground font-mono">{c.whatsapp || "—"}</span>
                     </div>
                   ))}
                   {parsed.length > 50 && (
