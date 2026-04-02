@@ -50,6 +50,27 @@ export default function SuperAdminPage() {
 
   useEffect(() => {
     fetchProfiles();
+
+    // Realtime: alert when new account is created
+    const channel = supabase
+      .channel('new-profiles')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'profiles' },
+        (payload) => {
+          const newProfile = payload.new as ProfileRow;
+          toast({
+            title: "Nova conta criada!",
+            description: `${newProfile.nome} (${newProfile.email || 'sem email'}) aguarda aprovação.`,
+          });
+          fetchProfiles();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const updateStatus = async (profileId: string, newStatus: string) => {
