@@ -151,6 +151,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
           cpf: c.cpf || null,
           whatsapp: c.whatsapp || null,
           email: c.email || null,
+          cep: c.cep || null,
           endereco,
           data_nascimento: formatDate(c.data_nascimento),
           como_conheceu: c.como_conheceu || null,

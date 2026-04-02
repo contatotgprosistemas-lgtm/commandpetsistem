@@ -387,6 +387,7 @@ export type Database = {
       clientes: {
         Row: {
           asaas_customer_id: string | null
+          cep: string | null
           como_conheceu: string | null
           cpf: string | null
           created_at: string
@@ -406,6 +407,7 @@ export type Database = {
         }
         Insert: {
           asaas_customer_id?: string | null
+          cep?: string | null
           como_conheceu?: string | null
           cpf?: string | null
           created_at?: string
@@ -425,6 +427,7 @@ export type Database = {
         }
         Update: {
           asaas_customer_id?: string | null
+          cep?: string | null
           como_conheceu?: string | null
           cpf?: string | null
           created_at?: string
