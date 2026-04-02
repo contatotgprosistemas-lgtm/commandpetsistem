@@ -53,7 +53,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", especie: "Cachorro", raca: "", sexo: "", peso: "", pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "" },
+    defaultValues: { nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "" },
   });
 
   const dataNascimento = form.watch("data_nascimento");
