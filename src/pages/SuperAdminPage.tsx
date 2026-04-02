@@ -22,6 +22,7 @@ interface ProfileRow {
   aprovado: boolean;
   created_at: string;
   user_id: string;
+  empresa_nome: string | null;
 }
 
 const statusColors: Record<string, string> = {
