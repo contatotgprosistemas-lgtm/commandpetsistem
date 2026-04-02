@@ -102,7 +102,6 @@ export default function ClientsPage() {
   const filtered = clientes?.filter(c =>
     !searchQuery ||
     c.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.telefone?.includes(searchQuery) ||
     c.whatsapp?.includes(searchQuery) ||
     c.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
