@@ -8,10 +8,14 @@ import { toast } from "sonner";
 
 interface ParsedContact {
   nome: string;
+  cpf?: string;
   telefone?: string;
   whatsapp?: string;
   email?: string;
   endereco?: string;
+  data_nascimento?: string;
+  como_conheceu?: string;
+  notas?: string;
 }
 
 export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) {
