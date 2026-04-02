@@ -365,6 +365,7 @@ export default function SuperAdminPage() {
                       <TableRow>
                         <TableHead>Nome</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Empresa</TableHead>
                         <TableHead>Cargo</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Criado em</TableHead>
