@@ -104,6 +104,18 @@ export default function SuperAdminPage() {
     }
   };
 
+  const deleteUser = async (userId: string) => {
+    const { data, error } = await supabase.functions.invoke("excluir-usuario", {
+      body: { user_id: userId },
+    });
+    if (error || data?.error) {
+      toast({ title: data?.error || "Erro ao excluir usuário", variant: "destructive" });
+    } else {
+      toast({ title: "Usuário excluído com sucesso!" });
+      fetchProfiles();
+    }
+  };
+
   const pendingProfiles = profiles.filter((p) => !p.aprovado && p.status !== "bloqueado");
   const approvedProfiles = profiles.filter((p) => p.aprovado);
 
