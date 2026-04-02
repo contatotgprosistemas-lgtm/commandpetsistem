@@ -113,7 +113,6 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
         empresa_id: prof.empresa_id!,
         nome: c.nome,
         cpf: c.cpf || null,
-        telefone: c.telefone || null,
         whatsapp: c.whatsapp || null,
         email: c.email || null,
         endereco: c.endereco || null,
