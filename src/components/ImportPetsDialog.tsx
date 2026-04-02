@@ -19,6 +19,7 @@ interface ParsedPet {
   comportamento?: string;
   medicacoes?: string;
   restricoes_alimentares?: string;
+  cor?: string;
 }
 
 export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
