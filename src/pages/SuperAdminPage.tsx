@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, Search, Loader2, Shield, Activity, CheckCircle, XCircle, Clock, Trash2 } from "lucide-react";
+import { Users, UserCheck, UserX, Search, Loader2, Shield, Activity, CheckCircle, XCircle, Clock, Trash2, LogIn } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -134,6 +134,18 @@ export default function SuperAdminPage() {
     } else {
       toast({ title: "Usuário excluído com sucesso!" });
       fetchProfiles();
+    }
+  };
+
+  const impersonateUser = async (userId: string, nome: string) => {
+    toast({ title: "Gerando acesso...", description: `Acessando conta de ${nome}` });
+    const { data, error } = await supabase.functions.invoke("impersonate-user", {
+      body: { user_id: userId },
+    });
+    if (error || data?.error) {
+      toast({ title: data?.error || "Erro ao acessar conta", variant: "destructive" });
+    } else if (data?.url) {
+      window.open(data.url, "_blank");
     }
   };
 
@@ -386,7 +398,11 @@ export default function SuperAdminPage() {
                             {new Date(p.created_at).toLocaleDateString("pt-BR")}
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 items-center">
+                              <Button variant="ghost" size="sm" className="gap-1 text-primary hover:text-primary" onClick={() => impersonateUser(p.user_id, p.nome)} title="Acessar conta deste usuário">
+                                <LogIn className="h-4 w-4" />
+                                Acessar
+                              </Button>
                               <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => updateStatus(p.id, "bloqueado")}>
                                 Bloquear
                               </Button>
