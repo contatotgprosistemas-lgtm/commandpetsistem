@@ -43,9 +43,14 @@ export default function SuperAdminPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select("*, empresas(nome_empresa)")
       .order("created_at", { ascending: false });
-    if (!error && data) setProfiles(data as ProfileRow[]);
+    if (!error && data) {
+      setProfiles(data.map((p: any) => ({
+        ...p,
+        empresa_nome: p.empresas?.nome_empresa || null,
+      })) as ProfileRow[]);
+    }
     setLoading(false);
   };
 
