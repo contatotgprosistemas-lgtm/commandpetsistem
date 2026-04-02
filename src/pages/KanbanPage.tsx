@@ -29,7 +29,7 @@ type FunilItem = {
   valor_estimado: number | null;
   notas: string | null;
   updated_at: string;
-  cliente?: { id: string; nome: string; telefone: string | null; email: string | null; whatsapp: string | null } | null;
+  cliente?: { id: string; nome: string; email: string | null; whatsapp: string | null } | null;
 };
 
 export default function KanbanPage() {
