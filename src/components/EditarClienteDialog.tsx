@@ -64,7 +64,7 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         data_nascimento: cliente.data_nascimento || "",
         whatsapp: cliente.whatsapp || "",
         email: cliente.email || "",
-        cep: "",
+        cep: cliente.cep || "",
         endereco: cliente.endereco || "",
         numero: "",
         como_conheceu: cliente.como_conheceu || "",
