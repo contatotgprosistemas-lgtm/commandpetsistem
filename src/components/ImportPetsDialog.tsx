@@ -214,7 +214,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
         <div className="space-y-4">
           <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Formato esperado (CSV):</p>
-            <p className="font-mono break-all text-[10px] leading-relaxed">nome;especie;raca;sexo;peso;idade;tutor;pelagem;data_nascimento;comportamento;medicacoes;restricoes_alimentares</p>
+            <p className="font-mono break-all text-[10px] leading-relaxed">nome;especie;raca;cor;sexo;peso;idade;tutor;pelagem;data_nascimento;comportamento;medicacoes;restricoes_alimentares</p>
             <p>Separador: <strong>;</strong> ou <strong>,</strong> — Codificação: UTF-8</p>
             <p className="text-warning">O nome do tutor deve corresponder a um contato já cadastrado.</p>
           </div>

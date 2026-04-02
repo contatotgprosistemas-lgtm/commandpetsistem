@@ -449,6 +449,12 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch, fotoUrl, onFoto
             <FormControl><Input placeholder="Ex: Golden" {...field} /></FormControl>
           </FormItem>
         )} />
+        <FormField control={control} name={`pets.${idx}.cor`} render={({ field }) => (
+          <FormItem>
+            <FormLabel>Cor</FormLabel>
+            <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
+          </FormItem>
+        )} />
         <FormField control={control} name={`pets.${idx}.sexo`} render={({ field }) => (
           <FormItem>
             <FormLabel>Sexo</FormLabel>

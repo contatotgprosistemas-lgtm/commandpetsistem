@@ -149,6 +149,12 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
                 </FormItem>
               )} />
             </div>
+            <FormField control={form.control} name="cor" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cor</FormLabel>
+                <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
+              </FormItem>
+            )} />
             <div className="grid grid-cols-3 gap-4">
               <FormField control={form.control} name="sexo" render={({ field }) => (
                 <FormItem>
