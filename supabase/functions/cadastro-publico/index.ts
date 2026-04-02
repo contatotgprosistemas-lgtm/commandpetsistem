@@ -86,6 +86,7 @@ Deno.serve(async (req) => {
         raiva_data: p.raiva_data || null,
         medicacoes: p.medicacoes?.trim?.().slice(0, 500) || null,
         foto_url: p.foto_url?.trim?.().slice(0, 1000) || null,
+        cor: p.cor?.trim?.().slice(0, 100) || null,
       })).filter((p: any) => p.nome.length >= 1);
 
       if (petRows.length > 0) {
