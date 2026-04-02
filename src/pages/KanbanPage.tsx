@@ -50,7 +50,7 @@ export default function KanbanPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("funil_vendas")
-        .select("*, cliente:cliente_id(id, nome, telefone, email, whatsapp)")
+        .select("*, cliente:cliente_id(id, nome, email, whatsapp)")
         .eq("empresa_id", empresaId!)
         .order("updated_at", { ascending: false });
       if (error) throw error;
