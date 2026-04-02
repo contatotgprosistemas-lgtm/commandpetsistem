@@ -9,7 +9,6 @@ import { toast } from "sonner";
 interface ParsedContact {
   nome: string;
   cpf?: string;
-  telefone?: string;
   whatsapp?: string;
   email?: string;
   endereco?: string;
@@ -51,8 +50,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
 
       const nameIdx = headers.findIndex(h => ["nome", "name", "contato"].includes(h));
       const cpfIdx = headers.findIndex(h => ["cpf", "documento", "doc"].includes(h));
-      const phoneIdx = headers.findIndex(h => ["telefone", "phone", "tel", "fone"].includes(h));
-      const whatsIdx = headers.findIndex(h => ["whatsapp", "wpp", "zap"].includes(h));
+      const whatsIdx = headers.findIndex(h => ["whatsapp", "wpp", "zap", "telefone", "phone", "tel", "fone"].includes(h));
       const emailIdx = headers.findIndex(h => ["email", "e-mail"].includes(h));
       const addrIdx = headers.findIndex(h => ["endereco", "endereço", "address"].includes(h));
       const nascIdx = headers.findIndex(h => ["data_nascimento", "nascimento", "aniversario", "aniversário"].includes(h));
@@ -77,7 +75,6 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
         contacts.push({
           nome,
           cpf: cpfIdx >= 0 ? cols[cpfIdx] || undefined : undefined,
-          telefone: phoneIdx >= 0 ? cols[phoneIdx] || undefined : undefined,
           whatsapp: whatsIdx >= 0 ? cols[whatsIdx] || undefined : undefined,
           email: emailIdx >= 0 ? cols[emailIdx] || undefined : undefined,
           endereco: addrIdx >= 0 ? cols[addrIdx] || undefined : undefined,
@@ -116,7 +113,6 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
         empresa_id: prof.empresa_id!,
         nome: c.nome,
         cpf: c.cpf || null,
-        telefone: c.telefone || null,
         whatsapp: c.whatsapp || null,
         email: c.email || null,
         endereco: c.endereco || null,
@@ -160,7 +156,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
           {/* Instructions */}
           <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Formato esperado (CSV):</p>
-            <p className="font-mono break-all text-[10px] leading-relaxed">nome;cpf;telefone;whatsapp;email;endereco;data_nascimento;como_conheceu;notas</p>
+            <p className="font-mono break-all text-[10px] leading-relaxed">nome;cpf;whatsapp;email;endereco;data_nascimento;como_conheceu;notas</p>
             <p>Separador: <strong>;</strong> ou <strong>,</strong> — Codificação: UTF-8</p>
             <p className="text-muted-foreground">Apenas a coluna <strong>nome</strong> é obrigatória.</p>
           </div>
@@ -208,7 +204,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
                   {parsed.slice(0, 50).map((c, i) => (
                     <div key={i} className="flex items-center justify-between text-xs px-2 py-1.5 rounded hover:bg-muted/50">
                       <span className="font-medium text-foreground">{c.nome}</span>
-                      <span className="text-muted-foreground font-mono">{c.whatsapp || c.telefone || "—"}</span>
+                      <span className="text-muted-foreground font-mono">{c.whatsapp || "—"}</span>
                     </div>
                   ))}
                   {parsed.length > 50 && (

@@ -102,7 +102,6 @@ export default function ClientsPage() {
   const filtered = clientes?.filter(c =>
     !searchQuery ||
     c.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.telefone?.includes(searchQuery) ||
     c.whatsapp?.includes(searchQuery) ||
     c.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -152,7 +151,7 @@ export default function ClientsPage() {
       <div className="bg-card rounded-lg shadow-card">
         <div className="grid grid-cols-[1fr_150px_200px_120px_120px] px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
           <span>Nome</span>
-          <span>Telefone</span>
+          <span>WhatsApp</span>
           <span>Email</span>
           <span>Tags</span>
           <span></span>
@@ -183,7 +182,7 @@ export default function ClientsPage() {
                 </div>
                 <span className="font-mono-tabular text-sm text-muted-foreground flex items-center gap-1.5">
                   <Phone className="h-3 w-3" strokeWidth={1.5} />
-                  {c.whatsapp || c.telefone || "—"}
+                  {c.whatsapp || "—"}
                 </span>
                 <span className="text-sm text-muted-foreground flex items-center gap-1.5 truncate">
                   <Mail className="h-3 w-3 shrink-0" strokeWidth={1.5} />
@@ -213,9 +212,9 @@ export default function ClientsPage() {
                   >
                     <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
                   </button>
-                  {(c.whatsapp || c.telefone) && (
+                  {c.whatsapp && (
                     <button
-                      onClick={() => navigate(`/crm?phone=${encodeURIComponent(c.whatsapp || c.telefone || "")}`)}
+                      onClick={() => navigate(`/crm?phone=${encodeURIComponent(c.whatsapp || "")}`)}
                       className="h-7 w-7 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
                       title="Abrir conversa no CRM"
                     >
