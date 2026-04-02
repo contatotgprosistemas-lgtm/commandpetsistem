@@ -60,6 +60,7 @@ const petSchema = z.object({
   nome: z.string().trim().min(1, "Nome do pet é obrigatório").max(100),
   especie: z.string().min(1),
   raca: z.string().trim().max(100).optional().or(z.literal("")),
+  cor: z.string().trim().max(100).optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
   data_nascimento: z.string().optional().or(z.literal("")),
