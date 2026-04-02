@@ -212,9 +212,9 @@ export default function ClientsPage() {
                   >
                     <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
                   </button>
-                  {(c.whatsapp || c.telefone) && (
+                  {c.whatsapp && (
                     <button
-                      onClick={() => navigate(`/crm?phone=${encodeURIComponent(c.whatsapp || c.telefone || "")}`)}
+                      onClick={() => navigate(`/crm?phone=${encodeURIComponent(c.whatsapp || "")}`)}
                       className="h-7 w-7 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
                       title="Abrir conversa no CRM"
                     >
