@@ -207,7 +207,7 @@ export default function KanbanPage() {
                   <SelectContent>
                     {clientesDisponiveis?.map(c => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.nome} {c.telefone ? `(${c.telefone})` : ""}
+                        {c.nome} {c.whatsapp ? `(${c.whatsapp})` : ""}
                       </SelectItem>
                     ))}
                     {!clientesDisponiveis?.length && (
