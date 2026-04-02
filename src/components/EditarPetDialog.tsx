@@ -26,6 +26,7 @@ const schema = z.object({
   nome: z.string().trim().min(1, "Nome é obrigatório").max(100),
   especie: z.string().min(1),
   raca: z.string().trim().max(100).optional().or(z.literal("")),
+  cor: z.string().trim().max(100).optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
   data_nascimento: z.date().optional(),
@@ -52,7 +53,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", especie: "Cachorro", raca: "", sexo: "", peso: "", pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "" },
+    defaultValues: { nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "" },
   });
 
   const dataNascimento = form.watch("data_nascimento");
@@ -64,6 +65,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         nome: pet.nome || "",
         especie: pet.especie || "Cachorro",
         raca: pet.raca || "",
+        cor: pet.cor || "",
         sexo: pet.sexo || "",
         peso: pet.peso != null ? String(pet.peso) : "",
         data_nascimento: pet.data_nascimento ? new Date(pet.data_nascimento + "T00:00:00") : undefined,
@@ -86,6 +88,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         nome: data.nome,
         especie: data.especie,
         raca: data.raca || null,
+        cor: data.cor || null,
         sexo: data.sexo || null,
         peso: data.peso ? parseFloat(data.peso) : null,
         data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
@@ -146,6 +149,12 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
                 </FormItem>
               )} />
             </div>
+            <FormField control={form.control} name="cor" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cor</FormLabel>
+                <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
+              </FormItem>
+            )} />
             <div className="grid grid-cols-3 gap-4">
               <FormField control={form.control} name="sexo" render={({ field }) => (
                 <FormItem>

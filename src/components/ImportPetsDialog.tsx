@@ -19,6 +19,7 @@ interface ParsedPet {
   comportamento?: string;
   medicacoes?: string;
   restricoes_alimentares?: string;
+  cor?: string;
 }
 
 export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
@@ -64,9 +65,10 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
       const compIdx = headers.findIndex(h => ["comportamento", "temperamento"].includes(h));
       const medIdx = headers.findIndex(h => ["medicacoes", "medicações", "remedios", "remédios"].includes(h));
       const restIdx = headers.findIndex(h => ["restricoes_alimentares", "restrições", "restricoes", "alimentacao"].includes(h));
+      const corIdx = headers.findIndex(h => ["cor", "color"].includes(h));
 
       if (nameIdx === -1) {
-        setErrors(["Coluna 'nome' não encontrada. Use: nome, especie, raca, sexo, peso, idade, tutor, pelagem, data_nascimento, comportamento, medicacoes, restricoes_alimentares"]);
+        setErrors(["Coluna 'nome' não encontrada. Use: nome, especie, raca, cor, sexo, peso, idade, tutor, pelagem, data_nascimento, comportamento, medicacoes, restricoes_alimentares"]);
         return;
       }
 
@@ -93,6 +95,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           comportamento: compIdx >= 0 ? cols[compIdx] || undefined : undefined,
           medicacoes: medIdx >= 0 ? cols[medIdx] || undefined : undefined,
           restricoes_alimentares: restIdx >= 0 ? cols[restIdx] || undefined : undefined,
+          cor: corIdx >= 0 ? cols[corIdx] || undefined : undefined,
         });
       }
 
@@ -122,6 +125,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
         nome: string;
         especie: string;
         raca: string | null;
+        cor: string | null;
         sexo: string | null;
         peso: number | null;
         idade: string | null;
@@ -162,6 +166,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           comportamento: pet.comportamento || null,
           medicacoes: pet.medicacoes || null,
           restricoes_alimentares: pet.restricoes_alimentares || null,
+          cor: pet.cor || null,
         });
       }
 
@@ -210,7 +215,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
         <div className="space-y-4">
           <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Formato esperado (CSV):</p>
-            <p className="font-mono break-all text-[10px] leading-relaxed">nome;especie;raca;sexo;peso;idade;tutor;pelagem;data_nascimento;comportamento;medicacoes;restricoes_alimentares</p>
+            <p className="font-mono break-all text-[10px] leading-relaxed">nome;especie;raca;cor;sexo;peso;idade;tutor;pelagem;data_nascimento;comportamento;medicacoes;restricoes_alimentares</p>
             <p>Separador: <strong>;</strong> ou <strong>,</strong> — Codificação: UTF-8</p>
             <p className="text-warning">O nome do tutor deve corresponder a um contato já cadastrado.</p>
           </div>

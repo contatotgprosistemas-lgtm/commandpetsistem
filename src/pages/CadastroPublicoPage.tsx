@@ -60,6 +60,7 @@ const petSchema = z.object({
   nome: z.string().trim().min(1, "Nome do pet é obrigatório").max(100),
   especie: z.string().min(1),
   raca: z.string().trim().max(100).optional().or(z.literal("")),
+  cor: z.string().trim().max(100).optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
   data_nascimento: z.string().optional().or(z.literal("")),
@@ -116,7 +117,7 @@ function PetVacinasFields({ control, idx }: { control: any; idx: number }) {
 }
 
 const defaultPet = {
-  nome: "", especie: "Cachorro", raca: "", sexo: "", peso: "", pelagem: "",
+  nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", pelagem: "",
   comportamento: "", restricoes_alimentares: "", medicacoes: "",
   antiparasitario: "", v10: "", raiva: "",
 };
@@ -446,6 +447,12 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch, fotoUrl, onFoto
           <FormItem>
             <FormLabel>Raça</FormLabel>
             <FormControl><Input placeholder="Ex: Golden" {...field} /></FormControl>
+          </FormItem>
+        )} />
+        <FormField control={control} name={`pets.${idx}.cor`} render={({ field }) => (
+          <FormItem>
+            <FormLabel>Cor</FormLabel>
+            <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
           </FormItem>
         )} />
         <FormField control={control} name={`pets.${idx}.sexo`} render={({ field }) => (

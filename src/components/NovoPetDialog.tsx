@@ -27,6 +27,7 @@ const schema = z.object({
   nome: z.string().trim().min(1, "Nome é obrigatório").max(100),
   especie: z.string().min(1, "Espécie é obrigatória"),
   raca: z.string().trim().max(100).optional().or(z.literal("")),
+  cor: z.string().trim().max(100).optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
   data_nascimento: z.date().optional(),
@@ -54,7 +55,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      nome: "", especie: "Cachorro", raca: "", sexo: "", peso: "", cliente_id: "",
+      nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", cliente_id: "",
       pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "",
       antiparasitario: "", v10: "", raiva: "",
     },
@@ -91,6 +92,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
         nome: data.nome,
         especie: data.especie,
         raca: data.raca || null,
+        cor: data.cor || null,
         sexo: data.sexo || null,
         peso: data.peso ? parseFloat(data.peso) : null,
         data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
@@ -184,6 +186,13 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
                 </FormItem>
               )} />
             </div>
+            <FormField control={form.control} name="cor" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cor</FormLabel>
+                <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
             <div className="grid grid-cols-3 gap-4">
               <FormField control={form.control} name="sexo" render={({ field }) => (
                 <FormItem>
