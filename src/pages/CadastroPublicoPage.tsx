@@ -105,7 +105,7 @@ function PetVacinasFields({ control, idx }: { control: any; idx: number }) {
           <FormField control={control} name={v.dataName} render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input type="date" placeholder="dd/mm/aaaa" {...field} />
+                <DateInput value={field.value} onChange={field.onChange} />
               </FormControl>
             </FormItem>
           )} />
