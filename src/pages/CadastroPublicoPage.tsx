@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { z } from "zod";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -11,6 +11,40 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+function applyDateMask(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function brDateToIso(val: string): string {
+  const s = val.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    const [d, m, y] = s.split("/");
+    return `${y}-${m}-${d}`;
+  }
+  return "";
+}
+
+function DateInput({ value, onChange, placeholder = "DD/MM/AAAA" }: { value?: string; onChange: (val: string) => void; placeholder?: string }) {
+  const displayVal = value && /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}`
+    : value || "";
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = applyDateMask(e.target.value);
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(masked)) {
+      onChange(brDateToIso(masked));
+    } else {
+      onChange(masked);
+    }
+  }, [onChange]);
+
+  return <Input value={displayVal} onChange={handleChange} placeholder={placeholder} maxLength={10} />;
+}
 
 function calcularIdade(nascimento: string): string {
   if (!nascimento) return "";
@@ -71,7 +105,7 @@ function PetVacinasFields({ control, idx }: { control: any; idx: number }) {
           <FormField control={control} name={v.dataName} render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input type="date" placeholder="dd/mm/aaaa" {...field} />
+                <DateInput value={field.value} onChange={field.onChange} />
               </FormControl>
             </FormItem>
           )} />
@@ -213,7 +247,7 @@ export default function CadastroPublicoPage() {
                   <FormItem>
                     <FormLabel>Data de Nascimento</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DateInput value={field.value} onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -471,7 +505,7 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch, fotoUrl, onFoto
           <FormItem>
             <FormLabel>Data de Nascimento</FormLabel>
             <FormControl>
-              <Input type="date" {...field} />
+              <DateInput value={field.value} onChange={field.onChange} />
             </FormControl>
           </FormItem>
         )} />
