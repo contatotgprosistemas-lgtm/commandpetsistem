@@ -398,7 +398,11 @@ export default function SuperAdminPage() {
                             {new Date(p.created_at).toLocaleDateString("pt-BR")}
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 items-center">
+                              <Button variant="ghost" size="sm" className="gap-1 text-primary hover:text-primary" onClick={() => impersonateUser(p.user_id, p.nome)} title="Acessar conta deste usuário">
+                                <LogIn className="h-4 w-4" />
+                                Acessar
+                              </Button>
                               <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => updateStatus(p.id, "bloqueado")}>
                                 Bloquear
                               </Button>
