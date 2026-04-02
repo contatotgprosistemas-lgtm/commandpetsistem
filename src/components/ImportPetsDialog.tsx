@@ -202,7 +202,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           Importar CSV
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Importar Pets</DialogTitle>
         </DialogHeader>

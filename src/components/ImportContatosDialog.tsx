@@ -140,7 +140,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
           Importar CSV
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Importar Contatos</DialogTitle>
         </DialogHeader>
