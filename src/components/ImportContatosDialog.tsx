@@ -93,6 +93,17 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
     reader.readAsText(file, "UTF-8");
   };
 
+  function formatDate(val: string | undefined): string | null {
+    if (!val) return null;
+    const s = val.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+      const [d, m, y] = s.split("/");
+      return `${y}-${m}-${d}`;
+    }
+    return null;
+  }
+
   const handleImport = async () => {
     if (!parsed.length) return;
     setImporting(true);
@@ -109,7 +120,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
         whatsapp: c.whatsapp || null,
         email: c.email || null,
         endereco: c.endereco || null,
-        data_nascimento: c.data_nascimento || null,
+        data_nascimento: formatDate(c.data_nascimento),
         como_conheceu: c.como_conheceu || null,
         notas: c.notas || null,
       }));
