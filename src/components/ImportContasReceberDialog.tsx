@@ -21,11 +21,11 @@ export function ImportContasReceberDialog({ open, onOpenChange, onSuccess }: Pro
 
   function downloadTemplate() {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["descricao", "valor", "vencimento", "categoria", "cliente_nome"],
-      ["Mensalidade Jan", 150.00, "2025-01-15", "Serviços", "João Silva"],
-      ["Banho e Tosa", 80.00, "2025-01-20", "Serviços", "Maria Santos"],
+      ["descricao", "valor", "vencimento", "categoria", "cliente_nome", "observacao_baixa"],
+      ["Mensalidade Jan", 150.00, "2025-01-15", "Serviços", "João Silva", ""],
+      ["Banho e Tosa", 80.00, "2025-01-20", "Serviços", "Maria Santos", "Pagamento via Pix"],
     ]);
-    ws["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 20 }];
+    ws["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Contas a Receber");
     XLSX.writeFile(wb, "modelo_contas_receber.xlsx");
