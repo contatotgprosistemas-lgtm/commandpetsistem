@@ -152,6 +152,11 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           peso: pet.peso ? parseFloat(pet.peso) || null : null,
           idade: pet.idade || null,
           cliente_id: clienteId,
+          pelagem: pet.pelagem || null,
+          data_nascimento: pet.data_nascimento || null,
+          comportamento: pet.comportamento || null,
+          medicacoes: pet.medicacoes || null,
+          restricoes_alimentares: pet.restricoes_alimentares || null,
         });
       }
 

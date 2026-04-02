@@ -104,10 +104,14 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
       const rows = parsed.map(c => ({
         empresa_id: prof.empresa_id!,
         nome: c.nome,
+        cpf: c.cpf || null,
         telefone: c.telefone || null,
         whatsapp: c.whatsapp || null,
         email: c.email || null,
         endereco: c.endereco || null,
+        data_nascimento: c.data_nascimento || null,
+        como_conheceu: c.como_conheceu || null,
+        notas: c.notas || null,
       }));
 
       // Insert in batches of 100

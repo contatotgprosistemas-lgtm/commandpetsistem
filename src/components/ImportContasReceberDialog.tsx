@@ -48,12 +48,18 @@ export function ImportContasReceberDialog({ open, onOpenChange, onSuccess }: Pro
     if (!profile?.empresa_id || preview.length === 0) return;
     setImporting(true);
     try {
+      // Load clients to match names
+      const { data: clientes } = await supabase.from("clientes").select("id, nome").eq("empresa_id", profile.empresa_id!);
+      const clienteMap = new Map((clientes || []).map(c => [c.nome.toLowerCase().trim(), c.id]));
+
       const records = preview.map((row) => ({
         empresa_id: profile.empresa_id!,
         descricao: String(row.descricao || ""),
         valor: Number(row.valor) || 0,
         vencimento: formatDate(row.vencimento),
         categoria: row.categoria || null,
+        cliente_id: row.cliente_nome ? clienteMap.get(String(row.cliente_nome).toLowerCase().trim()) || null : null,
+        observacao_baixa: row.observacao_baixa ? String(row.observacao_baixa) : null,
         status: "pendente",
       }));
 

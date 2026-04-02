@@ -55,6 +55,7 @@ export function ImportContasPagarDialog({ open, onOpenChange, onSuccess }: Props
         vencimento: formatDate(row.vencimento),
         fornecedor: String(row.fornecedor || "—"),
         categoria: row.categoria || null,
+        parcelas: row.parcelas ? Number(row.parcelas) || 1 : 1,
         status: "pendente",
       }));
 
