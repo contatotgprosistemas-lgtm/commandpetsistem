@@ -156,7 +156,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
           {/* Instructions */}
           <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Formato esperado (CSV):</p>
-            <p className="font-mono break-all text-[10px] leading-relaxed">nome;cpf;telefone;whatsapp;email;endereco;data_nascimento;como_conheceu;notas</p>
+            <p className="font-mono break-all text-[10px] leading-relaxed">nome;cpf;whatsapp;email;endereco;data_nascimento;como_conheceu;notas</p>
             <p>Separador: <strong>;</strong> ou <strong>,</strong> — Codificação: UTF-8</p>
             <p className="text-muted-foreground">Apenas a coluna <strong>nome</strong> é obrigatória.</p>
           </div>
