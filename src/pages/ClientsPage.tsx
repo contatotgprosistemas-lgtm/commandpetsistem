@@ -151,7 +151,7 @@ export default function ClientsPage() {
       <div className="bg-card rounded-lg shadow-card">
         <div className="grid grid-cols-[1fr_150px_200px_120px_120px] px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
           <span>Nome</span>
-          <span>Telefone</span>
+          <span>WhatsApp</span>
           <span>Email</span>
           <span>Tags</span>
           <span></span>
