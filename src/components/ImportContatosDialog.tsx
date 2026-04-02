@@ -8,10 +8,14 @@ import { toast } from "sonner";
 
 interface ParsedContact {
   nome: string;
+  cpf?: string;
   telefone?: string;
   whatsapp?: string;
   email?: string;
   endereco?: string;
+  data_nascimento?: string;
+  como_conheceu?: string;
+  notas?: string;
 }
 
 export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) {
@@ -46,10 +50,14 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
       const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/"/g, ""));
 
       const nameIdx = headers.findIndex(h => ["nome", "name", "contato"].includes(h));
+      const cpfIdx = headers.findIndex(h => ["cpf", "documento", "doc"].includes(h));
       const phoneIdx = headers.findIndex(h => ["telefone", "phone", "tel", "fone"].includes(h));
       const whatsIdx = headers.findIndex(h => ["whatsapp", "wpp", "zap"].includes(h));
       const emailIdx = headers.findIndex(h => ["email", "e-mail"].includes(h));
       const addrIdx = headers.findIndex(h => ["endereco", "endereço", "address"].includes(h));
+      const nascIdx = headers.findIndex(h => ["data_nascimento", "nascimento", "aniversario", "aniversário"].includes(h));
+      const comoIdx = headers.findIndex(h => ["como_conheceu", "origem", "indicacao", "indicação"].includes(h));
+      const notasIdx = headers.findIndex(h => ["notas", "observacoes", "observações", "obs"].includes(h));
 
       if (nameIdx === -1) {
         setErrors(["Coluna 'nome' não encontrada. Use: nome, telefone, whatsapp, email, endereco"]);
@@ -68,10 +76,14 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
         }
         contacts.push({
           nome,
+          cpf: cpfIdx >= 0 ? cols[cpfIdx] || undefined : undefined,
           telefone: phoneIdx >= 0 ? cols[phoneIdx] || undefined : undefined,
           whatsapp: whatsIdx >= 0 ? cols[whatsIdx] || undefined : undefined,
           email: emailIdx >= 0 ? cols[emailIdx] || undefined : undefined,
           endereco: addrIdx >= 0 ? cols[addrIdx] || undefined : undefined,
+          data_nascimento: nascIdx >= 0 ? cols[nascIdx] || undefined : undefined,
+          como_conheceu: comoIdx >= 0 ? cols[comoIdx] || undefined : undefined,
+          notas: notasIdx >= 0 ? cols[notasIdx] || undefined : undefined,
         });
       }
 
@@ -92,10 +104,14 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
       const rows = parsed.map(c => ({
         empresa_id: prof.empresa_id!,
         nome: c.nome,
+        cpf: c.cpf || null,
         telefone: c.telefone || null,
         whatsapp: c.whatsapp || null,
         email: c.email || null,
         endereco: c.endereco || null,
+        data_nascimento: c.data_nascimento || null,
+        como_conheceu: c.como_conheceu || null,
+        notas: c.notas || null,
       }));
 
       // Insert in batches of 100
@@ -133,7 +149,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
           {/* Instructions */}
           <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Formato esperado (CSV):</p>
-            <p className="font-mono">nome;telefone;whatsapp;email;endereco</p>
+            <p className="font-mono">nome;cpf;telefone;whatsapp;email;endereco;data_nascimento;como_conheceu;notas</p>
             <p>Separador: <strong>;</strong> ou <strong>,</strong> — Codificação: UTF-8</p>
           </div>
 

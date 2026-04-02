@@ -14,6 +14,11 @@ interface ParsedPet {
   peso?: string;
   idade?: string;
   tutor_nome?: string;
+  pelagem?: string;
+  data_nascimento?: string;
+  comportamento?: string;
+  medicacoes?: string;
+  restricoes_alimentares?: string;
 }
 
 export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
@@ -54,9 +59,14 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
       const weightIdx = headers.findIndex(h => ["peso", "weight", "kg"].includes(h));
       const ageIdx = headers.findIndex(h => ["idade", "age"].includes(h));
       const tutorIdx = headers.findIndex(h => ["tutor", "dono", "proprietario", "proprietário", "cliente", "owner"].includes(h));
+      const pelagemIdx = headers.findIndex(h => ["pelagem", "pelo", "coat"].includes(h));
+      const nascIdx = headers.findIndex(h => ["data_nascimento", "nascimento", "aniversario"].includes(h));
+      const compIdx = headers.findIndex(h => ["comportamento", "temperamento"].includes(h));
+      const medIdx = headers.findIndex(h => ["medicacoes", "medicações", "remedios", "remédios"].includes(h));
+      const restIdx = headers.findIndex(h => ["restricoes_alimentares", "restrições", "restricoes", "alimentacao"].includes(h));
 
       if (nameIdx === -1) {
-        setErrors(["Coluna 'nome' não encontrada. Use: nome, especie, raca, sexo, peso, idade, tutor"]);
+        setErrors(["Coluna 'nome' não encontrada. Use: nome, especie, raca, sexo, peso, idade, tutor, pelagem, data_nascimento, comportamento, medicacoes, restricoes_alimentares"]);
         return;
       }
 
@@ -78,6 +88,11 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           peso: weightIdx >= 0 ? cols[weightIdx] || undefined : undefined,
           idade: ageIdx >= 0 ? cols[ageIdx] || undefined : undefined,
           tutor_nome: tutorIdx >= 0 ? cols[tutorIdx] || undefined : undefined,
+          pelagem: pelagemIdx >= 0 ? cols[pelagemIdx] || undefined : undefined,
+          data_nascimento: nascIdx >= 0 ? cols[nascIdx] || undefined : undefined,
+          comportamento: compIdx >= 0 ? cols[compIdx] || undefined : undefined,
+          medicacoes: medIdx >= 0 ? cols[medIdx] || undefined : undefined,
+          restricoes_alimentares: restIdx >= 0 ? cols[restIdx] || undefined : undefined,
         });
       }
 
@@ -111,6 +126,11 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
         peso: number | null;
         idade: string | null;
         cliente_id: string;
+        pelagem: string | null;
+        data_nascimento: string | null;
+        comportamento: string | null;
+        medicacoes: string | null;
+        restricoes_alimentares: string | null;
       }> = [];
 
       for (let i = 0; i < parsed.length; i++) {
@@ -137,6 +157,11 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           peso: pet.peso ? parseFloat(pet.peso) || null : null,
           idade: pet.idade || null,
           cliente_id: clienteId,
+          pelagem: pet.pelagem || null,
+          data_nascimento: pet.data_nascimento || null,
+          comportamento: pet.comportamento || null,
+          medicacoes: pet.medicacoes || null,
+          restricoes_alimentares: pet.restricoes_alimentares || null,
         });
       }
 
@@ -185,7 +210,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
         <div className="space-y-4">
           <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Formato esperado (CSV):</p>
-            <p className="font-mono">nome;especie;raca;sexo;peso;idade;tutor</p>
+            <p className="font-mono">nome;especie;raca;sexo;peso;idade;tutor;pelagem;data_nascimento;comportamento;medicacoes;restricoes_alimentares</p>
             <p>Separador: <strong>;</strong> ou <strong>,</strong> — Codificação: UTF-8</p>
             <p className="text-warning">O nome do tutor deve corresponder a um contato já cadastrado.</p>
           </div>

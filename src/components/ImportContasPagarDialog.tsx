@@ -21,11 +21,11 @@ export function ImportContasPagarDialog({ open, onOpenChange, onSuccess }: Props
 
   function downloadTemplate() {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["descricao", "valor", "vencimento", "fornecedor", "categoria"],
-      ["Aluguel", 2500.00, "2025-01-10", "Imobiliária XYZ", "Despesas Fixas"],
-      ["Ração Premium", 450.00, "2025-01-15", "PetFood Ltda", "Insumos"],
+      ["descricao", "valor", "vencimento", "fornecedor", "categoria", "parcelas"],
+      ["Aluguel", 2500.00, "2025-01-10", "Imobiliária XYZ", "Despesas Fixas", 1],
+      ["Ração Premium", 450.00, "2025-01-15", "PetFood Ltda", "Insumos", 3],
     ]);
-    ws["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 16 }];
+    ws["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 10 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Contas a Pagar");
     XLSX.writeFile(wb, "modelo_contas_pagar.xlsx");
@@ -55,6 +55,7 @@ export function ImportContasPagarDialog({ open, onOpenChange, onSuccess }: Props
         vencimento: formatDate(row.vencimento),
         fornecedor: String(row.fornecedor || "—"),
         categoria: row.categoria || null,
+        parcelas: row.parcelas ? Number(row.parcelas) || 1 : 1,
         status: "pendente",
       }));
 

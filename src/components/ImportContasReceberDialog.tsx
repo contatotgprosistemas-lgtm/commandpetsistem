@@ -21,11 +21,11 @@ export function ImportContasReceberDialog({ open, onOpenChange, onSuccess }: Pro
 
   function downloadTemplate() {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["descricao", "valor", "vencimento", "categoria", "cliente_nome"],
-      ["Mensalidade Jan", 150.00, "2025-01-15", "Serviços", "João Silva"],
-      ["Banho e Tosa", 80.00, "2025-01-20", "Serviços", "Maria Santos"],
+      ["descricao", "valor", "vencimento", "categoria", "cliente_nome", "observacao_baixa"],
+      ["Mensalidade Jan", 150.00, "2025-01-15", "Serviços", "João Silva", ""],
+      ["Banho e Tosa", 80.00, "2025-01-20", "Serviços", "Maria Santos", "Pagamento via Pix"],
     ]);
-    ws["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 20 }];
+    ws["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Contas a Receber");
     XLSX.writeFile(wb, "modelo_contas_receber.xlsx");
@@ -48,12 +48,18 @@ export function ImportContasReceberDialog({ open, onOpenChange, onSuccess }: Pro
     if (!profile?.empresa_id || preview.length === 0) return;
     setImporting(true);
     try {
+      // Load clients to match names
+      const { data: clientes } = await supabase.from("clientes").select("id, nome").eq("empresa_id", profile.empresa_id!);
+      const clienteMap = new Map((clientes || []).map(c => [c.nome.toLowerCase().trim(), c.id]));
+
       const records = preview.map((row) => ({
         empresa_id: profile.empresa_id!,
         descricao: String(row.descricao || ""),
         valor: Number(row.valor) || 0,
         vencimento: formatDate(row.vencimento),
         categoria: row.categoria || null,
+        cliente_id: row.cliente_nome ? clienteMap.get(String(row.cliente_nome).toLowerCase().trim()) || null : null,
+        observacao_baixa: row.observacao_baixa ? String(row.observacao_baixa) : null,
         status: "pendente",
       }));
 
