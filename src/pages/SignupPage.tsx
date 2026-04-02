@@ -52,8 +52,7 @@ export default function SignupPage() {
     }
 
     toast({
-      title: "Conta criada com sucesso!",
-      description: "Verifique seu email para confirmar o cadastro.",
+      title: "Conta criada, aguarde aprovação do administrador!",
     });
     navigate("/login");
   };
