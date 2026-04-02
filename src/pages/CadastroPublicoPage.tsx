@@ -117,7 +117,7 @@ function PetVacinasFields({ control, idx }: { control: any; idx: number }) {
 }
 
 const defaultPet = {
-  nome: "", especie: "Cachorro", raca: "", sexo: "", peso: "", pelagem: "",
+  nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", pelagem: "",
   comportamento: "", restricoes_alimentares: "", medicacoes: "",
   antiparasitario: "", v10: "", raiva: "",
 };
