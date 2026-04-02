@@ -377,6 +377,7 @@ export default function SuperAdminPage() {
                         <TableRow key={p.id}>
                           <TableCell className="font-medium">{p.nome}</TableCell>
                           <TableCell className="text-muted-foreground">{p.email || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{p.empresa_nome || "—"}</TableCell>
                           <TableCell>
                             <Select defaultValue={p.cargo || "atendente"} onValueChange={(v) => updateCargo(p.id, v)}>
                               <SelectTrigger className="h-8 w-[130px]">
