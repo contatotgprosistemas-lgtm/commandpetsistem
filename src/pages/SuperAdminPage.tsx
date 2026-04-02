@@ -137,6 +137,18 @@ export default function SuperAdminPage() {
     }
   };
 
+  const impersonateUser = async (userId: string, nome: string) => {
+    toast({ title: "Gerando acesso...", description: `Acessando conta de ${nome}` });
+    const { data, error } = await supabase.functions.invoke("impersonate-user", {
+      body: { user_id: userId },
+    });
+    if (error || data?.error) {
+      toast({ title: data?.error || "Erro ao acessar conta", variant: "destructive" });
+    } else if (data?.url) {
+      window.open(data.url, "_blank");
+    }
+  };
+
   const pendingProfiles = profiles.filter((p) => !p.aprovado && p.status !== "bloqueado");
   const approvedProfiles = profiles.filter((p) => p.aprovado);
 
