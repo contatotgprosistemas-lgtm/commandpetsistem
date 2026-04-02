@@ -309,12 +309,11 @@ export default function KanbanPage() {
                                 {item.cliente?.nome ?? "Sem nome"}
                               </span>
                             </div>
-                            {(item.cliente?.telefone || item.cliente?.whatsapp) && (
+                            {item.cliente?.whatsapp && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const phone = item.cliente?.whatsapp || item.cliente?.telefone || "";
-                                  navigate(`/crm?phone=${encodeURIComponent(phone)}`);
+                                  navigate(`/crm?phone=${encodeURIComponent(item.cliente?.whatsapp || "")}`);
                                 }}
                                 className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
                                 title="Abrir conversa no CRM"
@@ -324,10 +323,10 @@ export default function KanbanPage() {
                             )}
                           </div>
 
-                          {item.cliente?.telefone && (
+                          {item.cliente?.whatsapp && (
                             <div className="flex items-center gap-1 mt-1.5">
                               <Phone className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-[11px] text-muted-foreground font-mono">{item.cliente.telefone}</span>
+                              <span className="text-[11px] text-muted-foreground font-mono">{item.cliente.whatsapp}</span>
                             </div>
                           )}
                           {item.cliente?.email && (
