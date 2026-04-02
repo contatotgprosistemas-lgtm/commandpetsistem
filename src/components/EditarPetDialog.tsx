@@ -88,6 +88,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         nome: data.nome,
         especie: data.especie,
         raca: data.raca || null,
+        cor: data.cor || null,
         sexo: data.sexo || null,
         peso: data.peso ? parseFloat(data.peso) : null,
         data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
