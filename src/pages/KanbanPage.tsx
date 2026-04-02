@@ -65,7 +65,7 @@ export default function KanbanPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clientes")
-        .select("id, nome, telefone")
+        .select("id, nome, whatsapp")
         .eq("empresa_id", empresaId!)
         .order("nome");
       if (error) throw error;
