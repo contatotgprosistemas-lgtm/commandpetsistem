@@ -14,45 +14,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-
-    // Check if called with service role or verify caller is super_admin
-    const token = authHeader.replace("Bearer ", "");
-    if (token !== serviceRoleKey) {
-      const callerClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user: caller } } = await callerClient.auth.getUser();
-      if (!caller) {
-        return new Response(JSON.stringify({ error: "Não autorizado" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const { data: roles } = await adminClient
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", caller.id)
-        .eq("role", "super_admin");
-
-      if (!roles || roles.length === 0) {
-        return new Response(JSON.stringify({ error: "Apenas super admins podem alterar emails" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
 
     const { user_id, new_email } = await req.json();
     if (!user_id || !new_email) {
