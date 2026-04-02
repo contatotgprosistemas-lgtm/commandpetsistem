@@ -125,6 +125,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
         nome: string;
         especie: string;
         raca: string | null;
+        cor: string | null;
         sexo: string | null;
         peso: number | null;
         idade: string | null;
