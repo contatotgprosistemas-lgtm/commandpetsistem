@@ -505,7 +505,7 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch, fotoUrl, onFoto
           <FormItem>
             <FormLabel>Data de Nascimento</FormLabel>
             <FormControl>
-              <Input type="date" {...field} />
+              <DateInput value={field.value} onChange={field.onChange} />
             </FormControl>
           </FormItem>
         )} />
