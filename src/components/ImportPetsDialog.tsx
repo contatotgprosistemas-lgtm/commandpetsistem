@@ -88,6 +88,11 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           peso: weightIdx >= 0 ? cols[weightIdx] || undefined : undefined,
           idade: ageIdx >= 0 ? cols[ageIdx] || undefined : undefined,
           tutor_nome: tutorIdx >= 0 ? cols[tutorIdx] || undefined : undefined,
+          pelagem: pelagemIdx >= 0 ? cols[pelagemIdx] || undefined : undefined,
+          data_nascimento: nascIdx >= 0 ? cols[nascIdx] || undefined : undefined,
+          comportamento: compIdx >= 0 ? cols[compIdx] || undefined : undefined,
+          medicacoes: medIdx >= 0 ? cols[medIdx] || undefined : undefined,
+          restricoes_alimentares: restIdx >= 0 ? cols[restIdx] || undefined : undefined,
         });
       }
 
