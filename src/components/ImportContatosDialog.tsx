@@ -75,7 +75,6 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
         contacts.push({
           nome,
           cpf: cpfIdx >= 0 ? cols[cpfIdx] || undefined : undefined,
-          telefone: phoneIdx >= 0 ? cols[phoneIdx] || undefined : undefined,
           whatsapp: whatsIdx >= 0 ? cols[whatsIdx] || undefined : undefined,
           email: emailIdx >= 0 ? cols[emailIdx] || undefined : undefined,
           endereco: addrIdx >= 0 ? cols[addrIdx] || undefined : undefined,
