@@ -126,6 +126,11 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
         peso: number | null;
         idade: string | null;
         cliente_id: string;
+        pelagem: string | null;
+        data_nascimento: string | null;
+        comportamento: string | null;
+        medicacoes: string | null;
+        restricoes_alimentares: string | null;
       }> = [];
 
       for (let i = 0; i < parsed.length; i++) {
