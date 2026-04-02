@@ -64,7 +64,7 @@ export function ImportContatosDialog({ onSuccess }: { onSuccess?: () => void }) 
 
       const nameIdx = headers.findIndex(h => ["nome", "name", "contato"].includes(h));
       const cpfIdx = headers.findIndex(h => ["cpf", "documento", "doc"].includes(h));
-      const whatsIdx = headers.findIndex(h => ["whatsapp", "wpp", "zap", "telefone", "phone", "tel", "fone"].includes(h));
+      const whatsIdx = headers.findIndex(h => ["whatsapp", "whattsapp", "whatsap", "whatssapp", "wpp", "zap", "telefone", "phone", "tel", "fone"].includes(h));
       const emailIdx = headers.findIndex(h => ["email", "e-mail"].includes(h));
       const cepIdx = headers.findIndex(h => ["cep", "zip", "zipcode", "codigo_postal"].includes(h));
       const addrIdx = headers.findIndex(h => ["endereco", "endereço", "address"].includes(h));
