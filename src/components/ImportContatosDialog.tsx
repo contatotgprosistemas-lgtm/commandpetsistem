@@ -9,7 +9,6 @@ import { toast } from "sonner";
 interface ParsedContact {
   nome: string;
   cpf?: string;
-  telefone?: string;
   whatsapp?: string;
   email?: string;
   endereco?: string;
