@@ -580,7 +580,7 @@ export default function ContratosPage() {
                                 <Send className="h-4 w-4" />
                               </Button>
                             )}
-                            {(c.status === "enviado" || c.status === "assinado") && (
+                            {(c.status === "enviado" || c.status === "assinado" || c.status === "assinado_parcial") && (
                               <Button variant="ghost" size="icon" onClick={() => copyLink(c)} title="Copiar link">
                                 <Link2 className="h-4 w-4" />
                               </Button>
