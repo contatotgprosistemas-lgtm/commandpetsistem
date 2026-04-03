@@ -97,7 +97,7 @@ const ServicosPage = () => {
     mutationFn: async () => {
       const { error } = await supabase
         .from("servicos")
-        .update({ descricao, valor: parseFloat(valor) || 0, tipo })
+        .update({ descricao, valor: parseFloat(valor) || 0, tipo, considerar_dia: considerarDia, diaria_24h: diaria24h } as any)
         .eq("id", editId!);
       if (error) throw error;
     },
