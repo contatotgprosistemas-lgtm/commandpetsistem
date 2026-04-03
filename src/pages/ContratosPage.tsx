@@ -469,11 +469,16 @@ export default function ContratosPage() {
     setShowTemplateDialog(true);
   }
 
-  function handleSelectTemplate(templateId: string) {
+  async function handleSelectTemplate(templateId: string) {
     setContractForm(prev => ({ ...prev, templateId }));
     const tpl = templates.find(t => t.id === templateId);
     if (tpl) {
-      setContractForm(prev => ({ ...prev, content: tpl.content }));
+      let content = tpl.content;
+      // If client already selected, fill placeholders
+      if (contractForm.clienteId) {
+        content = await fillTemplate(content, contractForm.clienteId);
+      }
+      setContractForm(prev => ({ ...prev, content }));
     }
   }
 
