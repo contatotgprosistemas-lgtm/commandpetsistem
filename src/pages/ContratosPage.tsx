@@ -85,6 +85,9 @@ export default function ContratosPage() {
   // Timeline dialog
   const [timelineContractId, setTimelineContractId] = useState<string | null>(null);
 
+  // Send dialog
+  const [sendDialogContract, setSendDialogContract] = useState<Contract | null>(null);
+
   useEffect(() => {
     loadData();
   }, []);
