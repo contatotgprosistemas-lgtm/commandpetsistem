@@ -363,6 +363,16 @@ const ServicosPage = () => {
                 ))}
               </select>
             </div>
+            <div className="flex gap-6">
+              <div className="flex items-center gap-2">
+                <Checkbox id="edit-considerar-dia" checked={considerarDia} onCheckedChange={(v) => { setConsiderarDia(!!v); if (v) setDiaria24h(false); }} />
+                <Label htmlFor="edit-considerar-dia" className="text-sm font-normal">Considerar o Dia</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="edit-diaria-24h" checked={diaria24h} onCheckedChange={(v) => { setDiaria24h(!!v); if (v) setConsiderarDia(false); }} />
+                <Label htmlFor="edit-diaria-24h" className="text-sm font-normal">Diária de 24 Horas</Label>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setEditOpen(false); resetForm(); }}>Cancelar</Button>
