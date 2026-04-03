@@ -380,7 +380,6 @@ export default function ContratosPage() {
                 onLogoUpload={handleLogoUpload}
               />
             </div>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowTemplateDialog(false)}>Cancelar</Button>
