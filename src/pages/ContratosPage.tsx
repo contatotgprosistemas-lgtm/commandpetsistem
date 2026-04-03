@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, FileText, Send, Eye, Copy, Clock, CheckCircle2, XCircle, Link2, History } from "lucide-react";
+import { Plus, FileText, Send, Eye, Copy, Clock, CheckCircle2, XCircle, Link2, History, Mail, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContractTimelineDialog } from "@/components/contracts/ContractTimelineDialog";
@@ -84,6 +84,9 @@ export default function ContratosPage() {
 
   // Timeline dialog
   const [timelineContractId, setTimelineContractId] = useState<string | null>(null);
+
+  // Send dialog
+  const [sendDialogContract, setSendDialogContract] = useState<Contract | null>(null);
 
   useEffect(() => {
     loadData();
@@ -312,7 +315,7 @@ export default function ContratosPage() {
     loadData();
   }
 
-  async function sendContract(contract: Contract) {
+  async function markAsSent(contract: Contract) {
     const { error } = await supabase.from("contracts").update({
       status: "enviado",
       sent_at: new Date().toISOString(),
@@ -320,7 +323,6 @@ export default function ContratosPage() {
     }).eq("id", contract.id);
 
     if (!error) {
-      // Log event
       const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
       if (profile?.empresa_id) {
         await supabase.from("contract_events").insert({
@@ -330,9 +332,51 @@ export default function ContratosPage() {
           description: "Contrato enviado para assinatura",
         });
       }
-      toast.success("Contrato enviado!");
       loadData();
     }
+  }
+
+  async function handleSendWhatsApp(contract: Contract) {
+    await markAsSent(contract);
+    const link = getSigningUrl(contract);
+    const clienteName = (contract as any).cliente?.nome || "Cliente";
+    const phone = await getClienteWhatsApp(contract.cliente_id);
+    if (!phone) {
+      toast.error("Cliente não possui WhatsApp cadastrado");
+      navigator.clipboard.writeText(link);
+      toast.info("Link copiado para a área de transferência");
+      setSendDialogContract(null);
+      return;
+    }
+    const msg = encodeURIComponent(`Olá ${clienteName}! Segue o contrato para assinatura digital:\n\n${link}`);
+    window.open(`https://wa.me/${phone.replace(/\D/g, "")}?text=${msg}`, "_blank");
+    toast.success("Contrato enviado via WhatsApp!");
+    setSendDialogContract(null);
+  }
+
+  async function handleSendEmail(contract: Contract) {
+    await markAsSent(contract);
+    const link = getSigningUrl(contract);
+    const clienteName = (contract as any).cliente?.nome || "Cliente";
+    const clienteEmail = (contract as any).cliente?.email;
+    if (!clienteEmail) {
+      toast.error("Cliente não possui e-mail cadastrado");
+      navigator.clipboard.writeText(link);
+      toast.info("Link copiado para a área de transferência");
+      setSendDialogContract(null);
+      return;
+    }
+    const subject = encodeURIComponent(`Contrato para assinatura — ${contract.title}`);
+    const body = encodeURIComponent(`Olá ${clienteName},\n\nSegue o link para assinatura digital do contrato:\n\n${link}\n\nAtenciosamente.`);
+    window.open(`mailto:${clienteEmail}?subject=${subject}&body=${body}`, "_blank");
+    toast.success("E-mail aberto para envio!");
+    setSendDialogContract(null);
+  }
+
+  async function getClienteWhatsApp(clienteId: string | null): Promise<string | null> {
+    if (!clienteId) return null;
+    const { data } = await supabase.from("clientes").select("whatsapp").eq("id", clienteId).single();
+    return data?.whatsapp || null;
   }
 
   function getSigningUrl(contract: Contract) {
@@ -406,7 +450,7 @@ export default function ContratosPage() {
                               <Eye className="h-4 w-4" />
                             </Button>
                             {c.status === "rascunho" && (
-                              <Button variant="ghost" size="icon" onClick={() => sendContract(c)} title="Enviar">
+                              <Button variant="ghost" size="icon" onClick={() => setSendDialogContract(c)} title="Enviar">
                                 <Send className="h-4 w-4" />
                               </Button>
                             )}
@@ -577,6 +621,65 @@ export default function ContratosPage() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Dialog */}
+      <Dialog open={!!sendDialogContract} onOpenChange={() => setSendDialogContract(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Enviar Contrato</DialogTitle>
+            <DialogDescription>
+              Escolha como deseja enviar o contrato para {(sendDialogContract as any)?.cliente?.nome || "o cliente"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-4">
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-14 text-left"
+              onClick={() => sendDialogContract && handleSendWhatsApp(sendDialogContract)}
+            >
+              <div className="h-9 w-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <MessageCircle className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">WhatsApp</p>
+                <p className="text-xs text-muted-foreground">Enviar link via WhatsApp</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-14 text-left"
+              onClick={() => sendDialogContract && handleSendEmail(sendDialogContract)}
+            >
+              <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                <Mail className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">E-mail</p>
+                <p className="text-xs text-muted-foreground">Abrir e-mail com link do contrato</p>
+              </div>
+            </Button>
+            <Button
+              variant="ghost"
+              className="justify-start gap-3 h-14 text-left"
+              onClick={() => {
+                if (sendDialogContract) {
+                  copyLink(sendDialogContract);
+                  markAsSent(sendDialogContract);
+                  setSendDialogContract(null);
+                }
+              }}
+            >
+              <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <Copy className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Copiar link</p>
+                <p className="text-xs text-muted-foreground">Copiar link de assinatura</p>
+              </div>
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
