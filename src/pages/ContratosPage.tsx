@@ -656,7 +656,14 @@ export default function ContratosPage() {
             </div>
             <div>
               <Label>Cliente</Label>
-              <Select value={contractForm.clienteId} onValueChange={v => setContractForm(p => ({ ...p, clienteId: v }))}>
+              <Select value={contractForm.clienteId} onValueChange={async (v) => {
+                setContractForm(p => ({ ...p, clienteId: v }));
+                // Auto-fill placeholders when client is selected
+                if (v && contractForm.content) {
+                  const filled = await fillTemplate(contractForm.content, v);
+                  setContractForm(p => ({ ...p, clienteId: v, content: filled }));
+                }
+              }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o cliente" /></SelectTrigger>
                 <SelectContent>
                   {clientes.map(c => (
@@ -668,7 +675,7 @@ export default function ContratosPage() {
             <div>
               <Label>Conteúdo (editável)</Label>
               <RichTextEditor
-                content={contractForm.clienteId ? fillTemplate(contractForm.content, contractForm.clienteId) : contractForm.content}
+                content={contractForm.content}
                 onChange={(html) => setContractForm(p => ({ ...p, content: html }))}
                 onLogoUpload={handleLogoUpload}
               />
