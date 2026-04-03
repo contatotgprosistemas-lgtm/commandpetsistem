@@ -704,7 +704,17 @@ export default function ContratosPage() {
                 : statusMap[previewContract?.status || "rascunho"]?.label}
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-muted/30 rounded-lg p-6 border prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewContract?.content || "" }} />
+          <style>{`
+            .contract-preview img {
+              max-width: 120px !important;
+              max-height: 80px !important;
+              width: auto !important;
+              height: auto !important;
+              display: block;
+              margin: 0;
+            }
+          `}</style>
+          <div className="contract-preview bg-muted/30 rounded-lg p-6 border prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewContract?.content || "" }} />
           {previewContract?.content_hash && (
             <div className="text-xs text-muted-foreground border-t pt-2">
               <strong>Hash SHA-256:</strong> {previewContract.content_hash}
