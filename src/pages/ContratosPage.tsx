@@ -66,6 +66,8 @@ const DEFAULT_TEMPLATE = `<h2 style="text-align: center">CONTRATO DE PRESTAÇÃO
 
 export default function ContratosPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user, session } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
   const [templates, setTemplates] = useState<Template[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [clientes, setClientes] = useState<{ id: string; nome: string; email: string | null; cpf: string | null; endereco: string | null }[]>([]);
@@ -88,6 +90,11 @@ export default function ContratosPage() {
 
   // Send dialog
   const [sendDialogContract, setSendDialogContract] = useState<Contract | null>(null);
+
+  // Delete dialog
+  const [deleteContract, setDeleteContract] = useState<Contract | null>(null);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadData();
