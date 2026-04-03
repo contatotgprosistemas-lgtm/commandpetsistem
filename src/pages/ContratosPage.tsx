@@ -315,7 +315,7 @@ export default function ContratosPage() {
     loadData();
   }
 
-  async function sendContract(contract: Contract) {
+  async function markAsSent(contract: Contract) {
     const { error } = await supabase.from("contracts").update({
       status: "enviado",
       sent_at: new Date().toISOString(),
@@ -323,7 +323,6 @@ export default function ContratosPage() {
     }).eq("id", contract.id);
 
     if (!error) {
-      // Log event
       const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
       if (profile?.empresa_id) {
         await supabase.from("contract_events").insert({
@@ -333,9 +332,51 @@ export default function ContratosPage() {
           description: "Contrato enviado para assinatura",
         });
       }
-      toast.success("Contrato enviado!");
       loadData();
     }
+  }
+
+  async function handleSendWhatsApp(contract: Contract) {
+    await markAsSent(contract);
+    const link = getSigningUrl(contract);
+    const clienteName = (contract as any).cliente?.nome || "Cliente";
+    const phone = await getClienteWhatsApp(contract.cliente_id);
+    if (!phone) {
+      toast.error("Cliente não possui WhatsApp cadastrado");
+      navigator.clipboard.writeText(link);
+      toast.info("Link copiado para a área de transferência");
+      setSendDialogContract(null);
+      return;
+    }
+    const msg = encodeURIComponent(`Olá ${clienteName}! Segue o contrato para assinatura digital:\n\n${link}`);
+    window.open(`https://wa.me/${phone.replace(/\D/g, "")}?text=${msg}`, "_blank");
+    toast.success("Contrato enviado via WhatsApp!");
+    setSendDialogContract(null);
+  }
+
+  async function handleSendEmail(contract: Contract) {
+    await markAsSent(contract);
+    const link = getSigningUrl(contract);
+    const clienteName = (contract as any).cliente?.nome || "Cliente";
+    const clienteEmail = (contract as any).cliente?.email;
+    if (!clienteEmail) {
+      toast.error("Cliente não possui e-mail cadastrado");
+      navigator.clipboard.writeText(link);
+      toast.info("Link copiado para a área de transferência");
+      setSendDialogContract(null);
+      return;
+    }
+    const subject = encodeURIComponent(`Contrato para assinatura — ${contract.title}`);
+    const body = encodeURIComponent(`Olá ${clienteName},\n\nSegue o link para assinatura digital do contrato:\n\n${link}\n\nAtenciosamente.`);
+    window.open(`mailto:${clienteEmail}?subject=${subject}&body=${body}`, "_blank");
+    toast.success("E-mail aberto para envio!");
+    setSendDialogContract(null);
+  }
+
+  async function getClienteWhatsApp(clienteId: string | null): Promise<string | null> {
+    if (!clienteId) return null;
+    const { data } = await supabase.from("clientes").select("whatsapp").eq("id", clienteId).single();
+    return data?.whatsapp || null;
   }
 
   function getSigningUrl(contract: Contract) {
