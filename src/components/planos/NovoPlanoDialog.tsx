@@ -26,7 +26,7 @@ interface PlanItem {
   limit_per_month: number | null;
 }
 
-export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Props) {
+export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, editingPlan }: Props) {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
