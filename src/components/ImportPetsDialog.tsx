@@ -142,6 +142,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
         medicacoes: string | null;
         restricoes_alimentares: string | null;
         porte: string | null;
+        castrado: string | null;
       }> = [];
 
 
