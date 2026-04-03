@@ -175,8 +175,9 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           comportamento: pet.comportamento || null,
           medicacoes: pet.medicacoes || null,
           restricoes_alimentares: pet.restricoes_alimentares || null,
-          cor: pet.cor || null,
-          porte: pet.porte || null,
+           cor: pet.cor || null,
+           porte: pet.porte || null,
+           castrado: pet.castrado || null,
         });
       }
 
