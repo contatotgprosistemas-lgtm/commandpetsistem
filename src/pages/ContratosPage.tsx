@@ -15,6 +15,8 @@ import { Plus, FileText, Send, Eye, Copy, Clock, CheckCircle2, XCircle, Link2, H
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContractTimelineDialog } from "@/components/contracts/ContractTimelineDialog";
+import { RichTextEditor } from "@/components/contracts/RichTextEditor";
+import { uploadFile } from "@/lib/storage";
 
 interface Template {
   id: string;
