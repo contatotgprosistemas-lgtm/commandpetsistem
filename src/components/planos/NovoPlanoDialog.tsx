@@ -106,7 +106,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
       );
     }
 
-    toast.success("Plano criado com sucesso");
+    toast.success(editingPlan ? "Plano atualizado" : "Plano criado com sucesso");
     reset(); setSaving(false); onSuccess(); onOpenChange(false);
   }
 
