@@ -90,7 +90,7 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId, edi
       );
     }
 
-    toast.success("Pacote criado com sucesso");
+    toast.success(editingPackage ? "Pacote atualizado" : "Pacote criado com sucesso");
     reset(); setSaving(false); onSuccess(); onOpenChange(false);
   }
 
