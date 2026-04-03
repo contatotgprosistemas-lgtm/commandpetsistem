@@ -185,6 +185,8 @@ const ServicosPage = () => {
     setDescricao(s.descricao);
     setValor(String(s.valor));
     setTipo(s.tipo);
+    setConsiderarDia((s as any).considerar_dia ?? false);
+    setDiaria24h((s as any).diaria_24h ?? false);
     setEditOpen(true);
   };
 
