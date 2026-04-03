@@ -15,6 +15,7 @@ import { Plus, FileText, Send, Eye, Copy, Clock, CheckCircle2, XCircle, Link2, H
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContractTimelineDialog } from "@/components/contracts/ContractTimelineDialog";
+import { RichTextEditor } from "@/components/contracts/RichTextEditor";
 
 interface Template {
   id: string;
@@ -49,32 +50,17 @@ const statusMap: Record<string, { label: string; color: string }> = {
   expirado: { label: "Não concluído", color: "bg-gray-100 text-gray-800" },
 };
 
-const DEFAULT_TEMPLATE = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
-
-Pelo presente instrumento particular, de um lado:
-
-CONTRATANTE: {{cliente_nome}}, CPF: {{cliente_cpf}}, residente em {{cliente_endereco}}, doravante denominado CONTRATANTE;
-
-CONTRATADA: A empresa prestadora de serviços pet, doravante denominada CONTRATADA;
-
-As partes acima qualificadas têm entre si justo e contratado o seguinte:
-
-CLÁUSULA 1ª - DO OBJETO
-O presente contrato tem como objeto a prestação de serviços de {{tipo_servico}} para o pet {{pet_nome}}, da raça {{pet_raca}}.
-
-CLÁUSULA 2ª - DO VALOR
-Os serviços descritos na Cláusula 1ª serão prestados pelo valor de R$ {{valor}}.
-
-CLÁUSULA 3ª - DAS OBRIGAÇÕES
-A CONTRATADA se compromete a prestar os serviços com zelo e dedicação, seguindo as melhores práticas do mercado pet.
-
-CLÁUSULA 4ª - DA VIGÊNCIA
-O presente contrato tem vigência a partir da data de assinatura.
-
-CLÁUSULA 5ª - DO FORO
-As partes elegem o foro da comarca do domicílio da CONTRATADA para dirimir quaisquer dúvidas ou litígios oriundos deste contrato.
-
-E por estarem assim justas e contratadas, as partes assinam eletronicamente o presente instrumento.`;
+const DEFAULT_TEMPLATE = `<h2 style="text-align: center">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</h2>
+<p>Pelo presente instrumento particular, de um lado:</p>
+<p><strong>CONTRATANTE:</strong> {{cliente_nome}}, CPF: {{cliente_cpf}}, residente em {{cliente_endereco}}, doravante denominado CONTRATANTE;</p>
+<p><strong>CONTRATADA:</strong> A empresa prestadora de serviços pet, doravante denominada CONTRATADA;</p>
+<p>As partes acima qualificadas têm entre si justo e contratado o seguinte:</p>
+<p><strong>CLÁUSULA 1ª - DO OBJETO</strong><br>O presente contrato tem como objeto a prestação de serviços de {{tipo_servico}} para o pet {{pet_nome}}, da raça {{pet_raca}}.</p>
+<p><strong>CLÁUSULA 2ª - DO VALOR</strong><br>Os serviços descritos na Cláusula 1ª serão prestados pelo valor de R$ {{valor}}.</p>
+<p><strong>CLÁUSULA 3ª - DAS OBRIGAÇÕES</strong><br>A CONTRATADA se compromete a prestar os serviços com zelo e dedicação, seguindo as melhores práticas do mercado pet.</p>
+<p><strong>CLÁUSULA 4ª - DA VIGÊNCIA</strong><br>O presente contrato tem vigência a partir da data de assinatura.</p>
+<p><strong>CLÁUSULA 5ª - DO FORO</strong><br>As partes elegem o foro da comarca do domicílio da CONTRATADA para dirimir quaisquer dúvidas ou litígios oriundos deste contrato.</p>
+<p>E por estarem assim justas e contratadas, as partes assinam eletronicamente o presente instrumento.</p>`;
 
 export default function ContratosPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -112,6 +98,17 @@ export default function ContratosPage() {
     if (cRes.data) setContracts(cRes.data as any);
     if (clRes.data) setClientes(clRes.data);
     setLoading(false);
+  }
+
+  async function handleLogoUpload(file: File): Promise<string | null> {
+    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
+    if (!profile?.empresa_id) return null;
+    const ext = file.name.split(".").pop();
+    const path = `${profile.empresa_id}/logo_${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("profile-photos").upload(path, file, { upsert: true });
+    if (error) { toast.error("Erro ao enviar imagem"); return null; }
+    const { data: urlData } = supabase.storage.from("profile-photos").getPublicUrl(path);
+    return urlData.publicUrl;
   }
 
   async function saveTemplate() {
@@ -377,7 +374,11 @@ export default function ContratosPage() {
             </div>
             <div>
               <Label>Conteúdo do contrato</Label>
-              <Textarea value={templateForm.content} onChange={e => setTemplateForm(p => ({ ...p, content: e.target.value }))} rows={15} className="font-mono text-sm" />
+              <RichTextEditor
+                content={templateForm.content}
+                onChange={(html) => setTemplateForm(p => ({ ...p, content: html }))}
+                onLogoUpload={handleLogoUpload}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -423,11 +424,10 @@ export default function ContratosPage() {
             </div>
             <div>
               <Label>Conteúdo (editável)</Label>
-              <Textarea
-                value={contractForm.clienteId ? fillTemplate(contractForm.content, contractForm.clienteId) : contractForm.content}
-                onChange={e => setContractForm(p => ({ ...p, content: e.target.value }))}
-                rows={12}
-                className="font-mono text-sm"
+              <RichTextEditor
+                content={contractForm.clienteId ? fillTemplate(contractForm.content, contractForm.clienteId) : contractForm.content}
+                onChange={(html) => setContractForm(p => ({ ...p, content: html }))}
+                onLogoUpload={handleLogoUpload}
               />
             </div>
           </div>
@@ -449,9 +449,7 @@ export default function ContratosPage() {
                 : statusMap[previewContract?.status || "rascunho"]?.label}
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-muted/30 rounded-lg p-6 border">
-            <pre className="whitespace-pre-wrap text-sm font-mono">{previewContract?.content}</pre>
-          </div>
+          <div className="bg-muted/30 rounded-lg p-6 border prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewContract?.content || "" }} />
           {previewContract?.content_hash && (
             <div className="text-xs text-muted-foreground border-t pt-2">
               <strong>Hash SHA-256:</strong> {previewContract.content_hash}
