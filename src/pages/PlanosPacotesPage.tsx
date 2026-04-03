@@ -341,8 +341,8 @@ export default function PlanosPacotesPage() {
       </Tabs>
 
       {/* Dialogs */}
-      {empresaId && <NovoPlanoDialog open={novoPlanoOpen} onOpenChange={setNovoPlanoOpen} onSuccess={fetchAll} empresaId={empresaId} />}
-      {empresaId && <NovoPacoteDialog open={novoPacoteOpen} onOpenChange={setNovoPacoteOpen} onSuccess={fetchAll} empresaId={empresaId} />}
+      {empresaId && <NovoPlanoDialog open={novoPlanoOpen || !!editingPlan} onOpenChange={o => { if (!o) { setNovoPlanoOpen(false); setEditingPlan(null); } }} onSuccess={fetchAll} empresaId={empresaId} editingPlan={editingPlan} />}
+      {empresaId && <NovoPacoteDialog open={novoPacoteOpen || !!editingPackage} onOpenChange={o => { if (!o) { setNovoPacoteOpen(false); setEditingPackage(null); } }} onSuccess={fetchAll} empresaId={empresaId} editingPackage={editingPackage} />}
       {empresaId && <ContratacaoDialog open={contratacaoOpen} onOpenChange={setContratacaoOpen} onSuccess={fetchAll} empresaId={empresaId} />}
       {planejamentoSub && <PlanejamentoDiasDialog open={!!planejamentoSub} onOpenChange={o => { if (!o) setPlanejamentoSub(null); }} subscription={planejamentoSub} onSuccess={fetchAll} />}
 
