@@ -28,6 +28,7 @@ const schema = z.object({
   raca: z.string().trim().max(100).optional().or(z.literal("")),
   cor: z.string().trim().max(100).optional().or(z.literal("")),
   porte: z.string().optional().or(z.literal("")),
+  castrado: z.string().optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
   data_nascimento: z.date().optional(),
@@ -54,7 +55,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", especie: "Cachorro", raca: "", cor: "", porte: "", sexo: "", peso: "", pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "" },
+    defaultValues: { nome: "", especie: "Cachorro", raca: "", cor: "", porte: "", castrado: "", sexo: "", peso: "", pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "" },
   });
 
   const dataNascimento = form.watch("data_nascimento");
@@ -68,6 +69,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         raca: pet.raca || "",
         cor: pet.cor || "",
         porte: pet.porte || "",
+        castrado: pet.castrado || "",
         sexo: pet.sexo || "",
         peso: pet.peso != null ? String(pet.peso) : "",
         data_nascimento: pet.data_nascimento ? new Date(pet.data_nascimento + "T00:00:00") : undefined,
@@ -92,6 +94,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         raca: data.raca || null,
         cor: data.cor || null,
         porte: data.porte || null,
+        castrado: data.castrado || null,
         sexo: data.sexo || null,
         peso: data.peso ? parseFloat(data.peso) : null,
         data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
@@ -175,7 +178,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
                 </FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <FormField control={form.control} name="sexo" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Sexo</FormLabel>
@@ -184,6 +187,18 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
                     <SelectContent>
                       <SelectItem value="Macho">Macho</SelectItem>
                       <SelectItem value="Fêmea">Fêmea</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="castrado" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Castrado</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="Sim">Sim</SelectItem>
+                      <SelectItem value="Não">Não</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>

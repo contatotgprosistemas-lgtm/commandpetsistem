@@ -2392,6 +2392,7 @@ export type Database = {
       pets: {
         Row: {
           antiparasitario_data: string | null
+          castrado: string | null
           cliente_id: string
           comportamento: string | null
           cor: string | null
@@ -2417,6 +2418,7 @@ export type Database = {
         }
         Insert: {
           antiparasitario_data?: string | null
+          castrado?: string | null
           cliente_id: string
           comportamento?: string | null
           cor?: string | null
@@ -2442,6 +2444,7 @@ export type Database = {
         }
         Update: {
           antiparasitario_data?: string | null
+          castrado?: string | null
           cliente_id?: string
           comportamento?: string | null
           cor?: string | null

@@ -29,6 +29,7 @@ const schema = z.object({
   raca: z.string().trim().max(100).optional().or(z.literal("")),
   cor: z.string().trim().max(100).optional().or(z.literal("")),
   porte: z.string().optional().or(z.literal("")),
+  castrado: z.string().optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
   data_nascimento: z.date().optional(),
@@ -57,7 +58,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
     resolver: zodResolver(schema),
     defaultValues: {
       nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", cliente_id: "",
-      porte: "",
+      porte: "", castrado: "",
       pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "",
       antiparasitario: "", v10: "", raiva: "",
     },
@@ -96,6 +97,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
         raca: data.raca || null,
         cor: data.cor || null,
         porte: data.porte || null,
+        castrado: data.castrado || null,
         sexo: data.sexo || null,
         peso: data.peso ? parseFloat(data.peso) : null,
         data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
@@ -214,7 +216,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
                 </FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <FormField control={form.control} name="sexo" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Sexo</FormLabel>
@@ -223,6 +225,19 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
                     <SelectContent>
                       <SelectItem value="Macho">Macho</SelectItem>
                       <SelectItem value="Fêmea">Fêmea</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="castrado" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Castrado</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="Sim">Sim</SelectItem>
+                      <SelectItem value="Não">Não</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
