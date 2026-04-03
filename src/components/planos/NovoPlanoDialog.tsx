@@ -136,7 +136,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Novo Plano</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{editingPlan ? "Editar Plano" : "Novo Plano"}</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
