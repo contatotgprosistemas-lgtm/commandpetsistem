@@ -2406,6 +2406,7 @@ export type Database = {
           nome: string
           pelagem: string | null
           peso: number | null
+          porte: string | null
           raca: string | null
           raiva_data: string | null
           restricoes_alimentares: string | null
@@ -2430,6 +2431,7 @@ export type Database = {
           nome: string
           pelagem?: string | null
           peso?: number | null
+          porte?: string | null
           raca?: string | null
           raiva_data?: string | null
           restricoes_alimentares?: string | null
@@ -2454,6 +2456,7 @@ export type Database = {
           nome?: string
           pelagem?: string | null
           peso?: number | null
+          porte?: string | null
           raca?: string | null
           raiva_data?: string | null
           restricoes_alimentares?: string | null
