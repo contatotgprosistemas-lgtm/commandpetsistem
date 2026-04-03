@@ -152,7 +152,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
             <Label>Descrição</Label>
             <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descrição do plano..." rows={2} />
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Tipo</Label>
               <Select value={type} onValueChange={setType}>
