@@ -77,6 +77,9 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId, edi
     if (error || !pkg) { toast.error("Erro ao salvar pacote"); setSaving(false); return; }
 
     const validItems = items.filter(i => i.service_name.trim());
+    if (editingPackage) {
+      await supabase.from("service_package_items" as any).delete().eq("package_id", editingPackage.id);
+    }
     if (validItems.length > 0) {
       await supabase.from("service_package_items" as any).insert(
         validItems.map(i => ({
