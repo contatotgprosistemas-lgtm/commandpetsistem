@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil } from "lucide-react";
+import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format, isPast, differenceInDays, addDays } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { NovoPlanoDialog } from "@/components/planos/NovoPlanoDialog";
 import { NovoPacoteDialog } from "@/components/planos/NovoPacoteDialog";
 import { ContratacaoDialog } from "@/components/planos/ContratacaoDialog";
@@ -18,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 export default function PlanosPacotesPage() {
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id || "";
+  const navigate = useNavigate();
 
   const [plans, setPlans] = useState<any[]>([]);
   const [packages, setPackages] = useState<any[]>([]);
@@ -301,6 +303,9 @@ export default function PlanosPacotesPage() {
                           <RefreshCw className="h-3.5 w-3.5" />
                         </Button>
                       )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Gerar Contrato" onClick={() => navigate(`/contratos?cliente_id=${s.cliente_id}`)}>
+                        <FileSignature className="h-3.5 w-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteTarget({ type: "subscription", id: s.id, name: planName })}>
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </Button>
