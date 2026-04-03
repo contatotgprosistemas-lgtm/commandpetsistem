@@ -107,6 +107,31 @@ export default function ClientsPage() {
     c.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleExport = () => {
+    if (!filtered?.length) {
+      toast.error("Nenhum contato para exportar");
+      return;
+    }
+    const rows = filtered.map(c => ({
+      Nome: c.nome,
+      CPF: c.cpf || "",
+      WhatsApp: c.whatsapp || "",
+      Telefone: c.telefone || "",
+      Email: c.email || "",
+      Endereço: c.endereco || "",
+      CEP: c.cep || "",
+      "Data Nascimento": c.data_nascimento || "",
+      "Como Conheceu": c.como_conheceu || "",
+      Tags: c.tags?.join(", ") || "",
+      Notas: c.notas || "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Contatos");
+    XLSX.writeFile(wb, "contatos.xlsx");
+    toast.success("Exportação concluída!");
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-[1400px]">
       <div className="flex items-center justify-between">
