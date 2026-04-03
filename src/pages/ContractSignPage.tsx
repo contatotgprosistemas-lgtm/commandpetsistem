@@ -250,7 +250,10 @@ export default function ContractSignPage() {
         {/* Contract content */}
         <Card>
           <CardContent className="pt-6">
-            <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed">{contract?.content}</pre>
+            <div
+              className="prose prose-sm max-w-none leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: contract?.content || "" }}
+            />
           </CardContent>
         </Card>
 
