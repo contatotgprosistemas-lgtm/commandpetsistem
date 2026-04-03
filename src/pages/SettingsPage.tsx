@@ -117,14 +117,60 @@ function EmpresaTab() {
             <Label>Telefone</Label>
             <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(00) 00000-0000" />
           </div>
-          <div className="space-y-2">
-            <Label>Horário de Funcionamento</Label>
-            <Input value={form.horario_funcionamento} onChange={(e) => setForm({ ...form, horario_funcionamento: e.target.value })} placeholder="Seg-Sex 08:00-18:00" />
+        </div>
+
+        {/* Endereço com CEP */}
+        <div className="border-t pt-4 space-y-3">
+          <Label className="text-sm font-semibold">Endereço</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>CEP</Label>
+              <div className="relative">
+                <Input
+                  value={form.cep}
+                  onChange={(e) => setForm({ ...form, cep: e.target.value })}
+                  onBlur={(e) => buscarCep(e.target.value)}
+                  placeholder="00000-000"
+                />
+                {cepLoading && <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
+              </div>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Endereço</Label>
+              <Input value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} placeholder="Rua, bairro, cidade - UF" />
+            </div>
+          </div>
+          <div className="w-32 space-y-2">
+            <Label>Número</Label>
+            <Input value={form.endereco_numero} onChange={(e) => setForm({ ...form, endereco_numero: e.target.value })} placeholder="Nº" />
           </div>
         </div>
-        <div className="space-y-2">
-          <Label>Endereço Completo</Label>
-          <Input value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} placeholder="Rua, número, bairro, cidade - UF, CEP" />
+
+        {/* Horários de Funcionamento */}
+        <div className="border-t pt-4 space-y-3">
+          <Label className="text-sm font-semibold">Horário de Funcionamento</Label>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground w-24 shrink-0">Seg a Sex</span>
+              <Input type="time" className="w-28" value={form.horario_semana_inicio} onChange={(e) => setForm({ ...form, horario_semana_inicio: e.target.value })} />
+              <span className="text-sm text-muted-foreground">às</span>
+              <Input type="time" className="w-28" value={form.horario_semana_fim} onChange={(e) => setForm({ ...form, horario_semana_fim: e.target.value })} />
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground w-24 shrink-0">Sábado</span>
+              <Input type="time" className="w-28" value={form.horario_sabado_inicio} onChange={(e) => setForm({ ...form, horario_sabado_inicio: e.target.value })} placeholder="--:--" />
+              <span className="text-sm text-muted-foreground">às</span>
+              <Input type="time" className="w-28" value={form.horario_sabado_fim} onChange={(e) => setForm({ ...form, horario_sabado_fim: e.target.value })} placeholder="--:--" />
+              <span className="text-xs text-muted-foreground">(vazio = fechado)</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground w-24 shrink-0">Domingo</span>
+              <Input type="time" className="w-28" value={form.horario_domingo_inicio} onChange={(e) => setForm({ ...form, horario_domingo_inicio: e.target.value })} placeholder="--:--" />
+              <span className="text-sm text-muted-foreground">às</span>
+              <Input type="time" className="w-28" value={form.horario_domingo_fim} onChange={(e) => setForm({ ...form, horario_domingo_fim: e.target.value })} placeholder="--:--" />
+              <span className="text-xs text-muted-foreground">(vazio = fechado)</span>
+            </div>
+          </div>
         </div>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
