@@ -159,6 +159,10 @@ export default function ClientsPage() {
             <Link2 className="h-4 w-4" strokeWidth={1.5} />
             Link de Cadastro
           </Button>
+          <Button size="sm" variant="outline" className="gap-2" onClick={handleExport}>
+            <Download className="h-4 w-4" strokeWidth={1.5} />
+            Exportar
+          </Button>
           <ImportContatosDialog onSuccess={handleRefresh} />
           <NovoClienteDialog onSuccess={handleRefresh} />
         </div>
