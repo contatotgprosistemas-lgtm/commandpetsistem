@@ -819,6 +819,7 @@ export type Database = {
           signer_latitude: number | null
           signer_longitude: number | null
           signer_name: string
+          signer_type: string
           signer_user_agent: string | null
         }
         Insert: {
@@ -837,6 +838,7 @@ export type Database = {
           signer_latitude?: number | null
           signer_longitude?: number | null
           signer_name: string
+          signer_type?: string
           signer_user_agent?: string | null
         }
         Update: {
@@ -855,6 +857,7 @@ export type Database = {
           signer_latitude?: number | null
           signer_longitude?: number | null
           signer_name?: string
+          signer_type?: string
           signer_user_agent?: string | null
         }
         Relationships: [

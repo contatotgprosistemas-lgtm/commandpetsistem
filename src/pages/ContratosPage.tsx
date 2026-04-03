@@ -45,11 +45,12 @@ interface Contract {
 }
 
 const statusMap: Record<string, { label: string; color: string }> = {
-  rascunho: { label: "Não concluído", color: "bg-muted text-muted-foreground" },
-  enviado: { label: "Não concluído", color: "bg-amber-100 text-amber-800" },
+  rascunho: { label: "Rascunho", color: "bg-muted text-muted-foreground" },
+  enviado: { label: "Aguardando assinaturas", color: "bg-amber-100 text-amber-800" },
+  assinado_parcial: { label: "Assinado parcialmente", color: "bg-blue-100 text-blue-800" },
   assinado: { label: "Concluído", color: "bg-emerald-100 text-emerald-800" },
   cancelado: { label: "Cancelado", color: "bg-red-100 text-red-800" },
-  expirado: { label: "Não concluído", color: "bg-gray-100 text-gray-800" },
+  expirado: { label: "Expirado", color: "bg-gray-100 text-gray-800" },
 };
 
 const DEFAULT_TEMPLATE = `<h2 style="text-align: center">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</h2>
@@ -95,6 +96,11 @@ export default function ContratosPage() {
   const [deleteContract, setDeleteContract] = useState<Contract | null>(null);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
+
+  // Company sign dialog
+  const [companySignContract, setCompanySignContract] = useState<Contract | null>(null);
+  const [companySignerName, setCompanySignerName] = useState("");
+  const [companySigning, setCompanySigning] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -463,6 +469,47 @@ export default function ContratosPage() {
     setDeletePassword("");
   }
 
+  async function handleCompanySign() {
+    if (!companySignContract || !companySignerName.trim()) return;
+    setCompanySigning(true);
+
+    const ua = navigator.userAgent;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(companySignContract.content);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const contentHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+    const { data: result, error: signErr } = await supabase.functions.invoke("sign-contract", {
+      body: {
+        action: "sign",
+        signing_token: companySignContract.signing_token,
+        signer_name: companySignerName.trim(),
+        signer_user_agent: ua,
+        signer_device: "Desktop",
+        content_hash: contentHash,
+        acceptance_text: "Assinatura da empresa — Li e aceito os termos deste contrato",
+        signer_type: "empresa",
+      },
+    });
+
+    if (signErr || result?.error) {
+      toast.error(result?.error || "Erro ao assinar contrato");
+      setCompanySigning(false);
+      return;
+    }
+
+    if (result?.both_signed) {
+      toast.success("Contrato concluído! Ambas as partes assinaram.");
+    } else {
+      toast.success("Assinatura da empresa registrada! Aguardando assinatura do cliente.");
+    }
+    setCompanySigning(false);
+    setCompanySignContract(null);
+    setCompanySignerName("");
+    loadData();
+  }
+
   function handleEditTemplate(t: Template) {
     setEditingTemplate(t.id);
     setTemplateForm({ name: t.name, description: t.description || "", content: t.content });
@@ -533,13 +580,13 @@ export default function ContratosPage() {
                                 <Send className="h-4 w-4" />
                               </Button>
                             )}
-                            {(c.status === "enviado" || c.status === "assinado") && (
+                            {(c.status === "enviado" || c.status === "assinado" || c.status === "assinado_parcial") && (
                               <Button variant="ghost" size="icon" onClick={() => copyLink(c)} title="Copiar link">
                                 <Link2 className="h-4 w-4" />
                               </Button>
                             )}
                             {c.status !== "assinado" && c.status !== "cancelado" && (
-                              <Button variant="ghost" size="icon" onClick={() => window.open(getSigningUrl(c), "_blank")} title="Assinar pela empresa">
+                              <Button variant="ghost" size="icon" onClick={() => { setCompanySignContract(c); setCompanySignerName(""); }} title="Assinar pela empresa">
                                 <PenTool className="h-4 w-4" />
                               </Button>
                             )}
@@ -823,6 +870,36 @@ export default function ContratosPage() {
             <Button variant="outline" onClick={() => { setDeleteContract(null); setDeletePassword(""); }}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDeleteContract} disabled={!deletePassword || deleting}>
               {deleting ? "Excluindo..." : "Excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Company Sign Dialog */}
+      <Dialog open={!!companySignContract} onOpenChange={(open) => { if (!open) { setCompanySignContract(null); setCompanySignerName(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Assinar pela Empresa</DialogTitle>
+            <DialogDescription>
+              Assine o contrato <strong>{companySignContract?.title}</strong> em nome da empresa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Nome do responsável *</Label>
+              <Input
+                value={companySignerName}
+                onChange={e => setCompanySignerName(e.target.value)}
+                placeholder="Nome completo do responsável"
+                onKeyDown={e => { if (e.key === "Enter" && companySignerName.trim()) handleCompanySign(); }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCompanySignContract(null); setCompanySignerName(""); }}>Cancelar</Button>
+            <Button onClick={handleCompanySign} disabled={!companySignerName.trim() || companySigning}>
+              <PenTool className="h-4 w-4 mr-2" />
+              {companySigning ? "Assinando..." : "Assinar"}
             </Button>
           </DialogFooter>
         </DialogContent>
