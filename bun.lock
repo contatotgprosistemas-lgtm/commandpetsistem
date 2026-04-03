@@ -36,6 +36,7 @@
         "@supabase/supabase-js": "^2.99.2",
         "@tanstack/react-query": "^5.83.0",
         "@tiptap/extension-font-family": "^3.22.1",
+        "@tiptap/extension-font-size": "^3.0.0-next.3",
         "@tiptap/extension-image": "^3.22.1",
         "@tiptap/extension-text-align": "^3.22.1",
         "@tiptap/extension-text-style": "^3.22.1",
@@ -412,6 +413,8 @@
     "@tiptap/extension-floating-menu": ["@tiptap/extension-floating-menu@3.22.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-floating-menu/-/extension-floating-menu-3.22.1.tgz", { "peerDependencies": { "@floating-ui/dom": "^1.0.0", "@tiptap/core": "^3.22.1", "@tiptap/pm": "^3.22.1" } }, "sha512-TaZqmaoKv36FzbKTrBkkv74o0t8dYTftNZ7NotBqfSki0BB2PupTCJHafdu1YI0zmJ3xEzjB/XKcKPz2+10sDA=="],
 
     "@tiptap/extension-font-family": ["@tiptap/extension-font-family@3.22.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-font-family/-/extension-font-family-3.22.1.tgz", { "peerDependencies": { "@tiptap/extension-text-style": "^3.22.1" } }, "sha512-CIXLsKS017QDWi8tAFHbXF4zqhoucQeE+3QL3CYHqL0WSZEYVZomVTvT8lW5LXvFDYTMbop7jliS4x4POBONdA=="],
+
+    "@tiptap/extension-font-size": ["@tiptap/extension-font-size@3.0.0-next.3", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-font-size/-/extension-font-size-3.0.0-next.3.tgz", { "peerDependencies": { "@tiptap/core": "^3.0.0-next.3", "@tiptap/extension-text-style": "^3.0.0-next.3" } }, "sha512-JmmrCboLvDH4HG1nOAMkiwmeFluliXaeEh5+RDxOofuzxsHjSYVJpNP846eLtMnjkUAxjvh7tBz7GTjATm3OuQ=="],
 
     "@tiptap/extension-gapcursor": ["@tiptap/extension-gapcursor@3.22.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-gapcursor/-/extension-gapcursor-3.22.1.tgz", { "peerDependencies": { "@tiptap/extensions": "^3.22.1" } }, "sha512-qqsyy7unWM3elv+7ru+6paKAnw1PZTvjNVQu3UzB6d556Gx2uE4isXJNdBaslBZdp2EoaYdIkhhEccW9B/Nwqg=="],
 
