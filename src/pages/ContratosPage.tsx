@@ -469,6 +469,47 @@ export default function ContratosPage() {
     setDeletePassword("");
   }
 
+  async function handleCompanySign() {
+    if (!companySignContract || !companySignerName.trim()) return;
+    setCompanySigning(true);
+
+    const ua = navigator.userAgent;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(companySignContract.content);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const contentHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+    const { data: result, error: signErr } = await supabase.functions.invoke("sign-contract", {
+      body: {
+        action: "sign",
+        signing_token: companySignContract.signing_token,
+        signer_name: companySignerName.trim(),
+        signer_user_agent: ua,
+        signer_device: "Desktop",
+        content_hash: contentHash,
+        acceptance_text: "Assinatura da empresa — Li e aceito os termos deste contrato",
+        signer_type: "empresa",
+      },
+    });
+
+    if (signErr || result?.error) {
+      toast.error(result?.error || "Erro ao assinar contrato");
+      setCompanySigning(false);
+      return;
+    }
+
+    if (result?.both_signed) {
+      toast.success("Contrato concluído! Ambas as partes assinaram.");
+    } else {
+      toast.success("Assinatura da empresa registrada! Aguardando assinatura do cliente.");
+    }
+    setCompanySigning(false);
+    setCompanySignContract(null);
+    setCompanySignerName("");
+    loadData();
+  }
+
   function handleEditTemplate(t: Template) {
     setEditingTemplate(t.id);
     setTemplateForm({ name: t.name, description: t.description || "", content: t.content });
