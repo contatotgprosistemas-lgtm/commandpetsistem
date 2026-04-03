@@ -26,7 +26,9 @@ export default function PlanosPacotesPage() {
   const [loading, setLoading] = useState(true);
 
   const [novoPlanoOpen, setNovoPlanoOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<any>(null);
   const [novoPacoteOpen, setNovoPacoteOpen] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<any>(null);
   const [contratacaoOpen, setContratacaoOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; name: string } | null>(null);
   const [actionTarget, setActionTarget] = useState<{ action: string; id: string } | null>(null);
