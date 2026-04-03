@@ -90,12 +90,12 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
     if (!open) return;
     supabase
       .from("servicos")
-      .select("nome")
+      .select("descricao")
       .eq("empresa_id", empresaId)
       .eq("ativo", true)
-      .order("nome")
+      .order("descricao")
       .then(({ data }) => {
-        if (data) setServiceOptions(data.map((s: any) => s.nome));
+        if (data) setServiceOptions(data.map((s: any) => s.descricao));
       });
   }, [open, empresaId]);
 
