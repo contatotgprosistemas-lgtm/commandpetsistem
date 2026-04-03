@@ -522,6 +522,11 @@ export default function ContratosPage() {
                             <Button variant="ghost" size="icon" onClick={() => setTimelineContractId(c.id)} title="Histórico">
                               <History className="h-4 w-4" />
                             </Button>
+                            {isAdmin && (
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteContract(c)} title="Excluir" className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
