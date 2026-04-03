@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const hasInitialized = useRef(false);
 
   const loadAuthData = useCallback(async (currentSession: Session | null) => {
     if (!currentSession?.user) {
@@ -39,10 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsSuperAdmin(false);
       setIsApproved(false);
       setLoading(false);
+      hasInitialized.current = true;
       return;
     }
 
-    setLoading(true);
+    if (!hasInitialized.current) {
+      setLoading(true);
+    }
+
     setSession(currentSession);
 
     const userId = currentSession.user.id;
@@ -68,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsSuperAdmin(superAdmin);
     setIsApproved(superAdmin || (profileData?.aprovado === true));
     setLoading(false);
+    hasInitialized.current = true;
   }, []);
 
   useEffect(() => {
