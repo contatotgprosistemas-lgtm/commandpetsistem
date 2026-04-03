@@ -216,6 +216,31 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
                 <FormMessage />
               </FormItem>
             )} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Venc. Fatura (dia do mês)</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={28}
+                  value={diaVencimento}
+                  onChange={e => setDiaVencimento(Number(e.target.value))}
+                  placeholder="10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Gerar Fatura (dias antes)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={30}
+                  value={diasGerarFatura}
+                  onChange={e => setDiasGerarFatura(Number(e.target.value))}
+                  placeholder="5"
+                />
+                <p className="text-xs text-muted-foreground">Quantos dias antes do vencimento gera automático a fatura</p>
+              </div>
+            </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
               <Button type="submit" disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>
