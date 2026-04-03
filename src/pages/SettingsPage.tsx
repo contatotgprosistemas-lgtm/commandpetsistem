@@ -45,7 +45,7 @@ function EmpresaTab() {
   const handleSave = async () => {
     if (!profile?.empresa_id) return;
     setSaving(true);
-    const { error } = await supabase.from("empresas").update(form).eq("id", profile.empresa_id);
+    const { error } = await supabase.from("empresas").update(form as any).eq("id", profile.empresa_id);
     setSaving(false);
     if (error) toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     else toast({ title: "Dados da empresa atualizados!" });
