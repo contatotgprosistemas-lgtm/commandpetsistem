@@ -14,6 +14,7 @@ interface Props {
   onOpenChange: (o: boolean) => void;
   onSuccess: () => void;
   empresaId: string;
+  editingPackage?: any;
 }
 
 interface PackageItem {
