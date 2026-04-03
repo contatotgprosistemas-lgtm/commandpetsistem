@@ -41,9 +41,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
     if (!file) return;
     resetState();
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
+    const processText = (text: string) => {
       if (!text) return;
 
       const lines = text.split(/\r?\n/).filter(l => l.trim());
@@ -107,6 +105,24 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
 
       setParsed(pets);
       if (errs.length) setErrors(errs);
+    };
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      if (!text) return;
+
+      const hasGarbled = /[\u00c3][\u0080-\u00bf]/.test(text) || /ï¿½|Ã£|Ã©|Ã§|Ãµ|Ã¡|Ã­|Ãº|Ã¢|Ãª|Ã´/.test(text);
+      if (hasGarbled) {
+        const latin1Reader = new FileReader();
+        latin1Reader.onload = (ev2) => {
+          const latin1Text = ev2.target?.result as string;
+          if (latin1Text) processText(latin1Text);
+        };
+        latin1Reader.readAsText(file, "ISO-8859-1");
+      } else {
+        processText(text);
+      }
     };
     reader.readAsText(file, "UTF-8");
   };
