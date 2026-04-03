@@ -756,6 +756,36 @@ export default function ContratosPage() {
           onOpenChange={() => setTimelineContractId(null)}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteContract} onOpenChange={(open) => { if (!open) { setDeleteContract(null); setDeletePassword(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir Contrato</DialogTitle>
+            <DialogDescription>
+              Para confirmar a exclusão de <strong>{deleteContract?.title}</strong>, digite sua senha de login.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                value={deletePassword}
+                onChange={e => setDeletePassword(e.target.value)}
+                placeholder="Digite sua senha"
+                onKeyDown={e => { if (e.key === "Enter" && deletePassword) handleDeleteContract(); }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteContract(null); setDeletePassword(""); }}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteContract} disabled={!deletePassword || deleting}>
+              {deleting ? "Excluindo..." : "Excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
