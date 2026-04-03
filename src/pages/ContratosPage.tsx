@@ -116,49 +116,28 @@ export default function ContratosPage() {
     tpls: Template[],
     clientesList: typeof clientes
   ) {
-    // Fetch subscription with related data
-    const { data: sub } = await supabase
+    // Fetch subscription with related data including plan and package
+    const { data: sub, error: subError } = await supabase
       .from("customer_pet_subscriptions")
-      .select("*, cliente:clientes(id, nome, cpf, email, endereco), pet:pets(id, nome, raca, sexo, cor, castrado)")
+      .select("*, cliente:clientes(id, nome, cpf, email, endereco), pet:pets(id, nome, raca, sexo, cor, castrado), plan:service_plans(id, name, price, type), package:service_packages(id, name, price)")
       .eq("id", subscriptionId)
       .single();
 
-    if (!sub) {
+    if (subError || !sub) {
+      console.error("Erro ao buscar contratação:", subError);
       toast.error("Contratação não encontrada");
       return;
     }
 
-    // Fetch plan or package name
-    let planName = "";
-    let planPrice = 0;
-    let packageName = "";
-    let packagePrice = 0;
-
-    if ((sub as any).plan_id) {
-      const { data: plan } = await supabase
-        .from("service_plans" as any)
-        .select("name, price, service_type")
-        .eq("id", (sub as any).plan_id)
-        .single();
-      if (plan) {
-        planName = (plan as any).name || "";
-        planPrice = Number((plan as any).price) || 0;
-      }
-    }
-    if ((sub as any).package_id) {
-      const { data: pkg } = await supabase
-        .from("service_packages" as any)
-        .select("name, price")
-        .eq("id", (sub as any).package_id)
-        .single();
-      if (pkg) {
-        packageName = (pkg as any).name || "";
-        packagePrice = Number((pkg as any).price) || 0;
-      }
-    }
-
     const cliente = (sub as any).cliente;
     const pet = (sub as any).pet;
+    const plan = (sub as any).plan;
+    const pkg = (sub as any).package;
+
+    const planName = plan?.name || "";
+    const planPrice = Number(plan?.price) || 0;
+    const packageName = pkg?.name || "";
+    const packagePrice = Number(pkg?.price) || 0;
 
     // Fetch all pets from same tutor
     let petsMesmoTutor = "";
