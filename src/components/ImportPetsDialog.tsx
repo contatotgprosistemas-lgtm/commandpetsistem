@@ -108,23 +108,26 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
     };
 
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      if (!text) return;
+    reader.onload = () => {
+      const buffer = reader.result;
+      if (!(buffer instanceof ArrayBuffer)) return;
 
-      const hasGarbled = /\uFFFD/.test(text) || /[\u00c3][\u0080-\u00bf]/.test(text) || /ï¿½|Ã£|Ã©|Ã§|Ãµ|Ã¡|Ã­|Ãº|Ã¢|Ãª|Ã´/.test(text);
-      if (hasGarbled) {
-        const latin1Reader = new FileReader();
-        latin1Reader.onload = (ev2) => {
-          const latin1Text = ev2.target?.result as string;
-          if (latin1Text) processText(latin1Text);
-        };
-        latin1Reader.readAsText(file, "ISO-8859-1");
-      } else {
-        processText(text);
+      const bytes = new Uint8Array(buffer);
+      let text: string;
+
+      try {
+        text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+      } catch {
+        text = new TextDecoder("windows-1252").decode(bytes);
       }
+
+      if (text.includes("\uFFFD")) {
+        text = new TextDecoder("windows-1252").decode(bytes);
+      }
+
+      processText(text);
     };
-    reader.readAsText(file, "UTF-8");
+    reader.readAsArrayBuffer(file);
   };
 
   const handleImport = async () => {
