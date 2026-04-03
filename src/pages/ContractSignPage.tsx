@@ -181,6 +181,7 @@ export default function ContractSignPage() {
         signature_image: signatureImage,
         content_hash: contentHash,
         acceptance_text: "Li e aceito os termos deste contrato",
+        signer_type: "cliente",
       },
     });
 
@@ -190,9 +191,14 @@ export default function ContractSignPage() {
       return;
     }
 
-    setSigned(true);
+    setAlreadySignedByClient(true);
+    if (result?.both_signed) {
+      setSigned(true);
+      toast.success("Contrato concluído! Ambas as partes assinaram.");
+    } else {
+      toast.success("Sua assinatura foi registrada! Aguardando assinatura da empresa.");
+    }
     setSigning(false);
-    toast.success("Contrato assinado com sucesso!");
   }
 
   if (loading) {
