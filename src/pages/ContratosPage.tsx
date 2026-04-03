@@ -624,6 +624,65 @@ export default function ContratosPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Send Dialog */}
+      <Dialog open={!!sendDialogContract} onOpenChange={() => setSendDialogContract(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Enviar Contrato</DialogTitle>
+            <DialogDescription>
+              Escolha como deseja enviar o contrato para {(sendDialogContract as any)?.cliente?.nome || "o cliente"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-4">
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-14 text-left"
+              onClick={() => sendDialogContract && handleSendWhatsApp(sendDialogContract)}
+            >
+              <div className="h-9 w-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <MessageCircle className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">WhatsApp</p>
+                <p className="text-xs text-muted-foreground">Enviar link via WhatsApp</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start gap-3 h-14 text-left"
+              onClick={() => sendDialogContract && handleSendEmail(sendDialogContract)}
+            >
+              <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                <Mail className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">E-mail</p>
+                <p className="text-xs text-muted-foreground">Abrir e-mail com link do contrato</p>
+              </div>
+            </Button>
+            <Button
+              variant="ghost"
+              className="justify-start gap-3 h-14 text-left"
+              onClick={() => {
+                if (sendDialogContract) {
+                  copyLink(sendDialogContract);
+                  markAsSent(sendDialogContract);
+                  setSendDialogContract(null);
+                }
+              }}
+            >
+              <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <Copy className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Copiar link</p>
+                <p className="text-xs text-muted-foreground">Copiar link de assinatura</p>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Timeline Dialog */}
       {timelineContractId && (
         <ContractTimelineDialog
