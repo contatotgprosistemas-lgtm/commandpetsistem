@@ -424,11 +424,10 @@ export default function ContratosPage() {
             </div>
             <div>
               <Label>Conteúdo (editável)</Label>
-              <Textarea
-                value={contractForm.clienteId ? fillTemplate(contractForm.content, contractForm.clienteId) : contractForm.content}
-                onChange={e => setContractForm(p => ({ ...p, content: e.target.value }))}
-                rows={12}
-                className="font-mono text-sm"
+              <RichTextEditor
+                content={contractForm.clienteId ? fillTemplate(contractForm.content, contractForm.clienteId) : contractForm.content}
+                onChange={(html) => setContractForm(p => ({ ...p, content: html }))}
+                onLogoUpload={handleLogoUpload}
               />
             </div>
           </div>
