@@ -250,8 +250,21 @@ export default function ContractSignPage() {
         {/* Contract content */}
         <Card>
           <CardContent className="pt-6">
+            <style>{`
+              .contract-content img {
+                max-width: 120px !important;
+                max-height: 80px !important;
+                width: auto !important;
+                height: auto !important;
+                display: block;
+                margin: 0;
+              }
+              .contract-content p[style*="text-align: center"] {
+                text-align: left !important;
+              }
+            `}</style>
             <div
-              className="prose prose-sm max-w-none leading-relaxed"
+              className="contract-content prose prose-sm max-w-none leading-relaxed"
               dangerouslySetInnerHTML={{ __html: contract?.content || "" }}
             />
           </CardContent>
