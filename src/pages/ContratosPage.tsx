@@ -450,7 +450,7 @@ export default function ContratosPage() {
                               <Eye className="h-4 w-4" />
                             </Button>
                             {c.status === "rascunho" && (
-                              <Button variant="ghost" size="icon" onClick={() => sendContract(c)} title="Enviar">
+                              <Button variant="ghost" size="icon" onClick={() => setSendDialogContract(c)} title="Enviar">
                                 <Send className="h-4 w-4" />
                               </Button>
                             )}
