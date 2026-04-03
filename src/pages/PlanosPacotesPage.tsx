@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 export default function PlanosPacotesPage() {
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id || "";
+  const navigate = useNavigate();
 
   const [plans, setPlans] = useState<any[]>([]);
   const [packages, setPackages] = useState<any[]>([]);
