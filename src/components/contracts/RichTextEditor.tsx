@@ -8,8 +8,9 @@ import FontFamily from "@tiptap/extension-font-family";
 import FontSize from "@tiptap/extension-font-size";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bold, Italic, Underline as UnderlineIcon, AlignLeft, AlignCenter, AlignRight, ImagePlus } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Bold, Italic, Underline as UnderlineIcon, AlignLeft, AlignCenter, AlignRight, ImagePlus, Tags } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Props {
   content: string;
@@ -26,8 +27,38 @@ const FONT_FAMILIES = [
   { label: "Times", value: "'Times New Roman', serif" },
 ];
 
+const PLACEHOLDERS = [
+  { group: "Cliente", items: [
+    { label: "Nome do cliente", value: "{{cliente_nome}}" },
+    { label: "CPF do cliente", value: "{{cliente_cpf}}" },
+    { label: "E-mail do cliente", value: "{{cliente_email}}" },
+    { label: "Endereço do cliente", value: "{{cliente_endereco}}" },
+  ]},
+  { group: "Pet", items: [
+    { label: "Nome do pet", value: "{{pet_nome}}" },
+    { label: "Raça", value: "{{pet_raca}}" },
+    { label: "Sexo", value: "{{pet_sexo}}" },
+    { label: "Cor", value: "{{pet_cor}}" },
+    { label: "Castrado", value: "{{pet_castrado}}" },
+    { label: "Pets do mesmo tutor", value: "{{pets_mesmo_tutor}}" },
+  ]},
+  { group: "Serviços / Planos", items: [
+    { label: "Serviços", value: "{{servicos}}" },
+    { label: "Plano", value: "{{plano}}" },
+    { label: "Pacote", value: "{{pacote}}" },
+  ]},
+  { group: "Valores / Datas", items: [
+    { label: "Data da reserva", value: "{{data_reserva}}" },
+    { label: "Valor do plano", value: "{{valor_plano}}" },
+    { label: "Valor do serviço", value: "{{valor_servico}}" },
+    { label: "Valor do pacote", value: "{{valor_pacote}}" },
+    { label: "Data atual", value: "{{data_atual}}" },
+  ]},
+];
+
 export function RichTextEditor({ content, onChange, onLogoUpload }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [placeholderOpen, setPlaceholderOpen] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -61,6 +92,12 @@ export function RichTextEditor({ content, onChange, onLogoUpload }: Props) {
       editor.chain().focus().setImage({ src: url }).run();
     }
     e.target.value = "";
+  }
+
+  function insertPlaceholder(value: string) {
+    if (!editor) return;
+    editor.chain().focus().insertContent(value).run();
+    setPlaceholderOpen(false);
   }
 
   return (
@@ -175,6 +212,42 @@ export function RichTextEditor({ content, onChange, onLogoUpload }: Props) {
           className="hidden"
           onChange={handleImageUpload}
         />
+
+        <div className="w-px h-5 bg-border mx-1" />
+
+        <Popover open={placeholderOpen} onOpenChange={setPlaceholderOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-7 text-xs gap-1 px-2"
+              title="Inserir placeholder"
+            >
+              <Tags className="h-3.5 w-3.5" />
+              Campos
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-0 max-h-72 overflow-y-auto" align="start">
+            {PLACEHOLDERS.map((group) => (
+              <div key={group.group}>
+                <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0">
+                  {group.group}
+                </div>
+                {group.items.map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between"
+                    onClick={() => insertPlaceholder(item.value)}
+                  >
+                    <span>{item.label}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{item.value}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </PopoverContent>
+        </Popover>
       </div>
       <EditorContent editor={editor} className="prose prose-sm max-w-none p-4 min-h-[300px] focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[280px] [&_.ProseMirror_img]:max-w-[200px] [&_.ProseMirror_img]:mx-auto [&_.ProseMirror_img]:block" />
     </div>
