@@ -173,7 +173,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
               <Button type="button" variant="outline" size="sm" onClick={addItem}><Plus className="h-3.5 w-3.5 mr-1" />Adicionar</Button>
             </div>
             {items.map((item, i) => (
-              <div key={i} className="grid grid-cols-[1fr_80px_100px_100px_32px] gap-2 mb-2 items-end">
+              <div key={i} className="grid grid-cols-[1fr_80px_100px_32px] gap-2 mb-2 items-end">
                 <div>
                   {i === 0 && <Label className="text-xs text-muted-foreground">Serviço</Label>}
                   <Select value={item.service_name} onValueChange={v => updateItem(i, "service_name", v)}>
@@ -195,10 +195,6 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
                       <SelectItem value="total">Total</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                <div>
-                  {i === 0 && <Label className="text-xs text-muted-foreground">Extra R$</Label>}
-                  <Input type="number" value={item.extra_unit_price} onChange={e => updateItem(i, "extra_unit_price", Number(e.target.value))} />
                 </div>
                 <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => removeItem(i)} disabled={items.length === 1}>
                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
