@@ -174,6 +174,8 @@ const ServicosPage = () => {
     setDescricao("");
     setValor("");
     setTipo("");
+    setConsiderarDia(false);
+    setDiaria24h(false);
     setOpen(false);
     setEditId(null);
   };
