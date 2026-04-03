@@ -22,21 +22,49 @@ function EmpresaTab() {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ nome_empresa: "", cnpj: "", email: "", telefone: "", nome_fantasia: "", endereco: "", inscricao_estadual: "", inscricao_municipal: "", horario_funcionamento: "" });
+  const [cepLoading, setCepLoading] = useState(false);
+  const [form, setForm] = useState({
+    nome_empresa: "", cnpj: "", email: "", telefone: "", nome_fantasia: "", endereco: "", endereco_numero: "", cep: "",
+    inscricao_estadual: "", inscricao_municipal: "",
+    horario_semana_inicio: "08:00", horario_semana_fim: "18:00",
+    horario_sabado_inicio: "", horario_sabado_fim: "",
+    horario_domingo_inicio: "", horario_domingo_fim: "",
+  });
+
+  async function buscarCep(cep: string) {
+    const clean = cep.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setForm(f => ({ ...f, endereco: `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}` }));
+      } else {
+        toast({ title: "CEP não encontrado", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro ao buscar CEP", variant: "destructive" });
+    } finally {
+      setCepLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!profile?.empresa_id) return;
     supabase
       .from("empresas")
-      .select("nome_empresa, cnpj, email, telefone, nome_fantasia, endereco, inscricao_estadual, inscricao_municipal, horario_funcionamento")
+      .select("nome_empresa, cnpj, email, telefone, nome_fantasia, endereco, endereco_numero, cep, inscricao_estadual, inscricao_municipal, horario_semana_inicio, horario_semana_fim, horario_sabado_inicio, horario_sabado_fim, horario_domingo_inicio, horario_domingo_fim")
       .eq("id", profile.empresa_id)
       .single()
       .then(({ data }: any) => {
         if (data) setForm({
           nome_empresa: data.nome_empresa || "", cnpj: data.cnpj || "", email: data.email || "", telefone: data.telefone || "",
-          nome_fantasia: data.nome_fantasia || "", endereco: data.endereco || "",
+          nome_fantasia: data.nome_fantasia || "", endereco: data.endereco || "", endereco_numero: data.endereco_numero || "", cep: data.cep || "",
           inscricao_estadual: data.inscricao_estadual || "", inscricao_municipal: data.inscricao_municipal || "",
-          horario_funcionamento: data.horario_funcionamento || ""
+          horario_semana_inicio: data.horario_semana_inicio || "08:00", horario_semana_fim: data.horario_semana_fim || "18:00",
+          horario_sabado_inicio: data.horario_sabado_inicio || "", horario_sabado_fim: data.horario_sabado_fim || "",
+          horario_domingo_inicio: data.horario_domingo_inicio || "", horario_domingo_fim: data.horario_domingo_fim || "",
         });
         setLoading(false);
       });
