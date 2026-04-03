@@ -97,6 +97,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
         raca: data.raca || null,
         cor: data.cor || null,
         porte: data.porte || null,
+        castrado: data.castrado || null,
         sexo: data.sexo || null,
         peso: data.peso ? parseFloat(data.peso) : null,
         data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
