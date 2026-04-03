@@ -11,7 +11,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, signing_token, signer_name, signer_email, signer_document, signer_user_agent, signer_device, signer_latitude, signer_longitude, signature_image, content_hash, acceptance_text } = await req.json();
+    const {
+      action, signing_token, signer_name, signer_email, signer_document,
+      signer_user_agent, signer_device, signer_latitude, signer_longitude,
+      signature_image, content_hash, acceptance_text, signer_type,
+    } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -42,8 +46,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Action: load contract data
+    // Action: load contract data - also return existing signatures info
     if (action === "load") {
+      // Check existing signatures
+      const { data: existingSigs } = await supabase
+        .from("contract_signatures")
+        .select("signer_type, signer_name, signed_at")
+        .eq("contract_id", contract.id);
+
+      const signatures = {
+        cliente: existingSigs?.find((s: any) => s.signer_type === "cliente") || null,
+        empresa: existingSigs?.find((s: any) => s.signer_type === "empresa") || null,
+      };
+
       // Log view event
       await supabase.from("contract_events").insert({
         contract_id: contract.id,
@@ -53,15 +68,25 @@ Deno.serve(async (req) => {
         user_agent: signer_user_agent || null,
       });
 
-      return new Response(JSON.stringify({ contract }), {
+      return new Response(JSON.stringify({ contract, signatures }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Action: sign
     if (action === "sign") {
-      if (contract.status === "assinado") {
-        return new Response(JSON.stringify({ error: "Contrato já assinado" }), {
+      const type = signer_type === "empresa" ? "empresa" : "cliente";
+
+      // Check if this type already signed
+      const { data: existingSig } = await supabase
+        .from("contract_signatures")
+        .select("id")
+        .eq("contract_id", contract.id)
+        .eq("signer_type", type)
+        .maybeSingle();
+
+      if (existingSig) {
+        return new Response(JSON.stringify({ error: `Este contrato já foi assinado pela parte ${type === "empresa" ? "da empresa" : "do cliente"}` }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -86,6 +111,7 @@ Deno.serve(async (req) => {
         signature_image: signature_image || null,
         content_hash: content_hash || "",
         acceptance_text: acceptance_text || "Li e aceito os termos deste contrato",
+        signer_type: type,
       });
 
       if (sigError) {
@@ -94,28 +120,45 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Update contract
+      // Check if both parties have now signed
+      const { data: allSigs } = await supabase
+        .from("contract_signatures")
+        .select("signer_type")
+        .eq("contract_id", contract.id);
+
+      const types = allSigs?.map((s: any) => s.signer_type) || [];
+      const hasCliente = types.includes("cliente");
+      const hasEmpresa = types.includes("empresa");
+      const bothSigned = hasCliente && hasEmpresa;
+
+      // Update contract status
+      const newStatus = bothSigned ? "assinado" : "assinado_parcial";
       await supabase.from("contracts").update({
-        status: "assinado",
-        signed_at: new Date().toISOString(),
+        status: newStatus,
+        signed_at: bothSigned ? new Date().toISOString() : null,
       }).eq("id", contract.id);
 
       // Log event
+      const signerLabel = type === "empresa" ? "empresa" : "cliente";
       await supabase.from("contract_events").insert({
         contract_id: contract.id,
         empresa_id: contract.empresa_id,
-        event_type: "assinado",
-        description: `Contrato assinado por ${signer_name.trim()}`,
+        event_type: bothSigned ? "assinado" : "assinado_parcial",
+        description: bothSigned
+          ? `Contrato concluído — ambas as partes assinaram. Última assinatura: ${signer_name.trim()} (${signerLabel})`
+          : `Contrato assinado parcialmente por ${signer_name.trim()} (${signerLabel})`,
         user_agent: signer_user_agent || null,
         metadata: {
           signer_name: signer_name.trim(),
           signer_email: signer_email?.trim(),
+          signer_type: type,
           device: signer_device,
           content_hash,
+          both_signed: bothSigned,
         },
       });
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, both_signed: bothSigned }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
