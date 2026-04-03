@@ -179,6 +179,18 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       toast.success("Contratação realizada com sucesso!");
     }
 
+    setClienteId("");
+    setPetId("");
+    setPets([]);
+    setPlanType("plan");
+    setSelectedId("");
+    setStartDate(format(new Date(), "yyyy-MM-dd"));
+    setDiscount("0");
+    setAutoRenew(false);
+    setNotes("");
+    setPlannedDays([]);
+    setHoraBuscar("08:00");
+    setHoraLevar("17:00");
     setSaving(false); onSuccess(); onOpenChange(false);
   }
 
