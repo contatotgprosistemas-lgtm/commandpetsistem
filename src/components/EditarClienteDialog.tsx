@@ -127,7 +127,9 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         endereco: enderecoFinal,
         como_conheceu: data.como_conheceu || null,
         notas: data.notas || null,
-      }).eq("id", cliente.id);
+        dia_vencimento_fatura: diaVencimento,
+        dias_gerar_fatura: diasGerarFatura,
+      } as any).eq("id", cliente.id);
 
       if (error) throw error;
       toast({ title: "Contato atualizado com sucesso!" });
