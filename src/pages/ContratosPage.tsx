@@ -267,13 +267,35 @@ export default function ContratosPage() {
     loadData();
   }
 
-  function fillTemplate(templateContent: string, clienteId: string) {
+  async function fillTemplate(templateContent: string, clienteId: string): Promise<string> {
     const cliente = clientes.find(c => c.id === clienteId);
     if (!cliente) return templateContent;
+
+    // Fetch pets for this client
+    const { data: petsData } = await supabase
+      .from("pets")
+      .select("nome, raca, sexo, cor, castrado")
+      .eq("cliente_id", clienteId);
+
+    const pet = petsData?.[0];
+    const petsMesmoTutor = petsData && petsData.length > 0
+      ? petsData.map((p: any) => `${p.nome}${p.raca ? ` (${p.raca})` : ""}`).join(", ")
+      : "";
+
+    const today = format(new Date(), "dd/MM/yyyy", { locale: ptBR });
+
     return templateContent
-      .replace(/\{\{cliente_nome\}\}/g, cliente.nome || "")
+      .replace(/\{\{cliente_nome\}\}/g, cliente.nome || "___")
       .replace(/\{\{cliente_cpf\}\}/g, cliente.cpf || "___")
-      .replace(/\{\{cliente_endereco\}\}/g, cliente.endereco || "___");
+      .replace(/\{\{cliente_email\}\}/g, cliente.email || "___")
+      .replace(/\{\{cliente_endereco\}\}/g, cliente.endereco || "___")
+      .replace(/\{\{pet_nome\}\}/g, pet?.nome || "___")
+      .replace(/\{\{pet_raca\}\}/g, pet?.raca || "___")
+      .replace(/\{\{pet_sexo\}\}/g, pet?.sexo || "___")
+      .replace(/\{\{pet_cor\}\}/g, pet?.cor || "___")
+      .replace(/\{\{pet_castrado\}\}/g, pet?.castrado || "___")
+      .replace(/\{\{pets_mesmo_tutor\}\}/g, petsMesmoTutor || pet?.nome || "___")
+      .replace(/\{\{data_atual\}\}/g, today);
   }
 
   async function createContract() {
@@ -284,11 +306,8 @@ export default function ContratosPage() {
     const { data: profile } = await supabase.from("profiles").select("empresa_id, id").single();
     if (!profile?.empresa_id) return;
 
+    // Use the content from the editor directly (already filled by handleFillAndPreview)
     let content = contractForm.content;
-    if (contractForm.templateId) {
-      const tpl = templates.find(t => t.id === contractForm.templateId);
-      if (tpl) content = fillTemplate(tpl.content, contractForm.clienteId);
-    }
     if (!content) {
       toast.error("O contrato precisa de conteúdo");
       return;
