@@ -72,6 +72,8 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         como_conheceu: cliente.como_conheceu || "",
         notas: cliente.notas || "",
       });
+      setDiaVencimento(cliente.dia_vencimento_fatura ?? 10);
+      setDiasGerarFatura(cliente.dias_gerar_fatura ?? 5);
       fetchHistorico(cliente.id);
     }
   }, [cliente, form]);
