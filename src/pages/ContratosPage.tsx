@@ -874,6 +874,36 @@ export default function ContratosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Company Sign Dialog */}
+      <Dialog open={!!companySignContract} onOpenChange={(open) => { if (!open) { setCompanySignContract(null); setCompanySignerName(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Assinar pela Empresa</DialogTitle>
+            <DialogDescription>
+              Assine o contrato <strong>{companySignContract?.title}</strong> em nome da empresa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Nome do responsável *</Label>
+              <Input
+                value={companySignerName}
+                onChange={e => setCompanySignerName(e.target.value)}
+                placeholder="Nome completo do responsável"
+                onKeyDown={e => { if (e.key === "Enter" && companySignerName.trim()) handleCompanySign(); }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCompanySignContract(null); setCompanySignerName(""); }}>Cancelar</Button>
+            <Button onClick={handleCompanySign} disabled={!companySignerName.trim() || companySigning}>
+              <PenTool className="h-4 w-4 mr-2" />
+              {companySigning ? "Assinando..." : "Assinar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
