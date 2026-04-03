@@ -41,6 +41,19 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId, edi
     setItems([{ service_name: "", quantity_included: 1, extra_unit_price: 0 }]);
   }
 
+  useEffect(() => {
+    if (editingPackage) {
+      setName(editingPackage.name || "");
+      setDescription(editingPackage.description || "");
+      setPrice(String(editingPackage.price || ""));
+      setValidityDays(String(editingPackage.validity_days || "90"));
+      setTotalCredits(String(editingPackage.total_credits || "1"));
+      setNotes(editingPackage.notes || "");
+    } else {
+      reset();
+    }
+  }, [editingPackage]);
+
   async function handleSave() {
     if (!name || !price) { toast.error("Preencha nome e preço"); return; }
     setSaving(true);
