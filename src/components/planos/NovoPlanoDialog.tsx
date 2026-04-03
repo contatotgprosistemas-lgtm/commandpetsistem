@@ -196,10 +196,6 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  {i === 0 && <Label className="text-xs text-muted-foreground">Extra R$</Label>}
-                  <Input type="number" value={item.extra_unit_price} onChange={e => updateItem(i, "extra_unit_price", Number(e.target.value))} />
-                </div>
                 <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => removeItem(i)} disabled={items.length === 1}>
                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                 </Button>
