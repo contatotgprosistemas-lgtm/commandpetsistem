@@ -20,6 +20,7 @@ interface ParsedPet {
   medicacoes?: string;
   restricoes_alimentares?: string;
   cor?: string;
+  porte?: string;
 }
 
 export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
@@ -66,6 +67,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
       const medIdx = headers.findIndex(h => ["medicacoes", "medicações", "remedios", "remédios"].includes(h));
       const restIdx = headers.findIndex(h => ["restricoes_alimentares", "restrições", "restricoes", "alimentacao"].includes(h));
       const corIdx = headers.findIndex(h => ["cor", "color"].includes(h));
+      const porteIdx = headers.findIndex(h => ["porte", "size", "tamanho"].includes(h));
 
       if (nameIdx === -1) {
         setErrors(["Coluna 'nome' não encontrada. Use: nome, especie, raca, cor, sexo, peso, idade, tutor, pelagem, data_nascimento, comportamento, medicacoes, restricoes_alimentares"]);
@@ -96,6 +98,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           medicacoes: medIdx >= 0 ? cols[medIdx] || undefined : undefined,
           restricoes_alimentares: restIdx >= 0 ? cols[restIdx] || undefined : undefined,
           cor: corIdx >= 0 ? cols[corIdx] || undefined : undefined,
+          porte: porteIdx >= 0 ? cols[porteIdx] || undefined : undefined,
         });
       }
 
@@ -135,7 +138,9 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
         comportamento: string | null;
         medicacoes: string | null;
         restricoes_alimentares: string | null;
+        porte: string | null;
       }> = [];
+
 
       for (let i = 0; i < parsed.length; i++) {
         const pet = parsed[i];
@@ -167,6 +172,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           medicacoes: pet.medicacoes || null,
           restricoes_alimentares: pet.restricoes_alimentares || null,
           cor: pet.cor || null,
+          porte: pet.porte || null,
         });
       }
 

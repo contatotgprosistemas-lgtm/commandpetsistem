@@ -61,6 +61,7 @@ const petSchema = z.object({
   especie: z.string().min(1),
   raca: z.string().trim().max(100).optional().or(z.literal("")),
   cor: z.string().trim().max(100).optional().or(z.literal("")),
+  porte: z.string().optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
   data_nascimento: z.string().optional().or(z.literal("")),
@@ -117,7 +118,7 @@ function PetVacinasFields({ control, idx }: { control: any; idx: number }) {
 }
 
 const defaultPet = {
-  nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", pelagem: "",
+  nome: "", especie: "Cachorro", raca: "", cor: "", porte: "", sexo: "", peso: "", pelagem: "",
   comportamento: "", restricoes_alimentares: "", medicacoes: "",
   antiparasitario: "", v10: "", raiva: "",
 };
@@ -453,6 +454,21 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch, fotoUrl, onFoto
           <FormItem>
             <FormLabel>Cor</FormLabel>
             <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
+          </FormItem>
+        )} />
+        <FormField control={control} name={`pets.${idx}.porte`} render={({ field }) => (
+          <FormItem>
+            <FormLabel>Porte</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+              <SelectContent>
+                <SelectItem value="Micro">Micro</SelectItem>
+                <SelectItem value="Pequeno">Pequeno</SelectItem>
+                <SelectItem value="Médio">Médio</SelectItem>
+                <SelectItem value="Grande">Grande</SelectItem>
+                <SelectItem value="Gigante">Gigante</SelectItem>
+              </SelectContent>
+            </Select>
           </FormItem>
         )} />
         <FormField control={control} name={`pets.${idx}.sexo`} render={({ field }) => (

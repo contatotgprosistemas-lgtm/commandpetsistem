@@ -27,6 +27,7 @@ const schema = z.object({
   especie: z.string().min(1),
   raca: z.string().trim().max(100).optional().or(z.literal("")),
   cor: z.string().trim().max(100).optional().or(z.literal("")),
+  porte: z.string().optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
   data_nascimento: z.date().optional(),
@@ -53,7 +54,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "" },
+    defaultValues: { nome: "", especie: "Cachorro", raca: "", cor: "", porte: "", sexo: "", peso: "", pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "" },
   });
 
   const dataNascimento = form.watch("data_nascimento");
@@ -66,6 +67,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         especie: pet.especie || "Cachorro",
         raca: pet.raca || "",
         cor: pet.cor || "",
+        porte: pet.porte || "",
         sexo: pet.sexo || "",
         peso: pet.peso != null ? String(pet.peso) : "",
         data_nascimento: pet.data_nascimento ? new Date(pet.data_nascimento + "T00:00:00") : undefined,
@@ -89,6 +91,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         especie: data.especie,
         raca: data.raca || null,
         cor: data.cor || null,
+        porte: data.porte || null,
         sexo: data.sexo || null,
         peso: data.peso ? parseFloat(data.peso) : null,
         data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
@@ -153,6 +156,21 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
               <FormItem>
                 <FormLabel>Cor</FormLabel>
                 <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="porte" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Porte</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="Micro">Micro</SelectItem>
+                    <SelectItem value="Pequeno">Pequeno</SelectItem>
+                    <SelectItem value="Médio">Médio</SelectItem>
+                    <SelectItem value="Grande">Grande</SelectItem>
+                    <SelectItem value="Gigante">Gigante</SelectItem>
+                  </SelectContent>
+                </Select>
               </FormItem>
             )} />
             <div className="grid grid-cols-3 gap-4">
