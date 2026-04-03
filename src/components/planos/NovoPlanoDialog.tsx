@@ -84,7 +84,20 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
     setItems(newItems);
   };
 
-  const serviceOptions = ["Banho", "Tosa", "Banho e Tosa", "Daycare", "Hospedagem", "Transporte", "Adestramento", "Creche Canina", "Passeio", "Consulta", "Alimentação Especial", "Medicação"];
+  const [serviceOptions, setServiceOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    supabase
+      .from("servicos")
+      .select("nome")
+      .eq("empresa_id", empresaId)
+      .eq("ativo", true)
+      .order("nome")
+      .then(({ data }) => {
+        if (data) setServiceOptions(data.map((s: any) => s.nome));
+      });
+  }, [open, empresaId]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
