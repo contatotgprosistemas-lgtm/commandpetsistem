@@ -228,15 +228,33 @@ export default function ContractSignPage() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <CheckCircle2 className="h-16 w-16 text-emerald-500 mx-auto" />
-            <h2 className="text-xl font-bold">Contrato Assinado!</h2>
+            <h2 className="text-xl font-bold">Contrato Concluído!</h2>
             <p className="text-sm text-muted-foreground">
-              O contrato <strong>"{contract?.title}"</strong> foi assinado com sucesso.
+              O contrato <strong>"{contract?.title}"</strong> foi assinado por ambas as partes.
             </p>
-            {contract?.signed_at && (
-              <p className="text-xs text-muted-foreground">
-                Assinado em {format(new Date(contract.signed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-              </p>
-            )}
+            <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
+              <Shield className="h-4 w-4 inline mr-1" />
+              Documento protegido com hash SHA-256. ID: {contract?.id?.slice(0, 8)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (alreadySignedByClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center space-y-4">
+            <Clock className="h-16 w-16 text-amber-500 mx-auto" />
+            <h2 className="text-xl font-bold">Assinatura Registrada!</h2>
+            <p className="text-sm text-muted-foreground">
+              Sua assinatura no contrato <strong>"{contract?.title}"</strong> foi registrada com sucesso.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Aguardando a assinatura da empresa para conclusão do contrato.
+            </p>
             <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
               <Shield className="h-4 w-4 inline mr-1" />
               Documento protegido com hash SHA-256. ID: {contract?.id?.slice(0, 8)}
