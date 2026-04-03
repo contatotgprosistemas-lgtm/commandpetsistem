@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,14 +24,21 @@ export function OperationalAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<OperationalUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const hasInitialized = useRef(false);
 
   const loadData = useCallback(async (s: Session | null) => {
     if (!s?.user) {
       setSession(null);
       setUser(null);
       setLoading(false);
+      hasInitialized.current = true;
       return;
     }
+
+    if (!hasInitialized.current) {
+      setLoading(true);
+    }
+
     setSession(s);
     const { data } = await supabase
       .from("operational_users")
@@ -41,6 +48,7 @@ export function OperationalAuthProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
     setUser((data as OperationalUser) ?? null);
     setLoading(false);
+    hasInitialized.current = true;
   }, []);
 
   useEffect(() => {
