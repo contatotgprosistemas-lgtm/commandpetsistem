@@ -449,8 +449,7 @@ export default function ContratosPage() {
                 : statusMap[previewContract?.status || "rascunho"]?.label}
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-muted/30 rounded-lg p-6 border">
-            <pre className="whitespace-pre-wrap text-sm font-mono">{previewContract?.content}</pre>
+          <div className="bg-muted/30 rounded-lg p-6 border prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewContract?.content || "" }} />
           </div>
           {previewContract?.content_hash && (
             <div className="text-xs text-muted-foreground border-t pt-2">
