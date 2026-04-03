@@ -244,7 +244,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Criar Plano"}</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : editingPlan ? "Salvar" : "Criar Plano"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
