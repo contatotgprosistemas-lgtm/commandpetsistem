@@ -6,13 +6,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { NovoClienteDialog } from "@/components/NovoClienteDialog";
 import { ImportContatosDialog } from "@/components/ImportContatosDialog";
 import { EditarClienteDialog } from "@/components/EditarClienteDialog";
-import { Search, Phone, Mail, Trash2, Users, Link2, MessageCircle, Pencil, KeyRound, Loader2 } from "lucide-react";
+import { Search, Phone, Mail, Trash2, Users, Link2, MessageCircle, Pencil, KeyRound, Loader2, Download } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import * as XLSX from "xlsx";
 
 const tagColors: Record<string, string> = {
   Frequente: "bg-primary/10 text-primary",
@@ -106,6 +107,31 @@ export default function ClientsPage() {
     c.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleExport = () => {
+    if (!filtered?.length) {
+      toast.error("Nenhum contato para exportar");
+      return;
+    }
+    const rows = filtered.map(c => ({
+      Nome: c.nome,
+      CPF: c.cpf || "",
+      WhatsApp: c.whatsapp || "",
+      Telefone: c.telefone || "",
+      Email: c.email || "",
+      Endereço: c.endereco || "",
+      CEP: c.cep || "",
+      "Data Nascimento": c.data_nascimento || "",
+      "Como Conheceu": c.como_conheceu || "",
+      Tags: c.tags?.join(", ") || "",
+      Notas: c.notas || "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Contatos");
+    XLSX.writeFile(wb, "contatos.xlsx");
+    toast.success("Exportação concluída!");
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-[1400px]">
       <div className="flex items-center justify-between">
@@ -132,6 +158,10 @@ export default function ClientsPage() {
           >
             <Link2 className="h-4 w-4" strokeWidth={1.5} />
             Link de Cadastro
+          </Button>
+          <Button size="sm" variant="outline" className="gap-2" onClick={handleExport}>
+            <Download className="h-4 w-4" strokeWidth={1.5} />
+            Exportar
           </Button>
           <ImportContatosDialog onSuccess={handleRefresh} />
           <NovoClienteDialog onSuccess={handleRefresh} />
