@@ -444,6 +444,7 @@ export default function ContratosPage() {
     setDeletePassword("");
   }
 
+  function handleEditTemplate(t: Template) {
     setEditingTemplate(t.id);
     setTemplateForm({ name: t.name, description: t.description || "", content: t.content });
     setShowTemplateDialog(true);
