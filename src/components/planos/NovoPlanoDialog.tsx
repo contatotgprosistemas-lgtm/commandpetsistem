@@ -15,6 +15,7 @@ interface Props {
   onOpenChange: (o: boolean) => void;
   onSuccess: () => void;
   empresaId: string;
+  editingPlan?: any;
 }
 
 interface PlanItem {
@@ -25,7 +26,7 @@ interface PlanItem {
   limit_per_month: number | null;
 }
 
-export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Props) {
+export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, editingPlan }: Props) {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -49,19 +50,52 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
     setItems([{ service_name: "", quantity_included: 1, usage_period: "mensal", extra_unit_price: 0, limit_per_month: null }]);
   }
 
+  useEffect(() => {
+    if (editingPlan) {
+      setName(editingPlan.name || "");
+      setDescription(editingPlan.description || "");
+      setType(editingPlan.type || "mensal");
+      setRecurringType(editingPlan.recurring_type || "mensal");
+      setPrice(String(editingPlan.price || ""));
+      setValidityDays(String(editingPlan.validity_days || "30"));
+      setAutoRenew(editingPlan.auto_renew || false);
+      setRollover(editingPlan.rollover_enabled || false);
+      setMinLoyalty(String(editingPlan.min_loyalty_months || "0"));
+      setCancellationFee(String(editingPlan.cancellation_fee || "0"));
+      setNotes(editingPlan.notes || "");
+    } else {
+      reset();
+    }
+  }, [editingPlan]);
+
   async function handleSave() {
     if (!name || !price) { toast.error("Preencha nome e preço"); return; }
     setSaving(true);
-    const { data: plan, error } = await supabase.from("service_plans" as any).insert({
+
+    const payload = {
       empresa_id: empresaId, name, description, type, recurring_type: recurringType,
       price: Number(price), validity_days: Number(validityDays), auto_renew: autoRenew,
       rollover_enabled: rollover, min_loyalty_months: Number(minLoyalty),
       cancellation_fee: Number(cancellationFee), notes, status: "ativo"
-    }).select().single();
+    };
 
-    if (error || !plan) { toast.error("Erro ao criar plano"); setSaving(false); return; }
+    let plan: any;
+    let error: any;
+
+    if (editingPlan) {
+      const res = await supabase.from("service_plans" as any).update(payload).eq("id", editingPlan.id).select().single();
+      plan = res.data; error = res.error;
+    } else {
+      const res = await supabase.from("service_plans" as any).insert(payload).select().single();
+      plan = res.data; error = res.error;
+    }
+
+    if (error || !plan) { toast.error("Erro ao salvar plano"); setSaving(false); return; }
 
     const validItems = items.filter(i => i.service_name.trim());
+    if (editingPlan) {
+      await supabase.from("service_plan_items" as any).delete().eq("plan_id", editingPlan.id);
+    }
     if (validItems.length > 0) {
       await supabase.from("service_plan_items" as any).insert(
         validItems.map(i => ({
@@ -72,7 +106,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
       );
     }
 
-    toast.success("Plano criado com sucesso");
+    toast.success(editingPlan ? "Plano atualizado" : "Plano criado com sucesso");
     reset(); setSaving(false); onSuccess(); onOpenChange(false);
   }
 
@@ -102,7 +136,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Novo Plano</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{editingPlan ? "Editar Plano" : "Novo Plano"}</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -210,7 +244,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId }: Pr
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Criar Plano"}</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : editingPlan ? "Salvar" : "Criar Plano"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

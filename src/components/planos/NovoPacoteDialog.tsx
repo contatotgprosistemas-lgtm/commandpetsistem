@@ -14,6 +14,7 @@ interface Props {
   onOpenChange: (o: boolean) => void;
   onSuccess: () => void;
   empresaId: string;
+  editingPackage?: any;
 }
 
 interface PackageItem {
@@ -22,7 +23,7 @@ interface PackageItem {
   extra_unit_price: number;
 }
 
-export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId }: Props) {
+export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId, editingPackage }: Props) {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -40,17 +41,45 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId }: P
     setItems([{ service_name: "", quantity_included: 1, extra_unit_price: 0 }]);
   }
 
+  useEffect(() => {
+    if (editingPackage) {
+      setName(editingPackage.name || "");
+      setDescription(editingPackage.description || "");
+      setPrice(String(editingPackage.price || ""));
+      setValidityDays(String(editingPackage.validity_days || "90"));
+      setTotalCredits(String(editingPackage.total_credits || "1"));
+      setNotes(editingPackage.notes || "");
+    } else {
+      reset();
+    }
+  }, [editingPackage]);
+
   async function handleSave() {
     if (!name || !price) { toast.error("Preencha nome e preço"); return; }
     setSaving(true);
-    const { data: pkg, error } = await supabase.from("service_packages" as any).insert({
+
+    const payload = {
       empresa_id: empresaId, name, description, price: Number(price),
       validity_days: Number(validityDays), total_credits: Number(totalCredits), notes, status: "ativo"
-    }).select().single();
+    };
 
-    if (error || !pkg) { toast.error("Erro ao criar pacote"); setSaving(false); return; }
+    let pkg: any;
+    let error: any;
+
+    if (editingPackage) {
+      const res = await supabase.from("service_packages" as any).update(payload).eq("id", editingPackage.id).select().single();
+      pkg = res.data; error = res.error;
+    } else {
+      const res = await supabase.from("service_packages" as any).insert(payload).select().single();
+      pkg = res.data; error = res.error;
+    }
+
+    if (error || !pkg) { toast.error("Erro ao salvar pacote"); setSaving(false); return; }
 
     const validItems = items.filter(i => i.service_name.trim());
+    if (editingPackage) {
+      await supabase.from("service_package_items" as any).delete().eq("package_id", editingPackage.id);
+    }
     if (validItems.length > 0) {
       await supabase.from("service_package_items" as any).insert(
         validItems.map(i => ({
@@ -61,7 +90,7 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId }: P
       );
     }
 
-    toast.success("Pacote criado com sucesso");
+    toast.success(editingPackage ? "Pacote atualizado" : "Pacote criado com sucesso");
     reset(); setSaving(false); onSuccess(); onOpenChange(false);
   }
 
@@ -83,7 +112,7 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId }: P
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Novo Pacote</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{editingPackage ? "Editar Pacote" : "Novo Pacote"}</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -144,7 +173,7 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId }: P
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Criar Pacote"}</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : editingPackage ? "Salvar" : "Criar Pacote"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

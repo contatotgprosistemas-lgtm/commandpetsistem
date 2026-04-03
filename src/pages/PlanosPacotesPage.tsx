@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign } from "lucide-react";
+import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,9 @@ export default function PlanosPacotesPage() {
   const [loading, setLoading] = useState(true);
 
   const [novoPlanoOpen, setNovoPlanoOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<any>(null);
   const [novoPacoteOpen, setNovoPacoteOpen] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<any>(null);
   const [contratacaoOpen, setContratacaoOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; name: string } | null>(null);
   const [actionTarget, setActionTarget] = useState<{ action: string; id: string } | null>(null);
@@ -196,6 +198,9 @@ export default function PlanosPacotesPage() {
                     
                   </div>
                   <div className="flex gap-2 pt-2 border-t border-border">
+                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setEditingPlan(p)}>
+                      <Pencil className="h-3 w-3 mr-1" />Editar
+                    </Button>
                     <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setDeleteTarget({ type: "plan", id: p.id, name: p.name })}>
                       <Trash2 className="h-3 w-3 mr-1" />Excluir
                     </Button>
@@ -232,6 +237,9 @@ export default function PlanosPacotesPage() {
                     <span>Validade: {p.validity_days} dias</span>
                   </div>
                   <div className="flex gap-2 pt-2 border-t border-border">
+                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setEditingPackage(p)}>
+                      <Pencil className="h-3 w-3 mr-1" />Editar
+                    </Button>
                     <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setDeleteTarget({ type: "package", id: p.id, name: p.name })}>
                       <Trash2 className="h-3 w-3 mr-1" />Excluir
                     </Button>
@@ -333,8 +341,8 @@ export default function PlanosPacotesPage() {
       </Tabs>
 
       {/* Dialogs */}
-      {empresaId && <NovoPlanoDialog open={novoPlanoOpen} onOpenChange={setNovoPlanoOpen} onSuccess={fetchAll} empresaId={empresaId} />}
-      {empresaId && <NovoPacoteDialog open={novoPacoteOpen} onOpenChange={setNovoPacoteOpen} onSuccess={fetchAll} empresaId={empresaId} />}
+      {empresaId && <NovoPlanoDialog open={novoPlanoOpen || !!editingPlan} onOpenChange={o => { if (!o) { setNovoPlanoOpen(false); setEditingPlan(null); } }} onSuccess={fetchAll} empresaId={empresaId} editingPlan={editingPlan} />}
+      {empresaId && <NovoPacoteDialog open={novoPacoteOpen || !!editingPackage} onOpenChange={o => { if (!o) { setNovoPacoteOpen(false); setEditingPackage(null); } }} onSuccess={fetchAll} empresaId={empresaId} editingPackage={editingPackage} />}
       {empresaId && <ContratacaoDialog open={contratacaoOpen} onOpenChange={setContratacaoOpen} onSuccess={fetchAll} empresaId={empresaId} />}
       {planejamentoSub && <PlanejamentoDiasDialog open={!!planejamentoSub} onOpenChange={o => { if (!o) setPlanejamentoSub(null); }} subscription={planejamentoSub} onSuccess={fetchAll} />}
 
