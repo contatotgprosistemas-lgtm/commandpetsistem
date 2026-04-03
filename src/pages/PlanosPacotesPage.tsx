@@ -193,7 +193,6 @@ export default function PlanosPacotesPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <span>Tipo: {p.type}</span>
-                    <span>Validade: {p.validity_days} dias</span>
                     <span>Renovação auto: {p.auto_renew ? "Sim" : "Não"}</span>
                     
                   </div>
@@ -234,7 +233,7 @@ export default function PlanosPacotesPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <span>Créditos: {p.total_credits}</span>
-                    <span>Validade: {p.validity_days} dias</span>
+                    
                   </div>
                   <div className="flex gap-2 pt-2 border-t border-border">
                     <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setEditingPackage(p)}>
