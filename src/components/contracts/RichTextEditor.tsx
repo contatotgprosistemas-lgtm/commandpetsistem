@@ -249,7 +249,7 @@ export function RichTextEditor({ content, onChange, onLogoUpload }: Props) {
           </PopoverContent>
         </Popover>
       </div>
-      <EditorContent editor={editor} className="prose prose-sm max-w-none p-4 min-h-[300px] focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[280px] [&_.ProseMirror_img]:max-w-[200px] [&_.ProseMirror_img]:mx-auto [&_.ProseMirror_img]:block" />
+      <EditorContent editor={editor} className="prose prose-sm max-w-none p-6 min-h-[500px] focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[480px] [&_.ProseMirror_img]:max-w-[200px] [&_.ProseMirror_img]:mx-auto [&_.ProseMirror_img]:block" />
     </div>
   );
 }
