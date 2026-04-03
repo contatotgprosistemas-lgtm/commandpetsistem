@@ -374,7 +374,12 @@ export default function ContratosPage() {
             </div>
             <div>
               <Label>Conteúdo do contrato</Label>
-              <Textarea value={templateForm.content} onChange={e => setTemplateForm(p => ({ ...p, content: e.target.value }))} rows={15} className="font-mono text-sm" />
+              <RichTextEditor
+                content={templateForm.content}
+                onChange={(html) => setTemplateForm(p => ({ ...p, content: html }))}
+                onLogoUpload={handleLogoUpload}
+              />
+            </div>
             </div>
           </div>
           <DialogFooter>
