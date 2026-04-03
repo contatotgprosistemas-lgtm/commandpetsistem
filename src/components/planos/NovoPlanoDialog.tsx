@@ -15,6 +15,7 @@ interface Props {
   onOpenChange: (o: boolean) => void;
   onSuccess: () => void;
   empresaId: string;
+  editingPlan?: any;
 }
 
 interface PlanItem {
