@@ -478,6 +478,11 @@ export default function ContratosPage() {
                                 <Link2 className="h-4 w-4" />
                               </Button>
                             )}
+                            {c.status !== "assinado" && c.status !== "cancelado" && (
+                              <Button variant="ghost" size="icon" onClick={() => window.open(getSigningUrl(c), "_blank")} title="Assinar pela empresa">
+                                <PenTool className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" onClick={() => setTimelineContractId(c.id)} title="Histórico">
                               <History className="h-4 w-4" />
                             </Button>
