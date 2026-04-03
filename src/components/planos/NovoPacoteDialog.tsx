@@ -173,7 +173,7 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId, edi
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Criar Pacote"}</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : editingPackage ? "Salvar" : "Criar Pacote"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
