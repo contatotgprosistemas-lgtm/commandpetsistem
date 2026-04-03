@@ -57,12 +57,24 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId, edi
   async function handleSave() {
     if (!name || !price) { toast.error("Preencha nome e preço"); return; }
     setSaving(true);
-    const { data: pkg, error } = await supabase.from("service_packages" as any).insert({
+
+    const payload = {
       empresa_id: empresaId, name, description, price: Number(price),
       validity_days: Number(validityDays), total_credits: Number(totalCredits), notes, status: "ativo"
-    }).select().single();
+    };
 
-    if (error || !pkg) { toast.error("Erro ao criar pacote"); setSaving(false); return; }
+    let pkg: any;
+    let error: any;
+
+    if (editingPackage) {
+      const res = await supabase.from("service_packages" as any).update(payload).eq("id", editingPackage.id).select().single();
+      pkg = res.data; error = res.error;
+    } else {
+      const res = await supabase.from("service_packages" as any).insert(payload).select().single();
+      pkg = res.data; error = res.error;
+    }
+
+    if (error || !pkg) { toast.error("Erro ao salvar pacote"); setSaving(false); return; }
 
     const validItems = items.filter(i => i.service_name.trim());
     if (validItems.length > 0) {
