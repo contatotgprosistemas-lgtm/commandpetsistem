@@ -366,10 +366,29 @@ export default function ContratosPage() {
       setSendDialogContract(null);
       return;
     }
-    const subject = encodeURIComponent(`Contrato para assinatura — ${contract.title}`);
-    const body = encodeURIComponent(`Olá ${clienteName},\n\nSegue o link para assinatura digital do contrato:\n\n${link}\n\nAtenciosamente.`);
-    window.open(`mailto:${clienteEmail}?subject=${subject}&body=${body}`, "_blank");
-    toast.success("E-mail aberto para envio!");
+
+    try {
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "contract-signing",
+          recipientEmail: clienteEmail,
+          idempotencyKey: `contract-signing-${contract.id}`,
+          templateData: {
+            clienteName,
+            contractTitle: contract.title,
+            signingLink: link,
+            petName: (contract as any).cliente?.nome || "",
+            serviceType: "",
+          },
+        },
+      });
+      if (error) throw error;
+      toast.success(`E-mail enviado automaticamente para ${clienteEmail}!`);
+    } catch (err) {
+      console.error("Erro ao enviar e-mail:", err);
+      toast.error("Erro ao enviar e-mail. Link copiado como alternativa.");
+      navigator.clipboard.writeText(link);
+    }
     setSendDialogContract(null);
   }
 
