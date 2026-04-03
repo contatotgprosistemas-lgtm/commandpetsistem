@@ -450,7 +450,6 @@ export default function ContratosPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="bg-muted/30 rounded-lg p-6 border prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewContract?.content || "" }} />
-          </div>
           {previewContract?.content_hash && (
             <div className="text-xs text-muted-foreground border-t pt-2">
               <strong>Hash SHA-256:</strong> {previewContract.content_hash}
