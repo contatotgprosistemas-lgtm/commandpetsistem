@@ -29,6 +29,8 @@ export default function ContractSignPage() {
   const [error, setError] = useState<string | null>(null);
   const [signed, setSigned] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [signatures, setSignatures] = useState<{ cliente: any; empresa: any }>({ cliente: null, empresa: null });
+  const [alreadySignedByClient, setAlreadySignedByClient] = useState(false);
 
   // Form state
   const [signerName, setSignerName] = useState("");
@@ -73,9 +75,17 @@ export default function ContractSignPage() {
     }
 
     const c = data.contract as ContractData;
+    const sigs = data.signatures || { cliente: null, empresa: null };
+    setSignatures(sigs);
 
+    // Contract is fully signed (both parties)
     if (c.status === "assinado") {
       setSigned(true);
+    }
+
+    // Client already signed - show partial signed state
+    if (sigs.cliente) {
+      setAlreadySignedByClient(true);
     }
 
     setContract(c);
