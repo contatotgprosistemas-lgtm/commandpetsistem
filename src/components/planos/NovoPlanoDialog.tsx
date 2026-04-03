@@ -93,6 +93,9 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
     if (error || !plan) { toast.error("Erro ao salvar plano"); setSaving(false); return; }
 
     const validItems = items.filter(i => i.service_name.trim());
+    if (editingPlan) {
+      await supabase.from("service_plan_items" as any).delete().eq("plan_id", editingPlan.id);
+    }
     if (validItems.length > 0) {
       await supabase.from("service_plan_items" as any).insert(
         validItems.map(i => ({
