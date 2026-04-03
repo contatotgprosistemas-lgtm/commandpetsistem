@@ -85,6 +85,8 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
         como_conheceu: data.como_conheceu || null,
         notas: data.notas || null,
         foto_url: fotoUrl,
+        dia_vencimento_fatura: diaVencimento,
+        dias_gerar_fatura: diasGerarFatura,
       } as any);
 
       if (error) throw error;
