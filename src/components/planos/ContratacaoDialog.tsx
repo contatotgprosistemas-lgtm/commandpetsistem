@@ -191,15 +191,9 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Data Início</Label>
-              <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Data Fim</Label>
-              <Input type="date" value={endDate} disabled />
-            </div>
+          <div className="space-y-1.5">
+            <Label>Data Início</Label>
+            <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
           </div>
 
           <div className="space-y-2">
