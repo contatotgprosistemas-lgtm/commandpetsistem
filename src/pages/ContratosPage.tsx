@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, FileText, Send, Eye, Copy, Clock, CheckCircle2, XCircle, Link2, History, Mail, MessageCircle } from "lucide-react";
+import { Plus, FileText, Send, Eye, Copy, Clock, CheckCircle2, XCircle, Link2, History, Mail, MessageCircle, PenTool } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContractTimelineDialog } from "@/components/contracts/ContractTimelineDialog";
@@ -476,6 +476,11 @@ export default function ContratosPage() {
                             {(c.status === "enviado" || c.status === "assinado") && (
                               <Button variant="ghost" size="icon" onClick={() => copyLink(c)} title="Copiar link">
                                 <Link2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {c.status !== "assinado" && c.status !== "cancelado" && (
+                              <Button variant="ghost" size="icon" onClick={() => window.open(getSigningUrl(c), "_blank")} title="Assinar pela empresa">
+                                <PenTool className="h-4 w-4" />
                               </Button>
                             )}
                             <Button variant="ghost" size="icon" onClick={() => setTimelineContractId(c.id)} title="Histórico">
