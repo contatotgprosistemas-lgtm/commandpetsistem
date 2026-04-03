@@ -22,21 +22,49 @@ function EmpresaTab() {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ nome_empresa: "", cnpj: "", email: "", telefone: "", nome_fantasia: "", endereco: "", inscricao_estadual: "", inscricao_municipal: "", horario_funcionamento: "" });
+  const [cepLoading, setCepLoading] = useState(false);
+  const [form, setForm] = useState({
+    nome_empresa: "", cnpj: "", email: "", telefone: "", nome_fantasia: "", endereco: "", endereco_numero: "", cep: "",
+    inscricao_estadual: "", inscricao_municipal: "",
+    horario_semana_inicio: "08:00", horario_semana_fim: "18:00",
+    horario_sabado_inicio: "", horario_sabado_fim: "",
+    horario_domingo_inicio: "", horario_domingo_fim: "",
+  });
+
+  async function buscarCep(cep: string) {
+    const clean = cep.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setForm(f => ({ ...f, endereco: `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}` }));
+      } else {
+        toast({ title: "CEP não encontrado", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro ao buscar CEP", variant: "destructive" });
+    } finally {
+      setCepLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!profile?.empresa_id) return;
     supabase
       .from("empresas")
-      .select("nome_empresa, cnpj, email, telefone, nome_fantasia, endereco, inscricao_estadual, inscricao_municipal, horario_funcionamento")
+      .select("nome_empresa, cnpj, email, telefone, nome_fantasia, endereco, endereco_numero, cep, inscricao_estadual, inscricao_municipal, horario_semana_inicio, horario_semana_fim, horario_sabado_inicio, horario_sabado_fim, horario_domingo_inicio, horario_domingo_fim")
       .eq("id", profile.empresa_id)
       .single()
       .then(({ data }: any) => {
         if (data) setForm({
           nome_empresa: data.nome_empresa || "", cnpj: data.cnpj || "", email: data.email || "", telefone: data.telefone || "",
-          nome_fantasia: data.nome_fantasia || "", endereco: data.endereco || "",
+          nome_fantasia: data.nome_fantasia || "", endereco: data.endereco || "", endereco_numero: data.endereco_numero || "", cep: data.cep || "",
           inscricao_estadual: data.inscricao_estadual || "", inscricao_municipal: data.inscricao_municipal || "",
-          horario_funcionamento: data.horario_funcionamento || ""
+          horario_semana_inicio: data.horario_semana_inicio || "08:00", horario_semana_fim: data.horario_semana_fim || "18:00",
+          horario_sabado_inicio: data.horario_sabado_inicio || "", horario_sabado_fim: data.horario_sabado_fim || "",
+          horario_domingo_inicio: data.horario_domingo_inicio || "", horario_domingo_fim: data.horario_domingo_fim || "",
         });
         setLoading(false);
       });
@@ -89,14 +117,60 @@ function EmpresaTab() {
             <Label>Telefone</Label>
             <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(00) 00000-0000" />
           </div>
-          <div className="space-y-2">
-            <Label>Horário de Funcionamento</Label>
-            <Input value={form.horario_funcionamento} onChange={(e) => setForm({ ...form, horario_funcionamento: e.target.value })} placeholder="Seg-Sex 08:00-18:00" />
+        </div>
+
+        {/* Endereço com CEP */}
+        <div className="border-t pt-4 space-y-3">
+          <Label className="text-sm font-semibold">Endereço</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>CEP</Label>
+              <div className="relative">
+                <Input
+                  value={form.cep}
+                  onChange={(e) => setForm({ ...form, cep: e.target.value })}
+                  onBlur={(e) => buscarCep(e.target.value)}
+                  placeholder="00000-000"
+                />
+                {cepLoading && <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
+              </div>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Endereço</Label>
+              <Input value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} placeholder="Rua, bairro, cidade - UF" />
+            </div>
+          </div>
+          <div className="w-32 space-y-2">
+            <Label>Número</Label>
+            <Input value={form.endereco_numero} onChange={(e) => setForm({ ...form, endereco_numero: e.target.value })} placeholder="Nº" />
           </div>
         </div>
-        <div className="space-y-2">
-          <Label>Endereço Completo</Label>
-          <Input value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} placeholder="Rua, número, bairro, cidade - UF, CEP" />
+
+        {/* Horários de Funcionamento */}
+        <div className="border-t pt-4 space-y-3">
+          <Label className="text-sm font-semibold">Horário de Funcionamento</Label>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground w-24 shrink-0">Seg a Sex</span>
+              <Input type="time" className="w-28" value={form.horario_semana_inicio} onChange={(e) => setForm({ ...form, horario_semana_inicio: e.target.value })} />
+              <span className="text-sm text-muted-foreground">às</span>
+              <Input type="time" className="w-28" value={form.horario_semana_fim} onChange={(e) => setForm({ ...form, horario_semana_fim: e.target.value })} />
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground w-24 shrink-0">Sábado</span>
+              <Input type="time" className="w-28" value={form.horario_sabado_inicio} onChange={(e) => setForm({ ...form, horario_sabado_inicio: e.target.value })} placeholder="--:--" />
+              <span className="text-sm text-muted-foreground">às</span>
+              <Input type="time" className="w-28" value={form.horario_sabado_fim} onChange={(e) => setForm({ ...form, horario_sabado_fim: e.target.value })} placeholder="--:--" />
+              <span className="text-xs text-muted-foreground">(vazio = fechado)</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground w-24 shrink-0">Domingo</span>
+              <Input type="time" className="w-28" value={form.horario_domingo_inicio} onChange={(e) => setForm({ ...form, horario_domingo_inicio: e.target.value })} placeholder="--:--" />
+              <span className="text-sm text-muted-foreground">às</span>
+              <Input type="time" className="w-28" value={form.horario_domingo_fim} onChange={(e) => setForm({ ...form, horario_domingo_fim: e.target.value })} placeholder="--:--" />
+              <span className="text-xs text-muted-foreground">(vazio = fechado)</span>
+            </div>
+          </div>
         </div>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
