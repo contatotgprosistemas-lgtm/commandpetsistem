@@ -33,7 +33,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
   const [type, setType] = useState("mensal");
   const [recurringType, setRecurringType] = useState("mensal");
   const [price, setPrice] = useState("");
-  const [validityDays, setValidityDays] = useState("30");
+  
   const [autoRenew, setAutoRenew] = useState(false);
   const [rollover, setRollover] = useState(false);
   const [minLoyalty, setMinLoyalty] = useState("0");
