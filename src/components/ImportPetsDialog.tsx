@@ -99,8 +99,9 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           comportamento: compIdx >= 0 ? cols[compIdx] || undefined : undefined,
           medicacoes: medIdx >= 0 ? cols[medIdx] || undefined : undefined,
           restricoes_alimentares: restIdx >= 0 ? cols[restIdx] || undefined : undefined,
-          cor: corIdx >= 0 ? cols[corIdx] || undefined : undefined,
-          porte: porteIdx >= 0 ? cols[porteIdx] || undefined : undefined,
+           cor: corIdx >= 0 ? cols[corIdx] || undefined : undefined,
+           porte: porteIdx >= 0 ? cols[porteIdx] || undefined : undefined,
+           castrado: castradoIdx >= 0 ? cols[castradoIdx] || undefined : undefined,
         });
       }
 
