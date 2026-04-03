@@ -50,32 +50,17 @@ const statusMap: Record<string, { label: string; color: string }> = {
   expirado: { label: "Não concluído", color: "bg-gray-100 text-gray-800" },
 };
 
-const DEFAULT_TEMPLATE = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
-
-Pelo presente instrumento particular, de um lado:
-
-CONTRATANTE: {{cliente_nome}}, CPF: {{cliente_cpf}}, residente em {{cliente_endereco}}, doravante denominado CONTRATANTE;
-
-CONTRATADA: A empresa prestadora de serviços pet, doravante denominada CONTRATADA;
-
-As partes acima qualificadas têm entre si justo e contratado o seguinte:
-
-CLÁUSULA 1ª - DO OBJETO
-O presente contrato tem como objeto a prestação de serviços de {{tipo_servico}} para o pet {{pet_nome}}, da raça {{pet_raca}}.
-
-CLÁUSULA 2ª - DO VALOR
-Os serviços descritos na Cláusula 1ª serão prestados pelo valor de R$ {{valor}}.
-
-CLÁUSULA 3ª - DAS OBRIGAÇÕES
-A CONTRATADA se compromete a prestar os serviços com zelo e dedicação, seguindo as melhores práticas do mercado pet.
-
-CLÁUSULA 4ª - DA VIGÊNCIA
-O presente contrato tem vigência a partir da data de assinatura.
-
-CLÁUSULA 5ª - DO FORO
-As partes elegem o foro da comarca do domicílio da CONTRATADA para dirimir quaisquer dúvidas ou litígios oriundos deste contrato.
-
-E por estarem assim justas e contratadas, as partes assinam eletronicamente o presente instrumento.`;
+const DEFAULT_TEMPLATE = `<h2 style="text-align: center">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</h2>
+<p>Pelo presente instrumento particular, de um lado:</p>
+<p><strong>CONTRATANTE:</strong> {{cliente_nome}}, CPF: {{cliente_cpf}}, residente em {{cliente_endereco}}, doravante denominado CONTRATANTE;</p>
+<p><strong>CONTRATADA:</strong> A empresa prestadora de serviços pet, doravante denominada CONTRATADA;</p>
+<p>As partes acima qualificadas têm entre si justo e contratado o seguinte:</p>
+<p><strong>CLÁUSULA 1ª - DO OBJETO</strong><br>O presente contrato tem como objeto a prestação de serviços de {{tipo_servico}} para o pet {{pet_nome}}, da raça {{pet_raca}}.</p>
+<p><strong>CLÁUSULA 2ª - DO VALOR</strong><br>Os serviços descritos na Cláusula 1ª serão prestados pelo valor de R$ {{valor}}.</p>
+<p><strong>CLÁUSULA 3ª - DAS OBRIGAÇÕES</strong><br>A CONTRATADA se compromete a prestar os serviços com zelo e dedicação, seguindo as melhores práticas do mercado pet.</p>
+<p><strong>CLÁUSULA 4ª - DA VIGÊNCIA</strong><br>O presente contrato tem vigência a partir da data de assinatura.</p>
+<p><strong>CLÁUSULA 5ª - DO FORO</strong><br>As partes elegem o foro da comarca do domicílio da CONTRATADA para dirimir quaisquer dúvidas ou litígios oriundos deste contrato.</p>
+<p>E por estarem assim justas e contratadas, as partes assinam eletronicamente o presente instrumento.</p>`;
 
 export default function ContratosPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
