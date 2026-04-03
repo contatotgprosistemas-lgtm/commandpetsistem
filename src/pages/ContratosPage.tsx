@@ -358,7 +358,7 @@ export default function ContratosPage() {
 
       {/* Template Dialog */}
       <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingTemplate ? "Editar Template" : "Novo Template"}</DialogTitle>
             <DialogDescription>Use placeholders como {"{{cliente_nome}}"}, {"{{cliente_cpf}}"}, {"{{pet_nome}}"} etc.</DialogDescription>
