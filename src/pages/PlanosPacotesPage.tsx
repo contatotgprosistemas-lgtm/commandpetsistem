@@ -193,7 +193,6 @@ export default function PlanosPacotesPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <span>Tipo: {p.type}</span>
-                    <span>Validade: {p.validity_days} dias</span>
                     <span>Renovação auto: {p.auto_renew ? "Sim" : "Não"}</span>
                     
                   </div>
