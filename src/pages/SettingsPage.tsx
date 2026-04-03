@@ -22,7 +22,7 @@ function EmpresaTab() {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ nome_empresa: "", cnpj: "", email: "", telefone: "" });
+  const [form, setForm] = useState({ nome_empresa: "", cnpj: "", email: "", telefone: "", nome_fantasia: "", endereco: "", inscricao_estadual: "", inscricao_municipal: "", horario_funcionamento: "" });
 
   useEffect(() => {
     if (!profile?.empresa_id) return;
