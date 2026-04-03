@@ -66,8 +66,20 @@ function EmpresaTab() {
             <Input value={form.nome_empresa} onChange={(e) => setForm({ ...form, nome_empresa: e.target.value })} />
           </div>
           <div className="space-y-2">
+            <Label>Nome Fantasia</Label>
+            <Input value={form.nome_fantasia} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} placeholder="Nome fantasia" />
+          </div>
+          <div className="space-y-2">
             <Label>CNPJ</Label>
             <Input value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} placeholder="00.000.000/0001-00" />
+          </div>
+          <div className="space-y-2">
+            <Label>Inscrição Estadual</Label>
+            <Input value={form.inscricao_estadual} onChange={(e) => setForm({ ...form, inscricao_estadual: e.target.value })} placeholder="IE" />
+          </div>
+          <div className="space-y-2">
+            <Label>Inscrição Municipal</Label>
+            <Input value={form.inscricao_municipal} onChange={(e) => setForm({ ...form, inscricao_municipal: e.target.value })} placeholder="IM" />
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
@@ -77,6 +89,14 @@ function EmpresaTab() {
             <Label>Telefone</Label>
             <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(00) 00000-0000" />
           </div>
+          <div className="space-y-2">
+            <Label>Horário de Funcionamento</Label>
+            <Input value={form.horario_funcionamento} onChange={(e) => setForm({ ...form, horario_funcionamento: e.target.value })} placeholder="Seg-Sex 08:00-18:00" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Endereço Completo</Label>
+          <Input value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} placeholder="Rua, número, bairro, cidade - UF, CEP" />
         </div>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
