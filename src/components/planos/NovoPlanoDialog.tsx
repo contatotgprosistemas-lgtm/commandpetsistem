@@ -74,7 +74,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
 
     const payload = {
       empresa_id: empresaId, name, description, type, recurring_type: recurringType,
-      price: Number(price), validity_days: Number(validityDays), auto_renew: autoRenew,
+      price: Number(price), auto_renew: autoRenew,
       rollover_enabled: rollover, min_loyalty_months: Number(minLoyalty),
       cancellation_fee: Number(cancellationFee), notes, status: "ativo"
     };
