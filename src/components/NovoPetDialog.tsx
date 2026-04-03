@@ -216,7 +216,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
                 </FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <FormField control={form.control} name="sexo" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Sexo</FormLabel>
@@ -225,6 +225,19 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
                     <SelectContent>
                       <SelectItem value="Macho">Macho</SelectItem>
                       <SelectItem value="Fêmea">Fêmea</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="castrado" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Castrado</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="Sim">Sim</SelectItem>
+                      <SelectItem value="Não">Não</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
