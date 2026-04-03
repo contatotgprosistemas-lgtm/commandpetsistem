@@ -69,6 +69,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         raca: pet.raca || "",
         cor: pet.cor || "",
         porte: pet.porte || "",
+        castrado: pet.castrado || "",
         sexo: pet.sexo || "",
         peso: pet.peso != null ? String(pet.peso) : "",
         data_nascimento: pet.data_nascimento ? new Date(pet.data_nascimento + "T00:00:00") : undefined,
