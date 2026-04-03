@@ -28,6 +28,7 @@ const schema = z.object({
   especie: z.string().min(1, "Espécie é obrigatória"),
   raca: z.string().trim().max(100).optional().or(z.literal("")),
   cor: z.string().trim().max(100).optional().or(z.literal("")),
+  porte: z.string().optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
   data_nascimento: z.date().optional(),
@@ -56,6 +57,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
     resolver: zodResolver(schema),
     defaultValues: {
       nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", cliente_id: "",
+      porte: "",
       pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "",
       antiparasitario: "", v10: "", raiva: "",
     },
@@ -93,6 +95,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
         especie: data.especie,
         raca: data.raca || null,
         cor: data.cor || null,
+        porte: data.porte || null,
         sexo: data.sexo || null,
         peso: data.peso ? parseFloat(data.peso) : null,
         data_nascimento: data.data_nascimento ? format(data.data_nascimento, "yyyy-MM-dd") : null,
@@ -190,6 +193,22 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
               <FormItem>
                 <FormLabel>Cor</FormLabel>
                 <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="porte" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Porte</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="Micro">Micro</SelectItem>
+                    <SelectItem value="Pequeno">Pequeno</SelectItem>
+                    <SelectItem value="Médio">Médio</SelectItem>
+                    <SelectItem value="Grande">Grande</SelectItem>
+                    <SelectItem value="Gigante">Gigante</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )} />
