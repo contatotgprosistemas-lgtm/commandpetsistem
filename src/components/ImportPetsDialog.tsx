@@ -190,7 +190,11 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
           idade: pet.idade || null,
           cliente_id: clienteId,
           pelagem: pet.pelagem || null,
-          data_nascimento: pet.data_nascimento || null,
+          data_nascimento: pet.data_nascimento ? (() => {
+            const d = pet.data_nascimento!.trim();
+            const m = d.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            return m ? `${m[3]}-${m[2]}-${m[1]}` : d;
+          })() : null,
           comportamento: pet.comportamento || null,
           medicacoes: pet.medicacoes || null,
           restricoes_alimentares: pet.restricoes_alimentares || null,
