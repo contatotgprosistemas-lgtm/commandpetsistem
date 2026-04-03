@@ -215,9 +215,9 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="Curto">Curto</SelectItem>
-                      <SelectItem value="Médio">Médio</SelectItem>
-                      <SelectItem value="Longo">Longo</SelectItem>
+                      <SelectItem value="Curta">Curta</SelectItem>
+                      <SelectItem value="Média">Média</SelectItem>
+                      <SelectItem value="Longa">Longa</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
