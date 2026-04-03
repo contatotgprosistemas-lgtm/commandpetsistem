@@ -23,7 +23,7 @@ interface PackageItem {
   extra_unit_price: number;
 }
 
-export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId }: Props) {
+export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId, editingPackage }: Props) {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
