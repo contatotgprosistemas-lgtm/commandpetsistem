@@ -198,6 +198,9 @@ export default function PlanosPacotesPage() {
                     
                   </div>
                   <div className="flex gap-2 pt-2 border-t border-border">
+                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setEditingPlan(p)}>
+                      <Pencil className="h-3 w-3 mr-1" />Editar
+                    </Button>
                     <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setDeleteTarget({ type: "plan", id: p.id, name: p.name })}>
                       <Trash2 className="h-3 w-3 mr-1" />Excluir
                     </Button>
@@ -234,6 +237,9 @@ export default function PlanosPacotesPage() {
                     <span>Validade: {p.validity_days} dias</span>
                   </div>
                   <div className="flex gap-2 pt-2 border-t border-border">
+                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setEditingPackage(p)}>
+                      <Pencil className="h-3 w-3 mr-1" />Editar
+                    </Button>
                     <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => setDeleteTarget({ type: "package", id: p.id, name: p.name })}>
                       <Trash2 className="h-3 w-3 mr-1" />Excluir
                     </Button>
