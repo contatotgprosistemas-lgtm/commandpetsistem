@@ -416,7 +416,34 @@ export default function ContratosPage() {
     toast.success("Link copiado!");
   }
 
-  function handleEditTemplate(t: Template) {
+  async function handleDeleteContract() {
+    if (!deleteContract || !session?.user?.email) return;
+    setDeleting(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: session.user.email,
+        password: deletePassword,
+      });
+      if (authError) {
+        toast.error("Senha incorreta. Tente novamente.");
+        setDeleting(false);
+        return;
+      }
+      const { error } = await supabase.from("contracts").delete().eq("id", deleteContract.id);
+      if (error) {
+        toast.error("Erro ao excluir contrato");
+      } else {
+        toast.success("Contrato excluído com sucesso!");
+        loadData();
+      }
+    } catch {
+      toast.error("Erro ao verificar senha");
+    }
+    setDeleting(false);
+    setDeleteContract(null);
+    setDeletePassword("");
+  }
+
     setEditingTemplate(t.id);
     setTemplateForm({ name: t.name, description: t.description || "", content: t.content });
     setShowTemplateDialog(true);
