@@ -112,7 +112,7 @@ export function ImportPetsDialog({ onSuccess }: { onSuccess?: () => void }) {
       const text = ev.target?.result as string;
       if (!text) return;
 
-      const hasGarbled = /[\u00c3][\u0080-\u00bf]/.test(text) || /ï¿½|Ã£|Ã©|Ã§|Ãµ|Ã¡|Ã­|Ãº|Ã¢|Ãª|Ã´/.test(text);
+      const hasGarbled = /\uFFFD/.test(text) || /[\u00c3][\u0080-\u00bf]/.test(text) || /ï¿½|Ã£|Ã©|Ã§|Ãµ|Ã¡|Ã­|Ãº|Ã¢|Ãª|Ã´/.test(text);
       if (hasGarbled) {
         const latin1Reader = new FileReader();
         latin1Reader.onload = (ev2) => {
