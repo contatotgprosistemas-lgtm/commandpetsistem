@@ -64,6 +64,7 @@ const DEFAULT_TEMPLATE = `<h2 style="text-align: center">CONTRATO DE PRESTAÇÃO
 <p>E por estarem assim justas e contratadas, as partes assinam eletronicamente o presente instrumento.</p>`;
 
 export default function ContratosPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [clientes, setClientes] = useState<{ id: string; nome: string; email: string | null; cpf: string | null; endereco: string | null }[]>([]);
@@ -95,10 +96,144 @@ export default function ContratosPage() {
       supabase.from("contracts").select("*, cliente:clientes(nome, email, cpf)").order("created_at", { ascending: false }),
       supabase.from("clientes").select("id, nome, email, cpf, endereco"),
     ]);
-    if (tRes.data) setTemplates(tRes.data as any);
+    const loadedTemplates = (tRes.data as any as Template[]) || [];
+    const loadedClientes = clRes.data || [];
+    if (tRes.data) setTemplates(loadedTemplates);
     if (cRes.data) setContracts(cRes.data as any);
-    if (clRes.data) setClientes(clRes.data);
+    if (clRes.data) setClientes(loadedClientes);
     setLoading(false);
+
+    // Auto-open contract dialog from subscription
+    const subId = searchParams.get("subscription_id");
+    if (subId && loadedTemplates.length > 0) {
+      await autoFillFromSubscription(subId, loadedTemplates, loadedClientes);
+      setSearchParams({}, { replace: true });
+    }
+  }
+
+  async function autoFillFromSubscription(
+    subscriptionId: string,
+    tpls: Template[],
+    clientesList: typeof clientes
+  ) {
+    // Fetch subscription with related data
+    const { data: sub } = await supabase
+      .from("customer_pet_subscriptions")
+      .select("*, cliente:clientes(id, nome, cpf, email, endereco), pet:pets(id, nome, raca, sexo, cor, castrado)")
+      .eq("id", subscriptionId)
+      .single();
+
+    if (!sub) {
+      toast.error("Contratação não encontrada");
+      return;
+    }
+
+    // Fetch plan or package name
+    let planName = "";
+    let planPrice = 0;
+    let packageName = "";
+    let packagePrice = 0;
+
+    if ((sub as any).plan_id) {
+      const { data: plan } = await supabase
+        .from("service_plans" as any)
+        .select("name, price, service_type")
+        .eq("id", (sub as any).plan_id)
+        .single();
+      if (plan) {
+        planName = (plan as any).name || "";
+        planPrice = Number((plan as any).price) || 0;
+      }
+    }
+    if ((sub as any).package_id) {
+      const { data: pkg } = await supabase
+        .from("service_packages" as any)
+        .select("name, price")
+        .eq("id", (sub as any).package_id)
+        .single();
+      if (pkg) {
+        packageName = (pkg as any).name || "";
+        packagePrice = Number((pkg as any).price) || 0;
+      }
+    }
+
+    const cliente = (sub as any).cliente;
+    const pet = (sub as any).pet;
+
+    // Fetch all pets from same tutor
+    let petsMesmoTutor = "";
+    if (cliente?.id) {
+      const { data: allPets } = await supabase
+        .from("pets")
+        .select("nome, raca")
+        .eq("cliente_id", cliente.id);
+      if (allPets && allPets.length > 1) {
+        petsMesmoTutor = allPets.map((p: any) => `${p.nome}${p.raca ? ` (${p.raca})` : ""}`).join(", ");
+      }
+    }
+
+    // Auto-match template by plan/service type
+    const searchTerms = [planName, packageName].join(" ").toLowerCase();
+    let matchedTemplate: Template | undefined;
+
+    // Hotel/Hospedagem matching
+    if (/hotel|hospedagem|pernoite/i.test(searchTerms)) {
+      matchedTemplate = tpls.find(t => /hospedagem|hotel/i.test(t.name));
+    }
+    // Escola/Daycare/Creche matching
+    if (!matchedTemplate && /escola|daycare|creche/i.test(searchTerms)) {
+      matchedTemplate = tpls.find(t => /escola|daycare|creche|serviço|servico/i.test(t.name));
+    }
+    // Fallback: try matching by plan name
+    if (!matchedTemplate) {
+      matchedTemplate = tpls.find(t => t.name.toLowerCase().includes(planName.toLowerCase()) || planName.toLowerCase().includes(t.name.toLowerCase()));
+    }
+    // Final fallback: first active template
+    if (!matchedTemplate) {
+      matchedTemplate = tpls.find(t => t.active) || tpls[0];
+    }
+
+    if (!matchedTemplate) {
+      toast.error("Nenhum template encontrado. Crie um template primeiro.");
+      return;
+    }
+
+    // Fill all placeholders
+    const today = format(new Date(), "dd/MM/yyyy", { locale: ptBR });
+    const startDate = (sub as any).start_date ? format(new Date((sub as any).start_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR }) : "___";
+    const finalPrice = Number((sub as any).final_price) || 0;
+
+    const filledContent = matchedTemplate.content
+      .replace(/\{\{cliente_nome\}\}/g, cliente?.nome || "___")
+      .replace(/\{\{cliente_cpf\}\}/g, cliente?.cpf || "___")
+      .replace(/\{\{cliente_email\}\}/g, cliente?.email || "___")
+      .replace(/\{\{cliente_endereco\}\}/g, cliente?.endereco || "___")
+      .replace(/\{\{pet_nome\}\}/g, pet?.nome || "___")
+      .replace(/\{\{pet_raca\}\}/g, pet?.raca || "___")
+      .replace(/\{\{pet_sexo\}\}/g, pet?.sexo || "___")
+      .replace(/\{\{pet_cor\}\}/g, pet?.cor || "___")
+      .replace(/\{\{pet_castrado\}\}/g, pet?.castrado || "___")
+      .replace(/\{\{pets_mesmo_tutor\}\}/g, petsMesmoTutor || pet?.nome || "___")
+      .replace(/\{\{servicos\}\}/g, planName || packageName || "___")
+      .replace(/\{\{plano\}\}/g, planName || "___")
+      .replace(/\{\{pacote\}\}/g, packageName || "___")
+      .replace(/\{\{data_reserva\}\}/g, startDate)
+      .replace(/\{\{valor_plano\}\}/g, planPrice ? `R$ ${planPrice.toFixed(2)}` : `R$ ${finalPrice.toFixed(2)}`)
+      .replace(/\{\{valor_servico\}\}/g, `R$ ${finalPrice.toFixed(2)}`)
+      .replace(/\{\{valor_pacote\}\}/g, packagePrice ? `R$ ${packagePrice.toFixed(2)}` : "___")
+      .replace(/\{\{data_atual\}\}/g, today)
+      .replace(/\{\{tipo_servico\}\}/g, planName || packageName || "___")
+      .replace(/\{\{valor\}\}/g, `R$ ${finalPrice.toFixed(2)}`);
+
+    const contractTitle = `${matchedTemplate.name} — ${pet?.nome || cliente?.nome || ""}`;
+
+    setContractForm({
+      title: contractTitle,
+      templateId: matchedTemplate.id,
+      clienteId: cliente?.id || "",
+      content: filledContent,
+    });
+    setShowContractDialog(true);
   }
 
   async function handleLogoUpload(file: File): Promise<string | null> {
