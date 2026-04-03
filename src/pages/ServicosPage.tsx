@@ -32,6 +32,8 @@ const ServicosPage = () => {
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [tipo, setTipo] = useState("");
+  const [considerarDia, setConsiderarDia] = useState(false);
+  const [diaria24h, setDiaria24h] = useState(false);
 
   // Tipos state
   const [tipoOpen, setTipoOpen] = useState(false);
