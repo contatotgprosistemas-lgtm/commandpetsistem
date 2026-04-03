@@ -179,10 +179,6 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label>Validade (dias)</Label>
-              <Input type="number" value={validityDays} onChange={e => setValidityDays(e.target.value)} />
-            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
