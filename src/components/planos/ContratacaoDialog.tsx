@@ -226,7 +226,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               </Select>
             </div>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 w-40">
             <Label>Data Início</Label>
             <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
           </div>
