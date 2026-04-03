@@ -50,6 +50,24 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
     setItems([{ service_name: "", quantity_included: 1, usage_period: "mensal", extra_unit_price: 0, limit_per_month: null }]);
   }
 
+  useEffect(() => {
+    if (editingPlan) {
+      setName(editingPlan.name || "");
+      setDescription(editingPlan.description || "");
+      setType(editingPlan.type || "mensal");
+      setRecurringType(editingPlan.recurring_type || "mensal");
+      setPrice(String(editingPlan.price || ""));
+      setValidityDays(String(editingPlan.validity_days || "30"));
+      setAutoRenew(editingPlan.auto_renew || false);
+      setRollover(editingPlan.rollover_enabled || false);
+      setMinLoyalty(String(editingPlan.min_loyalty_months || "0"));
+      setCancellationFee(String(editingPlan.cancellation_fee || "0"));
+      setNotes(editingPlan.notes || "");
+    } else {
+      reset();
+    }
+  }, [editingPlan]);
+
   async function handleSave() {
     if (!name || !price) { toast.error("Preencha nome e preço"); return; }
     setSaving(true);
