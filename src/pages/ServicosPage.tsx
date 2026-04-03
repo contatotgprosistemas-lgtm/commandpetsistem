@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
@@ -31,6 +32,8 @@ const ServicosPage = () => {
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [tipo, setTipo] = useState("");
+  const [considerarDia, setConsiderarDia] = useState(false);
+  const [diaria24h, setDiaria24h] = useState(false);
 
   // Tipos state
   const [tipoOpen, setTipoOpen] = useState(false);
@@ -77,7 +80,9 @@ const ServicosPage = () => {
         descricao,
         valor: parseFloat(valor) || 0,
         tipo,
-      });
+        considerar_dia: considerarDia,
+        diaria_24h: diaria24h,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -92,7 +97,7 @@ const ServicosPage = () => {
     mutationFn: async () => {
       const { error } = await supabase
         .from("servicos")
-        .update({ descricao, valor: parseFloat(valor) || 0, tipo })
+        .update({ descricao, valor: parseFloat(valor) || 0, tipo, considerar_dia: considerarDia, diaria_24h: diaria24h } as any)
         .eq("id", editId!);
       if (error) throw error;
     },
@@ -169,6 +174,8 @@ const ServicosPage = () => {
     setDescricao("");
     setValor("");
     setTipo("");
+    setConsiderarDia(false);
+    setDiaria24h(false);
     setOpen(false);
     setEditId(null);
   };
@@ -178,6 +185,8 @@ const ServicosPage = () => {
     setDescricao(s.descricao);
     setValor(String(s.valor));
     setTipo(s.tipo);
+    setConsiderarDia((s as any).considerar_dia ?? false);
+    setDiaria24h((s as any).diaria_24h ?? false);
     setEditOpen(true);
   };
 
@@ -229,6 +238,16 @@ const ServicosPage = () => {
                         <option key={t} value={t}>{t}</option>
                       ))}
                     </select>
+                  </div>
+                  <div className="flex gap-6">
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="new-considerar-dia" checked={considerarDia} onCheckedChange={(v) => { setConsiderarDia(!!v); if (v) setDiaria24h(false); }} />
+                      <Label htmlFor="new-considerar-dia" className="text-sm font-normal">Considerar o Dia</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="new-diaria-24h" checked={diaria24h} onCheckedChange={(v) => { setDiaria24h(!!v); if (v) setConsiderarDia(false); }} />
+                      <Label htmlFor="new-diaria-24h" className="text-sm font-normal">Diária de 24 Horas</Label>
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>
@@ -343,6 +362,16 @@ const ServicosPage = () => {
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
+            </div>
+            <div className="flex gap-6">
+              <div className="flex items-center gap-2">
+                <Checkbox id="edit-considerar-dia" checked={considerarDia} onCheckedChange={(v) => { setConsiderarDia(!!v); if (v) setDiaria24h(false); }} />
+                <Label htmlFor="edit-considerar-dia" className="text-sm font-normal">Considerar o Dia</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="edit-diaria-24h" checked={diaria24h} onCheckedChange={(v) => { setDiaria24h(!!v); if (v) setConsiderarDia(false); }} />
+                <Label htmlFor="edit-diaria-24h" className="text-sm font-normal">Diária de 24 Horas</Label>
+              </div>
             </div>
           </div>
           <DialogFooter>

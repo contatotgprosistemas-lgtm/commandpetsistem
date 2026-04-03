@@ -3078,8 +3078,10 @@ export type Database = {
       servicos: {
         Row: {
           ativo: boolean
+          considerar_dia: boolean
           created_at: string
           descricao: string
+          diaria_24h: boolean
           empresa_id: string
           id: string
           tipo: string
@@ -3088,8 +3090,10 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          considerar_dia?: boolean
           created_at?: string
           descricao: string
+          diaria_24h?: boolean
           empresa_id: string
           id?: string
           tipo?: string
@@ -3098,8 +3102,10 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          considerar_dia?: boolean
           created_at?: string
           descricao?: string
+          diaria_24h?: boolean
           empresa_id?: string
           id?: string
           tipo?: string
