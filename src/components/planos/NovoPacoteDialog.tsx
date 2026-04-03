@@ -112,7 +112,7 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId, edi
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Novo Pacote</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{editingPackage ? "Editar Pacote" : "Novo Pacote"}</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
