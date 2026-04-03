@@ -111,6 +111,7 @@ export default function ContratosPage() {
     return urlData.publicUrl;
   }
 
+  async function saveTemplate() {
     if (!templateForm.name || !templateForm.content) {
       toast.error("Preencha nome e conteúdo do template");
       return;
