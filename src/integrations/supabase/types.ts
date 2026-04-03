@@ -1625,11 +1625,18 @@ export type Database = {
       }
       empresas: {
         Row: {
+          cep: string | null
           cnpj: string | null
           created_at: string
           email: string | null
           endereco: string | null
-          horario_funcionamento: string | null
+          endereco_numero: string | null
+          horario_domingo_fim: string | null
+          horario_domingo_inicio: string | null
+          horario_sabado_fim: string | null
+          horario_sabado_inicio: string | null
+          horario_semana_fim: string | null
+          horario_semana_inicio: string | null
           id: string
           inscricao_estadual: string | null
           inscricao_municipal: string | null
@@ -1640,11 +1647,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cep?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string | null
           endereco?: string | null
-          horario_funcionamento?: string | null
+          endereco_numero?: string | null
+          horario_domingo_fim?: string | null
+          horario_domingo_inicio?: string | null
+          horario_sabado_fim?: string | null
+          horario_sabado_inicio?: string | null
+          horario_semana_fim?: string | null
+          horario_semana_inicio?: string | null
           id?: string
           inscricao_estadual?: string | null
           inscricao_municipal?: string | null
@@ -1655,11 +1669,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cep?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string | null
           endereco?: string | null
-          horario_funcionamento?: string | null
+          endereco_numero?: string | null
+          horario_domingo_fim?: string | null
+          horario_domingo_inicio?: string | null
+          horario_sabado_fim?: string | null
+          horario_sabado_inicio?: string | null
+          horario_semana_fim?: string | null
+          horario_semana_inicio?: string | null
           id?: string
           inscricao_estadual?: string | null
           inscricao_municipal?: string | null
