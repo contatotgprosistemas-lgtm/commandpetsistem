@@ -28,11 +28,16 @@ function EmpresaTab() {
     if (!profile?.empresa_id) return;
     supabase
       .from("empresas")
-      .select("nome_empresa, cnpj, email, telefone")
+      .select("nome_empresa, cnpj, email, telefone, nome_fantasia, endereco, inscricao_estadual, inscricao_municipal, horario_funcionamento")
       .eq("id", profile.empresa_id)
       .single()
-      .then(({ data }) => {
-        if (data) setForm({ nome_empresa: data.nome_empresa, cnpj: data.cnpj || "", email: data.email || "", telefone: data.telefone || "" });
+      .then(({ data }: any) => {
+        if (data) setForm({
+          nome_empresa: data.nome_empresa || "", cnpj: data.cnpj || "", email: data.email || "", telefone: data.telefone || "",
+          nome_fantasia: data.nome_fantasia || "", endereco: data.endereco || "",
+          inscricao_estadual: data.inscricao_estadual || "", inscricao_municipal: data.inscricao_municipal || "",
+          horario_funcionamento: data.horario_funcionamento || ""
+        });
         setLoading(false);
       });
   }, [profile?.empresa_id]);
