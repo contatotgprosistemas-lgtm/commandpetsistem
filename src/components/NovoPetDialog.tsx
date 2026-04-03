@@ -189,29 +189,31 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
                 </FormItem>
               )} />
             </div>
-            <FormField control={form.control} name="cor" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cor</FormLabel>
-                <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="porte" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Porte</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    <SelectItem value="Micro">Micro</SelectItem>
-                    <SelectItem value="Pequeno">Pequeno</SelectItem>
-                    <SelectItem value="Médio">Médio</SelectItem>
-                    <SelectItem value="Grande">Grande</SelectItem>
-                    <SelectItem value="Gigante">Gigante</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField control={form.control} name="cor" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cor</FormLabel>
+                  <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="porte" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Porte</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="Micro">Micro</SelectItem>
+                      <SelectItem value="Pequeno">Pequeno</SelectItem>
+                      <SelectItem value="Médio">Médio</SelectItem>
+                      <SelectItem value="Grande">Grande</SelectItem>
+                      <SelectItem value="Gigante">Gigante</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
             <div className="grid grid-cols-3 gap-4">
               <FormField control={form.control} name="sexo" render={({ field }) => (
                 <FormItem>
