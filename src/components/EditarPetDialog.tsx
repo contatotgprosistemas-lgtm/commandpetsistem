@@ -28,6 +28,7 @@ const schema = z.object({
   raca: z.string().trim().max(100).optional().or(z.literal("")),
   cor: z.string().trim().max(100).optional().or(z.literal("")),
   porte: z.string().optional().or(z.literal("")),
+  castrado: z.string().optional().or(z.literal("")),
   sexo: z.string().optional().or(z.literal("")),
   peso: z.string().optional().or(z.literal("")),
   data_nascimento: z.date().optional(),
