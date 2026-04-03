@@ -58,7 +58,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
     resolver: zodResolver(schema),
     defaultValues: {
       nome: "", especie: "Cachorro", raca: "", cor: "", sexo: "", peso: "", cliente_id: "",
-      porte: "",
+      porte: "", castrado: "",
       pelagem: "", comportamento: "", restricoes_alimentares: "", medicacoes: "",
       antiparasitario: "", v10: "", raiva: "",
     },
