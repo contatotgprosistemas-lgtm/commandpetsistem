@@ -45,7 +45,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
 
   function reset() {
     setName(""); setDescription(""); setType("mensal"); setRecurringType("mensal");
-    setPrice(""); setValidityDays("30"); setAutoRenew(false); setRollover(false);
+    setPrice(""); setAutoRenew(false); setRollover(false);
     setMinLoyalty("0"); setCancellationFee("0"); setNotes("");
     setItems([{ service_name: "", quantity_included: 1, usage_period: "mensal", extra_unit_price: 0, limit_per_month: null }]);
   }
