@@ -34,6 +34,8 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+  const [diaVencimento, setDiaVencimento] = useState(10);
+  const [diasGerarFatura, setDiasGerarFatura] = useState(5);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -83,12 +85,16 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
         como_conheceu: data.como_conheceu || null,
         notas: data.notas || null,
         foto_url: fotoUrl,
+        dia_vencimento_fatura: diaVencimento,
+        dias_gerar_fatura: diasGerarFatura,
       } as any);
 
       if (error) throw error;
       toast({ title: "Cliente cadastrado com sucesso!" });
       form.reset();
       setFotoUrl(null);
+      setDiaVencimento(10);
+      setDiasGerarFatura(5);
       setOpen(false);
       onSuccess?.();
     } catch (err: any) {
@@ -216,6 +222,31 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
                 <FormMessage />
               </FormItem>
             )} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Venc. Fatura (dia do mês)</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={28}
+                  value={diaVencimento}
+                  onChange={e => setDiaVencimento(Number(e.target.value))}
+                  placeholder="10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Gerar Fatura (dias antes)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={30}
+                  value={diasGerarFatura}
+                  onChange={e => setDiasGerarFatura(Number(e.target.value))}
+                  placeholder="5"
+                />
+                <p className="text-xs text-muted-foreground">Quantos dias antes do vencimento gera automático a fatura</p>
+              </div>
+            </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
               <Button type="submit" disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>

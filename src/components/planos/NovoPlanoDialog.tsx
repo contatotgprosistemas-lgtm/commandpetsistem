@@ -33,7 +33,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
   const [type, setType] = useState("mensal");
   const [recurringType, setRecurringType] = useState("mensal");
   const [price, setPrice] = useState("");
-  const [validityDays, setValidityDays] = useState("30");
+  
   const [autoRenew, setAutoRenew] = useState(false);
   const [rollover, setRollover] = useState(false);
   const [minLoyalty, setMinLoyalty] = useState("0");
@@ -45,7 +45,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
 
   function reset() {
     setName(""); setDescription(""); setType("mensal"); setRecurringType("mensal");
-    setPrice(""); setValidityDays("30"); setAutoRenew(false); setRollover(false);
+    setPrice(""); setAutoRenew(false); setRollover(false);
     setMinLoyalty("0"); setCancellationFee("0"); setNotes("");
     setItems([{ service_name: "", quantity_included: 1, usage_period: "mensal", extra_unit_price: 0, limit_per_month: null }]);
   }
@@ -57,7 +57,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
       setType(editingPlan.type || "mensal");
       setRecurringType(editingPlan.recurring_type || "mensal");
       setPrice(String(editingPlan.price || ""));
-      setValidityDays(String(editingPlan.validity_days || "30"));
+      
       setAutoRenew(editingPlan.auto_renew || false);
       setRollover(editingPlan.rollover_enabled || false);
       setMinLoyalty(String(editingPlan.min_loyalty_months || "0"));
@@ -74,7 +74,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
 
     const payload = {
       empresa_id: empresaId, name, description, type, recurring_type: recurringType,
-      price: Number(price), validity_days: Number(validityDays), auto_renew: autoRenew,
+      price: Number(price), auto_renew: autoRenew,
       rollover_enabled: rollover, min_loyalty_months: Number(minLoyalty),
       cancellation_fee: Number(cancellationFee), notes, status: "ativo"
     };
@@ -152,7 +152,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
             <Label>Descrição</Label>
             <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descrição do plano..." rows={2} />
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Tipo</Label>
               <Select value={type} onValueChange={setType}>
@@ -178,10 +178,6 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
                   <SelectItem value="anual">Anual</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Validade (dias)</Label>
-              <Input type="number" value={validityDays} onChange={e => setValidityDays(e.target.value)} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

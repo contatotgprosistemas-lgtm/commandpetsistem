@@ -392,6 +392,8 @@ export type Database = {
           cpf: string | null
           created_at: string
           data_nascimento: string | null
+          dia_vencimento_fatura: number
+          dias_gerar_fatura: number
           email: string | null
           empresa_id: string
           endereco: string | null
@@ -412,6 +414,8 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
+          dia_vencimento_fatura?: number
+          dias_gerar_fatura?: number
           email?: string | null
           empresa_id: string
           endereco?: string | null
@@ -432,6 +436,8 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
+          dia_vencimento_fatura?: number
+          dias_gerar_fatura?: number
           email?: string | null
           empresa_id?: string
           endereco?: string | null

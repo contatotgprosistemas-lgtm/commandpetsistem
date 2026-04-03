@@ -50,6 +50,8 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
   const [cepLoading, setCepLoading] = useState(false);
   const [historico, setHistorico] = useState<HistoricoServico[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+  const [diaVencimento, setDiaVencimento] = useState(10);
+  const [diasGerarFatura, setDiasGerarFatura] = useState(5);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -70,6 +72,8 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         como_conheceu: cliente.como_conheceu || "",
         notas: cliente.notas || "",
       });
+      setDiaVencimento(cliente.dia_vencimento_fatura ?? 10);
+      setDiasGerarFatura(cliente.dias_gerar_fatura ?? 5);
       fetchHistorico(cliente.id);
     }
   }, [cliente, form]);
@@ -123,7 +127,9 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         endereco: enderecoFinal,
         como_conheceu: data.como_conheceu || null,
         notas: data.notas || null,
-      }).eq("id", cliente.id);
+        dia_vencimento_fatura: diaVencimento,
+        dias_gerar_fatura: diasGerarFatura,
+      } as any).eq("id", cliente.id);
 
       if (error) throw error;
       toast({ title: "Contato atualizado com sucesso!" });
@@ -250,6 +256,31 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
                     <FormMessage />
                   </FormItem>
                 )} />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Venc. Fatura (dia do mês)</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={28}
+                      value={diaVencimento}
+                      onChange={e => setDiaVencimento(Number(e.target.value))}
+                      placeholder="10"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Gerar Fatura (dias antes)</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={30}
+                      value={diasGerarFatura}
+                      onChange={e => setDiasGerarFatura(Number(e.target.value))}
+                      placeholder="5"
+                    />
+                    <p className="text-xs text-muted-foreground">Quantos dias antes do vencimento gera automático a fatura</p>
+                  </div>
+                </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                   <Button type="submit" disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>

@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { addDays, format, getDay, isBefore, startOfDay } from "date-fns";
+import { addDays, format, getDay, isBefore, startOfDay, lastDayOfMonth, startOfMonth, addMonths } from "date-fns";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +34,22 @@ function isTaxiPetService(name: string) {
   return lower.includes("taxi") || lower.includes("transport") || lower.includes("leva");
 }
 
+function countWeekdaysInRange(start: Date, end: Date, days: number[]): number {
+  let count = 0;
+  let current = new Date(start);
+  while (!isBefore(end, current)) {
+    if (days.includes(getDay(current))) count++;
+    current = addDays(current, 1);
+  }
+  return count;
+}
+
+function countWeekdaysInMonth(year: number, month: number, days: number[]): number {
+  const start = new Date(year, month, 1);
+  const end = lastDayOfMonth(start);
+  return countWeekdaysInRange(start, end, days);
+}
+
 export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: Props) {
   const [saving, setSaving] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
@@ -48,7 +64,6 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [discount, setDiscount] = useState("0");
   const [autoRenew, setAutoRenew] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("pix");
   const [notes, setNotes] = useState("");
   const [plannedDays, setPlannedDays] = useState<number[]>([]);
   const [horaBuscar, setHoraBuscar] = useState("08:00");
@@ -68,10 +83,28 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
   const selectedPlan = planType === "plan" ? plans.find((p: any) => p.id === selectedId) : packages.find((p: any) => p.id === selectedId);
   const priceContracted = selectedPlan ? Number(selectedPlan.price) : 0;
-  const finalPrice = Math.max(0, priceContracted - Number(discount || 0));
-  const validityDays = selectedPlan?.validity_days || 30;
-  const endDate = format(addDays(new Date(startDate), validityDays), "yyyy-MM-dd");
   const showHorarios = selectedPlan ? isTaxiPetService(selectedPlan.name) : false;
+
+  // Calculate end date as last day of the month of startDate
+  const startDateObj = new Date(startDate + "T00:00:00");
+  const endOfMonth = lastDayOfMonth(startDateObj);
+  const endDate = format(endOfMonth, "yyyy-MM-dd");
+
+  // Calculate proportional price if not starting on the 1st
+  const isFirstDay = startDateObj.getDate() === 1;
+  let proportionalPrice = priceContracted;
+  let proportionalInfo = "";
+
+  if (!isFirstDay && plannedDays.length > 0) {
+    const totalDaysInMonth = countWeekdaysInMonth(startDateObj.getFullYear(), startDateObj.getMonth(), plannedDays);
+    const remainingDays = countWeekdaysInRange(startDateObj, endOfMonth, plannedDays);
+    if (totalDaysInMonth > 0) {
+      proportionalPrice = (priceContracted / totalDaysInMonth) * remainingDays;
+      proportionalInfo = `Proporcional: ${remainingDays}/${totalDaysInMonth} dias → R$ ${proportionalPrice.toFixed(2)}`;
+    }
+  }
+
+  const finalPrice = Math.max(0, proportionalPrice - Number(discount || 0));
 
   function toggleDay(day: number) {
     setPlannedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
@@ -82,12 +115,14 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     if (!petId) { toast.error("Selecione o pet"); return; }
     setSaving(true);
 
+    const nextMonthStart = format(startOfMonth(addMonths(startDateObj, 1)), "yyyy-MM-dd");
+
     const payload: any = {
       empresa_id: empresaId, cliente_id: clienteId, pet_id: petId || null,
       start_date: startDate, end_date: endDate,
-      next_renewal_date: autoRenew ? endDate : null,
+      next_renewal_date: autoRenew ? nextMonthStart : null,
       price_contracted: priceContracted, discount_amount: Number(discount || 0),
-      final_price: finalPrice, auto_renew: autoRenew, payment_method: paymentMethod,
+      final_price: finalPrice, auto_renew: autoRenew,
       notes, status: "ativo", planned_days: plannedDays
     };
     if (planType === "plan") payload.plan_id = selectedId;
@@ -100,13 +135,13 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
     await supabase.from("contas_receber").insert({
       empresa_id: empresaId, cliente_id: clienteId,
-      descricao: `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name}`,
+      descricao: `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name}${!isFirstDay ? " (proporcional)" : ""}`,
       valor: finalPrice, vencimento: startDate, status: "pendente", categoria: "Planos e Pacotes"
     });
 
     if (plannedDays.length > 0 && petId) {
-      const start = startOfDay(new Date(startDate + "T00:00:00"));
-      const end = startOfDay(new Date(endDate + "T00:00:00"));
+      const start = startOfDay(startDateObj);
+      const end = startOfDay(endOfMonth);
       const today = startOfDay(new Date());
       const tipoServico = selectedPlan?.name || "Plano";
 
@@ -239,10 +274,17 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </div>
           )}
 
+          {proportionalInfo && (
+            <div className="rounded-md bg-muted p-3">
+              <p className="text-xs font-medium text-muted-foreground">{proportionalInfo}</p>
+              <p className="text-xs text-muted-foreground mt-1">A partir do próximo mês, o valor será R$ {priceContracted.toFixed(2)} (mês cheio).</p>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label>Preço</Label>
-              <Input value={`R$ ${priceContracted.toFixed(2)}`} disabled />
+              <Input value={`R$ ${proportionalPrice.toFixed(2)}`} disabled />
             </div>
             <div className="space-y-1.5">
               <Label>Desconto (R$)</Label>
