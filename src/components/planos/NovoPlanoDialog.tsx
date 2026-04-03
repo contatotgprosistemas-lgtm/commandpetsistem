@@ -71,14 +71,26 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
   async function handleSave() {
     if (!name || !price) { toast.error("Preencha nome e preço"); return; }
     setSaving(true);
-    const { data: plan, error } = await supabase.from("service_plans" as any).insert({
+
+    const payload = {
       empresa_id: empresaId, name, description, type, recurring_type: recurringType,
       price: Number(price), validity_days: Number(validityDays), auto_renew: autoRenew,
       rollover_enabled: rollover, min_loyalty_months: Number(minLoyalty),
       cancellation_fee: Number(cancellationFee), notes, status: "ativo"
-    }).select().single();
+    };
 
-    if (error || !plan) { toast.error("Erro ao criar plano"); setSaving(false); return; }
+    let plan: any;
+    let error: any;
+
+    if (editingPlan) {
+      const res = await supabase.from("service_plans" as any).update(payload).eq("id", editingPlan.id).select().single();
+      plan = res.data; error = res.error;
+    } else {
+      const res = await supabase.from("service_plans" as any).insert(payload).select().single();
+      plan = res.data; error = res.error;
+    }
+
+    if (error || !plan) { toast.error("Erro ao salvar plano"); setSaving(false); return; }
 
     const validItems = items.filter(i => i.service_name.trim());
     if (validItems.length > 0) {
