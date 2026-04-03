@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, FileText, Send, Eye, Copy, Clock, CheckCircle2, XCircle, Link2, History, Mail, MessageCircle, PenTool } from "lucide-react";
+import { Plus, FileText, Send, Eye, Copy, Clock, CheckCircle2, XCircle, Link2, History, Mail, MessageCircle, PenTool, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContractTimelineDialog } from "@/components/contracts/ContractTimelineDialog";
@@ -65,6 +66,8 @@ const DEFAULT_TEMPLATE = `<h2 style="text-align: center">CONTRATO DE PRESTAÇÃO
 
 export default function ContratosPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user, session } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
   const [templates, setTemplates] = useState<Template[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [clientes, setClientes] = useState<{ id: string; nome: string; email: string | null; cpf: string | null; endereco: string | null }[]>([]);
@@ -87,6 +90,11 @@ export default function ContratosPage() {
 
   // Send dialog
   const [sendDialogContract, setSendDialogContract] = useState<Contract | null>(null);
+
+  // Delete dialog
+  const [deleteContract, setDeleteContract] = useState<Contract | null>(null);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -408,6 +416,34 @@ export default function ContratosPage() {
     toast.success("Link copiado!");
   }
 
+  async function handleDeleteContract() {
+    if (!deleteContract || !session?.user?.email) return;
+    setDeleting(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: session.user.email,
+        password: deletePassword,
+      });
+      if (authError) {
+        toast.error("Senha incorreta. Tente novamente.");
+        setDeleting(false);
+        return;
+      }
+      const { error } = await supabase.from("contracts").delete().eq("id", deleteContract.id);
+      if (error) {
+        toast.error("Erro ao excluir contrato");
+      } else {
+        toast.success("Contrato excluído com sucesso!");
+        loadData();
+      }
+    } catch {
+      toast.error("Erro ao verificar senha");
+    }
+    setDeleting(false);
+    setDeleteContract(null);
+    setDeletePassword("");
+  }
+
   function handleEditTemplate(t: Template) {
     setEditingTemplate(t.id);
     setTemplateForm({ name: t.name, description: t.description || "", content: t.content });
@@ -486,6 +522,11 @@ export default function ContratosPage() {
                             <Button variant="ghost" size="icon" onClick={() => setTimelineContractId(c.id)} title="Histórico">
                               <History className="h-4 w-4" />
                             </Button>
+                            {isAdmin && (
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteContract(c)} title="Excluir" className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -715,6 +756,36 @@ export default function ContratosPage() {
           onOpenChange={() => setTimelineContractId(null)}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteContract} onOpenChange={(open) => { if (!open) { setDeleteContract(null); setDeletePassword(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir Contrato</DialogTitle>
+            <DialogDescription>
+              Para confirmar a exclusão de <strong>{deleteContract?.title}</strong>, digite sua senha de login.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                value={deletePassword}
+                onChange={e => setDeletePassword(e.target.value)}
+                placeholder="Digite sua senha"
+                onKeyDown={e => { if (e.key === "Enter" && deletePassword) handleDeleteContract(); }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteContract(null); setDeletePassword(""); }}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteContract} disabled={!deletePassword || deleting}>
+              {deleting ? "Excluindo..." : "Excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
