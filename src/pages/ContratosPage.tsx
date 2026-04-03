@@ -100,7 +100,17 @@ export default function ContratosPage() {
     setLoading(false);
   }
 
-  async function saveTemplate() {
+  async function handleLogoUpload(file: File): Promise<string | null> {
+    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
+    if (!profile?.empresa_id) return null;
+    const ext = file.name.split(".").pop();
+    const path = `${profile.empresa_id}/logo_${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("profile-photos").upload(path, file, { upsert: true });
+    if (error) { toast.error("Erro ao enviar imagem"); return null; }
+    const { data: urlData } = supabase.storage.from("profile-photos").getPublicUrl(path);
+    return urlData.publicUrl;
+  }
+
     if (!templateForm.name || !templateForm.content) {
       toast.error("Preencha nome e conteúdo do template");
       return;
