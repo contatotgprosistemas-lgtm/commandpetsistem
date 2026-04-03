@@ -239,6 +239,7 @@ const ServicosPage = () => {
                       ))}
                     </select>
                   </div>
+                  {/hotel|hospedagem|hotelzinho|pensão|pens[aã]o|pernoite|estadia/i.test(tipo) && (
                   <div className="flex gap-6">
                     <div className="flex items-center gap-2">
                       <Checkbox id="new-considerar-dia" checked={considerarDia} onCheckedChange={(v) => { setConsiderarDia(!!v); if (v) setDiaria24h(false); }} />
@@ -249,6 +250,7 @@ const ServicosPage = () => {
                       <Label htmlFor="new-diaria-24h" className="text-sm font-normal">Diária de 24 Horas</Label>
                     </div>
                   </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -363,6 +365,7 @@ const ServicosPage = () => {
                 ))}
               </select>
             </div>
+            {/hotel|hospedagem|hotelzinho|pensão|pens[aã]o|pernoite|estadia/i.test(tipo) && (
             <div className="flex gap-6">
               <div className="flex items-center gap-2">
                 <Checkbox id="edit-considerar-dia" checked={considerarDia} onCheckedChange={(v) => { setConsiderarDia(!!v); if (v) setDiaria24h(false); }} />
@@ -373,6 +376,7 @@ const ServicosPage = () => {
                 <Label htmlFor="edit-diaria-24h" className="text-sm font-normal">Diária de 24 Horas</Label>
               </div>
             </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setEditOpen(false); resetForm(); }}>Cancelar</Button>
