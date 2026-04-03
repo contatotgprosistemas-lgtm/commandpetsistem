@@ -118,7 +118,7 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId }: P
               </Button>
             </div>
             {items.map((item, i) => (
-              <div key={i} className="grid grid-cols-[1fr_80px_100px_32px] gap-2 mb-2 items-end">
+              <div key={i} className="grid grid-cols-[1fr_80px_32px] gap-2 mb-2 items-end">
                 <div>
                   {i === 0 && <Label className="text-xs text-muted-foreground">Serviço</Label>}
                   <Select value={item.service_name} onValueChange={v => { const n = [...items]; n[i].service_name = v; setItems(n); }}>
@@ -129,10 +129,6 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId }: P
                 <div>
                   {i === 0 && <Label className="text-xs text-muted-foreground">Qtd</Label>}
                   <Input type="number" value={item.quantity_included} onChange={e => { const n = [...items]; n[i].quantity_included = Number(e.target.value); setItems(n); }} />
-                </div>
-                <div>
-                  {i === 0 && <Label className="text-xs text-muted-foreground">Extra R$</Label>}
-                  <Input type="number" value={item.extra_unit_price} onChange={e => { const n = [...items]; n[i].extra_unit_price = Number(e.target.value); setItems(n); }} />
                 </div>
                 <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setItems(items.filter((_, idx) => idx !== i))} disabled={items.length === 1}>
                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
