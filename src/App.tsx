@@ -33,6 +33,7 @@ import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import CadastroPublicoPage from "@/pages/CadastroPublicoPage";
 import NotFound from "@/pages/NotFound";
+import UnsubscribePage from "@/pages/UnsubscribePage";
 
 // Operacional pages
 import OperacionalLoginPage from "@/pages/operacional/OperacionalLoginPage";
