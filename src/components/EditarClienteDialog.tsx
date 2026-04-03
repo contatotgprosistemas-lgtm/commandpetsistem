@@ -50,6 +50,8 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
   const [cepLoading, setCepLoading] = useState(false);
   const [historico, setHistorico] = useState<HistoricoServico[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+  const [diaVencimento, setDiaVencimento] = useState(10);
+  const [diasGerarFatura, setDiasGerarFatura] = useState(5);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
