@@ -303,7 +303,7 @@ export default function PlanosPacotesPage() {
                           <RefreshCw className="h-3.5 w-3.5" />
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Gerar Contrato" onClick={() => navigate(`/contratos?cliente_id=${s.cliente_id}`)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Gerar Contrato" onClick={() => navigate(`/contratos?subscription_id=${s.id}`)}>
                         <FileSignature className="h-3.5 w-3.5" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteTarget({ type: "subscription", id: s.id, name: planName })}>
