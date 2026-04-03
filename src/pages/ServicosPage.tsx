@@ -80,7 +80,9 @@ const ServicosPage = () => {
         descricao,
         valor: parseFloat(valor) || 0,
         tipo,
-      });
+        considerar_dia: considerarDia,
+        diaria_24h: diaria24h,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
