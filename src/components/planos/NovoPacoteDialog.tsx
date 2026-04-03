@@ -65,7 +65,20 @@ export function NovoPacoteDialog({ open, onOpenChange, onSuccess, empresaId }: P
     reset(); setSaving(false); onSuccess(); onOpenChange(false);
   }
 
-  const serviceOptions = ["Banho", "Tosa", "Banho e Tosa", "Daycare", "Hospedagem", "Transporte", "Adestramento", "Creche Canina", "Passeio", "Consulta"];
+  const [serviceOptions, setServiceOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    supabase
+      .from("servicos")
+      .select("descricao")
+      .eq("empresa_id", empresaId)
+      .eq("ativo", true)
+      .order("descricao")
+      .then(({ data }) => {
+        if (data) setServiceOptions(data.map((s: any) => s.descricao));
+      });
+  }, [open, empresaId]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
