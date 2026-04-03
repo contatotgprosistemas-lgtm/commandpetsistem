@@ -57,7 +57,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
       setType(editingPlan.type || "mensal");
       setRecurringType(editingPlan.recurring_type || "mensal");
       setPrice(String(editingPlan.price || ""));
-      setValidityDays(String(editingPlan.validity_days || "30"));
+      
       setAutoRenew(editingPlan.auto_renew || false);
       setRollover(editingPlan.rollover_enabled || false);
       setMinLoyalty(String(editingPlan.min_loyalty_months || "0"));
