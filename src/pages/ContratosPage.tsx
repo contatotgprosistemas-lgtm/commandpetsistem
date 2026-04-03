@@ -97,6 +97,11 @@ export default function ContratosPage() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  // Company sign dialog
+  const [companySignContract, setCompanySignContract] = useState<Contract | null>(null);
+  const [companySignerName, setCompanySignerName] = useState("");
+  const [companySigning, setCompanySigning] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
