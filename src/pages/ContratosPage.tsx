@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, FileText, Send, Eye, Copy, Clock, CheckCircle2, XCircle, Link2, History } from "lucide-react";
+import { Plus, FileText, Send, Eye, Copy, Clock, CheckCircle2, XCircle, Link2, History, Mail, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContractTimelineDialog } from "@/components/contracts/ContractTimelineDialog";
