@@ -1628,8 +1628,13 @@ export type Database = {
           cnpj: string | null
           created_at: string
           email: string | null
+          endereco: string | null
+          horario_funcionamento: string | null
           id: string
+          inscricao_estadual: string | null
+          inscricao_municipal: string | null
           nome_empresa: string
+          nome_fantasia: string | null
           plano: string
           telefone: string | null
           updated_at: string
@@ -1638,8 +1643,13 @@ export type Database = {
           cnpj?: string | null
           created_at?: string
           email?: string | null
+          endereco?: string | null
+          horario_funcionamento?: string | null
           id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
           nome_empresa: string
+          nome_fantasia?: string | null
           plano?: string
           telefone?: string | null
           updated_at?: string
@@ -1648,8 +1658,13 @@ export type Database = {
           cnpj?: string | null
           created_at?: string
           email?: string | null
+          endereco?: string | null
+          horario_funcionamento?: string | null
           id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
           nome_empresa?: string
+          nome_fantasia?: string | null
           plano?: string
           telefone?: string | null
           updated_at?: string
