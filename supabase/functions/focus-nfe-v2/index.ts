@@ -274,7 +274,7 @@ async function cancelarNfe(supabase: any, settings: any, nfeId: string, justific
   if (nfe.status !== "autorizada") throw new Error("Só é possível cancelar notas autorizadas");
 
   const base = getBaseUrl(settings.ambiente);
-  const resp = await fetch(`${base}/v2/nfse/${nfe.reference}`, {
+  const resp = await fetch(`${base}/nfse/${nfe.reference}`, {
     method: "DELETE",
     headers: focusHeaders(settings.token_focus),
     body: JSON.stringify({ justificativa }),
