@@ -38,6 +38,8 @@ export default function PlanosPacotesPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; name: string } | null>(null);
   const [actionTarget, setActionTarget] = useState<{ action: string; id: string } | null>(null);
   const [planejamentoSub, setPlanejamentoSub] = useState<any>(null);
+  const [discountTarget, setDiscountTarget] = useState<any>(null);
+  const [discountValue, setDiscountValue] = useState("");
 
   async function fetchAll() {
     setLoading(true);
