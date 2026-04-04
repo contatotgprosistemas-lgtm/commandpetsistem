@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { format, isToday, isAfter, startOfDay } from "date-fns";
+import { format, isToday, isAfter, startOfDay, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ManejoDialog } from "@/components/ManejoDialog";
 import { ChecklistDialog } from "@/components/ChecklistDialog";
