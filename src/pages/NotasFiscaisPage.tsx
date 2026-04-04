@@ -254,6 +254,7 @@ export default function NotasFiscaisPage() {
             discriminacao: form.descricao,
             iss_retido: false,
             item_lista_servico: nfseForm.codigo_servico,
+            codigo_tributacao_nacional: nfseForm.codigo_tributacao_nacional || undefined,
             valor_servicos: valor,
           },
         };
