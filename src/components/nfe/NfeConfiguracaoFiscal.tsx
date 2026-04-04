@@ -211,14 +211,8 @@ export function NfeConfiguracaoFiscal({ empresaId }: Props) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Padrões de Emissão</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div><Label>Série Padrão</Label><Input value={form.serie_padrao} onChange={(e) => update("serie_padrao", e.target.value)} /></div>
-          <div><Label>Natureza de Operação</Label><Input value={form.natureza_operacao_padrao} onChange={(e) => update("natureza_operacao_padrao", e.target.value)} /></div>
-          <div><Label>CFOP Padrão</Label><Input value={form.cfop_padrao} onChange={(e) => update("cfop_padrao", e.target.value)} /></div>
-        </CardContent>
-      </Card>
+
+
 
       <Card>
         <CardHeader><CardTitle className="text-base">Webhook</CardTitle></CardHeader>
