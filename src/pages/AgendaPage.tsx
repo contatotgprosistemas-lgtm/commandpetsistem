@@ -226,6 +226,7 @@ export default function AgendaPage() {
             onEdit={a => setEditingAgendamento(a)}
             showDelete
             onDelete={handleDelete}
+            onFalta={setFaltaOpen}
           />
         </TabsContent>
       </Tabs>
