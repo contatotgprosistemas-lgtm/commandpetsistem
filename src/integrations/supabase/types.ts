@@ -1419,6 +1419,8 @@ export type Database = {
         Row: {
           auto_renew: boolean | null
           cliente_id: string
+          contract_date: string | null
+          contract_end_date: string | null
           created_at: string
           discount_amount: number | null
           empresa_id: string
@@ -1441,6 +1443,8 @@ export type Database = {
         Insert: {
           auto_renew?: boolean | null
           cliente_id: string
+          contract_date?: string | null
+          contract_end_date?: string | null
           created_at?: string
           discount_amount?: number | null
           empresa_id: string
@@ -1463,6 +1467,8 @@ export type Database = {
         Update: {
           auto_renew?: boolean | null
           cliente_id?: string
+          contract_date?: string | null
+          contract_end_date?: string | null
           created_at?: string
           discount_amount?: number | null
           empresa_id?: string
@@ -3740,6 +3746,7 @@ export type Database = {
           allows_replacement: boolean
           auto_renew: boolean | null
           cancellation_fee: number | null
+          contract_duration_months: number | null
           created_at: string
           description: string | null
           empresa_id: string
@@ -3760,6 +3767,7 @@ export type Database = {
           allows_replacement?: boolean
           auto_renew?: boolean | null
           cancellation_fee?: number | null
+          contract_duration_months?: number | null
           created_at?: string
           description?: string | null
           empresa_id: string
@@ -3780,6 +3788,7 @@ export type Database = {
           allows_replacement?: boolean
           auto_renew?: boolean | null
           cancellation_fee?: number | null
+          contract_duration_months?: number | null
           created_at?: string
           description?: string | null
           empresa_id?: string
