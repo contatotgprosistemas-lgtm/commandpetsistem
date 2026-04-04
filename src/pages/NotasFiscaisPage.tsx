@@ -90,7 +90,8 @@ export default function NotasFiscaisPage() {
     valor: "",
     aliquota_iss: "5",
     codigo_servico: "05.08",
-    codigo_tributacao_nacional: "",
+    codigo_tributacao_nacional: "050801",
+    codigo_tributario_municipio: "0508",
     endereco_logradouro: "",
     endereco_numero: "",
     endereco_complemento: "",
@@ -226,6 +227,9 @@ export default function NotasFiscaisPage() {
       let dados: Record<string, unknown>;
 
       if (isNfse) {
+        const codigoTributacaoNacional = nfseForm.codigo_tributacao_nacional.replace(/\D/g, "") || "050801";
+        const codigoTributarioMunicipio = nfseForm.codigo_tributario_municipio.replace(/\D/g, "") || "0508";
+
         dados = {
           data_emissao: new Date().toISOString().split("T")[0],
           prestador: {
@@ -254,7 +258,8 @@ export default function NotasFiscaisPage() {
             discriminacao: form.descricao,
             iss_retido: false,
             item_lista_servico: nfseForm.codigo_servico,
-            codigo_tributacao_nacional_iss: nfseForm.codigo_tributacao_nacional.replace(/\D/g, "") || undefined,
+            codigo_tributacao_nacional_iss: codigoTributacaoNacional,
+            codigo_tributario_municipio: codigoTributarioMunicipio,
             valor_servicos: valor,
           },
         };
@@ -360,7 +365,7 @@ export default function NotasFiscaisPage() {
       }
       setEmitirOpen(false);
       queryClient.invalidateQueries({ queryKey: ["notas_fiscais"] });
-      setNfseForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", aliquota_iss: "5", codigo_servico: "05.08", codigo_tributacao_nacional: "", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
+      setNfseForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", aliquota_iss: "5", codigo_servico: "05.08", codigo_tributacao_nacional: "050801", codigo_tributario_municipio: "0508", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
       setNfeForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", ncm: "", cfop: "5102", quantidade: "1", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
     },
     onError: (err: Error) => toast.error(err.message || "Erro ao emitir nota"),
@@ -510,14 +515,18 @@ export default function NotasFiscaisPage() {
                       <Input type="number" step="0.01" value={nfseForm.aliquota_iss} onChange={(e) => setNfseForm((p) => ({ ...p, aliquota_iss: e.target.value }))} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label>Cód. Serviço (item lista)</Label>
                       <Input value={nfseForm.codigo_servico} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_servico: e.target.value }))} placeholder="Ex: 05.08" />
                     </div>
                     <div>
                       <Label>Cód. Tributação Nacional</Label>
-                      <Input value={nfseForm.codigo_tributacao_nacional} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_tributacao_nacional: e.target.value }))} placeholder="Ex: 050800" />
+                      <Input value={nfseForm.codigo_tributacao_nacional} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_tributacao_nacional: e.target.value.replace(/\D/g, "") }))} placeholder="Ex: 050801" />
+                    </div>
+                    <div>
+                      <Label>Cód. Tributário Município</Label>
+                      <Input value={nfseForm.codigo_tributario_municipio} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_tributario_municipio: e.target.value.replace(/\D/g, "") }))} placeholder="Ex: 0508" />
                     </div>
                   </div>
 
