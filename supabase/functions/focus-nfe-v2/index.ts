@@ -52,19 +52,25 @@ function getBaseUrl(ambiente: string) {
 
 async function testarConexao(settings: any) {
   const base = getBaseUrl(settings.ambiente);
-  const token = settings.token_focus;
   
-  // Use token as query param to test authentication against the NFSe endpoint
-  const resp = await fetch(`${base}/nfse?token=${encodeURIComponent(token)}`, {
+  // Focus NFe doesn't have a health-check endpoint.
+  // We query a non-existent ref: 401 = bad token, 404 = token valid (ref not found)
+  const testRef = `test-conexao-${Date.now()}`;
+  const resp = await fetch(`${base}/v2/nfse/${testRef}`, {
     method: "GET",
+    headers: focusHeaders(settings.token_focus),
   });
   const body = await resp.text();
   
-  if (resp.status === 200) {
-    return { status: 200, ok: true, body: "Conexão OK! Token válido." };
-  }
   if (resp.status === 401 || resp.status === 403) {
     return { status: resp.status, ok: false, body: "Token inválido ou sem permissão. Verifique o token da Focus NFe." };
+  }
+  // 404 means the token authenticated but ref doesn't exist — connection works!
+  if (resp.status === 404) {
+    return { status: 200, ok: true, body: "Conexão OK! Token válido e autenticado." };
+  }
+  if (resp.status === 200) {
+    return { status: 200, ok: true, body: "Conexão OK!" };
   }
   
   return { status: resp.status, ok: false, body: body.substring(0, 500) };
