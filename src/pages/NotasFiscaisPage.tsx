@@ -517,7 +517,7 @@ export default function NotasFiscaisPage() {
                     </div>
                     <div>
                       <Label>Cód. Tributação Nacional</Label>
-                      <Input value={nfseForm.codigo_tributacao_nacional} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_tributacao_nacional: e.target.value }))} placeholder="Ex: 01.05.08" />
+                      <Input value={nfseForm.codigo_tributacao_nacional} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_tributacao_nacional: e.target.value }))} placeholder="Ex: 050800" />
                     </div>
                   </div>
 
