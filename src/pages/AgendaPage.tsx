@@ -58,6 +58,7 @@ export default function AgendaPage() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
+  const [faltaOpen, setFaltaOpen] = useState<Agendamento | null>(null);
   const [view, setView] = useState<"calendar" | "list">("calendar");
 
   // List filters
