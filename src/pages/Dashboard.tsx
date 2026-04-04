@@ -299,6 +299,16 @@ export default function Dashboard() {
         onOpenChange={(o) => { if (!o) { setEditingAgendamento(null); setEditOpen(null); } }}
         onSuccess={() => { setEditingAgendamento(null); setEditOpen(null); fetchAgendamentos(); }}
       />
+      {faltaOpen && (
+        <FaltaDialog
+          open={!!faltaOpen}
+          onOpenChange={(o) => { if (!o) setFaltaOpen(null); }}
+          agendamento={faltaOpen}
+          empresaId={faltaOpen.empresa_id}
+          allowsReplacement={true}
+          onSuccess={fetchAgendamentos}
+        />
+      )}
     </div>
   );
 }
