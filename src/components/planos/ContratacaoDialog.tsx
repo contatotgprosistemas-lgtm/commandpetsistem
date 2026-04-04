@@ -226,12 +226,48 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </Select>
           </div>
           {pets.length > 0 && (
-            <div className="space-y-1.5">
-              <Label>Pet *</Label>
-              <Select value={petId} onValueChange={setPetId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o pet" /></SelectTrigger>
-                <SelectContent>{pets.map(p => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}</SelectContent>
-              </Select>
+            <div className="space-y-2">
+              <Label>Pet(s) * {pets.length > 1 && <span className="text-xs text-muted-foreground ml-1">(selecione um ou mais)</span>}</Label>
+              {pets.length === 1 ? (
+                <div className="flex items-center gap-2 p-2 rounded-md border border-border bg-card">
+                  <Checkbox
+                    checked={selectedPetIds.includes(pets[0].id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedPetIds(checked ? [pets[0].id] : []);
+                    }}
+                  />
+                  <span className="text-sm">{pets[0].nome}</span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {pets.map(p => {
+                    const isSelected = selectedPetIds.includes(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setSelectedPetIds(prev =>
+                          prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]
+                        )}
+                        className={cn(
+                          "relative flex items-center justify-center rounded-lg border-2 px-3 py-2 text-xs font-medium transition-all min-w-[70px]",
+                          isSelected
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                        )}
+                      >
+                        {isSelected && (
+                          <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                          </div>
+                        )}
+                        {p.nome}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">{selectedPetIds.length} pet(s) selecionado(s)</p>
             </div>
           )}
           <div className="grid grid-cols-2 gap-4">
