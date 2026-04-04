@@ -35,6 +35,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
   const [price, setPrice] = useState("");
   
   const [autoRenew, setAutoRenew] = useState(false);
+  const [allowsReplacement, setAllowsReplacement] = useState(false);
   const [rollover, setRollover] = useState(false);
   const [minLoyalty, setMinLoyalty] = useState("0");
   const [cancellationFee, setCancellationFee] = useState("0");
