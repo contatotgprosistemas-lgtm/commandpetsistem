@@ -340,8 +340,8 @@ export default function NotasFiscaisPage() {
       }
       setEmitirOpen(false);
       queryClient.invalidateQueries({ queryKey: ["notas_fiscais"] });
-      setNfseForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", aliquota_iss: "5", codigo_servico: "" });
-      setNfeForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", ncm: "", cfop: "5102", quantidade: "1" });
+      setNfseForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", aliquota_iss: "5", codigo_servico: "", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
+      setNfeForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", ncm: "", cfop: "5102", quantidade: "1", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
     },
     onError: (err: Error) => toast.error(err.message || "Erro ao emitir nota"),
   });
