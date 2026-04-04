@@ -227,6 +227,9 @@ export default function NotasFiscaisPage() {
       let dados: Record<string, unknown>;
 
       if (isNfse) {
+        const codigoTributacaoNacional = nfseForm.codigo_tributacao_nacional.replace(/\D/g, "") || "050801";
+        const codigoTributarioMunicipio = nfseForm.codigo_tributario_municipio.replace(/\D/g, "") || "0508";
+
         dados = {
           data_emissao: new Date().toISOString().split("T")[0],
           prestador: {
@@ -255,7 +258,8 @@ export default function NotasFiscaisPage() {
             discriminacao: form.descricao,
             iss_retido: false,
             item_lista_servico: nfseForm.codigo_servico,
-            codigo_tributacao_nacional_iss: nfseForm.codigo_tributacao_nacional.replace(/\D/g, "") || undefined,
+            codigo_tributacao_nacional_iss: codigoTributacaoNacional,
+            codigo_tributario_municipio: codigoTributarioMunicipio,
             valor_servicos: valor,
           },
         };
