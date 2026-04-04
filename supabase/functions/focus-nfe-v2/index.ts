@@ -56,7 +56,7 @@ async function testarConexao(settings: any) {
   // Focus NFe doesn't have a health-check endpoint.
   // We query a non-existent ref: 401 = bad token, 404 = token valid (ref not found)
   const testRef = `test-conexao-${Date.now()}`;
-  const resp = await fetch(`${base}/v2/nfse/${testRef}`, {
+  const resp = await fetch(`${base}/nfse/${testRef}`, {
     method: "GET",
     headers: focusHeaders(settings.token_focus),
   });
@@ -210,7 +210,7 @@ async function consultarNfe(supabase: any, settings: any, nfeId: string) {
   }
 
   const base = getBaseUrl(settings.ambiente);
-  const resp = await fetch(`${base}/v2/nfse/${nfe.reference}`, {
+  const resp = await fetch(`${base}/nfse/${nfe.reference}`, {
     method: "GET",
     headers: focusHeaders(settings.token_focus),
   });
@@ -274,7 +274,7 @@ async function cancelarNfe(supabase: any, settings: any, nfeId: string, justific
   if (nfe.status !== "autorizada") throw new Error("Só é possível cancelar notas autorizadas");
 
   const base = getBaseUrl(settings.ambiente);
-  const resp = await fetch(`${base}/v2/nfse/${nfe.reference}`, {
+  const resp = await fetch(`${base}/nfse/${nfe.reference}`, {
     method: "DELETE",
     headers: focusHeaders(settings.token_focus),
     body: JSON.stringify({ justificativa }),
