@@ -49,6 +49,7 @@ function statusColor(status: string) {
     case "pendente": return "bg-amber-500";
     case "cancelado": return "bg-destructive";
     case "concluido": return "bg-primary";
+    case "falta": return "bg-destructive";
     default: return "bg-muted-foreground";
   }
 }
