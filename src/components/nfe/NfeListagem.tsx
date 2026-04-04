@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { NfeStatusBadge } from "./NfeStatusBadge";
 import { NfeTimeline } from "./NfeTimeline";
 import { toast } from "sonner";
-import { Search, RefreshCw, Eye, Download, FileText, Ban, Loader2 } from "lucide-react";
+import { Search, RefreshCw, Eye, Download, FileText, Ban, Loader2, RotateCcw } from "lucide-react";
 
 interface Props { empresaId: string }
 
@@ -59,6 +59,23 @@ export function NfeListagem({ empresaId }: Props) {
       queryClient.invalidateQueries({ queryKey: ["nfe_documents_dashboard"] });
     },
     onError: (e: any) => toast.error("Erro: " + e.message),
+  });
+
+  const reenviarMutation = useMutation({
+    mutationFn: async (nfeId: string) => {
+      const { data, error } = await supabase.functions.invoke("focus-nfe-v2", {
+        body: { action: "reenviar", empresa_id: empresaId, nfe_id: nfeId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("NFS-e reenviada com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["nfe_documents"] });
+      queryClient.invalidateQueries({ queryKey: ["nfe_documents_dashboard"] });
+    },
+    onError: (e: any) => toast.error("Erro ao reenviar: " + e.message),
   });
 
   const cancelarMutation = useMutation({
@@ -181,6 +198,11 @@ export function NfeListagem({ empresaId }: Props) {
                           {nota.status === "autorizada" && (
                             <Button variant="ghost" size="sm" onClick={() => setShowCancelar(nota.id)} title="Cancelar">
                               <Ban className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                          {(nota.status === "rejeitada" || nota.status === "erro") && (
+                            <Button variant="ghost" size="sm" onClick={() => reenviarMutation.mutate(nota.id)} title="Reenviar" disabled={reenviarMutation.isPending}>
+                              <RotateCcw className="h-4 w-4 text-orange-500" />
                             </Button>
                           )}
                         </div>

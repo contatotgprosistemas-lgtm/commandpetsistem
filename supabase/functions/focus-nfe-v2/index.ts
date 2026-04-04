@@ -469,6 +469,27 @@ Deno.serve(async (req) => {
         result = { results };
         break;
       }
+      case "reenviar": {
+        const settings = await getFiscalSettings(supabase, empresaId);
+        // Generate new reference and reset status, then re-emit
+        const newRef = `NFS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        await supabase.from("nfe_documents").update({
+          reference: newRef,
+          status: "rascunho",
+          focus_status: null,
+          focus_code: null,
+          focus_message: null,
+          payload_response: null,
+        }).eq("id", body.nfe_id);
+        await supabase.from("nfe_events").insert({
+          empresa_id: empresaId,
+          nfe_id: body.nfe_id,
+          event_type: "reenvio",
+          description: `Nota reenviada com nova referência: ${newRef}`,
+        });
+        result = await emitirNfe(supabase, settings, body.nfe_id);
+        break;
+      }
       case "cancelar": {
         const settings = await getFiscalSettings(supabase, empresaId);
         if (!body.justificativa || body.justificativa.length < 15) {
