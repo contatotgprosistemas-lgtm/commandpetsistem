@@ -62,6 +62,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [planType, setPlanType] = useState<"plan" | "package">("plan");
   const [selectedId, setSelectedId] = useState("");
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [contractDate, setContractDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [discount, setDiscount] = useState("0");
   const [autoRenew, setAutoRenew] = useState(false);
   const [notes, setNotes] = useState("");
@@ -84,6 +85,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const selectedPlan = planType === "plan" ? plans.find((p: any) => p.id === selectedId) : packages.find((p: any) => p.id === selectedId);
   const priceContracted = selectedPlan ? Number(selectedPlan.price) : 0;
   const showHorarios = selectedPlan ? isTaxiPetService(selectedPlan.name) : false;
+  const contractDurationMonths = selectedPlan?.contract_duration_months || null;
 
   // Calculate end date as last day of the month of startDate
   const startDateObj = new Date(startDate + "T00:00:00");
@@ -117,9 +119,16 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
     const nextMonthStart = format(startOfMonth(addMonths(startDateObj, 1)), "yyyy-MM-dd");
 
+    const contractDateObj = new Date(contractDate + "T00:00:00");
+    const contractEndDate = contractDurationMonths
+      ? format(addMonths(contractDateObj, contractDurationMonths), "yyyy-MM-dd")
+      : null;
+
     const payload: any = {
       empresa_id: empresaId, cliente_id: clienteId, pet_id: petId || null,
       start_date: startDate, end_date: endDate,
+      contract_date: contractDate,
+      contract_end_date: contractEndDate,
       next_renewal_date: autoRenew ? nextMonthStart : null,
       price_contracted: priceContracted, discount_amount: Number(discount || 0),
       final_price: finalPrice, auto_renew: autoRenew,
@@ -185,6 +194,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setPlanType("plan");
     setSelectedId("");
     setStartDate(format(new Date(), "yyyy-MM-dd"));
+    setContractDate(format(new Date(), "yyyy-MM-dd"));
     setDiscount("0");
     setAutoRenew(false);
     setNotes("");
@@ -238,10 +248,25 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               </Select>
             </div>
           </div>
-          <div className="space-y-1.5 w-40">
-            <Label>Data Início</Label>
-            <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Data Contrato</Label>
+              <Input type="date" value={contractDate} onChange={e => setContractDate(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Data Início</Label>
+              <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            </div>
           </div>
+
+          {contractDurationMonths && (
+            <div className="rounded-md bg-muted p-3">
+              <p className="text-xs font-medium text-muted-foreground">
+                Validade do contrato: {contractDurationMonths} meses — Vencimento em{" "}
+                {format(addMonths(new Date(contractDate + "T00:00:00"), contractDurationMonths), "dd/MM/yyyy")}
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Dias de uso na semana</Label>

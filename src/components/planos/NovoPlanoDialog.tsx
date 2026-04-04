@@ -36,6 +36,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
   
   const [autoRenew, setAutoRenew] = useState(false);
   const [allowsReplacement, setAllowsReplacement] = useState(false);
+  const [contractDurationMonths, setContractDurationMonths] = useState("");
   const [rollover, setRollover] = useState(false);
   const [minLoyalty, setMinLoyalty] = useState("0");
   const [cancellationFee, setCancellationFee] = useState("0");
@@ -47,7 +48,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
   function reset() {
     setName(""); setDescription(""); setType("mensal"); setRecurringType("mensal");
     setPrice(""); setAutoRenew(false); setAllowsReplacement(false); setRollover(false);
-    setMinLoyalty("0"); setCancellationFee("0"); setNotes("");
+    setMinLoyalty("0"); setCancellationFee("0"); setNotes(""); setContractDurationMonths("");
     setItems([{ service_name: "", quantity_included: 1, usage_period: "mensal", extra_unit_price: 0, limit_per_month: null }]);
   }
 
@@ -61,6 +62,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
       
       setAutoRenew(editingPlan.auto_renew || false);
       setAllowsReplacement(editingPlan.allows_replacement || false);
+      setContractDurationMonths(String(editingPlan.contract_duration_months || ""));
       setRollover(editingPlan.rollover_enabled || false);
       setMinLoyalty(String(editingPlan.min_loyalty_months || "0"));
       setCancellationFee(String(editingPlan.cancellation_fee || "0"));
@@ -96,6 +98,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
     const payload = {
       empresa_id: empresaId, name, description, type, recurring_type: recurringType,
       price: Number(price), auto_renew: autoRenew, allows_replacement: allowsReplacement,
+      contract_duration_months: contractDurationMonths ? Number(contractDurationMonths) : null,
       rollover_enabled: rollover, min_loyalty_months: Number(minLoyalty),
       cancellation_fee: Number(cancellationFee), notes, status: "ativo"
     };
@@ -201,7 +204,11 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label>Validade do contrato (meses)</Label>
+              <Input type="number" value={contractDurationMonths} onChange={e => setContractDurationMonths(e.target.value)} placeholder="Ex: 6 ou 12" />
+            </div>
             <div className="space-y-1.5">
               <Label>Fidelidade mínima (meses)</Label>
               <Input type="number" value={minLoyalty} onChange={e => setMinLoyalty(e.target.value)} />

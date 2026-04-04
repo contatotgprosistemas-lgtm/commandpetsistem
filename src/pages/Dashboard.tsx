@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle } from "lucide-react";
+import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { format, isToday, isAfter, startOfDay } from "date-fns";
+import { format, isToday, isAfter, startOfDay, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ManejoDialog } from "@/components/ManejoDialog";
 import { ChecklistDialog } from "@/components/ChecklistDialog";
@@ -63,6 +63,7 @@ export default function Dashboard() {
   const [agendaLoading, setAgendaLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
   const [transportBookings, setTransportBookings] = useState<any[]>([]);
+  const [expiringContracts, setExpiringContracts] = useState<any[]>([]);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
@@ -88,7 +89,28 @@ export default function Dashboard() {
     setAgendaLoading(false);
   }
 
-  useEffect(() => { fetchAgendamentos(); }, []);
+  useEffect(() => {
+    fetchAgendamentos();
+    // Fetch expiring contracts (within 30 days)
+    supabase
+      .from("customer_pet_subscriptions" as any)
+      .select("id, contract_date, contract_end_date, status, cliente:clientes(nome), pet:pets(nome), plan:service_plans(name)")
+      .eq("status", "ativo")
+      .not("contract_end_date", "is", null)
+      .then(({ data }) => {
+        if (!data) return;
+        const now = new Date();
+        const expiring = (data as any[]).filter(sub => {
+          const endDate = new Date(sub.contract_end_date);
+          const daysLeft = differenceInDays(endDate, now);
+          return daysLeft >= 0 && daysLeft <= 30;
+        }).map(sub => ({
+          ...sub,
+          daysLeft: differenceInDays(new Date(sub.contract_end_date), now),
+        })).sort((a, b) => a.daysLeft - b.daysLeft);
+        setExpiringContracts(expiring);
+      });
+  }, []);
 
   // Auto-refresh at midnight
   useEffect(() => {
@@ -259,7 +281,28 @@ export default function Dashboard() {
         </div>
         <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
-          <div className="flex items-center justify-center h-[160px] text-[13px] text-muted-foreground">Nenhuma atividade recente</div>
+          {expiringContracts.length > 0 ? (
+            <div className="space-y-3 max-h-[220px] overflow-y-auto">
+              {expiringContracts.map((c: any) => (
+                <div key={c.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                  <div className="text-xs">
+                    <p className="font-medium text-foreground">
+                      Contrato vence em {c.daysLeft} dia{c.daysLeft !== 1 ? "s" : ""}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {c.cliente?.nome} — {c.pet?.nome} — {c.plan?.name || "Pacote"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      Vencimento: {format(new Date(c.contract_end_date), "dd/MM/yyyy")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[160px] text-[13px] text-muted-foreground">Nenhuma atividade recente</div>
+          )}
         </div>
       </div>
 
