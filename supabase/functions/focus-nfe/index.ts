@@ -91,11 +91,12 @@ Deno.serve(async (req) => {
       // ===== NFS-e =====
       case "emitir_nfse": {
         const { ref, dados } = params;
-        console.log("Emitindo NFS-e ref:", ref, "dados:", JSON.stringify(dados));
+        const normalizedDados = normalizeNfsePayload(dados as Record<string, any>);
+        console.log("Emitindo NFS-e ref:", ref, "dados:", JSON.stringify(normalizedDados));
         const resp = await fetch(`${FOCUS_BASE_URL}/v2/nfse?ref=${ref}`, {
           method: "POST",
           headers: focusHeaders,
-          body: JSON.stringify(dados),
+          body: JSON.stringify(normalizedDados),
         });
         const respText = await resp.text();
         console.log("Focus NFS-e response status:", resp.status, "body:", respText);
