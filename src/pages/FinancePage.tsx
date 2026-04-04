@@ -31,6 +31,8 @@ interface ContaReceber {
   categoria: string | null;
   status: string;
   cliente: { nome: string } | null;
+  cliente_id: string | null;
+  banco: string | null;
 }
 
 function statusBadge(status: string, vencimento: string) {
