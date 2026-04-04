@@ -90,6 +90,14 @@ export default function NotasFiscaisPage() {
     valor: "",
     aliquota_iss: "5",
     codigo_servico: "",
+    endereco_logradouro: "",
+    endereco_numero: "",
+    endereco_complemento: "",
+    endereco_bairro: "",
+    endereco_cep: "",
+    endereco_uf: "",
+    endereco_municipio: "",
+    endereco_codigo_municipio: "",
   });
 
   // NF-e form state
@@ -101,6 +109,14 @@ export default function NotasFiscaisPage() {
     ncm: "",
     cfop: "5102",
     quantidade: "1",
+    endereco_logradouro: "",
+    endereco_numero: "",
+    endereco_complemento: "",
+    endereco_bairro: "",
+    endereco_cep: "",
+    endereco_uf: "",
+    endereco_municipio: "",
+    endereco_codigo_municipio: "",
   });
 
   // Dados fiscais form state
@@ -220,6 +236,13 @@ export default function NotasFiscaisPage() {
             cnpj: form.cliente_cpf_cnpj.length > 11 ? form.cliente_cpf_cnpj : undefined,
             cpf: form.cliente_cpf_cnpj.length <= 11 ? form.cliente_cpf_cnpj : undefined,
             razao_social: form.cliente_nome,
+            endereco: nfseForm.endereco_logradouro || undefined,
+            numero: nfseForm.endereco_numero || undefined,
+            complemento: nfseForm.endereco_complemento || undefined,
+            bairro: nfseForm.endereco_bairro || undefined,
+            codigo_municipio: nfseForm.endereco_codigo_municipio || undefined,
+            uf: nfseForm.endereco_uf || undefined,
+            cep: nfseForm.endereco_cep || undefined,
           },
           servico: {
             aliquota: parseFloat(nfseForm.aliquota_iss) / 100,
@@ -248,6 +271,13 @@ export default function NotasFiscaisPage() {
           nome_destinatario: form.cliente_nome,
           cpf_destinatario: nfeForm.cliente_cpf_cnpj.length <= 11 ? nfeForm.cliente_cpf_cnpj : undefined,
           cnpj_destinatario: nfeForm.cliente_cpf_cnpj.length > 11 ? nfeForm.cliente_cpf_cnpj : undefined,
+          logradouro_destinatario: nfeForm.endereco_logradouro || undefined,
+          numero_destinatario: nfeForm.endereco_numero || undefined,
+          complemento_destinatario: nfeForm.endereco_complemento || undefined,
+          bairro_destinatario: nfeForm.endereco_bairro || undefined,
+          municipio_destinatario: nfeForm.endereco_codigo_municipio || undefined,
+          uf_destinatario: nfeForm.endereco_uf || undefined,
+          cep_destinatario: nfeForm.endereco_cep || undefined,
           items: [
             {
               numero_item: "1",
@@ -324,8 +354,8 @@ export default function NotasFiscaisPage() {
       }
       setEmitirOpen(false);
       queryClient.invalidateQueries({ queryKey: ["notas_fiscais"] });
-      setNfseForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", aliquota_iss: "5", codigo_servico: "" });
-      setNfeForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", ncm: "", cfop: "5102", quantidade: "1" });
+      setNfseForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", aliquota_iss: "5", codigo_servico: "", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
+      setNfeForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", ncm: "", cfop: "5102", quantidade: "1", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
     },
     onError: (err: Error) => toast.error(err.message || "Erro ao emitir nota"),
   });
@@ -478,6 +508,63 @@ export default function NotasFiscaisPage() {
                       <Input value={nfseForm.codigo_servico} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_servico: e.target.value }))} placeholder="Ex: 14.01" />
                     </div>
                   </div>
+
+                  <Separator />
+                  <p className="text-sm font-medium text-muted-foreground">Endereço do Tomador</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label>CEP</Label>
+                      <Input
+                        value={nfseForm.endereco_cep}
+                        onChange={(e) => {
+                          const cep = e.target.value.replace(/\D/g, "");
+                          setNfseForm((p) => ({ ...p, endereco_cep: cep }));
+                          if (cep.length === 8) {
+                            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                              .then(r => r.json())
+                              .then(d => {
+                                if (!d.erro) setNfseForm(p => ({
+                                  ...p,
+                                  endereco_logradouro: d.logradouro || "",
+                                  endereco_bairro: d.bairro || "",
+                                  endereco_complemento: d.complemento || "",
+                                  endereco_uf: d.uf || "",
+                                  endereco_municipio: d.localidade || "",
+                                  endereco_codigo_municipio: d.ibge || "",
+                                }));
+                              }).catch(() => {});
+                          }
+                        }}
+                        placeholder="00000000"
+                      />
+                    </div>
+                    <div>
+                      <Label>Logradouro</Label>
+                      <Input value={nfseForm.endereco_logradouro} onChange={(e) => setNfseForm((p) => ({ ...p, endereco_logradouro: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Número</Label>
+                      <Input value={nfseForm.endereco_numero} onChange={(e) => setNfseForm((p) => ({ ...p, endereco_numero: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <Label>Complemento</Label>
+                      <Input value={nfseForm.endereco_complemento} onChange={(e) => setNfseForm((p) => ({ ...p, endereco_complemento: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Bairro</Label>
+                      <Input value={nfseForm.endereco_bairro} onChange={(e) => setNfseForm((p) => ({ ...p, endereco_bairro: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Município</Label>
+                      <Input value={nfseForm.endereco_municipio} onChange={(e) => setNfseForm((p) => ({ ...p, endereco_municipio: e.target.value }))} disabled />
+                    </div>
+                    <div>
+                      <Label>UF</Label>
+                      <Input value={nfseForm.endereco_uf} onChange={(e) => setNfseForm((p) => ({ ...p, endereco_uf: e.target.value }))} maxLength={2} />
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
@@ -513,6 +600,63 @@ export default function NotasFiscaisPage() {
                     <div>
                       <Label>CFOP</Label>
                       <Input value={nfeForm.cfop} onChange={(e) => setNfeForm((p) => ({ ...p, cfop: e.target.value }))} />
+                    </div>
+                  </div>
+
+                  <Separator />
+                  <p className="text-sm font-medium text-muted-foreground">Endereço do Destinatário</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label>CEP</Label>
+                      <Input
+                        value={nfeForm.endereco_cep}
+                        onChange={(e) => {
+                          const cep = e.target.value.replace(/\D/g, "");
+                          setNfeForm((p) => ({ ...p, endereco_cep: cep }));
+                          if (cep.length === 8) {
+                            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                              .then(r => r.json())
+                              .then(d => {
+                                if (!d.erro) setNfeForm(p => ({
+                                  ...p,
+                                  endereco_logradouro: d.logradouro || "",
+                                  endereco_bairro: d.bairro || "",
+                                  endereco_complemento: d.complemento || "",
+                                  endereco_uf: d.uf || "",
+                                  endereco_municipio: d.localidade || "",
+                                  endereco_codigo_municipio: d.ibge || "",
+                                }));
+                              }).catch(() => {});
+                          }
+                        }}
+                        placeholder="00000000"
+                      />
+                    </div>
+                    <div>
+                      <Label>Logradouro</Label>
+                      <Input value={nfeForm.endereco_logradouro} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_logradouro: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Número</Label>
+                      <Input value={nfeForm.endereco_numero} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_numero: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <Label>Complemento</Label>
+                      <Input value={nfeForm.endereco_complemento} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_complemento: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Bairro</Label>
+                      <Input value={nfeForm.endereco_bairro} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_bairro: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Município</Label>
+                      <Input value={nfeForm.endereco_municipio} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_municipio: e.target.value }))} disabled />
+                    </div>
+                    <div>
+                      <Label>UF</Label>
+                      <Input value={nfeForm.endereco_uf} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_uf: e.target.value }))} maxLength={2} />
                     </div>
                   </div>
                 </>
