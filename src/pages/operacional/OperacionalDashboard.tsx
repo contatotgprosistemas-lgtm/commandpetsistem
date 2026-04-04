@@ -19,6 +19,8 @@ export default function OperacionalDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ agendamentosHoje: 0, petsHospedados: 0, checkinsHoje: 0, checkoutsHoje: 0, petsDaycare: 0 });
   const [petsNaEmpresa, setPetsNaEmpresa] = useState<any[]>([]);
+  const [faltaOpen, setFaltaOpen] = useState<any>(null);
+  const [pendingCheckins, setPendingCheckins] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
