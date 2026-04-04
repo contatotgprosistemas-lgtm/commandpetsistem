@@ -233,11 +233,15 @@ async function consultarNfe(supabase: any, settings: any, nfeId: string) {
   else if (result.status === "erro_autorizacao") newStatus = "rejeitada";
   else if (result.status === "processando_autorizacao") newStatus = "processando";
 
+  const errorMessages = Array.isArray(result.erros)
+    ? result.erros.map((erro: any) => `${erro.codigo}: ${erro.mensagem}`).join(" | ")
+    : result.mensagem_sefaz || result.mensagem;
+
   const updateData: any = {
     status: newStatus,
     focus_status: result.status,
-    focus_code: result.status_sefaz?.toString(),
-    focus_message: result.mensagem_sefaz || result.mensagem,
+    focus_code: result.status_sefaz?.toString() || result.erros?.[0]?.codigo || null,
+    focus_message: errorMessages,
     payload_response: result,
   };
 
