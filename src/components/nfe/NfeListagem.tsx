@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { NfeStatusBadge } from "./NfeStatusBadge";
 import { NfeTimeline } from "./NfeTimeline";
 import { toast } from "sonner";
-import { Search, RefreshCw, Eye, Download, FileText, Ban, Loader2 } from "lucide-react";
+import { Search, RefreshCw, Eye, Download, FileText, Ban, Loader2, RotateCcw } from "lucide-react";
 
 interface Props { empresaId: string }
 
