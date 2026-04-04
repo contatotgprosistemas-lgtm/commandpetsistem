@@ -65,6 +65,25 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
       setMinLoyalty(String(editingPlan.min_loyalty_months || "0"));
       setCancellationFee(String(editingPlan.cancellation_fee || "0"));
       setNotes(editingPlan.notes || "");
+
+      // Load existing plan items
+      supabase
+        .from("service_plan_items" as any)
+        .select("service_name, quantity_included, usage_period, extra_unit_price, limit_per_month")
+        .eq("plan_id", editingPlan.id)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setItems(data.map((d: any) => ({
+              service_name: d.service_name || "",
+              quantity_included: d.quantity_included || 1,
+              usage_period: d.usage_period || "mensal",
+              extra_unit_price: d.extra_unit_price || 0,
+              limit_per_month: d.limit_per_month,
+            })));
+          } else {
+            setItems([{ service_name: "", quantity_included: 1, usage_period: "mensal", extra_unit_price: 0, limit_per_month: null }]);
+          }
+        });
     } else {
       reset();
     }
