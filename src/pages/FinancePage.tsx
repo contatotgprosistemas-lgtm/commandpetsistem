@@ -147,6 +147,7 @@ export default function FinancePage() {
             contas={contas}
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
+            onEdit={(c) => setEditConta(c)}
             onDelete={async (id) => {
               const { error } = await supabase.from("contas_receber").delete().eq("id", id);
               if (error) { toast.error("Erro ao excluir"); return; }
