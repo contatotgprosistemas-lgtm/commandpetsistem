@@ -236,13 +236,17 @@ export default function NotasFiscaisPage() {
             cnpj: form.cliente_cpf_cnpj.length > 11 ? form.cliente_cpf_cnpj : undefined,
             cpf: form.cliente_cpf_cnpj.length <= 11 ? form.cliente_cpf_cnpj : undefined,
             razao_social: form.cliente_nome,
-            endereco: nfseForm.endereco_logradouro || undefined,
-            numero: nfseForm.endereco_numero || undefined,
-            complemento: nfseForm.endereco_complemento || undefined,
-            bairro: nfseForm.endereco_bairro || undefined,
-            codigo_municipio: nfseForm.endereco_codigo_municipio || undefined,
-            uf: nfseForm.endereco_uf || undefined,
-            cep: nfseForm.endereco_cep || undefined,
+            endereco: nfseForm.endereco_logradouro
+              ? {
+                  logradouro: nfseForm.endereco_logradouro,
+                  numero: nfseForm.endereco_numero || "S/N",
+                  complemento: nfseForm.endereco_complemento || undefined,
+                  bairro: nfseForm.endereco_bairro || undefined,
+                  codigo_municipio: nfseForm.endereco_codigo_municipio || undefined,
+                  uf: nfseForm.endereco_uf || undefined,
+                  cep: nfseForm.endereco_cep || undefined,
+                }
+              : undefined,
           },
           servico: {
             aliquota: parseFloat(nfseForm.aliquota_iss) / 100,
