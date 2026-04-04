@@ -89,7 +89,28 @@ export default function Dashboard() {
     setAgendaLoading(false);
   }
 
-  useEffect(() => { fetchAgendamentos(); }, []);
+  useEffect(() => {
+    fetchAgendamentos();
+    // Fetch expiring contracts (within 30 days)
+    supabase
+      .from("customer_pet_subscriptions" as any)
+      .select("id, contract_date, contract_end_date, status, cliente:clientes(nome), pet:pets(nome), plan:service_plans(name)")
+      .eq("status", "ativo")
+      .not("contract_end_date", "is", null)
+      .then(({ data }) => {
+        if (!data) return;
+        const now = new Date();
+        const expiring = (data as any[]).filter(sub => {
+          const endDate = new Date(sub.contract_end_date);
+          const daysLeft = differenceInDays(endDate, now);
+          return daysLeft >= 0 && daysLeft <= 30;
+        }).map(sub => ({
+          ...sub,
+          daysLeft: differenceInDays(new Date(sub.contract_end_date), now),
+        })).sort((a, b) => a.daysLeft - b.daysLeft);
+        setExpiringContracts(expiring);
+      });
+  }, []);
 
   // Auto-refresh at midnight
   useEffect(() => {
