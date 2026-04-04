@@ -54,6 +54,7 @@ export default function OperacionalDashboard() {
         petsDaycare: daycare.length,
       });
       setPetsNaEmpresa(naEmpresa);
+      setPendingCheckins(checkinsHoje);
       setLoading(false);
     };
     fetchData();
