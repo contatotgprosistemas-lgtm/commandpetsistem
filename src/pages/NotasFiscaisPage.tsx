@@ -602,6 +602,63 @@ export default function NotasFiscaisPage() {
                       <Input value={nfeForm.cfop} onChange={(e) => setNfeForm((p) => ({ ...p, cfop: e.target.value }))} />
                     </div>
                   </div>
+
+                  <Separator />
+                  <p className="text-sm font-medium text-muted-foreground">Endereço do Destinatário</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label>CEP</Label>
+                      <Input
+                        value={nfeForm.endereco_cep}
+                        onChange={(e) => {
+                          const cep = e.target.value.replace(/\D/g, "");
+                          setNfeForm((p) => ({ ...p, endereco_cep: cep }));
+                          if (cep.length === 8) {
+                            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                              .then(r => r.json())
+                              .then(d => {
+                                if (!d.erro) setNfeForm(p => ({
+                                  ...p,
+                                  endereco_logradouro: d.logradouro || "",
+                                  endereco_bairro: d.bairro || "",
+                                  endereco_complemento: d.complemento || "",
+                                  endereco_uf: d.uf || "",
+                                  endereco_municipio: d.localidade || "",
+                                  endereco_codigo_municipio: d.ibge || "",
+                                }));
+                              }).catch(() => {});
+                          }
+                        }}
+                        placeholder="00000000"
+                      />
+                    </div>
+                    <div>
+                      <Label>Logradouro</Label>
+                      <Input value={nfeForm.endereco_logradouro} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_logradouro: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Número</Label>
+                      <Input value={nfeForm.endereco_numero} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_numero: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <Label>Complemento</Label>
+                      <Input value={nfeForm.endereco_complemento} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_complemento: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Bairro</Label>
+                      <Input value={nfeForm.endereco_bairro} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_bairro: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Município</Label>
+                      <Input value={nfeForm.endereco_municipio} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_municipio: e.target.value }))} disabled />
+                    </div>
+                    <div>
+                      <Label>UF</Label>
+                      <Input value={nfeForm.endereco_uf} onChange={(e) => setNfeForm((p) => ({ ...p, endereco_uf: e.target.value }))} maxLength={2} />
+                    </div>
+                  </div>
                 </>
               )}
 
