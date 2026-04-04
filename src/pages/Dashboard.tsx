@@ -281,7 +281,28 @@ export default function Dashboard() {
         </div>
         <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
-          <div className="flex items-center justify-center h-[160px] text-[13px] text-muted-foreground">Nenhuma atividade recente</div>
+          {expiringContracts.length > 0 ? (
+            <div className="space-y-3 max-h-[220px] overflow-y-auto">
+              {expiringContracts.map((c: any) => (
+                <div key={c.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                  <div className="text-xs">
+                    <p className="font-medium text-foreground">
+                      Contrato vence em {c.daysLeft} dia{c.daysLeft !== 1 ? "s" : ""}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {c.cliente?.nome} — {c.pet?.nome} — {c.plan?.name || "Pacote"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      Vencimento: {format(new Date(c.contract_end_date), "dd/MM/yyyy")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[160px] text-[13px] text-muted-foreground">Nenhuma atividade recente</div>
+          )}
         </div>
       </div>
 
