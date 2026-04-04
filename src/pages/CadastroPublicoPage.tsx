@@ -86,6 +86,7 @@ const schema = z.object({
   cep: z.string().trim().max(10).optional().or(z.literal("")),
   endereco: z.string().trim().max(500).optional().or(z.literal("")),
   numero: z.string().trim().max(20).optional().or(z.literal("")),
+  complemento: z.string().trim().max(100).optional().or(z.literal("")),
   como_conheceu: z.string().optional().or(z.literal("")),
   pets: z.array(petSchema),
 });
@@ -154,7 +155,7 @@ export default function CadastroPublicoPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      nome: "", whatsapp: "", email: "", cpf: "", cep: "", endereco: "", numero: "", como_conheceu: "",
+      nome: "", whatsapp: "", email: "", cpf: "", cep: "", endereco: "", numero: "", complemento: "", como_conheceu: "",
       pets: [{ ...defaultPet }],
     },
   });
@@ -190,7 +191,9 @@ export default function CadastroPublicoPage() {
               whatsapp: data.whatsapp || null,
               email: data.email || null,
               cpf: data.cpf || null,
-              endereco: data.numero ? `${data.endereco}, ${data.numero}` : (data.endereco || null),
+              endereco: data.numero 
+                ? (data.complemento ? `${data.endereco}, ${data.numero} - ${data.complemento}` : `${data.endereco}, ${data.numero}`)
+                : (data.complemento ? `${data.endereco} - ${data.complemento}` : (data.endereco || null)),
               como_conheceu: data.como_conheceu || null,
               foto_url: clienteFotoUrl || null,
             },
@@ -306,13 +309,22 @@ export default function CadastroPublicoPage() {
                   </FormItem>
                 )} />
               </div>
-              <FormField control={form.control} name="numero" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número</FormLabel>
-                  <FormControl><Input placeholder="Nº da casa/apto" className="w-32" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="numero" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número</FormLabel>
+                    <FormControl><Input placeholder="Nº da casa/apto" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="complemento" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Complemento</FormLabel>
+                    <FormControl><Input placeholder="Bloco, apto, sala..." {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
               <FormField control={form.control} name="como_conheceu" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Como nos conheceu?</FormLabel>
