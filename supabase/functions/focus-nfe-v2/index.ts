@@ -226,8 +226,13 @@ async function consultarNfe(supabase: any, settings: any, nfeId: string) {
     .single();
   if (error || !nfe) throw new Error("NF-e não encontrada");
 
+  // Don't query Focus for drafts - they haven't been sent yet
+  if (nfe.status === "rascunho") {
+    return { status: "rascunho", focus: { mensagem: "Nota ainda não foi enviada para processamento." } };
+  }
+
   const base = getBaseUrl(settings.ambiente);
-  const resp = await fetch(`${base}/nfe/${nfe.reference}`, {
+  const resp = await fetch(`${base}/v2/nfse/${nfe.reference}`, {
     method: "GET",
     headers: focusHeaders(settings.token_focus),
   });
