@@ -128,7 +128,8 @@ export default function PortalPetsPage() {
                 {pet.v10_data && <Badge variant="secondary" className="text-[10px]">V10: {new Date(pet.v10_data).toLocaleDateString("pt-BR")}</Badge>}
                 {pet.raiva_data && <Badge variant="secondary" className="text-[10px]">Raiva: {new Date(pet.raiva_data).toLocaleDateString("pt-BR")}</Badge>}
                 {pet.antiparasitario_data && <Badge variant="secondary" className="text-[10px]">Antiparasitário: {new Date(pet.antiparasitario_data).toLocaleDateString("pt-BR")}</Badge>}
-                {!pet.v10_data && !pet.raiva_data && !pet.antiparasitario_data && (
+                {pet.gripe_data && <Badge variant="secondary" className="text-[10px]">Gripe: {new Date(pet.gripe_data).toLocaleDateString("pt-BR")}</Badge>}
+                {!pet.v10_data && !pet.raiva_data && !pet.antiparasitario_data && !pet.gripe_data && (
                   <span className="text-xs text-muted-foreground">Sem registros</span>
                 )}
               </div>

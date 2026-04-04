@@ -177,7 +177,8 @@ export default function CadastroPublicoPage() {
         antiparasitario_data: p.antiparasitario_data || null,
         v10_data: p.v10_data || null,
         raiva_data: p.raiva_data || null,
-        vacinas: [p.antiparasitario, p.v10, p.raiva].filter(Boolean).join(", ") || null,
+        gripe_data: p.gripe_data || null,
+        vacinas: [p.antiparasitario, p.v10, p.raiva, p.gripe].filter(Boolean).join(", ") || null,
         foto_url: petFotos[idx] || null,
       }));
 

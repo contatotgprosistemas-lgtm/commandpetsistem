@@ -303,6 +303,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
                 { dataName: "antiparasitario_data" as const, label: "Antiparasitário" },
                 { dataName: "v10_data" as const, label: "V10" },
                 { dataName: "raiva_data" as const, label: "Raiva" },
+                { dataName: "gripe_data" as const, label: "Gripe" },
               ]).map((vacina) => (
                 <div key={vacina.dataName} className="grid grid-cols-2 gap-3 items-center">
                   <span className="text-sm font-medium text-foreground">{vacina.label}</span>

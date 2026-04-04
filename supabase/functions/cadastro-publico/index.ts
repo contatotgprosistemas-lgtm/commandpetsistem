@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
         antiparasitario_data: p.antiparasitario_data || null,
         v10_data: p.v10_data || null,
         raiva_data: p.raiva_data || null,
+        gripe_data: p.gripe_data || null,
         medicacoes: p.medicacoes?.trim?.().slice(0, 500) || null,
         foto_url: p.foto_url?.trim?.().slice(0, 1000) || null,
         cor: p.cor?.trim?.().slice(0, 100) || null,
