@@ -52,42 +52,22 @@ function getBaseUrl(ambiente: string) {
 
 async function testarConexao(settings: any) {
   const base = getBaseUrl(settings.ambiente);
-  const cnpj = (settings.cnpj || "").replace(/\D/g, "");
-  // Try NFS-e endpoint first (services), fallback to NFe
-  const endpoints = [
-    `${base}/nfse?cnpj=${cnpj}`,
-    `${base}/nfe?cnpj=${cnpj}`,
-  ];
+  const token = settings.token_focus;
   
-  let lastStatus = 0;
-  let lastBody = "";
+  // Use token as query param to test authentication against the NFSe endpoint
+  const resp = await fetch(`${base}/nfse?token=${encodeURIComponent(token)}`, {
+    method: "GET",
+  });
+  const body = await resp.text();
   
-  for (const url of endpoints) {
-    try {
-      const resp = await fetch(url, {
-        method: "GET",
-        headers: focusHeaders(settings.token_focus),
-      });
-      const body = await resp.text();
-      
-      // 200 = success, 401 = bad token, 403 = no permission but token works
-      if (resp.status === 200) {
-        return { status: 200, ok: true, body: "Conexão OK! Token válido." };
-      }
-      if (resp.status === 401) {
-        return { status: 401, ok: false, body: "Token inválido. Verifique o token da Focus NFe." };
-      }
-      if (resp.status === 403) {
-        return { status: 200, ok: true, body: "Conexão OK! Token autenticado (sem notas ainda)." };
-      }
-      lastStatus = resp.status;
-      lastBody = body.substring(0, 500);
-    } catch (e: any) {
-      lastBody = e.message;
-    }
+  if (resp.status === 200) {
+    return { status: 200, ok: true, body: "Conexão OK! Token válido." };
+  }
+  if (resp.status === 401 || resp.status === 403) {
+    return { status: resp.status, ok: false, body: "Token inválido ou sem permissão. Verifique o token da Focus NFe." };
   }
   
-  return { status: lastStatus, ok: lastStatus >= 200 && lastStatus < 300, body: lastBody };
+  return { status: resp.status, ok: false, body: body.substring(0, 500) };
 }
 
 async function emitirNfe(supabase: any, settings: any, nfeId: string) {
