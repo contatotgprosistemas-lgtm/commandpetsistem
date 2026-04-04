@@ -43,7 +43,7 @@ export default function OperacionalDashboard() {
       const naEmpresa = all.filter(a => a.status === "na_empresa");
       const hospedados = naEmpresa.filter(a => ["hotel", "hospedagem", "hotel_e_creche"].includes(a.tipo_servico.toLowerCase()));
       const daycare = naEmpresa.filter(a => ["daycare", "creche", "day_care"].includes(a.tipo_servico.toLowerCase()));
-      const checkinsHoje = agHoje.filter(a => a.status === "pendente" || a.status === "confirmado").length;
+      const checkinsHoje = agHoje.filter(a => a.status === "pendente" || a.status === "confirmado");
       const checkoutsHoje = naEmpresa.length;
 
       setStats({
