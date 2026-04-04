@@ -210,7 +210,7 @@ export default function NotasFiscaisPage() {
 
       if (isNfse) {
         dados = {
-          data_emissao: new Date().toISOString(),
+          data_emissao: new Date().toISOString().split("T")[0],
           prestador: {
             cnpj: fiscalForm.cnpj,
             inscricao_municipal: fiscalForm.inscricao_municipal,
@@ -280,12 +280,25 @@ export default function NotasFiscaisPage() {
 
       if (focusError) throw focusError;
 
+      // Check for Focus API errors
+      const hasApiError = focusResult?._http_status && focusResult._http_status >= 400;
+      const hasErros = focusResult?.erros || focusResult?.codigo === "nao_encontrado" || focusResult?.error;
+      const errorMsg = focusResult?.mensagem || (focusResult?.erros ? JSON.stringify(focusResult.erros) : null) || focusResult?.error || null;
+
+      // Determine status
+      let notaStatus = "processando";
+      if (focusResult?.status === "autorizado" || focusResult?.status_sefaz === "100") {
+        notaStatus = "autorizada";
+      } else if (hasApiError || hasErros) {
+        notaStatus = "rejeitada";
+      }
+
       // Save to DB
       const { error: dbError } = await supabase.from("notas_fiscais").insert([{
         empresa_id: empresaId!,
         tipo: tipoNota,
         referencia: ref,
-        status: focusResult?.status === "autorizado" ? "autorizada" : "processando",
+        status: notaStatus,
         numero: focusResult?.numero || null,
         url_pdf: focusResult?.url || null,
         cliente_nome: form.cliente_nome,
@@ -294,12 +307,13 @@ export default function NotasFiscaisPage() {
         valor_total: valor,
         dados_envio: JSON.parse(JSON.stringify(dados)),
         resposta_api: JSON.parse(JSON.stringify(focusResult)),
-        mensagem_erro: focusResult?.erros
-          ? JSON.stringify(focusResult.erros)
-          : null,
+        mensagem_erro: errorMsg,
       }]);
 
       if (dbError) throw dbError;
+      if (hasApiError || hasErros) {
+        throw new Error(errorMsg || "Erro retornado pela API Focus NFe");
+      }
       return focusResult;
     },
     onSuccess: (result) => {

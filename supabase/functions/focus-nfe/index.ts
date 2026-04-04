@@ -60,12 +60,22 @@ Deno.serve(async (req) => {
       // ===== NFS-e =====
       case "emitir_nfse": {
         const { ref, dados } = params;
+        console.log("Emitindo NFS-e ref:", ref, "dados:", JSON.stringify(dados));
         const resp = await fetch(`${FOCUS_BASE_URL}/v2/nfse?ref=${ref}`, {
           method: "POST",
           headers: focusHeaders,
           body: JSON.stringify(dados),
         });
-        result = await resp.json();
+        const respText = await resp.text();
+        console.log("Focus NFS-e response status:", resp.status, "body:", respText);
+        try {
+          result = JSON.parse(respText);
+        } catch {
+          result = { error: respText, status_code: resp.status };
+        }
+        if (!resp.ok) {
+          (result as any)._http_status = resp.status;
+        }
         break;
       }
 
@@ -93,12 +103,22 @@ Deno.serve(async (req) => {
       // ===== NF-e =====
       case "emitir_nfe": {
         const { ref, dados } = params;
+        console.log("Emitindo NF-e ref:", ref, "dados:", JSON.stringify(dados));
         const resp = await fetch(`${FOCUS_BASE_URL}/v2/nfe?ref=${ref}`, {
           method: "POST",
           headers: focusHeaders,
           body: JSON.stringify(dados),
         });
-        result = await resp.json();
+        const nfeRespText = await resp.text();
+        console.log("Focus NF-e response status:", resp.status, "body:", nfeRespText);
+        try {
+          result = JSON.parse(nfeRespText);
+        } catch {
+          result = { error: nfeRespText, status_code: resp.status };
+        }
+        if (!resp.ok) {
+          (result as any)._http_status = resp.status;
+        }
         break;
       }
 
