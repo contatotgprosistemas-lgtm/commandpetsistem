@@ -68,6 +68,7 @@ export default function Dashboard() {
   const [checklistOpen, setChecklistOpen] = useState<Agendamento | null>(null);
   const [fichaOpen, setFichaOpen] = useState<Agendamento | null>(null);
   const [editOpen, setEditOpen] = useState<Agendamento | null>(null);
+  const [faltaOpen, setFaltaOpen] = useState<Agendamento | null>(null);
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
