@@ -62,6 +62,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
       
       setAutoRenew(editingPlan.auto_renew || false);
       setAllowsReplacement(editingPlan.allows_replacement || false);
+      setContractDurationMonths(String(editingPlan.contract_duration_months || ""));
       setRollover(editingPlan.rollover_enabled || false);
       setMinLoyalty(String(editingPlan.min_loyalty_months || "0"));
       setCancellationFee(String(editingPlan.cancellation_fee || "0"));
