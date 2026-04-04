@@ -16,22 +16,31 @@ const normalizeNfsePayload = (rawDados: Record<string, any>) => {
   const prestador = dados?.prestador && typeof dados.prestador === "object" ? { ...dados.prestador } : {};
 
   const itemListaServico = onlyDigits(servico.item_lista_servico);
-  const codigoTributacaoNacional = onlyDigits(servico.codigo_tributacao_nacional_iss ?? servico.codigo_tributacao_nacional);
-  const codigoTributarioMunicipio = onlyDigits(servico.codigo_tributario_municipio ?? servico.codigo_servico_municipio ?? itemListaServico);
+  const codigoMunicipioPrestacao = onlyDigits(dados?.codigo_municipio_prestacao ?? servico.codigo_municipio ?? prestador.codigo_municipio);
+  const codigoTributacaoNacional = onlyDigits(
+    servico.codigo_tributacao_nacional_iss ?? dados?.codigo_tributacao_nacional_iss ?? servico.codigo_tributacao_nacional,
+  ) || (itemListaServico === "0508" ? "050801" : "");
+  const codigoTributarioMunicipio = onlyDigits(servico.codigo_tributario_municipio ?? servico.codigo_servico_municipio);
+  const shouldSendMunicipalTaxCode = Boolean(codigoTributarioMunicipio && codigoTributarioMunicipio !== itemListaServico);
 
   if (itemListaServico) servico.item_lista_servico = itemListaServico;
+  if (codigoMunicipioPrestacao) servico.codigo_municipio = codigoMunicipioPrestacao;
   if (codigoTributacaoNacional) servico.codigo_tributacao_nacional_iss = codigoTributacaoNacional;
-  if (codigoTributarioMunicipio) servico.codigo_tributario_municipio = codigoTributarioMunicipio;
+  if (shouldSendMunicipalTaxCode) servico.codigo_tributario_municipio = codigoTributarioMunicipio;
+  else delete servico.codigo_tributario_municipio;
+
+  if (codigoMunicipioPrestacao) prestador.codigo_municipio = codigoMunicipioPrestacao;
 
   delete servico.codigo_tributacao_nacional;
   delete servico.codigo_servico_municipio;
 
   const normalized = {
     ...dados,
+    prestador,
     servico,
   };
 
-  if (prestador.codigo_municipio) normalized.codigo_municipio_prestacao = prestador.codigo_municipio;
+  if (codigoMunicipioPrestacao) normalized.codigo_municipio_prestacao = codigoMunicipioPrestacao;
   if (codigoTributacaoNacional) normalized.codigo_tributacao_nacional_iss = codigoTributacaoNacional;
   if (servico.discriminacao) normalized.descricao_servico = servico.discriminacao;
   if (servico.valor_servicos !== undefined) normalized.valor_servico = servico.valor_servicos;
@@ -117,7 +126,16 @@ Deno.serve(async (req) => {
           method: "GET",
           headers: focusHeaders,
         });
-        result = await resp.json();
+        const respText = await resp.text();
+        console.log("Focus consulta NFS-e response status:", resp.status, "body:", respText);
+        try {
+          result = JSON.parse(respText);
+        } catch {
+          result = { error: respText, status_code: resp.status };
+        }
+        if (!resp.ok) {
+          (result as any)._http_status = resp.status;
+        }
         break;
       }
 
