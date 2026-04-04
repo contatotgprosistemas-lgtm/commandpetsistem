@@ -210,7 +210,7 @@ export default function NotasFiscaisPage() {
 
       if (isNfse) {
         dados = {
-          data_emissao: new Date().toISOString(),
+          data_emissao: new Date().toISOString().split("T")[0],
           prestador: {
             cnpj: fiscalForm.cnpj,
             inscricao_municipal: fiscalForm.inscricao_municipal,
