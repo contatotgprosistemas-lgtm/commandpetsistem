@@ -91,7 +91,7 @@ export default function NotasFiscaisPage() {
     aliquota_iss: "5",
     codigo_servico: "05.08",
     codigo_tributacao_nacional: "050801",
-    codigo_tributario_municipio: "0508",
+    codigo_tributario_municipio: "",
     endereco_logradouro: "",
     endereco_numero: "",
     endereco_complemento: "",
@@ -230,13 +230,18 @@ export default function NotasFiscaisPage() {
         const prestadorCodigoMunicipio = fiscalForm.codigo_municipio.replace(/\D/g, "");
         const tomadorCodigoMunicipio = nfseForm.endereco_codigo_municipio.replace(/\D/g, "");
         const documentoTomador = form.cliente_cpf_cnpj.replace(/\D/g, "");
-        const itemListaServico = nfseForm.codigo_servico.replace(/\D/g, "") || "0508";
+        const itemListaServicoDigits = nfseForm.codigo_servico.replace(/\D/g, "") || "0508";
+        const itemListaServico = itemListaServicoDigits.length === 4
+          ? `${itemListaServicoDigits.slice(0, 2)}.${itemListaServicoDigits.slice(2)}`
+          : nfseForm.codigo_servico.trim() || "05.08";
         const codigoTributacaoNacional = nfseForm.codigo_tributacao_nacional.replace(/\D/g, "") || (itemListaServico === "0508" ? "050801" : "");
         const codigoTributarioMunicipio = nfseForm.codigo_tributario_municipio.replace(/\D/g, "");
-        const shouldSendMunicipalTaxCode = !!codigoTributarioMunicipio && codigoTributarioMunicipio !== itemListaServico;
+        const shouldSendMunicipalTaxCode = !!codigoTributarioMunicipio && codigoTributarioMunicipio !== itemListaServicoDigits;
 
         dados = {
           data_emissao: new Date().toISOString().split("T")[0],
+          natureza_operacao: 1,
+          optante_simples_nacional: fiscalForm.regime_tributario === "simples_nacional",
           codigo_municipio_prestacao: prestadorCodigoMunicipio || undefined,
           codigo_tributacao_nacional_iss: codigoTributacaoNacional || undefined,
           descricao_servico: form.descricao,
@@ -334,7 +339,7 @@ export default function NotasFiscaisPage() {
       // Check for Focus API errors
       const hasApiError = focusResult?._http_status && focusResult._http_status >= 400;
       const hasErros = focusResult?.erros || focusResult?.codigo === "nao_encontrado" || focusResult?.error;
-      const errorMsg = focusResult?.mensagem || (focusResult?.erros ? JSON.stringify(focusResult.erros) : null) || focusResult?.error || null;
+        const errorMsg = focusResult?.mensagem_sefaz || focusResult?.mensagem || (focusResult?.erros ? JSON.stringify(focusResult.erros) : null) || focusResult?.error || null;
 
       // Determine status
       let notaStatus = "processando";
@@ -375,7 +380,7 @@ export default function NotasFiscaisPage() {
       }
       setEmitirOpen(false);
       queryClient.invalidateQueries({ queryKey: ["notas_fiscais"] });
-      setNfseForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", aliquota_iss: "5", codigo_servico: "05.08", codigo_tributacao_nacional: "050801", codigo_tributario_municipio: "0508", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
+      setNfseForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", aliquota_iss: "5", codigo_servico: "05.08", codigo_tributacao_nacional: "050801", codigo_tributario_municipio: "", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
       setNfeForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", ncm: "", cfop: "5102", quantidade: "1", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
     },
     onError: (err: Error) => toast.error(err.message || "Erro ao emitir nota"),
