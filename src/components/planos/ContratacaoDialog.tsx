@@ -194,6 +194,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setPlanType("plan");
     setSelectedId("");
     setStartDate(format(new Date(), "yyyy-MM-dd"));
+    setContractDate(format(new Date(), "yyyy-MM-dd"));
     setDiscount("0");
     setAutoRenew(false);
     setNotes("");
