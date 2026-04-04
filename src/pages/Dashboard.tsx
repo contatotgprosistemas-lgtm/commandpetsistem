@@ -63,6 +63,7 @@ export default function Dashboard() {
   const [agendaLoading, setAgendaLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
   const [transportBookings, setTransportBookings] = useState<any[]>([]);
+  const [expiringContracts, setExpiringContracts] = useState<any[]>([]);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
