@@ -200,6 +200,11 @@ export function NfeListagem({ empresaId }: Props) {
                               <Ban className="h-4 w-4 text-destructive" />
                             </Button>
                           )}
+                          {(nota.status === "rejeitada" || nota.status === "erro") && (
+                            <Button variant="ghost" size="sm" onClick={() => reenviarMutation.mutate(nota.id)} title="Reenviar" disabled={reenviarMutation.isPending}>
+                              <RotateCcw className="h-4 w-4 text-orange-500" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
