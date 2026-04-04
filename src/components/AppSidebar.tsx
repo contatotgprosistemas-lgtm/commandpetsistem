@@ -24,7 +24,7 @@ import {
   Car,
   FileSignature,
   CalendarDays,
-  Receipt,
+  
   Clock,
 } from "lucide-react";
 
@@ -58,7 +58,7 @@ export function AppSidebar() {
     { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
     { icon: Car, label: "TaxiPet", path: "/taxipet" },
     { icon: FileSignature, label: "Contratos", path: "/contratos" },
-    { icon: Receipt, label: "Notas Fiscais", path: "/notas-fiscais" },
+    
     { icon: Clock, label: "Ponto", path: "/ponto" },
   ];
 
