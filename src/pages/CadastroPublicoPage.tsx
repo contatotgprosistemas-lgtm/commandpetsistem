@@ -309,13 +309,22 @@ export default function CadastroPublicoPage() {
                   </FormItem>
                 )} />
               </div>
-              <FormField control={form.control} name="numero" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número</FormLabel>
-                  <FormControl><Input placeholder="Nº da casa/apto" className="w-32" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="numero" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número</FormLabel>
+                    <FormControl><Input placeholder="Nº da casa/apto" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="complemento" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Complemento</FormLabel>
+                    <FormControl><Input placeholder="Bloco, apto, sala..." {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
               <FormField control={form.control} name="como_conheceu" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Como nos conheceu?</FormLabel>
