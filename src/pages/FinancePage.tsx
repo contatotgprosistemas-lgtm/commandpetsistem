@@ -56,11 +56,13 @@ export default function FinancePage() {
   const [importReceberOpen, setImportReceberOpen] = useState(false);
   const [importPagarOpen, setImportPagarOpen] = useState(false);
 
+  const [editConta, setEditConta] = useState<ContaReceber | null>(null);
+
   async function fetchContas() {
     setLoading(true);
     const { data } = await supabase
       .from("contas_receber")
-      .select("id, descricao, valor, vencimento, categoria, status, cliente:clientes(nome)")
+      .select("id, descricao, valor, vencimento, categoria, status, cliente_id, banco, cliente:clientes(nome)")
       .neq("status", "pago")
       .order("vencimento", { ascending: false });
     if (data) setContas(data as any);
