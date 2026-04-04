@@ -119,9 +119,16 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
     const nextMonthStart = format(startOfMonth(addMonths(startDateObj, 1)), "yyyy-MM-dd");
 
+    const contractDateObj = new Date(contractDate + "T00:00:00");
+    const contractEndDate = contractDurationMonths
+      ? format(addMonths(contractDateObj, contractDurationMonths), "yyyy-MM-dd")
+      : null;
+
     const payload: any = {
       empresa_id: empresaId, cliente_id: clienteId, pet_id: petId || null,
       start_date: startDate, end_date: endDate,
+      contract_date: contractDate,
+      contract_end_date: contractEndDate,
       next_renewal_date: autoRenew ? nextMonthStart : null,
       price_contracted: priceContracted, discount_amount: Number(discount || 0),
       final_price: finalPrice, auto_renew: autoRenew,
