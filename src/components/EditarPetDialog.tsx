@@ -81,6 +81,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         antiparasitario_data: pet.antiparasitario_data ? new Date(pet.antiparasitario_data + "T00:00:00") : undefined,
         v10_data: pet.v10_data ? new Date(pet.v10_data + "T00:00:00") : undefined,
         raiva_data: pet.raiva_data ? new Date(pet.raiva_data + "T00:00:00") : undefined,
+        gripe_data: pet.gripe_data ? new Date(pet.gripe_data + "T00:00:00") : undefined,
       });
     }
   }, [pet, form]);
