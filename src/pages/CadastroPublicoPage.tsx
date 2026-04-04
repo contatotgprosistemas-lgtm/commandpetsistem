@@ -100,6 +100,7 @@ function PetVacinasFields({ control, idx }: { control: any; idx: number }) {
     { dataName: `pets.${idx}.antiparasitario_data` as const, label: "Antiparasitário" },
     { dataName: `pets.${idx}.v10_data` as const, label: "V10" },
     { dataName: `pets.${idx}.raiva_data` as const, label: "Raiva" },
+    { dataName: `pets.${idx}.gripe_data` as const, label: "Gripe" },
   ];
   return (
     <div className="space-y-2">
