@@ -85,6 +85,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const selectedPlan = planType === "plan" ? plans.find((p: any) => p.id === selectedId) : packages.find((p: any) => p.id === selectedId);
   const priceContracted = selectedPlan ? Number(selectedPlan.price) : 0;
   const showHorarios = selectedPlan ? isTaxiPetService(selectedPlan.name) : false;
+  const contractDurationMonths = selectedPlan?.contract_duration_months || null;
 
   // Calculate end date as last day of the month of startDate
   const startDateObj = new Date(startDate + "T00:00:00");
