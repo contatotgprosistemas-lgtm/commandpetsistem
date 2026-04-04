@@ -156,7 +156,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             cliente_id: clienteId,
             pet_id: petId,
             tipo_servico: tipoServico,
-            data_hora: format(current, "yyyy-MM-dd") + "T08:00:00",
+            data_hora: format(current, "yyyy-MM-dd") + "T07:00:00-03:00",
             status: "agendado",
             subscription_id: subscriptionId,
             notas: "Gerado automaticamente pelo plano",
