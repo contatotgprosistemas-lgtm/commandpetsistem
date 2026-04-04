@@ -269,8 +269,8 @@ async function consultarNfe(supabase: any, settings: any, nfeId: string) {
     await supabase.from("nfe_rejections").insert({
       empresa_id: nfe.empresa_id,
       nfe_id: nfeId,
-      rejection_code: result.status_sefaz?.toString() || "REJEICAO",
-      rejection_message: result.mensagem_sefaz || result.mensagem,
+      rejection_code: result.erros?.[0]?.codigo || result.status_sefaz?.toString() || "REJEICAO",
+      rejection_message: errorMessages,
     });
   }
 
