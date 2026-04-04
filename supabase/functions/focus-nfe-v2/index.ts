@@ -260,8 +260,8 @@ async function consultarNfe(supabase: any, settings: any, nfeId: string) {
     nfe_id: nfeId,
     event_type: "consulta_status",
     description: `Status consultado: ${newStatus}`,
-    event_code: result.status_sefaz?.toString(),
-    event_message: result.mensagem_sefaz || result.mensagem,
+    event_code: result.status_sefaz?.toString() || result.erros?.[0]?.codigo,
+    event_message: errorMessages,
     payload: result,
   });
 
