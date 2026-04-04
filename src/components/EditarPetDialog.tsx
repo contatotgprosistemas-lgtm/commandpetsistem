@@ -108,6 +108,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         antiparasitario_data: data.antiparasitario_data ? format(data.antiparasitario_data, "yyyy-MM-dd") : null,
         v10_data: data.v10_data ? format(data.v10_data, "yyyy-MM-dd") : null,
         raiva_data: data.raiva_data ? format(data.raiva_data, "yyyy-MM-dd") : null,
+        gripe_data: data.gripe_data ? format(data.gripe_data, "yyyy-MM-dd") : null,
       }).eq("id", pet.id);
 
       if (error) throw error;
