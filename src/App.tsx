@@ -208,16 +208,6 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/notas-fiscais"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <NotasFiscaisPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
 
 
             <Route
