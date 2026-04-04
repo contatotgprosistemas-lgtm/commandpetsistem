@@ -344,7 +344,78 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
               </div>
             )}
           </TabsContent>
+          <TabsContent value="faturas">
+            {loadingFaturas ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">Carregando faturas...</div>
+            ) : faturas.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <DollarSign className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">Nenhuma fatura encontrada</p>
+              </div>
+            ) : (
+              <div className="mt-2 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Vencimento</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {faturas.map(f => (
+                      <TableRow key={f.id}>
+                        <TableCell>
+                          <p className="text-sm font-medium">{f.descricao}</p>
+                          {f.categoria && <p className="text-xs text-muted-foreground">{f.categoria}</p>}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {format(new Date(f.vencimento + "T00:00:00"), "dd/MM/yyyy")}
+                        </TableCell>
+                        <TableCell className="text-sm text-right tabular-nums font-medium">
+                          R$ {Number(f.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell>
+                          {f.status === "pago" ? (
+                            <Badge className="bg-emerald-500/15 text-emerald-600 border-0 text-xs">Pago</Badge>
+                          ) : (
+                            (() => {
+                              const vencDate = new Date(f.vencimento + "T00:00:00");
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return vencDate < today
+                                ? <Badge variant="destructive" className="text-xs">Vencida</Badge>
+                                : <Badge className="bg-amber-500/15 text-amber-600 border-0 text-xs">Pendente</Badge>;
+                            })()
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => setEditFatura(f)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
+
+        <EditarContaReceberDialog
+          open={!!editFatura}
+          onOpenChange={(o) => { if (!o) setEditFatura(null); }}
+          onSuccess={() => { setEditFatura(null); if (cliente) fetchFaturas(cliente.id); }}
+          conta={editFatura}
+        />
       </DialogContent>
     </Dialog>
   );
