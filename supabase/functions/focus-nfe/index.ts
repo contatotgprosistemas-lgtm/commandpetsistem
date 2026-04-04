@@ -10,18 +10,32 @@ const FOCUS_BASE_URL = "https://homologacao.focusnfe.com.br";
 
 const onlyDigits = (value: unknown) => typeof value === "string" ? value.replace(/\D/g, "") : "";
 
+const normalizeServiceItem = (value: unknown) => {
+  if (typeof value !== "string") return "";
+
+  const trimmed = value.trim();
+  const digits = onlyDigits(trimmed);
+
+  if (!digits) return trimmed;
+  if (trimmed.includes(".")) return trimmed;
+  if (digits.length === 4) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+
+  return trimmed;
+};
+
 const normalizeNfsePayload = (rawDados: Record<string, any>) => {
   const dados = JSON.parse(JSON.stringify(rawDados ?? {}));
   const servico = dados?.servico && typeof dados.servico === "object" ? { ...dados.servico } : {};
   const prestador = dados?.prestador && typeof dados.prestador === "object" ? { ...dados.prestador } : {};
 
-  const itemListaServico = onlyDigits(servico.item_lista_servico);
+  const itemListaServico = normalizeServiceItem(servico.item_lista_servico);
+  const itemListaServicoDigits = onlyDigits(itemListaServico);
   const codigoMunicipioPrestacao = onlyDigits(dados?.codigo_municipio_prestacao ?? servico.codigo_municipio ?? prestador.codigo_municipio);
   const codigoTributacaoNacional = onlyDigits(
     servico.codigo_tributacao_nacional_iss ?? dados?.codigo_tributacao_nacional_iss ?? servico.codigo_tributacao_nacional,
-  ) || (itemListaServico === "0508" ? "050801" : "");
+  ) || (itemListaServicoDigits === "0508" ? "050801" : "");
   const codigoTributarioMunicipio = onlyDigits(servico.codigo_tributario_municipio ?? servico.codigo_servico_municipio);
-  const shouldSendMunicipalTaxCode = Boolean(codigoTributarioMunicipio && codigoTributarioMunicipio !== itemListaServico);
+  const shouldSendMunicipalTaxCode = Boolean(codigoTributarioMunicipio && codigoTributarioMunicipio !== itemListaServicoDigits);
 
   if (itemListaServico) servico.item_lista_servico = itemListaServico;
   if (codigoMunicipioPrestacao) servico.codigo_municipio = codigoMunicipioPrestacao;
