@@ -103,6 +103,7 @@ async function emitirNfe(supabase: any, settings: any, nfeId: string) {
   }
 
   const itemListaServico = items[0]?.codigo_produto?.replace(/\D/g, "") || "0508";
+  const codigoTributacaoNacionalIss = "050801";
 
   // Build NFS-e payload for Focus NFe
   const payload: any = {
@@ -111,15 +112,17 @@ async function emitirNfe(supabase: any, settings: any, nfeId: string) {
     optante_simples_nacional: settings.regime_tributario === "simples_nacional",
     prestador: {
       cnpj: settings.cnpj?.replace(/\D/g, ""),
-      inscricao_municipal: settings.inscricao_municipal?.replace(/\D/g, "") || "",
       codigo_municipio: settings.endereco_codigo_municipio || "",
+      ...(settings.inscricao_municipal
+        ? { inscricao_municipal: settings.inscricao_municipal.replace(/\D/g, "") }
+        : {}),
     },
     servico: {
-      discriminacao: discriminacao,
+      discriminacao,
       iss_retido: false,
       item_lista_servico: itemListaServico,
-      codigo_tributario_municipio: itemListaServico,
-      codigo_cnae: "9609208", // Higiene e embelezamento de animais domésticos
+      codigo_tributacao_nacional_iss: codigoTributacaoNacionalIss,
+      codigo_cnae: "9609208",
       valor_servicos: valorServicos.toFixed(2),
       valor_liquido: valorServicos.toFixed(2),
       aliquota: 0,
@@ -230,11 +233,15 @@ async function consultarNfe(supabase: any, settings: any, nfeId: string) {
   else if (result.status === "erro_autorizacao") newStatus = "rejeitada";
   else if (result.status === "processando_autorizacao") newStatus = "processando";
 
+  const errorMessages = Array.isArray(result.erros)
+    ? result.erros.map((erro: any) => `${erro.codigo}: ${erro.mensagem}`).join(" | ")
+    : result.mensagem_sefaz || result.mensagem;
+
   const updateData: any = {
     status: newStatus,
     focus_status: result.status,
-    focus_code: result.status_sefaz?.toString(),
-    focus_message: result.mensagem_sefaz || result.mensagem,
+    focus_code: result.status_sefaz?.toString() || result.erros?.[0]?.codigo || null,
+    focus_message: errorMessages,
     payload_response: result,
   };
 
@@ -253,8 +260,8 @@ async function consultarNfe(supabase: any, settings: any, nfeId: string) {
     nfe_id: nfeId,
     event_type: "consulta_status",
     description: `Status consultado: ${newStatus}`,
-    event_code: result.status_sefaz?.toString(),
-    event_message: result.mensagem_sefaz || result.mensagem,
+    event_code: result.status_sefaz?.toString() || result.erros?.[0]?.codigo,
+    event_message: errorMessages,
     payload: result,
   });
 
@@ -262,8 +269,8 @@ async function consultarNfe(supabase: any, settings: any, nfeId: string) {
     await supabase.from("nfe_rejections").insert({
       empresa_id: nfe.empresa_id,
       nfe_id: nfeId,
-      rejection_code: result.status_sefaz?.toString() || "REJEICAO",
-      rejection_message: result.mensagem_sefaz || result.mensagem,
+      rejection_code: result.erros?.[0]?.codigo || result.status_sefaz?.toString() || "REJEICAO",
+      rejection_message: errorMessages,
     });
   }
 
