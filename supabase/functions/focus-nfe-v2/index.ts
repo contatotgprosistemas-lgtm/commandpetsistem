@@ -139,12 +139,12 @@ async function emitirNfe(supabase: any, settings: any, nfeId: string) {
       tomador.endereco = {
         logradouro: nfe.dest_logradouro,
         numero: nfe.dest_numero || "S/N",
-        complemento: nfe.dest_complemento || "",
         bairro: nfe.dest_bairro || "",
         codigo_municipio: nfe.dest_codigo_municipio || "",
         uf: nfe.dest_uf || "",
         cep: nfe.dest_cep?.replace(/\D/g, "") || "",
       };
+      if (nfe.dest_complemento) tomador.endereco.complemento = nfe.dest_complemento;
     }
     payload.tomador = tomador;
   }
