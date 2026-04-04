@@ -500,7 +500,6 @@ export default function NotasFiscaisPage() {
                     <Label>Descrição do Serviço *</Label>
                     <Textarea value={nfseForm.descricao} onChange={(e) => setNfseForm((p) => ({ ...p, descricao: e.target.value }))} />
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Valor (R$) *</Label>
