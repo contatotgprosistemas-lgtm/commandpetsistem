@@ -90,6 +90,14 @@ export default function NotasFiscaisPage() {
     valor: "",
     aliquota_iss: "5",
     codigo_servico: "",
+    endereco_logradouro: "",
+    endereco_numero: "",
+    endereco_complemento: "",
+    endereco_bairro: "",
+    endereco_cep: "",
+    endereco_uf: "",
+    endereco_municipio: "",
+    endereco_codigo_municipio: "",
   });
 
   // NF-e form state
@@ -101,6 +109,14 @@ export default function NotasFiscaisPage() {
     ncm: "",
     cfop: "5102",
     quantidade: "1",
+    endereco_logradouro: "",
+    endereco_numero: "",
+    endereco_complemento: "",
+    endereco_bairro: "",
+    endereco_cep: "",
+    endereco_uf: "",
+    endereco_municipio: "",
+    endereco_codigo_municipio: "",
   });
 
   // Dados fiscais form state
