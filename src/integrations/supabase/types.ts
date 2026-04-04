@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      agendamento_absences: {
+        Row: {
+          admin_authorized_by: string | null
+          agendamento_id: string
+          atestado_url: string | null
+          created_at: string
+          empresa_id: string
+          id: string
+          notes: string | null
+          tipo: string
+        }
+        Insert: {
+          admin_authorized_by?: string | null
+          agendamento_id: string
+          atestado_url?: string | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+          notes?: string | null
+          tipo?: string
+        }
+        Update: {
+          admin_authorized_by?: string | null
+          agendamento_id?: string
+          atestado_url?: string | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          notes?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agendamento_absences_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agendamento_absences_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agendamentos: {
         Row: {
           atendente_id: string | null
@@ -3689,6 +3737,7 @@ export type Database = {
       }
       service_plans: {
         Row: {
+          allows_replacement: boolean
           auto_renew: boolean | null
           cancellation_fee: number | null
           created_at: string
@@ -3708,6 +3757,7 @@ export type Database = {
           validity_days: number | null
         }
         Insert: {
+          allows_replacement?: boolean
           auto_renew?: boolean | null
           cancellation_fee?: number | null
           created_at?: string
@@ -3727,6 +3777,7 @@ export type Database = {
           validity_days?: number | null
         }
         Update: {
+          allows_replacement?: boolean
           auto_renew?: boolean | null
           cancellation_fee?: number | null
           created_at?: string
