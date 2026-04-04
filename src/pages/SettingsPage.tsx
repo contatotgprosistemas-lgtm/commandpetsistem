@@ -525,10 +525,25 @@ function SegurancaTab() {
 
 // ─── Integrações ────────────────────────────────────────────────────
 function AsaasIntegrationPanel() {
+  const { profile } = useAuth();
   const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/asaas-webhook`;
   const [copied, setCopied] = useState(false);
-  const [apiKey, setApiKey] = useState("");
+  const [contas, setContas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState({ label: "", api_key: "", teto_mensal: "", prioridade: "1" });
   const [saving, setSaving] = useState(false);
+  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+
+  const fetchContas = async () => {
+    if (!profile?.empresa_id) return;
+    const { data } = await supabase.from("asaas_contas").select("*").eq("empresa_id", profile.empresa_id).order("prioridade");
+    setContas((data as any) ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchContas(); }, [profile?.empresa_id]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(webhookUrl);
@@ -537,42 +552,154 @@ function AsaasIntegrationPanel() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSaveApiKey = async () => {
-    if (!apiKey.trim()) {
-      toast({ title: "Informe a API Key", variant: "destructive" });
+  const openNew = () => {
+    setEditId(null);
+    setForm({ label: "", api_key: "", teto_mensal: "", prioridade: String((contas.length || 0) + 1) });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (c: any) => {
+    setEditId(c.id);
+    setForm({ label: c.label, api_key: c.api_key, teto_mensal: c.teto_mensal?.toString() || "", prioridade: String(c.prioridade) });
+    setDialogOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!profile?.empresa_id || !form.label || !form.api_key) {
+      toast({ title: "Preencha nome e API Key", variant: "destructive" });
       return;
     }
     setSaving(true);
-    toast({ title: "API Key informada", description: "Entre em contato com o suporte para finalizar a configuração com esta chave." });
+    const payload = {
+      empresa_id: profile.empresa_id,
+      label: form.label,
+      api_key: form.api_key,
+      teto_mensal: form.teto_mensal ? parseFloat(form.teto_mensal) : null,
+      prioridade: parseInt(form.prioridade) || 1,
+    };
+
+    let error;
+    if (editId) {
+      ({ error } = await supabase.from("asaas_contas").update(payload).eq("id", editId));
+    } else {
+      ({ error } = await supabase.from("asaas_contas").insert(payload));
+    }
     setSaving(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: editId ? "Conta atualizada!" : "Conta cadastrada!" });
+      setDialogOpen(false);
+      fetchContas();
+    }
   };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Excluir esta conta Asaas?")) return;
+    await supabase.from("asaas_contas").delete().eq("id", id);
+    toast({ title: "Conta removida" });
+    fetchContas();
+  };
+
+  const handleToggle = async (id: string, ativo: boolean) => {
+    await supabase.from("asaas_contas").update({ ativo: !ativo }).eq("id", id);
+    fetchContas();
+  };
+
+  const maskKey = (key: string) => key.length > 12 ? key.slice(0, 8) + "••••••••" + key.slice(-4) : "••••••••";
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Asaas — Gateway de Pagamento</CardTitle>
-        <CardDescription>Configure a integração com o Asaas para cobranças PIX, boleto e cartão</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-base">Asaas — Gateway de Pagamento</CardTitle>
+          <CardDescription>Configure contas Asaas com roteamento automático por teto mensal</CardDescription>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" onClick={openNew}><UserPlus className="h-4 w-4 mr-1" /> Adicionar Conta</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editId ? "Editar Conta Asaas" : "Nova Conta Asaas"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-1">
+                <Label>Nome da Conta <span className="text-destructive">*</span></Label>
+                <Input value={form.label} onChange={e => setForm({ ...form, label: e.target.value })} placeholder="Ex: Conta Principal" />
+              </div>
+              <div className="space-y-1">
+                <Label>API Key do Asaas <span className="text-destructive">*</span></Label>
+                <Input value={form.api_key} onChange={e => setForm({ ...form, api_key: e.target.value })} placeholder="Cole aqui a API Key" className="font-mono text-xs" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Teto Mensal (R$)</Label>
+                  <Input type="number" step="0.01" value={form.teto_mensal} onChange={e => setForm({ ...form, teto_mensal: e.target.value })} placeholder="Sem limite" />
+                  <p className="text-xs text-muted-foreground">Deixe vazio para sem limite</p>
+                </div>
+                <div className="space-y-1">
+                  <Label>Prioridade</Label>
+                  <Input type="number" min="1" value={form.prioridade} onChange={e => setForm({ ...form, prioridade: e.target.value })} />
+                  <p className="text-xs text-muted-foreground">1 = recebe primeiro</p>
+                </div>
+              </div>
+              <Button onClick={handleSave} disabled={saving} className="w-full">
+                {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {editId ? "Atualizar" : "Cadastrar"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="space-y-2">
-          <Label>API Key do Asaas</Label>
-          <p className="text-xs text-muted-foreground">
-            Cole aqui a API Key encontrada no painel Asaas em <strong>Configurações → Integrações → API</strong>.
-          </p>
-          <div className="flex items-center gap-2">
-            <Input
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Cole sua API Key do Asaas aqui"
-              className="font-mono text-xs"
-            />
-            <Button variant="outline" size="sm" onClick={handleSaveApiKey} disabled={saving} className="whitespace-nowrap">
-              Salvar
-            </Button>
-          </div>
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin" /></div>
+        ) : contas.length === 0 ? (
+          <p className="text-center text-muted-foreground py-4">Nenhuma conta Asaas cadastrada. Adicione uma conta para começar a receber pagamentos.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Conta</TableHead>
+                <TableHead>API Key</TableHead>
+                <TableHead>Teto Mensal</TableHead>
+                <TableHead>Prioridade</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-28">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {contas.map(c => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">{c.label}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    <button onClick={() => setShowKeys(prev => ({ ...prev, [c.id]: !prev[c.id] }))} className="flex items-center gap-1 hover:text-primary">
+                      {showKeys[c.id] ? c.api_key : maskKey(c.api_key)}
+                      {showKeys[c.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    </button>
+                  </TableCell>
+                  <TableCell>{c.teto_mensal ? `R$ ${Number(c.teto_mensal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "Sem limite"}</TableCell>
+                  <TableCell>{c.prioridade}</TableCell>
+                  <TableCell><Badge variant={c.ativo ? "default" : "secondary"}>{c.ativo ? "Ativo" : "Inativo"}</Badge></TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
+                        <Settings className="h-3.5 w-3.5" />
+                      </Button>
+                      <Switch checked={c.ativo} onCheckedChange={() => handleToggle(c.id, c.ativo)} />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(c.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
 
-        <div className="space-y-2">
+        <div className="space-y-2 pt-2 border-t">
           <Label>URL do Webhook</Label>
           <p className="text-xs text-muted-foreground">
             Copie esta URL e cadastre no painel do Asaas em <strong>Configurações → Integrações → Webhooks</strong>.

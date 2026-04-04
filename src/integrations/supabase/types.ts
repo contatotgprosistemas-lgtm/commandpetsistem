@@ -131,6 +131,50 @@ export type Database = {
           },
         ]
       }
+      asaas_contas: {
+        Row: {
+          api_key: string
+          ativo: boolean
+          created_at: string
+          empresa_id: string
+          id: string
+          label: string
+          prioridade: number
+          teto_mensal: number | null
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          ativo?: boolean
+          created_at?: string
+          empresa_id: string
+          id?: string
+          label?: string
+          prioridade?: number
+          teto_mensal?: number | null
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          ativo?: boolean
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          label?: string
+          prioridade?: number
+          teto_mensal?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_contas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           acao: string
