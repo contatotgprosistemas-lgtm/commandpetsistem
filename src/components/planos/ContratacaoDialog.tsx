@@ -58,7 +58,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [packages, setPackages] = useState<any[]>([]);
 
   const [clienteId, setClienteId] = useState("");
-  const [petId, setPetId] = useState("");
+  const [selectedPetIds, setSelectedPetIds] = useState<string[]>([]);
   const [planType, setPlanType] = useState<"plan" | "package">("plan");
   const [selectedId, setSelectedId] = useState("");
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
