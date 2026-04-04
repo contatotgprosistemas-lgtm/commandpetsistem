@@ -30,7 +30,7 @@ const MODULES: ModuleConfig[] = [
   { key: "chatbot", label: "Chatbot" },
   { key: "taxipet", label: "TaxiPet" },
   { key: "contratos", label: "Contratos" },
-  
+  { key: "notas_fiscais", label: "Notas Fiscais" },
   { key: "clientes", label: "Clientes" },
   { key: "pets", label: "Pets" },
   { key: "servicos", label: "Serviços" },
