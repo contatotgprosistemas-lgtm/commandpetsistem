@@ -53,15 +53,41 @@ function getBaseUrl(ambiente: string) {
 async function testarConexao(settings: any) {
   const base = getBaseUrl(settings.ambiente);
   const cnpj = (settings.cnpj || "").replace(/\D/g, "");
-  const url = cnpj ? `${base}/nfe?cnpj=${cnpj}` : `${base}/nfe?cnpj=00000000000000`;
-  const resp = await fetch(url, {
-    method: "GET",
-    headers: focusHeaders(settings.token_focus),
-  });
-  const body = await resp.text();
-  // 200 or 403 (valid token but no access) both confirm connectivity
-  const ok = resp.status === 200 || resp.status === 403;
-  return { status: resp.status, ok, body: body.substring(0, 500) };
+  // Try NFS-e endpoint first (services), fallback to NFe
+  const endpoints = [
+    `${base}/nfse?cnpj=${cnpj}`,
+    `${base}/nfe?cnpj=${cnpj}`,
+  ];
+  
+  let lastStatus = 0;
+  let lastBody = "";
+  
+  for (const url of endpoints) {
+    try {
+      const resp = await fetch(url, {
+        method: "GET",
+        headers: focusHeaders(settings.token_focus),
+      });
+      const body = await resp.text();
+      
+      // 200 = success, 401 = bad token, 403 = no permission but token works
+      if (resp.status === 200) {
+        return { status: 200, ok: true, body: "Conexão OK! Token válido." };
+      }
+      if (resp.status === 401) {
+        return { status: 401, ok: false, body: "Token inválido. Verifique o token da Focus NFe." };
+      }
+      if (resp.status === 403) {
+        return { status: 200, ok: true, body: "Conexão OK! Token autenticado (sem notas ainda)." };
+      }
+      lastStatus = resp.status;
+      lastBody = body.substring(0, 500);
+    } catch (e: any) {
+      lastBody = e.message;
+    }
+  }
+  
+  return { status: lastStatus, ok: lastStatus >= 200 && lastStatus < 300, body: lastBody };
 }
 
 async function emitirNfe(supabase: any, settings: any, nfeId: string) {
