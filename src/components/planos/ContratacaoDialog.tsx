@@ -115,7 +115,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
   async function handleSave() {
     if (!clienteId || !selectedId) { toast.error("Selecione cliente e plano/pacote"); return; }
-    if (!petId) { toast.error("Selecione o pet"); return; }
+    if (selectedPetIds.length === 0) { toast.error("Selecione ao menos um pet"); return; }
     setSaving(true);
 
     const nextMonthStart = format(startOfMonth(addMonths(startDateObj, 1)), "yyyy-MM-dd");
@@ -125,72 +125,80 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       ? format(addMonths(contractDateObj, contractDurationMonths), "yyyy-MM-dd")
       : null;
 
-    const payload: any = {
-      empresa_id: empresaId, cliente_id: clienteId, pet_id: petId || null,
-      start_date: startDate, end_date: endDate,
-      contract_date: contractDate,
-      contract_end_date: contractEndDate,
-      next_renewal_date: autoRenew ? nextMonthStart : null,
-      price_contracted: priceContracted, discount_amount: Number(discount || 0),
-      final_price: finalPrice, auto_renew: autoRenew,
-      notes, status: "ativo", planned_days: plannedDays
-    };
-    if (planType === "plan") payload.plan_id = selectedId;
-    else payload.package_id = selectedId;
+    let totalAgendamentos = 0;
 
-    const { data: subData, error } = await supabase.from("customer_pet_subscriptions" as any).insert(payload).select("id").single();
-    if (error || !subData) { toast.error("Erro ao contratar"); setSaving(false); return; }
+    for (const petId of selectedPetIds) {
+      const payload: any = {
+        empresa_id: empresaId, cliente_id: clienteId, pet_id: petId,
+        start_date: startDate, end_date: endDate,
+        contract_date: contractDate,
+        contract_end_date: contractEndDate,
+        next_renewal_date: autoRenew ? nextMonthStart : null,
+        price_contracted: priceContracted, discount_amount: Number(discount || 0),
+        final_price: finalPrice, auto_renew: autoRenew,
+        notes, status: "ativo", planned_days: plannedDays
+      };
+      if (planType === "plan") payload.plan_id = selectedId;
+      else payload.package_id = selectedId;
 
-    const subscriptionId = (subData as any).id;
+      const { data: subData, error } = await supabase.from("customer_pet_subscriptions" as any).insert(payload).select("id").single();
+      if (error || !subData) { toast.error("Erro ao contratar pet"); continue; }
 
-    await supabase.from("contas_receber").insert({
-      empresa_id: empresaId, cliente_id: clienteId,
-      descricao: `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name}${!isFirstDay ? " (proporcional)" : ""}`,
-      valor: finalPrice, vencimento: startDate, status: "pendente", categoria: "Planos e Pacotes"
-    });
+      const subscriptionId = (subData as any).id;
+      const petNome = pets.find(p => p.id === petId)?.nome || "";
 
-    if (plannedDays.length > 0 && petId) {
-      const start = startOfDay(startDateObj);
-      const end = startOfDay(endOfMonth);
-      const today = startOfDay(new Date());
-      const tipoServico = selectedPlan?.name || "Plano";
+      await supabase.from("contas_receber").insert({
+        empresa_id: empresaId, cliente_id: clienteId,
+        descricao: `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name} - ${petNome}${!isFirstDay ? " (proporcional)" : ""}`,
+        valor: finalPrice, vencimento: startDate, status: "pendente", categoria: "Planos e Pacotes"
+      });
 
-      const agendamentos: any[] = [];
-      let current = isBefore(start, today) ? today : start;
+      if (plannedDays.length > 0) {
+        const start = startOfDay(startDateObj);
+        const end = startOfDay(endOfMonth);
+        const today = startOfDay(new Date());
+        const tipoServico = selectedPlan?.name || "Plano";
 
-      while (!isBefore(end, current)) {
-        const weekday = getDay(current);
-        if (plannedDays.includes(weekday)) {
-          const ag: any = {
-            empresa_id: empresaId,
-            cliente_id: clienteId,
-            pet_id: petId,
-            tipo_servico: tipoServico,
-            data_hora: format(current, "yyyy-MM-dd") + "T07:00:00-03:00",
-            status: "agendado",
-            subscription_id: subscriptionId,
-            notas: "Gerado automaticamente pelo plano",
-          };
-          if (showHorarios) {
-            ag.hora_prevista_buscar = horaBuscar;
-            ag.hora_prevista_levar = horaLevar;
+        const agendamentos: any[] = [];
+        let current = isBefore(start, today) ? today : start;
+
+        while (!isBefore(end, current)) {
+          const weekday = getDay(current);
+          if (plannedDays.includes(weekday)) {
+            const ag: any = {
+              empresa_id: empresaId,
+              cliente_id: clienteId,
+              pet_id: petId,
+              tipo_servico: tipoServico,
+              data_hora: format(current, "yyyy-MM-dd") + "T07:00:00-03:00",
+              status: "agendado",
+              subscription_id: subscriptionId,
+              notas: "Gerado automaticamente pelo plano",
+            };
+            if (showHorarios) {
+              ag.hora_prevista_buscar = horaBuscar;
+              ag.hora_prevista_levar = horaLevar;
+            }
+            agendamentos.push(ag);
           }
-          agendamentos.push(ag);
+          current = addDays(current, 1);
         }
-        current = addDays(current, 1);
-      }
 
-      for (let i = 0; i < agendamentos.length; i += 50) {
-        await supabase.from("agendamentos").insert(agendamentos.slice(i, i + 50) as any);
+        for (let i = 0; i < agendamentos.length; i += 50) {
+          await supabase.from("agendamentos").insert(agendamentos.slice(i, i + 50) as any);
+        }
+        totalAgendamentos += agendamentos.length;
       }
+    }
 
-      toast.success(`Contratação realizada! ${agendamentos.length} reservas geradas.`);
+    if (totalAgendamentos > 0) {
+      toast.success(`Contratação realizada! ${totalAgendamentos} reservas geradas para ${selectedPetIds.length} pet(s).`);
     } else {
-      toast.success("Contratação realizada com sucesso!");
+      toast.success(`Contratação realizada para ${selectedPetIds.length} pet(s)!`);
     }
 
     setClienteId("");
-    setPetId("");
+    setSelectedPetIds([]);
     setPets([]);
     setPlanType("plan");
     setSelectedId("");
