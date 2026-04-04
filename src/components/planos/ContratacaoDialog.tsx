@@ -147,10 +147,24 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       const subscriptionId = (subData as any).id;
       const petNome = pets.find(p => p.id === petId)?.nome || "";
 
+      // Calculate vencimento based on client's dia_vencimento_fatura
+      const clienteData = clientes.find(c => c.id === clienteId);
+      const diaVenc = clienteData?.dia_vencimento_fatura || 10;
+      const startObj = new Date(startDate + "T00:00:00");
+      let vencMonth = startObj.getMonth();
+      let vencYear = startObj.getFullYear();
+      // If start day already passed the due day, use next month
+      if (startObj.getDate() > diaVenc) {
+        vencMonth += 1;
+        if (vencMonth > 11) { vencMonth = 0; vencYear += 1; }
+      }
+      const vencimentoDate = new Date(vencYear, vencMonth, diaVenc);
+      const vencimentoStr = format(vencimentoDate, "yyyy-MM-dd");
+
       await supabase.from("contas_receber").insert({
         empresa_id: empresaId, cliente_id: clienteId,
         descricao: `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name} - ${petNome}${!isFirstDay ? " (proporcional)" : ""}`,
-        valor: finalPrice, vencimento: startDate, status: "pendente", categoria: "Planos e Pacotes"
+        valor: finalPrice, vencimento: vencimentoStr, status: "pendente", categoria: "Planos e Pacotes"
       });
 
       if (plannedDays.length > 0) {
