@@ -22,6 +22,7 @@ interface Pet {
   v10_data: string | null;
   raiva_data: string | null;
   antiparasitario_data: string | null;
+  gripe_data: string | null;
 }
 
 interface Agendamento {
