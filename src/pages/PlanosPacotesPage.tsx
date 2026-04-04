@@ -302,6 +302,9 @@ export default function PlanosPacotesPage() {
                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Faturar manual" onClick={() => handleFaturar(s)}>
                         <DollarSign className="h-3.5 w-3.5" />
                       </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Aplicar desconto" onClick={() => { setDiscountTarget(s); setDiscountValue(String(s.discount_amount || 0)); }}>
+                        <PercentCircle className="h-3.5 w-3.5" />
+                      </Button>
                       {s.status === "ativo" && (
                         <>
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="Pausar" onClick={() => setActionTarget({ action: "pause", id: s.id })}>
