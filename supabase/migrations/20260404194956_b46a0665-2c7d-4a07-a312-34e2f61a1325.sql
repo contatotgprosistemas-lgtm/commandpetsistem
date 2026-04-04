@@ -1,0 +1,1 @@
+ALTER TABLE public.pets ADD COLUMN gripe_data DATE;
