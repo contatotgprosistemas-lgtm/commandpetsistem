@@ -8,6 +8,37 @@ const corsHeaders = {
 
 const FOCUS_BASE_URL = "https://homologacao.focusnfe.com.br";
 
+const onlyDigits = (value: unknown) => typeof value === "string" ? value.replace(/\D/g, "") : "";
+
+const normalizeNfsePayload = (rawDados: Record<string, any>) => {
+  const dados = JSON.parse(JSON.stringify(rawDados ?? {}));
+  const servico = dados?.servico && typeof dados.servico === "object" ? { ...dados.servico } : {};
+  const prestador = dados?.prestador && typeof dados.prestador === "object" ? { ...dados.prestador } : {};
+
+  const itemListaServico = onlyDigits(servico.item_lista_servico);
+  const codigoTributacaoNacional = onlyDigits(servico.codigo_tributacao_nacional_iss ?? servico.codigo_tributacao_nacional);
+  const codigoTributarioMunicipio = onlyDigits(servico.codigo_tributario_municipio ?? servico.codigo_servico_municipio ?? itemListaServico);
+
+  if (itemListaServico) servico.item_lista_servico = itemListaServico;
+  if (codigoTributacaoNacional) servico.codigo_tributacao_nacional_iss = codigoTributacaoNacional;
+  if (codigoTributarioMunicipio) servico.codigo_tributario_municipio = codigoTributarioMunicipio;
+
+  delete servico.codigo_tributacao_nacional;
+  delete servico.codigo_servico_municipio;
+
+  const normalized = {
+    ...dados,
+    servico,
+  };
+
+  if (prestador.codigo_municipio) normalized.codigo_municipio_prestacao = prestador.codigo_municipio;
+  if (codigoTributacaoNacional) normalized.codigo_tributacao_nacional_iss = codigoTributacaoNacional;
+  if (servico.discriminacao) normalized.descricao_servico = servico.discriminacao;
+  if (servico.valor_servicos !== undefined) normalized.valor_servico = servico.valor_servicos;
+
+  return normalized;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
