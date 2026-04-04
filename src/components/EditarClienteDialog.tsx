@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -10,10 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PawPrint, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { PawPrint, Loader2, DollarSign, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { EditarContaReceberDialog } from "@/components/EditarContaReceberDialog";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
@@ -45,11 +49,25 @@ interface HistoricoServico {
   notas: string | null;
 }
 
+interface Fatura {
+  id: string;
+  descricao: string;
+  valor: number;
+  vencimento: string;
+  categoria: string | null;
+  status: string;
+  cliente_id: string | null;
+  banco: string | null;
+}
+
 export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: EditarClienteDialogProps) {
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [historico, setHistorico] = useState<HistoricoServico[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+  const [faturas, setFaturas] = useState<Fatura[]>([]);
+  const [loadingFaturas, setLoadingFaturas] = useState(false);
+  const [editFatura, setEditFatura] = useState<Fatura | null>(null);
   const [diaVencimento, setDiaVencimento] = useState(10);
   const [diasGerarFatura, setDiasGerarFatura] = useState(5);
 
@@ -75,6 +93,7 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
       setDiaVencimento(cliente.dia_vencimento_fatura ?? 10);
       setDiasGerarFatura(cliente.dias_gerar_fatura ?? 5);
       fetchHistorico(cliente.id);
+      fetchFaturas(cliente.id);
     }
   }, [cliente, form]);
 
@@ -106,6 +125,17 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
       .order("data_servico", { ascending: false });
     setHistorico((data as any) ?? []);
     setLoadingHistorico(false);
+  }
+
+  async function fetchFaturas(clienteId: string) {
+    setLoadingFaturas(true);
+    const { data } = await supabase
+      .from("contas_receber")
+      .select("id, descricao, valor, vencimento, categoria, status, cliente_id, banco")
+      .eq("cliente_id", clienteId)
+      .order("vencimento", { ascending: false });
+    setFaturas((data as any) ?? []);
+    setLoadingFaturas(false);
   }
 
   async function onSubmit(data: FormValues) {
@@ -150,7 +180,8 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         <Tabs defaultValue="dados" className="w-full">
           <TabsList className="w-full">
             <TabsTrigger value="dados" className="flex-1">Dados</TabsTrigger>
-            <TabsTrigger value="historico" className="flex-1">Histórico de Serviços</TabsTrigger>
+            <TabsTrigger value="historico" className="flex-1">Histórico</TabsTrigger>
+            <TabsTrigger value="faturas" className="flex-1">Faturas</TabsTrigger>
           </TabsList>
           <TabsContent value="dados">
             <Form {...form}>
@@ -313,7 +344,78 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
               </div>
             )}
           </TabsContent>
+          <TabsContent value="faturas">
+            {loadingFaturas ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">Carregando faturas...</div>
+            ) : faturas.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <DollarSign className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">Nenhuma fatura encontrada</p>
+              </div>
+            ) : (
+              <div className="mt-2 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Vencimento</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {faturas.map(f => (
+                      <TableRow key={f.id}>
+                        <TableCell>
+                          <p className="text-sm font-medium">{f.descricao}</p>
+                          {f.categoria && <p className="text-xs text-muted-foreground">{f.categoria}</p>}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {format(new Date(f.vencimento + "T00:00:00"), "dd/MM/yyyy")}
+                        </TableCell>
+                        <TableCell className="text-sm text-right tabular-nums font-medium">
+                          R$ {Number(f.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell>
+                          {f.status === "pago" ? (
+                            <Badge className="bg-emerald-500/15 text-emerald-600 border-0 text-xs">Pago</Badge>
+                          ) : (
+                            (() => {
+                              const vencDate = new Date(f.vencimento + "T00:00:00");
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return vencDate < today
+                                ? <Badge variant="destructive" className="text-xs">Vencida</Badge>
+                                : <Badge className="bg-amber-500/15 text-amber-600 border-0 text-xs">Pendente</Badge>;
+                            })()
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => setEditFatura(f)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
+
+        <EditarContaReceberDialog
+          open={!!editFatura}
+          onOpenChange={(o) => { if (!o) setEditFatura(null); }}
+          onSuccess={() => { setEditFatura(null); if (cliente) fetchFaturas(cliente.id); }}
+          conta={editFatura}
+        />
       </DialogContent>
     </Dialog>
   );
