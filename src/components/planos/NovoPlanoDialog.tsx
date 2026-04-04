@@ -204,7 +204,11 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label>Validade do contrato (meses)</Label>
+              <Input type="number" value={contractDurationMonths} onChange={e => setContractDurationMonths(e.target.value)} placeholder="Ex: 6 ou 12" />
+            </div>
             <div className="space-y-1.5">
               <Label>Fidelidade mínima (meses)</Label>
               <Input type="number" value={minLoyalty} onChange={e => setMinLoyalty(e.target.value)} />
