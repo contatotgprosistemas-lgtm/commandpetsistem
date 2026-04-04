@@ -93,6 +93,7 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
       setDiaVencimento(cliente.dia_vencimento_fatura ?? 10);
       setDiasGerarFatura(cliente.dias_gerar_fatura ?? 5);
       fetchHistorico(cliente.id);
+      fetchFaturas(cliente.id);
     }
   }, [cliente, form]);
 
