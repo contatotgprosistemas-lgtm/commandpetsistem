@@ -49,6 +49,17 @@ interface HistoricoServico {
   notas: string | null;
 }
 
+interface Fatura {
+  id: string;
+  descricao: string;
+  valor: number;
+  vencimento: string;
+  categoria: string | null;
+  status: string;
+  cliente_id: string | null;
+  banco: string | null;
+}
+
 export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: EditarClienteDialogProps) {
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
