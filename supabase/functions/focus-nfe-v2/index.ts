@@ -52,12 +52,16 @@ function getBaseUrl(ambiente: string) {
 
 async function testarConexao(settings: any) {
   const base = getBaseUrl(settings.ambiente);
-  const resp = await fetch(`${base}/nfe`, {
+  const cnpj = (settings.cnpj || "").replace(/\D/g, "");
+  const url = cnpj ? `${base}/nfe?cnpj=${cnpj}` : `${base}/nfe?cnpj=00000000000000`;
+  const resp = await fetch(url, {
     method: "GET",
     headers: focusHeaders(settings.token_focus),
   });
   const body = await resp.text();
-  return { status: resp.status, ok: resp.ok, body: body.substring(0, 500) };
+  // 200 or 403 (valid token but no access) both confirm connectivity
+  const ok = resp.status === 200 || resp.status === 403;
+  return { status: resp.status, ok, body: body.substring(0, 500) };
 }
 
 async function emitirNfe(supabase: any, settings: any, nfeId: string) {
