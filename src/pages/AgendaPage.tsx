@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calculator, PawPrint, Phone, MessageCircle, Pencil, LogIn, Trash2, CalendarDays, List } from "lucide-react";
+import { Calculator, PawPrint, Phone, MessageCircle, Pencil, LogIn, Trash2, CalendarDays, List, XCircle } from "lucide-react";
 import { format, isToday, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -16,6 +16,7 @@ import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { FaltaDialog } from "@/components/FaltaDialog";
 
 interface Agendamento {
   id: string;
@@ -57,6 +58,7 @@ export default function AgendaPage() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
+  const [faltaOpen, setFaltaOpen] = useState<Agendamento | null>(null);
   const [view, setView] = useState<"calendar" | "list">("calendar");
 
   // List filters
@@ -224,6 +226,7 @@ export default function AgendaPage() {
             onEdit={a => setEditingAgendamento(a)}
             showDelete
             onDelete={handleDelete}
+            onFalta={setFaltaOpen}
           />
         </TabsContent>
       </Tabs>
@@ -234,10 +237,20 @@ export default function AgendaPage() {
         onOpenChange={(o) => { if (!o) setEditingAgendamento(null); }}
         onSuccess={() => { setEditingAgendamento(null); fetchAgendamentos(); }}
       />
+      {faltaOpen && (
+        <FaltaDialog
+          open={!!faltaOpen}
+          onOpenChange={(o) => { if (!o) setFaltaOpen(null); }}
+          agendamento={faltaOpen}
+          empresaId={faltaOpen.empresa_id}
+          allowsReplacement={true}
+          onSuccess={fetchAgendamentos}
+        />
+      )}
     </div>
   );
 }
-function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showDelete, onDelete }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void }) {
+function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showDelete, onDelete, onFalta }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void; onFalta?: (item: Agendamento) => void }) {
   if (loading) {
     return (
       <div className="space-y-3 mt-4">
@@ -260,13 +273,13 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showD
   return (
     <div className="bg-card rounded-lg shadow-card mt-4 divide-y divide-border">
       {items.map(item => (
-        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} showDelete={showDelete} onDelete={onDelete} />
+        <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} showDelete={showDelete} onDelete={onDelete} onFalta={onFalta} />
       ))}
     </div>
   );
 }
 
-function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void }) {
+function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete, onFalta }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void; onFalta?: (item: Agendamento) => void }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
@@ -325,16 +338,27 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1 text-xs"
-            onClick={() => onCheckin?.(item)}
-          >
-            <LogIn className="h-3.5 w-3.5" />
-            Check-in
-          </Button>
+        {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && item.status !== "falta" && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1 text-xs"
+              onClick={() => onCheckin?.(item)}
+            >
+              <LogIn className="h-3.5 w-3.5" />
+              Check-in
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1 text-xs text-destructive hover:text-destructive"
+              onClick={() => onFalta?.(item)}
+            >
+              <XCircle className="h-3.5 w-3.5" />
+              Falta
+            </Button>
+          </>
         )}
         {clientWhatsapp && (
           <Button

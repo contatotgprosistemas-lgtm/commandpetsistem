@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon } from "lucide-react";
+import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,6 +11,7 @@ import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { format, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { FaltaDialog } from "@/components/FaltaDialog";
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
@@ -18,6 +19,8 @@ export default function OperacionalDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ agendamentosHoje: 0, petsHospedados: 0, checkinsHoje: 0, checkoutsHoje: 0, petsDaycare: 0 });
   const [petsNaEmpresa, setPetsNaEmpresa] = useState<any[]>([]);
+  const [faltaOpen, setFaltaOpen] = useState<any>(null);
+  const [pendingCheckins, setPendingCheckins] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -40,17 +43,18 @@ export default function OperacionalDashboard() {
       const naEmpresa = all.filter(a => a.status === "na_empresa");
       const hospedados = naEmpresa.filter(a => ["hotel", "hospedagem", "hotel_e_creche"].includes(a.tipo_servico.toLowerCase()));
       const daycare = naEmpresa.filter(a => ["daycare", "creche", "day_care"].includes(a.tipo_servico.toLowerCase()));
-      const checkinsHoje = agHoje.filter(a => a.status === "pendente" || a.status === "confirmado").length;
+      const checkinsHoje = agHoje.filter(a => a.status === "pendente" || a.status === "confirmado");
       const checkoutsHoje = naEmpresa.length;
 
       setStats({
         agendamentosHoje: agHoje.length,
         petsHospedados: hospedados.length,
-        checkinsHoje,
+        checkinsHoje: checkinsHoje.length,
         checkoutsHoje,
         petsDaycare: daycare.length,
       });
       setPetsNaEmpresa(naEmpresa);
+      setPendingCheckins(checkinsHoje);
       setLoading(false);
     };
     fetchData();
@@ -124,6 +128,40 @@ export default function OperacionalDashboard() {
         ))}
       </div>
 
+      {/* Pending check-ins with Falta button */}
+      {pendingCheckins.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">Check-ins Pendentes</h2>
+          <div className="space-y-2">
+            {pendingCheckins.map((item) => (
+              <Card key={item.id} className="rounded-xl">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+                      {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground text-base">{item.pet?.nome ?? "Pet"}</p>
+                    <p className="text-xs text-muted-foreground">{item.cliente?.nome ?? "—"}</p>
+                    <Badge variant="outline" className="mt-1 text-[10px]">{item.tipo_servico}</Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleCheckin(item)} className="gap-1.5 h-10 px-3">
+                      <LogIn className="h-4 w-4" /> Entrada
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setFaltaOpen(item)} className="gap-1.5 h-10 px-3 text-destructive hover:text-destructive">
+                      <XCircle className="h-4 w-4" /> Falta
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Pets na empresa */}
       {petsNaEmpresa.length > 0 && (
         <div className="space-y-3">
@@ -151,6 +189,17 @@ export default function OperacionalDashboard() {
             ))}
           </div>
         </div>
+      )}
+
+      {faltaOpen && (
+        <FaltaDialog
+          open={!!faltaOpen}
+          onOpenChange={(o) => { if (!o) setFaltaOpen(null); }}
+          agendamento={faltaOpen}
+          empresaId={user?.empresa_id ?? ""}
+          allowsReplacement={true}
+          onSuccess={() => window.location.reload()}
+        />
       )}
     </div>
   );

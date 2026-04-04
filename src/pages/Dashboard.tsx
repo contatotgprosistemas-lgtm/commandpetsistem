@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car } from "lucide-react";
+import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { OrcamentoDialog } from "@/components/OrcamentoDialog";
 import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
 import { GerarContratoButton } from "@/components/contracts/GerarContratoButton";
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
+import { FaltaDialog } from "@/components/FaltaDialog";
 
 interface Agendamento {
   id: string;
@@ -48,6 +49,7 @@ function statusColor(status: string) {
     case "pendente": return "bg-amber-500";
     case "cancelado": return "bg-destructive";
     case "concluido": return "bg-primary";
+    case "falta": return "bg-destructive";
     default: return "bg-muted-foreground";
   }
 }
@@ -67,6 +69,7 @@ export default function Dashboard() {
   const [checklistOpen, setChecklistOpen] = useState<Agendamento | null>(null);
   const [fichaOpen, setFichaOpen] = useState<Agendamento | null>(null);
   const [editOpen, setEditOpen] = useState<Agendamento | null>(null);
+  const [faltaOpen, setFaltaOpen] = useState<Agendamento | null>(null);
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
@@ -241,7 +244,7 @@ export default function Dashboard() {
             />
           </TabsContent>
           <TabsContent value="hoje">
-            <AgendamentoList items={reservasHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
+            <AgendamentoList items={reservasHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} onFalta={setFaltaOpen} />
           </TabsContent>
           <TabsContent value="taxipet">
             <TaxiPetTodayList items={transportHoje} loading={agendaLoading} />
@@ -297,12 +300,22 @@ export default function Dashboard() {
         onOpenChange={(o) => { if (!o) { setEditingAgendamento(null); setEditOpen(null); } }}
         onSuccess={() => { setEditingAgendamento(null); setEditOpen(null); fetchAgendamentos(); }}
       />
+      {faltaOpen && (
+        <FaltaDialog
+          open={!!faltaOpen}
+          onOpenChange={(o) => { if (!o) setFaltaOpen(null); }}
+          agendamento={faltaOpen}
+          empresaId={faltaOpen.empresa_id}
+          allowsReplacement={true}
+          onSuccess={fetchAgendamentos}
+        />
+      )}
     </div>
   );
 }
 
 /* Agenda sub-components */
-function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showDelete, onDelete }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void }) {
+function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showDelete, onDelete, onFalta }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void; onFalta?: (item: Agendamento) => void }) {
   if (loading) return <div className="space-y-3 mt-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}</div>;
   if (items.length === 0) return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -312,12 +325,12 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showD
   );
   return (
     <div className="bg-card rounded-xl border border-border/60 shadow-card mt-4 divide-y divide-border/60">
-      {items.map(item => <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} showDelete={showDelete} onDelete={onDelete} />)}
+      {items.map(item => <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} showDelete={showDelete} onDelete={onDelete} onFalta={onFalta} />)}
     </div>
   );
 }
 
-function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void }) {
+function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete, onFalta }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void; onFalta?: (item: Agendamento) => void }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
@@ -360,10 +373,15 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
       </div>
       <div className="flex items-center gap-1 shrink-0 ml-2"><StatusDot status={item.status} /></div>
       <div className="flex items-center gap-1 shrink-0">
-        {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && !["taxipet", "taxi pet", "transporte", "taxi-pet"].includes(item.tipo_servico.toLowerCase()) && (
-          <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => onCheckin?.(item)}>
-            <LogIn className="h-3.5 w-3.5" />Check-in
-          </Button>
+        {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && item.status !== "falta" && !["taxipet", "taxi pet", "transporte", "taxi-pet"].includes(item.tipo_servico.toLowerCase()) && (
+          <>
+            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => onCheckin?.(item)}>
+              <LogIn className="h-3.5 w-3.5" />Check-in
+            </Button>
+            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs text-destructive hover:text-destructive" onClick={() => onFalta?.(item)}>
+              <XCircle className="h-3.5 w-3.5" />Falta
+            </Button>
+          </>
         )}
         {clientWhatsapp && (
           <Button variant="ghost" size="icon" className="h-7 w-7" title="WhatsApp" onClick={() => window.open(`https://wa.me/${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}>

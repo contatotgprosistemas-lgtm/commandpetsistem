@@ -35,6 +35,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
   const [price, setPrice] = useState("");
   
   const [autoRenew, setAutoRenew] = useState(false);
+  const [allowsReplacement, setAllowsReplacement] = useState(false);
   const [rollover, setRollover] = useState(false);
   const [minLoyalty, setMinLoyalty] = useState("0");
   const [cancellationFee, setCancellationFee] = useState("0");
@@ -45,7 +46,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
 
   function reset() {
     setName(""); setDescription(""); setType("mensal"); setRecurringType("mensal");
-    setPrice(""); setAutoRenew(false); setRollover(false);
+    setPrice(""); setAutoRenew(false); setAllowsReplacement(false); setRollover(false);
     setMinLoyalty("0"); setCancellationFee("0"); setNotes("");
     setItems([{ service_name: "", quantity_included: 1, usage_period: "mensal", extra_unit_price: 0, limit_per_month: null }]);
   }
@@ -59,6 +60,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
       setPrice(String(editingPlan.price || ""));
       
       setAutoRenew(editingPlan.auto_renew || false);
+      setAllowsReplacement(editingPlan.allows_replacement || false);
       setRollover(editingPlan.rollover_enabled || false);
       setMinLoyalty(String(editingPlan.min_loyalty_months || "0"));
       setCancellationFee(String(editingPlan.cancellation_fee || "0"));
@@ -74,7 +76,7 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
 
     const payload = {
       empresa_id: empresaId, name, description, type, recurring_type: recurringType,
-      price: Number(price), auto_renew: autoRenew,
+      price: Number(price), auto_renew: autoRenew, allows_replacement: allowsReplacement,
       rollover_enabled: rollover, min_loyalty_months: Number(minLoyalty),
       cancellation_fee: Number(cancellationFee), notes, status: "ativo"
     };
@@ -194,6 +196,10 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
             <div className="flex items-center gap-2">
               <Switch checked={autoRenew} onCheckedChange={setAutoRenew} />
               <Label>Renovação automática</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={allowsReplacement} onCheckedChange={setAllowsReplacement} />
+              <Label>Permite reposição?</Label>
             </div>
           </div>
 
