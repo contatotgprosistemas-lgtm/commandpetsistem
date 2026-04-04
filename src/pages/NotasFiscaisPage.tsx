@@ -515,14 +515,18 @@ export default function NotasFiscaisPage() {
                       <Input type="number" step="0.01" value={nfseForm.aliquota_iss} onChange={(e) => setNfseForm((p) => ({ ...p, aliquota_iss: e.target.value }))} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label>Cód. Serviço (item lista)</Label>
                       <Input value={nfseForm.codigo_servico} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_servico: e.target.value }))} placeholder="Ex: 05.08" />
                     </div>
                     <div>
                       <Label>Cód. Tributação Nacional</Label>
-                      <Input value={nfseForm.codigo_tributacao_nacional} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_tributacao_nacional: e.target.value }))} placeholder="Ex: 050800" />
+                      <Input value={nfseForm.codigo_tributacao_nacional} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_tributacao_nacional: e.target.value.replace(/\D/g, "") }))} placeholder="Ex: 050801" />
+                    </div>
+                    <div>
+                      <Label>Cód. Tributário Município</Label>
+                      <Input value={nfseForm.codigo_tributario_municipio} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_tributario_municipio: e.target.value.replace(/\D/g, "") }))} placeholder="Ex: 0508" />
                     </div>
                   </div>
 
