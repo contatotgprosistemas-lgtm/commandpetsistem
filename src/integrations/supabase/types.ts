@@ -1884,6 +1884,95 @@ export type Database = {
           },
         ]
       }
+      fiscal_settings: {
+        Row: {
+          ambiente: string | null
+          cfop_padrao: string | null
+          cnpj: string | null
+          created_at: string
+          empresa_id: string
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_codigo_municipio: string | null
+          endereco_complemento: string | null
+          endereco_logradouro: string | null
+          endereco_municipio: string | null
+          endereco_numero: string | null
+          endereco_uf: string | null
+          id: string
+          inscricao_estadual: string | null
+          natureza_operacao_padrao: string | null
+          nome_fantasia: string | null
+          razao_social: string | null
+          regime_tributario: string | null
+          serie_padrao: string | null
+          token_focus: string | null
+          updated_at: string
+          webhook_ativo: boolean | null
+          webhook_url: string | null
+        }
+        Insert: {
+          ambiente?: string | null
+          cfop_padrao?: string | null
+          cnpj?: string | null
+          created_at?: string
+          empresa_id: string
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_codigo_municipio?: string | null
+          endereco_complemento?: string | null
+          endereco_logradouro?: string | null
+          endereco_municipio?: string | null
+          endereco_numero?: string | null
+          endereco_uf?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          natureza_operacao_padrao?: string | null
+          nome_fantasia?: string | null
+          razao_social?: string | null
+          regime_tributario?: string | null
+          serie_padrao?: string | null
+          token_focus?: string | null
+          updated_at?: string
+          webhook_ativo?: boolean | null
+          webhook_url?: string | null
+        }
+        Update: {
+          ambiente?: string | null
+          cfop_padrao?: string | null
+          cnpj?: string | null
+          created_at?: string
+          empresa_id?: string
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_codigo_municipio?: string | null
+          endereco_complemento?: string | null
+          endereco_logradouro?: string | null
+          endereco_municipio?: string | null
+          endereco_numero?: string | null
+          endereco_uf?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          natureza_operacao_padrao?: string | null
+          nome_fantasia?: string | null
+          razao_social?: string | null
+          regime_tributario?: string | null
+          serie_padrao?: string | null
+          token_focus?: string | null
+          updated_at?: string
+          webhook_ativo?: boolean | null
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_settings_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funil_vendas: {
         Row: {
           cliente_id: string
@@ -2300,6 +2389,421 @@ export type Database = {
           },
           {
             foreignKeyName: "movimentacoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nfe_documents: {
+        Row: {
+          ambiente: string | null
+          chave_nfe: string | null
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          data_emissao: string | null
+          data_entrada_saida: string | null
+          dest_bairro: string | null
+          dest_cep: string | null
+          dest_codigo_municipio: string | null
+          dest_complemento: string | null
+          dest_cpf_cnpj: string | null
+          dest_email: string | null
+          dest_inscricao_estadual: string | null
+          dest_logradouro: string | null
+          dest_municipio: string | null
+          dest_nome: string | null
+          dest_numero: string | null
+          dest_telefone: string | null
+          dest_uf: string | null
+          empresa_id: string
+          finalidade_emissao: string | null
+          focus_code: string | null
+          focus_message: string | null
+          focus_status: string | null
+          id: string
+          informacoes_complementares: string | null
+          informacoes_fisco: string | null
+          natureza_operacao: string | null
+          numero: string | null
+          payload_response: Json | null
+          payload_sent: Json | null
+          pdf_url: string | null
+          protocolo_autorizacao: string | null
+          reference: string
+          serie: string | null
+          status: string
+          tipo_operacao: string | null
+          updated_at: string
+          valor_desconto: number | null
+          valor_frete: number | null
+          valor_outras: number | null
+          valor_produtos: number | null
+          valor_seguro: number | null
+          valor_total: number | null
+          xml_url: string | null
+        }
+        Insert: {
+          ambiente?: string | null
+          chave_nfe?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_emissao?: string | null
+          data_entrada_saida?: string | null
+          dest_bairro?: string | null
+          dest_cep?: string | null
+          dest_codigo_municipio?: string | null
+          dest_complemento?: string | null
+          dest_cpf_cnpj?: string | null
+          dest_email?: string | null
+          dest_inscricao_estadual?: string | null
+          dest_logradouro?: string | null
+          dest_municipio?: string | null
+          dest_nome?: string | null
+          dest_numero?: string | null
+          dest_telefone?: string | null
+          dest_uf?: string | null
+          empresa_id: string
+          finalidade_emissao?: string | null
+          focus_code?: string | null
+          focus_message?: string | null
+          focus_status?: string | null
+          id?: string
+          informacoes_complementares?: string | null
+          informacoes_fisco?: string | null
+          natureza_operacao?: string | null
+          numero?: string | null
+          payload_response?: Json | null
+          payload_sent?: Json | null
+          pdf_url?: string | null
+          protocolo_autorizacao?: string | null
+          reference: string
+          serie?: string | null
+          status?: string
+          tipo_operacao?: string | null
+          updated_at?: string
+          valor_desconto?: number | null
+          valor_frete?: number | null
+          valor_outras?: number | null
+          valor_produtos?: number | null
+          valor_seguro?: number | null
+          valor_total?: number | null
+          xml_url?: string | null
+        }
+        Update: {
+          ambiente?: string | null
+          chave_nfe?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_emissao?: string | null
+          data_entrada_saida?: string | null
+          dest_bairro?: string | null
+          dest_cep?: string | null
+          dest_codigo_municipio?: string | null
+          dest_complemento?: string | null
+          dest_cpf_cnpj?: string | null
+          dest_email?: string | null
+          dest_inscricao_estadual?: string | null
+          dest_logradouro?: string | null
+          dest_municipio?: string | null
+          dest_nome?: string | null
+          dest_numero?: string | null
+          dest_telefone?: string | null
+          dest_uf?: string | null
+          empresa_id?: string
+          finalidade_emissao?: string | null
+          focus_code?: string | null
+          focus_message?: string | null
+          focus_status?: string | null
+          id?: string
+          informacoes_complementares?: string | null
+          informacoes_fisco?: string | null
+          natureza_operacao?: string | null
+          numero?: string | null
+          payload_response?: Json | null
+          payload_sent?: Json | null
+          pdf_url?: string | null
+          protocolo_autorizacao?: string | null
+          reference?: string
+          serie?: string | null
+          status?: string
+          tipo_operacao?: string | null
+          updated_at?: string
+          valor_desconto?: number | null
+          valor_frete?: number | null
+          valor_outras?: number | null
+          valor_produtos?: number | null
+          valor_seguro?: number | null
+          valor_total?: number | null
+          xml_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfe_documents_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfe_documents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfe_documents_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nfe_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          empresa_id: string
+          event_code: string | null
+          event_message: string | null
+          event_type: string
+          id: string
+          nfe_id: string
+          payload: Json | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          empresa_id: string
+          event_code?: string | null
+          event_message?: string | null
+          event_type: string
+          id?: string
+          nfe_id: string
+          payload?: Json | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          empresa_id?: string
+          event_code?: string | null
+          event_message?: string | null
+          event_type?: string
+          id?: string
+          nfe_id?: string
+          payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfe_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfe_events_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfe_events_nfe_id_fkey"
+            columns: ["nfe_id"]
+            isOneToOne: false
+            referencedRelation: "nfe_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nfe_items: {
+        Row: {
+          cfop: string | null
+          codigo_produto: string | null
+          cofins_aliquota: number | null
+          cofins_cst: string | null
+          cofins_valor: number | null
+          created_at: string
+          cst_csosn: string | null
+          descricao: string
+          empresa_id: string
+          icms_aliquota: number | null
+          icms_base_calculo: number | null
+          icms_valor: number | null
+          id: string
+          ncm: string | null
+          nfe_id: string
+          numero_item: number
+          origem: string | null
+          pis_aliquota: number | null
+          pis_cst: string | null
+          pis_valor: number | null
+          quantidade: number | null
+          unidade: string | null
+          valor_total: number | null
+          valor_unitario: number | null
+        }
+        Insert: {
+          cfop?: string | null
+          codigo_produto?: string | null
+          cofins_aliquota?: number | null
+          cofins_cst?: string | null
+          cofins_valor?: number | null
+          created_at?: string
+          cst_csosn?: string | null
+          descricao: string
+          empresa_id: string
+          icms_aliquota?: number | null
+          icms_base_calculo?: number | null
+          icms_valor?: number | null
+          id?: string
+          ncm?: string | null
+          nfe_id: string
+          numero_item?: number
+          origem?: string | null
+          pis_aliquota?: number | null
+          pis_cst?: string | null
+          pis_valor?: number | null
+          quantidade?: number | null
+          unidade?: string | null
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Update: {
+          cfop?: string | null
+          codigo_produto?: string | null
+          cofins_aliquota?: number | null
+          cofins_cst?: string | null
+          cofins_valor?: number | null
+          created_at?: string
+          cst_csosn?: string | null
+          descricao?: string
+          empresa_id?: string
+          icms_aliquota?: number | null
+          icms_base_calculo?: number | null
+          icms_valor?: number | null
+          id?: string
+          ncm?: string | null
+          nfe_id?: string
+          numero_item?: number
+          origem?: string | null
+          pis_aliquota?: number | null
+          pis_cst?: string | null
+          pis_valor?: number | null
+          quantidade?: number | null
+          unidade?: string | null
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfe_items_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfe_items_nfe_id_fkey"
+            columns: ["nfe_id"]
+            isOneToOne: false
+            referencedRelation: "nfe_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nfe_rejections: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          id: string
+          nfe_id: string
+          rejection_code: string | null
+          rejection_message: string | null
+          resolution_notes: string | null
+          resolved: boolean | null
+          resolved_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nfe_id: string
+          rejection_code?: string | null
+          rejection_message?: string | null
+          resolution_notes?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nfe_id?: string
+          rejection_code?: string | null
+          rejection_message?: string | null
+          resolution_notes?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfe_rejections_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfe_rejections_nfe_id_fkey"
+            columns: ["nfe_id"]
+            isOneToOne: false
+            referencedRelation: "nfe_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nfe_webhook_logs: {
+        Row: {
+          created_at: string
+          empresa_id: string | null
+          error_message: string | null
+          id: string
+          payload: Json | null
+          processed: boolean | null
+          reference: string | null
+        }
+        Insert: {
+          created_at?: string
+          empresa_id?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          processed?: boolean | null
+          reference?: string | null
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          processed?: boolean | null
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfe_webhook_logs_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
