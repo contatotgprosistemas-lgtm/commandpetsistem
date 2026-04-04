@@ -21,6 +21,7 @@ import MovimentacaoPage from "@/pages/MovimentacaoPage";
 import PlanoContasPage from "@/pages/PlanoContasPage";
 import { ImportContasReceberDialog } from "@/components/ImportContasReceberDialog";
 import { ImportContasPagarDialog } from "@/components/ImportContasPagarDialog";
+import { EditarContaReceberDialog } from "@/components/EditarContaReceberDialog";
 
 interface ContaReceber {
   id: string;
@@ -30,6 +31,8 @@ interface ContaReceber {
   categoria: string | null;
   status: string;
   cliente: { nome: string } | null;
+  cliente_id: string | null;
+  banco: string | null;
 }
 
 function statusBadge(status: string, vencimento: string) {
@@ -53,11 +56,13 @@ export default function FinancePage() {
   const [importReceberOpen, setImportReceberOpen] = useState(false);
   const [importPagarOpen, setImportPagarOpen] = useState(false);
 
+  const [editConta, setEditConta] = useState<ContaReceber | null>(null);
+
   async function fetchContas() {
     setLoading(true);
     const { data } = await supabase
       .from("contas_receber")
-      .select("id, descricao, valor, vencimento, categoria, status, cliente:clientes(nome)")
+      .select("id, descricao, valor, vencimento, categoria, status, cliente_id, banco, cliente:clientes(nome)")
       .neq("status", "pago")
       .order("vencimento", { ascending: false });
     if (data) setContas(data as any);
@@ -142,6 +147,7 @@ export default function FinancePage() {
             contas={contas}
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
+            onEdit={(c) => setEditConta(c)}
             onDelete={async (id) => {
               const { error } = await supabase.from("contas_receber").delete().eq("id", id);
               if (error) { toast.error("Erro ao excluir"); return; }
@@ -207,11 +213,18 @@ export default function FinancePage() {
         onOpenChange={setImportPagarOpen}
         onSuccess={() => {}}
       />
+
+      <EditarContaReceberDialog
+        open={!!editConta}
+        onOpenChange={(o) => { if (!o) setEditConta(null); }}
+        onSuccess={() => { setEditConta(null); fetchContas(); }}
+        conta={editConta}
+      />
     </div>
   );
 }
 
-function ContasReceberTable({ contas, loading, onBaixar, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
+function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onEdit: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const allSelected = contas.length > 0 && selected.length === contas.length;
 
@@ -309,6 +322,10 @@ function ContasReceberTable({ contas, loading, onBaixar, onDelete }: { contas: C
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onEdit(c)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onBaixar(c)}>
                         <ArrowDownCircle className="h-4 w-4 mr-2" />
                         Baixar
