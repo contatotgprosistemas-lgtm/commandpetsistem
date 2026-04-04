@@ -49,7 +49,7 @@ export default function OperacionalDashboard() {
       setStats({
         agendamentosHoje: agHoje.length,
         petsHospedados: hospedados.length,
-        checkinsHoje,
+        checkinsHoje: checkinsHoje.length,
         checkoutsHoje,
         petsDaycare: daycare.length,
       });
