@@ -11,6 +11,7 @@ import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { format, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { FaltaDialog } from "@/components/FaltaDialog";
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
