@@ -271,6 +271,13 @@ export default function NotasFiscaisPage() {
           nome_destinatario: form.cliente_nome,
           cpf_destinatario: nfeForm.cliente_cpf_cnpj.length <= 11 ? nfeForm.cliente_cpf_cnpj : undefined,
           cnpj_destinatario: nfeForm.cliente_cpf_cnpj.length > 11 ? nfeForm.cliente_cpf_cnpj : undefined,
+          logradouro_destinatario: nfeForm.endereco_logradouro || undefined,
+          numero_destinatario: nfeForm.endereco_numero || undefined,
+          complemento_destinatario: nfeForm.endereco_complemento || undefined,
+          bairro_destinatario: nfeForm.endereco_bairro || undefined,
+          municipio_destinatario: nfeForm.endereco_codigo_municipio || undefined,
+          uf_destinatario: nfeForm.endereco_uf || undefined,
+          cep_destinatario: nfeForm.endereco_cep || undefined,
           items: [
             {
               numero_item: "1",
