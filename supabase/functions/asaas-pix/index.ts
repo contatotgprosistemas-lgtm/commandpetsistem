@@ -14,9 +14,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    if (!ASAAS_API_KEY) throw new Error("ASAAS_API_KEY not configured");
-
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -40,6 +37,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    const serviceSupabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
     const { conta_id } = await req.json();
     if (!conta_id) throw new Error("conta_id is required");
 
@@ -51,6 +53,87 @@ Deno.serve(async (req) => {
       .single();
     if (contaErr || !conta) throw new Error("Invoice not found");
     if (conta.status === "pago") throw new Error("Invoice already paid");
+
+    // ─── Determine which Asaas API key to use ───
+    const { data: asaasContas } = await serviceSupabase
+      .from("asaas_contas")
+      .select("*")
+      .eq("empresa_id", conta.empresa_id)
+      .eq("ativo", true)
+      .order("prioridade", { ascending: true });
+
+    let ASAAS_API_KEY: string | null = null;
+
+    if (asaasContas && asaasContas.length > 0) {
+      // Calculate monthly received total per account
+      const now = new Date();
+      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const monthEnd = nextMonth.toISOString().split("T")[0];
+
+      for (const ac of asaasContas) {
+        if (!ac.teto_mensal) {
+          // No cap — use this account
+          ASAAS_API_KEY = ac.api_key;
+          break;
+        }
+
+        // Sum payments received this month for this account by checking
+        // contas_receber paid this month that were created via this account's API key
+        // We track which account was used via the asaas_payment_id prefix pattern
+        // Instead, we check total received this month for the empresa via payments API
+        const paymentsRes = await fetch(
+          `${ASAAS_BASE}/payments?dateCreated[ge]=${monthStart}&dateCreated[le]=${monthEnd}&status=RECEIVED&limit=100`,
+          { headers: { access_token: ac.api_key } }
+        );
+
+        let totalReceived = 0;
+        if (paymentsRes.ok) {
+          const paymentsData = await paymentsRes.json();
+          totalReceived = (paymentsData.data || []).reduce(
+            (sum: number, p: any) => sum + (p.value || 0),
+            0
+          );
+          // Handle pagination if more than 100
+          if (paymentsData.totalCount > 100) {
+            let offset = 100;
+            while (offset < paymentsData.totalCount) {
+              const moreRes = await fetch(
+                `${ASAAS_BASE}/payments?dateCreated[ge]=${monthStart}&dateCreated[le]=${monthEnd}&status=RECEIVED&limit=100&offset=${offset}`,
+                { headers: { access_token: ac.api_key } }
+              );
+              if (moreRes.ok) {
+                const moreData = await moreRes.json();
+                totalReceived += (moreData.data || []).reduce(
+                  (sum: number, p: any) => sum + (p.value || 0),
+                  0
+                );
+              }
+              offset += 100;
+            }
+          }
+        }
+
+        console.log(`Account "${ac.label}" (priority ${ac.prioridade}): received R$${totalReceived.toFixed(2)} / cap R$${ac.teto_mensal}`);
+
+        if (totalReceived + conta.valor <= ac.teto_mensal) {
+          ASAAS_API_KEY = ac.api_key;
+          break;
+        }
+        // Cap exceeded, try next account
+      }
+
+      // If all accounts exceeded cap, fallback to last one (no cap enforcement)
+      if (!ASAAS_API_KEY) {
+        ASAAS_API_KEY = asaasContas[asaasContas.length - 1].api_key;
+        console.log(`All accounts exceeded cap, using last account: "${asaasContas[asaasContas.length - 1].label}"`);
+      }
+    } else {
+      // Fallback to env var
+      ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY") || null;
+    }
+
+    if (!ASAAS_API_KEY) throw new Error("Nenhuma conta Asaas configurada. Configure em Configurações → Integrações.");
 
     // If already has asaas payment, return existing QR code
     if (conta.asaas_payment_id) {
@@ -104,11 +187,6 @@ Deno.serve(async (req) => {
 
       asaasCustomerId = customerData.id;
 
-      // Save asaas_customer_id using service role to bypass RLS
-      const serviceSupabase = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
       await serviceSupabase
         .from("clientes")
         .update({ asaas_customer_id: asaasCustomerId })
@@ -138,17 +216,12 @@ Deno.serve(async (req) => {
     if (!paymentRes.ok) throw new Error(`Asaas payment error: ${JSON.stringify(paymentData)}`);
 
     // Save asaas_payment_id
-    const serviceSupabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
     await serviceSupabase
       .from("contas_receber")
       .update({ asaas_payment_id: paymentData.id })
       .eq("id", conta.id);
 
     // Get PIX QR Code
-    // Wait a moment for Asaas to generate the QR code
     await new Promise((r) => setTimeout(r, 2000));
 
     const pixRes = await fetch(`${ASAAS_BASE}/payments/${paymentData.id}/pixQrCode`, {
