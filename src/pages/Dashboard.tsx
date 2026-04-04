@@ -243,7 +243,7 @@ export default function Dashboard() {
             />
           </TabsContent>
           <TabsContent value="hoje">
-            <AgendamentoList items={reservasHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} />
+            <AgendamentoList items={reservasHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} onFalta={setFaltaOpen} />
           </TabsContent>
           <TabsContent value="taxipet">
             <TaxiPetTodayList items={transportHoje} loading={agendaLoading} />
