@@ -501,6 +501,7 @@ export default function NotasFiscaisPage() {
                     <Textarea value={nfseForm.descricao} onChange={(e) => setNfseForm((p) => ({ ...p, descricao: e.target.value }))} />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Valor (R$) *</Label>
                       <Input type="number" step="0.01" value={nfseForm.valor} onChange={(e) => setNfseForm((p) => ({ ...p, valor: e.target.value }))} />
@@ -509,9 +510,15 @@ export default function NotasFiscaisPage() {
                       <Label>Alíquota ISS (%)</Label>
                       <Input type="number" step="0.01" value={nfseForm.aliquota_iss} onChange={(e) => setNfseForm((p) => ({ ...p, aliquota_iss: e.target.value }))} />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label>Cód. Serviço</Label>
-                      <Input value={nfseForm.codigo_servico} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_servico: e.target.value }))} placeholder="Ex: 14.01" />
+                      <Label>Cód. Serviço (item lista)</Label>
+                      <Input value={nfseForm.codigo_servico} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_servico: e.target.value }))} placeholder="Ex: 05.08" />
+                    </div>
+                    <div>
+                      <Label>Cód. Tributação Nacional</Label>
+                      <Input value={nfseForm.codigo_tributacao_nacional} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_tributacao_nacional: e.target.value }))} placeholder="Ex: 01.05.08" />
                     </div>
                   </div>
 
