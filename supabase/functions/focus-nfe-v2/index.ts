@@ -77,104 +77,84 @@ async function testarConexao(settings: any) {
 }
 
 async function emitirNfe(supabase: any, settings: any, nfeId: string) {
-  // Get NF-e document
   const { data: nfe, error: nfeErr } = await supabase
     .from("nfe_documents")
     .select("*")
     .eq("id", nfeId)
     .single();
-  if (nfeErr || !nfe) throw new Error("NF-e não encontrada: " + nfeErr?.message);
+  if (nfeErr || !nfe) throw new Error("NFS-e não encontrada: " + nfeErr?.message);
 
-  // Get items
   const { data: items, error: itemsErr } = await supabase
     .from("nfe_items")
     .select("*")
     .eq("nfe_id", nfeId)
     .order("numero_item");
   if (itemsErr) throw new Error("Erro ao buscar itens: " + itemsErr.message);
-  if (!items || items.length === 0) throw new Error("A NF-e não possui itens.");
+  if (!items || items.length === 0) throw new Error("A NFS-e não possui itens/serviços.");
 
-  // Build Focus payload
-  const payload: any = {
-    natureza_operacao: nfe.natureza_operacao || settings.natureza_operacao_padrao,
-    data_emissao: nfe.data_emissao ? new Date(nfe.data_emissao).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-    tipo_documento: nfe.tipo_operacao === "0" ? 0 : 1,
-    finalidade_emissao: nfe.finalidade_emissao || "1",
-    consumidor_final: 1,
-    presenca_comprador: 1,
-    cnpj_emitente: settings.cnpj?.replace(/\D/g, ""),
-    nome_emitente: settings.razao_social,
-    nome_fantasia_emitente: settings.nome_fantasia,
-    inscricao_estadual_emitente: settings.inscricao_estadual?.replace(/\D/g, ""),
-    logradouro_emitente: settings.endereco_logradouro,
-    numero_emitente: settings.endereco_numero,
-    bairro_emitente: settings.endereco_bairro,
-    municipio_emitente: settings.endereco_municipio,
-    uf_emitente: settings.endereco_uf,
-    cep_emitente: settings.endereco_cep?.replace(/\D/g, ""),
-    regime_tributario_emitente: settings.regime_tributario === "simples_nacional" ? 1 : settings.regime_tributario === "lucro_presumido" ? 2 : 3,
-  };
+  const valorServicos = items.reduce((acc: number, i: any) => acc + Number(i.valor_total || 0), 0);
 
-  // Destinatário
-  if (nfe.dest_cpf_cnpj) {
-    const cpfCnpj = nfe.dest_cpf_cnpj.replace(/\D/g, "");
-    if (cpfCnpj.length <= 11) {
-      payload.cpf_destinatario = cpfCnpj;
-    } else {
-      payload.cnpj_destinatario = cpfCnpj;
-    }
-    payload.nome_destinatario = nfe.dest_nome;
-    payload.inscricao_estadual_destinatario = nfe.dest_inscricao_estadual?.replace(/\D/g, "") || "";
-    payload.telefone_destinatario = nfe.dest_telefone?.replace(/\D/g, "");
-    payload.email_destinatario = nfe.dest_email;
-    payload.logradouro_destinatario = nfe.dest_logradouro;
-    payload.numero_destinatario = nfe.dest_numero;
-    payload.complemento_destinatario = nfe.dest_complemento;
-    payload.bairro_destinatario = nfe.dest_bairro;
-    payload.municipio_destinatario = nfe.dest_municipio;
-    payload.uf_destinatario = nfe.dest_uf;
-    payload.cep_destinatario = nfe.dest_cep?.replace(/\D/g, "");
-    payload.indicador_inscricao_estadual_destinatario = nfe.dest_inscricao_estadual ? 1 : 9;
+  // Build discriminação from items if not provided
+  let discriminacao = nfe.informacoes_complementares || "";
+  if (!discriminacao) {
+    discriminacao = items.map((i: any, idx: number) => 
+      `${idx + 1}. ${i.descricao} - Qtd: ${i.quantidade} x R$ ${Number(i.valor_unitario).toFixed(2)}`
+    ).join("\n");
   }
 
-  // Items
-  payload.items = items.map((item: any, idx: number) => ({
-    numero_item: idx + 1,
-    codigo_produto: item.codigo_produto || String(idx + 1),
-    descricao: item.descricao,
-    codigo_ncm: item.ncm?.replace(/\D/g, ""),
-    cfop: item.cfop?.replace(/\D/g, ""),
-    unidade_comercial: item.unidade,
-    quantidade_comercial: Number(item.quantidade),
-    valor_unitario_comercial: Number(item.valor_unitario),
-    valor_bruto: Number(item.valor_total),
-    unidade_tributavel: item.unidade,
-    quantidade_tributavel: Number(item.quantidade),
-    valor_unitario_tributavel: Number(item.valor_unitario),
-    origem: item.origem || "0",
-    icms_situacao_tributaria: item.cst_csosn,
-    icms_aliquota: Number(item.icms_aliquota) || undefined,
-    icms_base_calculo: Number(item.icms_base_calculo) || undefined,
-    icms_valor: Number(item.icms_valor) || undefined,
-    pis_situacao_tributaria: item.pis_cst,
-    pis_aliquota_porcentual: Number(item.pis_aliquota) || undefined,
-    pis_valor: Number(item.pis_valor) || undefined,
-    cofins_situacao_tributaria: item.cofins_cst,
-    cofins_aliquota_porcentual: Number(item.cofins_aliquota) || undefined,
-    cofins_valor: Number(item.cofins_valor) || undefined,
-  }));
+  // Build NFS-e payload for Focus NFe
+  const payload: any = {
+    data_emissao: nfe.data_emissao || new Date().toISOString(),
+    natureza_operacao: "1", // Tributação no município
+    prestador: {
+      cnpj: settings.cnpj?.replace(/\D/g, ""),
+      inscricao_municipal: settings.inscricao_municipal?.replace(/\D/g, "") || "",
+      codigo_municipio: settings.endereco_codigo_municipio || "",
+    },
+    servico: {
+      discriminacao: discriminacao,
+      iss_retido: "2", // 1 = retido, 2 = não retido (default)
+      item_lista_servico: items[0]?.codigo_produto?.replace(/\D/g, "") || "0508",
+      valor_servicos: valorServicos.toFixed(2),
+      valor_liquido: valorServicos.toFixed(2),
+    },
+  };
 
-  // Informações complementares
-  if (nfe.informacoes_complementares) {
-    payload.informacoes_adicionais_contribuinte = nfe.informacoes_complementares;
+  // Tomador (destinatário)
+  if (nfe.dest_cpf_cnpj) {
+    const cpfCnpj = nfe.dest_cpf_cnpj.replace(/\D/g, "");
+    const tomador: any = {
+      razao_social: nfe.dest_nome,
+    };
+    if (cpfCnpj.length <= 11) {
+      tomador.cpf = cpfCnpj;
+    } else {
+      tomador.cnpj = cpfCnpj;
+    }
+    if (nfe.dest_email) tomador.email = nfe.dest_email;
+    if (nfe.dest_telefone) tomador.telefone = nfe.dest_telefone?.replace(/\D/g, "");
+    
+    // Endereço do tomador
+    if (nfe.dest_logradouro) {
+      tomador.endereco = {
+        logradouro: nfe.dest_logradouro,
+        numero: nfe.dest_numero || "S/N",
+        complemento: nfe.dest_complemento || "",
+        bairro: nfe.dest_bairro || "",
+        codigo_municipio: nfe.dest_codigo_municipio || "",
+        uf: nfe.dest_uf || "",
+        cep: nfe.dest_cep?.replace(/\D/g, "") || "",
+      };
+    }
+    payload.tomador = tomador;
   }
 
   const base = getBaseUrl(settings.ambiente);
   const ref = nfe.reference;
 
-  console.log("Emitindo NF-e ref:", ref);
+  console.log("Emitindo NFS-e ref:", ref);
 
-  const resp = await fetch(`${base}/nfe?ref=${ref}`, {
+  const resp = await fetch(`${base}/nfse?ref=${ref}`, {
     method: "POST",
     headers: focusHeaders(settings.token_focus),
     body: JSON.stringify(payload),
@@ -183,34 +163,32 @@ async function emitirNfe(supabase: any, settings: any, nfeId: string) {
   const result = await resp.json();
   console.log("Focus response:", resp.status, JSON.stringify(result));
 
-  // Update document
   const newStatus = resp.ok ? "processando" : "erro";
   await supabase.from("nfe_documents").update({
     status: newStatus,
     focus_status: result.status || result.status_sefaz,
-    focus_code: result.status_sefaz?.toString(),
+    focus_code: result.status_sefaz?.toString() || result.codigo,
     focus_message: result.mensagem_sefaz || result.mensagem || JSON.stringify(result),
     payload_sent: payload,
     payload_response: result,
+    data_emissao: new Date().toISOString(),
   }).eq("id", nfeId);
 
-  // Register event
   await supabase.from("nfe_events").insert({
     empresa_id: nfe.empresa_id,
     nfe_id: nfeId,
     event_type: "emissao_enviada",
-    description: `NF-e enviada para processamento. Status: ${newStatus}`,
-    event_code: result.status_sefaz?.toString(),
+    description: `NFS-e enviada para processamento. Status: ${newStatus}`,
+    event_code: result.status_sefaz?.toString() || result.codigo,
     event_message: result.mensagem_sefaz || result.mensagem,
     payload: result,
   });
 
   if (!resp.ok) {
-    // Register rejection
     await supabase.from("nfe_rejections").insert({
       empresa_id: nfe.empresa_id,
       nfe_id: nfeId,
-      rejection_code: result.erros?.[0]?.codigo || result.status_sefaz?.toString() || "ERRO",
+      rejection_code: result.erros?.[0]?.codigo || result.codigo || result.status_sefaz?.toString() || "ERRO",
       rejection_message: result.erros?.[0]?.mensagem || result.mensagem_sefaz || result.mensagem || JSON.stringify(result),
     });
   }
@@ -226,8 +204,13 @@ async function consultarNfe(supabase: any, settings: any, nfeId: string) {
     .single();
   if (error || !nfe) throw new Error("NF-e não encontrada");
 
+  // Don't query Focus for drafts - they haven't been sent yet
+  if (nfe.status === "rascunho") {
+    return { status: "rascunho", focus: { mensagem: "Nota ainda não foi enviada para processamento." } };
+  }
+
   const base = getBaseUrl(settings.ambiente);
-  const resp = await fetch(`${base}/nfe/${nfe.reference}`, {
+  const resp = await fetch(`${base}/v2/nfse/${nfe.reference}`, {
     method: "GET",
     headers: focusHeaders(settings.token_focus),
   });
@@ -291,7 +274,7 @@ async function cancelarNfe(supabase: any, settings: any, nfeId: string, justific
   if (nfe.status !== "autorizada") throw new Error("Só é possível cancelar notas autorizadas");
 
   const base = getBaseUrl(settings.ambiente);
-  const resp = await fetch(`${base}/nfe/${nfe.reference}`, {
+  const resp = await fetch(`${base}/v2/nfse/${nfe.reference}`, {
     method: "DELETE",
     headers: focusHeaders(settings.token_focus),
     body: JSON.stringify({ justificativa }),
