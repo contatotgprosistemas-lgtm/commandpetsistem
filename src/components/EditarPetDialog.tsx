@@ -39,6 +39,7 @@ const schema = z.object({
   antiparasitario_data: z.date().optional(),
   v10_data: z.date().optional(),
   raiva_data: z.date().optional(),
+  gripe_data: z.date().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
