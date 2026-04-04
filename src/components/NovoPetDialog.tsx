@@ -44,6 +44,8 @@ const schema = z.object({
   v10_data: z.date().optional(),
   raiva: z.string().optional().or(z.literal("")),
   raiva_data: z.date().optional(),
+  gripe: z.string().optional().or(z.literal("")),
+  gripe_data: z.date().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
