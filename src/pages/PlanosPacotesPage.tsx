@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature } from "lucide-react";
+import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,9 @@ import { NovoPacoteDialog } from "@/components/planos/NovoPacoteDialog";
 import { ContratacaoDialog } from "@/components/planos/ContratacaoDialog";
 import { PlanejamentoDiasDialog } from "@/components/planos/PlanejamentoDiasDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function PlanosPacotesPage() {
   const { profile } = useAuth();
@@ -35,6 +38,8 @@ export default function PlanosPacotesPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; name: string } | null>(null);
   const [actionTarget, setActionTarget] = useState<{ action: string; id: string } | null>(null);
   const [planejamentoSub, setPlanejamentoSub] = useState<any>(null);
+  const [discountTarget, setDiscountTarget] = useState<any>(null);
+  const [discountValue, setDiscountValue] = useState("");
 
   async function fetchAll() {
     setLoading(true);
@@ -79,6 +84,20 @@ export default function PlanosPacotesPage() {
 
     toast.success("Status atualizado");
     setActionTarget(null);
+    fetchAll();
+  }
+
+  async function handleApplyDiscount() {
+    if (!discountTarget) return;
+    const discountAmount = Number(discountValue || 0);
+    const newFinalPrice = Math.max(0, Number(discountTarget.price_contracted) - discountAmount);
+    await supabase.from("customer_pet_subscriptions" as any).update({
+      discount_amount: discountAmount,
+      final_price: newFinalPrice,
+    }).eq("id", discountTarget.id);
+    toast.success(`Desconto de R$ ${discountAmount.toFixed(2)} aplicado`);
+    setDiscountTarget(null);
+    setDiscountValue("");
     fetchAll();
   }
 
@@ -283,6 +302,9 @@ export default function PlanosPacotesPage() {
                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Faturar manual" onClick={() => handleFaturar(s)}>
                         <DollarSign className="h-3.5 w-3.5" />
                       </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Aplicar desconto" onClick={() => { setDiscountTarget(s); setDiscountValue(String(s.discount_amount || 0)); }}>
+                        <PercentCircle className="h-3.5 w-3.5" />
+                      </Button>
                       {s.status === "ativo" && (
                         <>
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="Pausar" onClick={() => setActionTarget({ action: "pause", id: s.id })}>
@@ -379,6 +401,33 @@ export default function PlanosPacotesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!discountTarget} onOpenChange={o => { if (!o) { setDiscountTarget(null); setDiscountValue(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Aplicar Desconto</DialogTitle></DialogHeader>
+          {discountTarget && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Plano: <span className="font-medium text-foreground">{plans.find((p: any) => p.id === discountTarget.plan_id)?.name || packages.find((p: any) => p.id === discountTarget.package_id)?.name || "—"}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Valor original: <span className="font-medium text-foreground">R$ {Number(discountTarget.price_contracted).toFixed(2)}</span>
+              </p>
+              <div className="space-y-1.5">
+                <Label>Desconto (R$)</Label>
+                <Input type="number" value={discountValue} onChange={e => setDiscountValue(e.target.value)} placeholder="0.00" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">
+                Valor final: R$ {Math.max(0, Number(discountTarget.price_contracted) - Number(discountValue || 0)).toFixed(2)}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDiscountTarget(null); setDiscountValue(""); }}>Cancelar</Button>
+            <Button onClick={handleApplyDiscount}>Aplicar Desconto</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
