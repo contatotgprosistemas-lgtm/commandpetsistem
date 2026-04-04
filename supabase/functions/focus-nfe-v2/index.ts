@@ -210,7 +210,7 @@ async function consultarNfe(supabase: any, settings: any, nfeId: string) {
   }
 
   const base = getBaseUrl(settings.ambiente);
-  const resp = await fetch(`${base}/v2/nfse/${nfe.reference}`, {
+  const resp = await fetch(`${base}/nfse/${nfe.reference}`, {
     method: "GET",
     headers: focusHeaders(settings.token_focus),
   });
