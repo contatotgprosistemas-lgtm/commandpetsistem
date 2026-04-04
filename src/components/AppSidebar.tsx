@@ -24,7 +24,7 @@ import {
   Car,
   FileSignature,
   CalendarDays,
-  Receipt,
+  
   Clock,
 } from "lucide-react";
 
