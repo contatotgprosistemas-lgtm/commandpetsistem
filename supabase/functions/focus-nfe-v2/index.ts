@@ -52,16 +52,28 @@ function getBaseUrl(ambiente: string) {
 
 async function testarConexao(settings: any) {
   const base = getBaseUrl(settings.ambiente);
-  const cnpj = (settings.cnpj || "").replace(/\D/g, "");
-  const url = cnpj ? `${base}/nfe?cnpj=${cnpj}` : `${base}/nfe?cnpj=00000000000000`;
-  const resp = await fetch(url, {
+  
+  // Focus NFe doesn't have a health-check endpoint.
+  // We query a non-existent ref: 401 = bad token, 404 = token valid (ref not found)
+  const testRef = `test-conexao-${Date.now()}`;
+  const resp = await fetch(`${base}/v2/nfse/${testRef}`, {
     method: "GET",
     headers: focusHeaders(settings.token_focus),
   });
   const body = await resp.text();
-  // 200 or 403 (valid token but no access) both confirm connectivity
-  const ok = resp.status === 200 || resp.status === 403;
-  return { status: resp.status, ok, body: body.substring(0, 500) };
+  
+  if (resp.status === 401 || resp.status === 403) {
+    return { status: resp.status, ok: false, body: "Token inválido ou sem permissão. Verifique o token da Focus NFe." };
+  }
+  // 404 means the token authenticated but ref doesn't exist — connection works!
+  if (resp.status === 404) {
+    return { status: 200, ok: true, body: "Conexão OK! Token válido e autenticado." };
+  }
+  if (resp.status === 200) {
+    return { status: 200, ok: true, body: "Conexão OK!" };
+  }
+  
+  return { status: resp.status, ok: false, body: body.substring(0, 500) };
 }
 
 async function emitirNfe(supabase: any, settings: any, nfeId: string) {
