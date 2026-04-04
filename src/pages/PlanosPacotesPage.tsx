@@ -401,6 +401,33 @@ export default function PlanosPacotesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!discountTarget} onOpenChange={o => { if (!o) { setDiscountTarget(null); setDiscountValue(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Aplicar Desconto</DialogTitle></DialogHeader>
+          {discountTarget && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Plano: <span className="font-medium text-foreground">{plans.find((p: any) => p.id === discountTarget.plan_id)?.name || packages.find((p: any) => p.id === discountTarget.package_id)?.name || "—"}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Valor original: <span className="font-medium text-foreground">R$ {Number(discountTarget.price_contracted).toFixed(2)}</span>
+              </p>
+              <div className="space-y-1.5">
+                <Label>Desconto (R$)</Label>
+                <Input type="number" value={discountValue} onChange={e => setDiscountValue(e.target.value)} placeholder="0.00" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">
+                Valor final: R$ {Math.max(0, Number(discountTarget.price_contracted) - Number(discountValue || 0)).toFixed(2)}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDiscountTarget(null); setDiscountValue(""); }}>Cancelar</Button>
+            <Button onClick={handleApplyDiscount}>Aplicar Desconto</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
