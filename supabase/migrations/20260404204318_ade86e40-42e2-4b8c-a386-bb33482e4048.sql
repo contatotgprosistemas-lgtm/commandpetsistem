@@ -1,0 +1,1 @@
+ALTER TABLE public.clientes ALTER COLUMN dias_gerar_fatura SET DEFAULT 7;
