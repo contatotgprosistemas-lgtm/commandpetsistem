@@ -372,10 +372,15 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
       </div>
       <div className="flex items-center gap-1 shrink-0 ml-2"><StatusDot status={item.status} /></div>
       <div className="flex items-center gap-1 shrink-0">
-        {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && !["taxipet", "taxi pet", "transporte", "taxi-pet"].includes(item.tipo_servico.toLowerCase()) && (
-          <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => onCheckin?.(item)}>
-            <LogIn className="h-3.5 w-3.5" />Check-in
-          </Button>
+        {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && item.status !== "falta" && !["taxipet", "taxi pet", "transporte", "taxi-pet"].includes(item.tipo_servico.toLowerCase()) && (
+          <>
+            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => onCheckin?.(item)}>
+              <LogIn className="h-3.5 w-3.5" />Check-in
+            </Button>
+            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs text-destructive hover:text-destructive" onClick={() => onFalta?.(item)}>
+              <XCircle className="h-3.5 w-3.5" />Falta
+            </Button>
+          </>
         )}
         {clientWhatsapp && (
           <Button variant="ghost" size="icon" className="h-7 w-7" title="WhatsApp" onClick={() => window.open(`https://wa.me/${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}>
