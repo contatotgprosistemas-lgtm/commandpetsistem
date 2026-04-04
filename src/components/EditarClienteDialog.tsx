@@ -65,6 +65,9 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
   const [cepLoading, setCepLoading] = useState(false);
   const [historico, setHistorico] = useState<HistoricoServico[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+  const [faturas, setFaturas] = useState<Fatura[]>([]);
+  const [loadingFaturas, setLoadingFaturas] = useState(false);
+  const [editFatura, setEditFatura] = useState<Fatura | null>(null);
   const [diaVencimento, setDiaVencimento] = useState(10);
   const [diasGerarFatura, setDiasGerarFatura] = useState(5);
 
