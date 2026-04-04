@@ -213,6 +213,13 @@ export default function FinancePage() {
         onOpenChange={setImportPagarOpen}
         onSuccess={() => {}}
       />
+
+      <EditarContaReceberDialog
+        open={!!editConta}
+        onOpenChange={(o) => { if (!o) setEditConta(null); }}
+        onSuccess={() => { setEditConta(null); fetchContas(); }}
+        conta={editConta}
+      />
     </div>
   );
 }
