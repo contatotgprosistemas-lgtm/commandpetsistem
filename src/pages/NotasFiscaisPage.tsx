@@ -565,6 +565,8 @@ export default function NotasFiscaisPage() {
                       <Input value={nfseForm.endereco_uf} onChange={(e) => setNfseForm((p) => ({ ...p, endereco_uf: e.target.value }))} maxLength={2} />
                     </div>
                   </div>
+                </>
+              ) : (
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
