@@ -61,6 +61,23 @@ export function NfeListagem({ empresaId }: Props) {
     onError: (e: any) => toast.error("Erro: " + e.message),
   });
 
+  const reenviarMutation = useMutation({
+    mutationFn: async (nfeId: string) => {
+      const { data, error } = await supabase.functions.invoke("focus-nfe-v2", {
+        body: { action: "reenviar", empresa_id: empresaId, nfe_id: nfeId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("NFS-e reenviada com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["nfe_documents"] });
+      queryClient.invalidateQueries({ queryKey: ["nfe_documents_dashboard"] });
+    },
+    onError: (e: any) => toast.error("Erro ao reenviar: " + e.message),
+  });
+
   const cancelarMutation = useMutation({
     mutationFn: async ({ nfeId, justificativa }: { nfeId: string; justificativa: string }) => {
       const { data, error } = await supabase.functions.invoke("focus-nfe-v2", {
