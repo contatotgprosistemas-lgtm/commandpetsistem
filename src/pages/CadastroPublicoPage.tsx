@@ -75,6 +75,8 @@ const petSchema = z.object({
   v10_data: z.string().optional().or(z.literal("")),
   raiva: z.string().optional().or(z.literal("")),
   raiva_data: z.string().optional().or(z.literal("")),
+  gripe: z.string().optional().or(z.literal("")),
+  gripe_data: z.string().optional().or(z.literal("")),
 });
 
 const schema = z.object({
@@ -98,6 +100,7 @@ function PetVacinasFields({ control, idx }: { control: any; idx: number }) {
     { dataName: `pets.${idx}.antiparasitario_data` as const, label: "Antiparasitário" },
     { dataName: `pets.${idx}.v10_data` as const, label: "V10" },
     { dataName: `pets.${idx}.raiva_data` as const, label: "Raiva" },
+    { dataName: `pets.${idx}.gripe_data` as const, label: "Gripe" },
   ];
   return (
     <div className="space-y-2">
@@ -174,7 +177,8 @@ export default function CadastroPublicoPage() {
         antiparasitario_data: p.antiparasitario_data || null,
         v10_data: p.v10_data || null,
         raiva_data: p.raiva_data || null,
-        vacinas: [p.antiparasitario, p.v10, p.raiva].filter(Boolean).join(", ") || null,
+        gripe_data: p.gripe_data || null,
+        vacinas: [p.antiparasitario, p.v10, p.raiva, p.gripe].filter(Boolean).join(", ") || null,
         foto_url: petFotos[idx] || null,
       }));
 
