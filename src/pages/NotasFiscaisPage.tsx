@@ -89,7 +89,8 @@ export default function NotasFiscaisPage() {
     descricao: "",
     valor: "",
     aliquota_iss: "5",
-    codigo_servico: "",
+    codigo_servico: "05.08",
+    codigo_tributacao_nacional: "",
     endereco_logradouro: "",
     endereco_numero: "",
     endereco_complemento: "",
@@ -253,6 +254,7 @@ export default function NotasFiscaisPage() {
             discriminacao: form.descricao,
             iss_retido: false,
             item_lista_servico: nfseForm.codigo_servico,
+            codigo_tributacao_nacional: nfseForm.codigo_tributacao_nacional || undefined,
             valor_servicos: valor,
           },
         };
@@ -358,7 +360,7 @@ export default function NotasFiscaisPage() {
       }
       setEmitirOpen(false);
       queryClient.invalidateQueries({ queryKey: ["notas_fiscais"] });
-      setNfseForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", aliquota_iss: "5", codigo_servico: "", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
+      setNfseForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", aliquota_iss: "5", codigo_servico: "05.08", codigo_tributacao_nacional: "", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
       setNfeForm({ cliente_nome: "", cliente_cpf_cnpj: "", descricao: "", valor: "", ncm: "", cfop: "5102", quantidade: "1", endereco_logradouro: "", endereco_numero: "", endereco_complemento: "", endereco_bairro: "", endereco_cep: "", endereco_uf: "", endereco_municipio: "", endereco_codigo_municipio: "" });
     },
     onError: (err: Error) => toast.error(err.message || "Erro ao emitir nota"),
@@ -498,7 +500,7 @@ export default function NotasFiscaisPage() {
                     <Label>Descrição do Serviço *</Label>
                     <Textarea value={nfseForm.descricao} onChange={(e) => setNfseForm((p) => ({ ...p, descricao: e.target.value }))} />
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Valor (R$) *</Label>
                       <Input type="number" step="0.01" value={nfseForm.valor} onChange={(e) => setNfseForm((p) => ({ ...p, valor: e.target.value }))} />
@@ -507,9 +509,15 @@ export default function NotasFiscaisPage() {
                       <Label>Alíquota ISS (%)</Label>
                       <Input type="number" step="0.01" value={nfseForm.aliquota_iss} onChange={(e) => setNfseForm((p) => ({ ...p, aliquota_iss: e.target.value }))} />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label>Cód. Serviço</Label>
-                      <Input value={nfseForm.codigo_servico} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_servico: e.target.value }))} placeholder="Ex: 14.01" />
+                      <Label>Cód. Serviço (item lista)</Label>
+                      <Input value={nfseForm.codigo_servico} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_servico: e.target.value }))} placeholder="Ex: 05.08" />
+                    </div>
+                    <div>
+                      <Label>Cód. Tributação Nacional</Label>
+                      <Input value={nfseForm.codigo_tributacao_nacional} onChange={(e) => setNfseForm((p) => ({ ...p, codigo_tributacao_nacional: e.target.value }))} placeholder="Ex: 01.05.08" />
                     </div>
                   </div>
 
