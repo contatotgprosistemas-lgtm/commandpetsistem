@@ -128,6 +128,40 @@ export default function OperacionalDashboard() {
         ))}
       </div>
 
+      {/* Pending check-ins with Falta button */}
+      {pendingCheckins.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">Check-ins Pendentes</h2>
+          <div className="space-y-2">
+            {pendingCheckins.map((item) => (
+              <Card key={item.id} className="rounded-xl">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+                      {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground text-base">{item.pet?.nome ?? "Pet"}</p>
+                    <p className="text-xs text-muted-foreground">{item.cliente?.nome ?? "—"}</p>
+                    <Badge variant="outline" className="mt-1 text-[10px]">{item.tipo_servico}</Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleCheckin(item)} className="gap-1.5 h-10 px-3">
+                      <LogIn className="h-4 w-4" /> Entrada
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setFaltaOpen(item)} className="gap-1.5 h-10 px-3 text-destructive hover:text-destructive">
+                      <XCircle className="h-4 w-4" /> Falta
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Pets na empresa */}
       {petsNaEmpresa.length > 0 && (
         <div className="space-y-3">
@@ -155,6 +189,17 @@ export default function OperacionalDashboard() {
             ))}
           </div>
         </div>
+      )}
+
+      {faltaOpen && (
+        <FaltaDialog
+          open={!!faltaOpen}
+          onOpenChange={(o) => { if (!o) setFaltaOpen(null); }}
+          agendamento={faltaOpen}
+          empresaId={user?.empresa_id ?? ""}
+          allowsReplacement={true}
+          onSuccess={() => window.location.reload()}
+        />
       )}
     </div>
   );

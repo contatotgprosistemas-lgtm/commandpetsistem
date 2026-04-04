@@ -197,6 +197,10 @@ export function NovoPlanoDialog({ open, onOpenChange, onSuccess, empresaId, edit
               <Switch checked={autoRenew} onCheckedChange={setAutoRenew} />
               <Label>Renovação automática</Label>
             </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={allowsReplacement} onCheckedChange={setAllowsReplacement} />
+              <Label>Permite reposição?</Label>
+            </div>
           </div>
 
           <div className="border-t pt-4">
