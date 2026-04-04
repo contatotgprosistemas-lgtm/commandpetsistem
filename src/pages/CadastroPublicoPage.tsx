@@ -521,21 +521,25 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch, fotoUrl, onFoto
             </Select>
           </FormItem>
         )} />
-        <FormField control={control} name={`pets.${idx}.comportamento`} render={({ field }) => (
-          <FormItem>
-            <FormLabel>Comportamento</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
-              <SelectContent>
-                <SelectItem value="Dócil">Dócil</SelectItem>
-                <SelectItem value="Agitado">Agitado</SelectItem>
-                <SelectItem value="Ativo">Ativo</SelectItem>
-                <SelectItem value="Adestrado">Adestrado</SelectItem>
-                <SelectItem value="Individual">Individual</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormItem>
-        )} />
+        <FormField control={control} name={`pets.${idx}.comportamento`} render={({ field }) => {
+          const selected = field.value ? field.value.split(", ").filter(Boolean) : [];
+          const toggle = (opt: string) => {
+            const next = selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt];
+            field.onChange(next.join(", "));
+          };
+          return (
+            <FormItem>
+              <FormLabel>Comportamento</FormLabel>
+              <div className="flex flex-wrap gap-2">
+                {["Dócil", "Agitado", "Ativo", "Adestrado", "Individual"].map(opt => (
+                  <Button key={opt} type="button" size="sm" variant={selected.includes(opt) ? "default" : "outline"} onClick={() => toggle(opt)}>
+                    {opt}
+                  </Button>
+                ))}
+              </div>
+            </FormItem>
+          );
+        }} />
       </div>
 
       {/* Data nascimento + idade */}
