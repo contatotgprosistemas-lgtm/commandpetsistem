@@ -56,7 +56,7 @@ async function testarConexao(settings: any) {
   // Focus NFe doesn't have a health-check endpoint.
   // We query a non-existent ref: 401 = bad token, 404 = token valid (ref not found)
   const testRef = `test-conexao-${Date.now()}`;
-  const resp = await fetch(`${base}/v2/nfse/${testRef}`, {
+  const resp = await fetch(`${base}/nfse/${testRef}`, {
     method: "GET",
     headers: focusHeaders(settings.token_focus),
   });
