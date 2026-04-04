@@ -102,10 +102,13 @@ async function emitirNfe(supabase: any, settings: any, nfeId: string) {
     ).join("\n");
   }
 
+  const itemListaServico = items[0]?.codigo_produto?.replace(/\D/g, "") || "0508";
+
   // Build NFS-e payload for Focus NFe
   const payload: any = {
     data_emissao: nfe.data_emissao || new Date().toISOString(),
     natureza_operacao: "1", // Tributação no município
+    optante_simples_nacional: settings.regime_tributario === "simples_nacional",
     prestador: {
       cnpj: settings.cnpj?.replace(/\D/g, ""),
       inscricao_municipal: settings.inscricao_municipal?.replace(/\D/g, "") || "",
@@ -113,10 +116,13 @@ async function emitirNfe(supabase: any, settings: any, nfeId: string) {
     },
     servico: {
       discriminacao: discriminacao,
-      iss_retido: "2", // 1 = retido, 2 = não retido (default)
-      item_lista_servico: items[0]?.codigo_produto?.replace(/\D/g, "") || "0508",
+      iss_retido: false,
+      item_lista_servico: itemListaServico,
+      codigo_tributario_municipio: itemListaServico,
+      codigo_cnae: "9609208", // Higiene e embelezamento de animais domésticos
       valor_servicos: valorServicos.toFixed(2),
       valor_liquido: valorServicos.toFixed(2),
+      aliquota: 0,
     },
   };
 
