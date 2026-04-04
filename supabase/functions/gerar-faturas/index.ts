@@ -182,6 +182,42 @@ Deno.serve(async (req) => {
           notificacoesCriadas++;
         }
       }
+
+      // --- OVERDUE ALERTS: check current month's due date if already passed ---
+      if (todayDay > diaVencimento) {
+        const overdueDate = new Date(currentYear, currentMonth, diaVencimento);
+        const overdueStr = overdueDate.toISOString().split("T")[0];
+        const daysOverdue = todayDay - diaVencimento;
+
+        if (daysOverdue === 2 || daysOverdue === 4) {
+          const { data: overdueInvoice } = await supabase
+            .from("contas_receber")
+            .select("id")
+            .eq("cliente_id", sub.cliente_id)
+            .eq("vencimento", overdueStr)
+            .eq("status", "pendente")
+            .ilike("descricao", `%${planName}%`)
+            .limit(1);
+
+          if (overdueInvoice && overdueInvoice.length > 0) {
+            const titulo = daysOverdue === 2
+              ? "Fatura atrasada há 2 dias"
+              : "Fatura atrasada há 4 dias";
+            const msg = daysOverdue === 2
+              ? `Sua fatura de ${planName} (R$ ${Number(sub.final_price).toFixed(2)}) venceu em ${formatDateBR(overdueStr)} e está pendente. Regularize o pagamento o quanto antes.`
+              : `Sua fatura de ${planName} (R$ ${Number(sub.final_price).toFixed(2)}) está atrasada há 4 dias (vencimento ${formatDateBR(overdueStr)}). Entre em contato para regularizar.`;
+
+            await supabase.from("customer_notifications").insert({
+              empresa_id: sub.empresa_id,
+              cliente_id: sub.cliente_id,
+              title: titulo,
+              message: msg,
+              type: "financeiro",
+            });
+            notificacoesCriadas++;
+          }
+        }
+      }
     }
 
     console.log(
