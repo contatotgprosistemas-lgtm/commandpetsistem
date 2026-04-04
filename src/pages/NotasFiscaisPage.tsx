@@ -227,20 +227,28 @@ export default function NotasFiscaisPage() {
       let dados: Record<string, unknown>;
 
       if (isNfse) {
-        const codigoTributacaoNacional = nfseForm.codigo_tributacao_nacional.replace(/\D/g, "") || "050801";
-        const codigoTributarioMunicipio = nfseForm.codigo_tributario_municipio.replace(/\D/g, "") || "0508";
+        const prestadorCodigoMunicipio = fiscalForm.codigo_municipio.replace(/\D/g, "");
+        const tomadorCodigoMunicipio = nfseForm.endereco_codigo_municipio.replace(/\D/g, "");
+        const documentoTomador = form.cliente_cpf_cnpj.replace(/\D/g, "");
         const itemListaServico = nfseForm.codigo_servico.replace(/\D/g, "") || "0508";
+        const codigoTributacaoNacional = nfseForm.codigo_tributacao_nacional.replace(/\D/g, "") || (itemListaServico === "0508" ? "050801" : "");
+        const codigoTributarioMunicipio = nfseForm.codigo_tributario_municipio.replace(/\D/g, "");
+        const shouldSendMunicipalTaxCode = !!codigoTributarioMunicipio && codigoTributarioMunicipio !== itemListaServico;
 
         dados = {
           data_emissao: new Date().toISOString().split("T")[0],
+          codigo_municipio_prestacao: prestadorCodigoMunicipio || undefined,
+          codigo_tributacao_nacional_iss: codigoTributacaoNacional || undefined,
+          descricao_servico: form.descricao,
+          valor_servico: valor,
           prestador: {
             cnpj: fiscalForm.cnpj,
             inscricao_municipal: fiscalForm.inscricao_municipal,
-            codigo_municipio: fiscalForm.codigo_municipio,
+            codigo_municipio: prestadorCodigoMunicipio || undefined,
           },
           tomador: {
-            cnpj: form.cliente_cpf_cnpj.length > 11 ? form.cliente_cpf_cnpj : undefined,
-            cpf: form.cliente_cpf_cnpj.length <= 11 ? form.cliente_cpf_cnpj : undefined,
+            cnpj: documentoTomador.length > 11 ? documentoTomador : undefined,
+            cpf: documentoTomador.length <= 11 ? documentoTomador : undefined,
             razao_social: form.cliente_nome,
             endereco: nfseForm.endereco_logradouro
               ? {
@@ -248,7 +256,7 @@ export default function NotasFiscaisPage() {
                   numero: nfseForm.endereco_numero || "S/N",
                   complemento: nfseForm.endereco_complemento || undefined,
                   bairro: nfseForm.endereco_bairro || undefined,
-                  codigo_municipio: nfseForm.endereco_codigo_municipio || undefined,
+                  codigo_municipio: tomadorCodigoMunicipio || undefined,
                   uf: nfseForm.endereco_uf || undefined,
                   cep: nfseForm.endereco_cep || undefined,
                 }
@@ -259,8 +267,9 @@ export default function NotasFiscaisPage() {
             discriminacao: form.descricao,
             iss_retido: false,
             item_lista_servico: itemListaServico,
-            codigo_tributacao_nacional_iss: codigoTributacaoNacional,
-            codigo_tributario_municipio: codigoTributarioMunicipio,
+            codigo_municipio: prestadorCodigoMunicipio || undefined,
+            codigo_tributacao_nacional_iss: codigoTributacaoNacional || undefined,
+            codigo_tributario_municipio: shouldSendMunicipalTaxCode ? codigoTributarioMunicipio : undefined,
             valor_servicos: valor,
           },
         };
@@ -383,6 +392,8 @@ export default function NotasFiscaisPage() {
       });
       if (error) throw error;
 
+      const mensagemErro = result?.mensagem_sefaz || result?.mensagem || (result?.erros ? JSON.stringify(result.erros) : null) || null;
+
       await supabase
         .from("notas_fiscais")
         .update({
@@ -392,7 +403,7 @@ export default function NotasFiscaisPage() {
           url_pdf: result?.url || result?.caminho_danfe || null,
           url_xml: result?.caminho_xml_nota_fiscal || null,
           resposta_api: result,
-          mensagem_erro: result?.erros ? JSON.stringify(result.erros) : null,
+          mensagem_erro: mensagemErro,
         })
         .eq("id", nota.id);
 
