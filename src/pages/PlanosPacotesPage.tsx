@@ -87,6 +87,20 @@ export default function PlanosPacotesPage() {
     fetchAll();
   }
 
+  async function handleApplyDiscount() {
+    if (!discountTarget) return;
+    const discountAmount = Number(discountValue || 0);
+    const newFinalPrice = Math.max(0, Number(discountTarget.price_contracted) - discountAmount);
+    await supabase.from("customer_pet_subscriptions" as any).update({
+      discount_amount: discountAmount,
+      final_price: newFinalPrice,
+    }).eq("id", discountTarget.id);
+    toast.success(`Desconto de R$ ${discountAmount.toFixed(2)} aplicado`);
+    setDiscountTarget(null);
+    setDiscountValue("");
+    fetchAll();
+  }
+
   async function handleRenew(sub: any) {
     const plan = plans.find((p: any) => p.id === sub.plan_id);
     const pkg = packages.find((p: any) => p.id === sub.package_id);
