@@ -21,6 +21,7 @@ import MovimentacaoPage from "@/pages/MovimentacaoPage";
 import PlanoContasPage from "@/pages/PlanoContasPage";
 import { ImportContasReceberDialog } from "@/components/ImportContasReceberDialog";
 import { ImportContasPagarDialog } from "@/components/ImportContasPagarDialog";
+import { EditarContaReceberDialog } from "@/components/EditarContaReceberDialog";
 
 interface ContaReceber {
   id: string;
