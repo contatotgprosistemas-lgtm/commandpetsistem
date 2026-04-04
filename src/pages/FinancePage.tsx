@@ -224,7 +224,7 @@ export default function FinancePage() {
   );
 }
 
-function ContasReceberTable({ contas, loading, onBaixar, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
+function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onEdit: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const allSelected = contas.length > 0 && selected.length === contas.length;
 
