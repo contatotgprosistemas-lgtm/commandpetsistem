@@ -240,7 +240,7 @@ export default function NotasFiscaisPage() {
           },
           tomador: {
             cnpj: form.cliente_cpf_cnpj.length > 11 ? form.cliente_cpf_cnpj : undefined,
-            cpf: form.cliente_cpf_cnpj.length <= 11 ? form.cliente_cpf_cpf_cnpj : undefined,
+            cpf: form.cliente_cpf_cnpj.length <= 11 ? form.cliente_cpf_cnpj : undefined,
             razao_social: form.cliente_nome,
             endereco: nfseForm.endereco_logradouro
               ? {
