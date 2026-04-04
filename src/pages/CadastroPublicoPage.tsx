@@ -86,6 +86,7 @@ const schema = z.object({
   cep: z.string().trim().max(10).optional().or(z.literal("")),
   endereco: z.string().trim().max(500).optional().or(z.literal("")),
   numero: z.string().trim().max(20).optional().or(z.literal("")),
+  complemento: z.string().trim().max(100).optional().or(z.literal("")),
   como_conheceu: z.string().optional().or(z.literal("")),
   pets: z.array(petSchema),
 });
