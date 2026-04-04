@@ -75,6 +75,8 @@ const petSchema = z.object({
   v10_data: z.string().optional().or(z.literal("")),
   raiva: z.string().optional().or(z.literal("")),
   raiva_data: z.string().optional().or(z.literal("")),
+  gripe: z.string().optional().or(z.literal("")),
+  gripe_data: z.string().optional().or(z.literal("")),
 });
 
 const schema = z.object({
