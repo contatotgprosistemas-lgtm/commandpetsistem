@@ -531,7 +531,7 @@ function PetFormCard({ control, idx, canRemove, onRemove, watch, fotoUrl, onFoto
             <FormItem>
               <FormLabel>Comportamento</FormLabel>
               <div className="flex flex-wrap gap-2">
-                {["Dócil", "Agitado", "Ativo", "Adestrado", "Individual"].map(opt => (
+                {["Dócil", "Agitado", "Ativo", "Adestrado", "Individual", "Inseguro"].map(opt => (
                   <Button key={opt} type="button" size="sm" variant={selected.includes(opt) ? "default" : "outline"} onClick={() => toggle(opt)}>
                     {opt}
                   </Button>
