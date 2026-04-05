@@ -68,6 +68,7 @@ function EmpresaTab() {
           horario_semana_inicio: data.horario_semana_inicio || "08:00", horario_semana_fim: data.horario_semana_fim || "18:00",
           horario_sabado_inicio: data.horario_sabado_inicio || "", horario_sabado_fim: data.horario_sabado_fim || "",
           horario_domingo_inicio: data.horario_domingo_inicio || "", horario_domingo_fim: data.horario_domingo_fim || "",
+          logo_url: data.logo_url || "",
         });
         setLoading(false);
       });
