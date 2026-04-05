@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff, Wrench, Trash2 } from "lucide-react";
+import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff, Wrench, Trash2, Camera, X, Upload } from "lucide-react";
 import { WhatsAppConnectionPanel } from "@/components/WhatsAppConnectionPanel";
 import { PermissoesCargoPanel } from "@/components/PermissoesCargoPanel";
 
@@ -73,6 +73,28 @@ function EmpresaTab() {
         setLoading(false);
       });
   }, [profile?.empresa_id]);
+
+  const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile?.empresa_id) return;
+    if (!file.type.startsWith("image/")) { toast({ title: "Selecione uma imagem válida", variant: "destructive" }); return; }
+    if (file.size > 5 * 1024 * 1024) { toast({ title: "Imagem deve ter no máximo 5MB", variant: "destructive" }); return; }
+    setUploadingLogo(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const fileName = `${profile.empresa_id}/logo.${ext}`;
+      const { error } = await supabase.storage.from("profile-photos").upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("profile-photos").getPublicUrl(fileName);
+      setForm(f => ({ ...f, logo_url: urlData.publicUrl }));
+      toast({ title: "Logo enviada! Clique em Salvar para confirmar." });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar logo", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
+    }
+  };
 
   const handleSave = async () => {
     if (!profile?.empresa_id) return;
