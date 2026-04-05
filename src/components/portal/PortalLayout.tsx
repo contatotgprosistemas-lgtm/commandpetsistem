@@ -151,7 +151,7 @@ export function PortalLayout() {
 
       {/* Bottom mobile nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-around py-2 z-50">
-        {navItems.slice(0, 5).map((item) => (
+        {navItems.filter(i => ["/portal", "/portal/pets", "/portal/pagamentos", "/portal/notificacoes", "/portal/galeria"].includes(i.path)).map((item) => (
           <button
             key={item.path}
             onClick={() => navigate(item.path)}
