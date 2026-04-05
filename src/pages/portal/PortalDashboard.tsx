@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, MessageCircle, Bell, ClipboardList, PawPrint, Calendar } from "lucide-react";
+import { CreditCard, Bell, PawPrint, Calendar, Navigation } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,7 +56,7 @@ export default function PortalDashboard() {
     { label: "Meus Pets", value: stats.totalPets, icon: PawPrint, color: "text-primary", path: "/portal/pets" },
     { label: "Pagamentos Pendentes", value: stats.pendingPayments, icon: CreditCard, color: "text-warning", path: "/portal/pagamentos" },
     { label: "Notificações", value: stats.unreadNotifications, icon: Bell, color: "text-destructive", path: "/portal/notificacoes" },
-    { label: "Solicitações Abertas", value: stats.openRequests, icon: ClipboardList, color: "text-accent", path: "/portal/solicitacoes" },
+    { label: "Estou Chegando", value: null, icon: Navigation, color: "text-emerald-500", path: "/portal/estou-chegando" },
   ];
 
   return (
@@ -77,7 +77,11 @@ export default function PortalDashboard() {
           >
             <CardContent className="p-4 flex flex-col items-center text-center gap-2">
               <card.icon className={`h-8 w-8 ${card.color}`} />
-              <span className="text-2xl font-bold text-foreground">{card.value}</span>
+              {card.value !== null ? (
+                <span className="text-2xl font-bold text-foreground">{card.value}</span>
+              ) : (
+                <span className="text-sm font-semibold text-foreground">Avisar</span>
+              )}
               <span className="text-xs text-muted-foreground">{card.label}</span>
             </CardContent>
           </Card>
