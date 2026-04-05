@@ -82,10 +82,6 @@ export default function PortalContaPage() {
                 <Input value={cliente.email ?? ""} disabled className="opacity-60" />
               </div>
               <div className="space-y-1">
-                <Label>Telefone</Label>
-                <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} />
-              </div>
-              <div className="space-y-1">
                 <Label>CPF</Label>
                 <Input value={cliente.cpf ?? ""} disabled className="opacity-60" />
               </div>
@@ -102,7 +98,7 @@ export default function PortalContaPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Nome</span><span className="text-foreground">{cliente.nome}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">E-mail</span><span className="text-foreground">{cliente.email ?? "—"}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Telefone</span><span className="text-foreground">{cliente.telefone ?? "—"}</span></div>
+              
               <div className="flex justify-between"><span className="text-muted-foreground">CPF</span><span className="text-foreground">{cliente.cpf ?? "—"}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">WhatsApp</span><span className="text-foreground">{cliente.whatsapp ?? "—"}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Endereço</span><span className="text-foreground">{cliente.endereco ?? "—"}</span></div>
