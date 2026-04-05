@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoTgPro from "@/assets/logo-tgpro.jpeg";
+import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +49,7 @@ export function PortalLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { logoUrl: empresaLogo } = useEmpresaLogo(logoTgPro);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -72,7 +74,7 @@ export function PortalLayout() {
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
-        <img src={logoTgPro} alt="TG-PRO" className="h-8 w-8 rounded-lg object-cover mr-2.5" />
+        <img src={empresaLogo} alt="Logo" className="h-8 w-8 rounded-lg object-cover mr-2.5" />
         <span className="font-semibold text-foreground text-sm tracking-tight">TG-PRO</span>
         <div className="ml-auto">
           <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">

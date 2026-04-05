@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import logoTg from "@/assets/logo-tg.png";
 import {
   LayoutDashboard,
@@ -32,6 +33,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   
   const { isSuperAdmin, signOut, profile } = useAuth();
+  const { logoUrl: empresaLogo } = useEmpresaLogo(logoTg);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -111,7 +113,7 @@ export function AppSidebar() {
     >
       {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-sidebar-border/60">
-        <img src={logoTg} alt="Logo" className="h-8 w-8 rounded-lg object-cover shrink-0" />
+        <img src={empresaLogo} alt="Logo" className="h-8 w-8 rounded-lg object-cover shrink-0" />
         <AnimatePresence>
           {!collapsed && (
             <motion.span

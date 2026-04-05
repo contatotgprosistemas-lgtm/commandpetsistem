@@ -6,6 +6,7 @@ import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { toast } from "sonner";
 import { useState } from "react";
 import logoTgPro from "@/assets/logo-tgpro.jpeg";
+import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 
 const navItems = [
   { path: "/operacional", label: "Dashboard", icon: LayoutDashboard },
@@ -20,6 +21,7 @@ export function OperacionalLayout() {
   const { user, signOut } = useOperationalAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { logoUrl: empresaLogo } = useEmpresaLogo(logoTgPro);
 
   const handleSignOut = async () => {
     await signOut();
@@ -39,7 +41,7 @@ export function OperacionalLayout() {
         <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </Button>
-        <img src={logoTgPro} alt="TG-PRO" className="h-9 w-9 rounded-lg object-cover mr-3" />
+        <img src={empresaLogo} alt="Logo" className="h-9 w-9 rounded-lg object-cover mr-3" />
         <div>
           <span className="font-semibold text-foreground text-base tracking-tight">Operacional</span>
           {user && <p className="text-xs text-muted-foreground">Olá, {user.nome.split(" ")[0]}</p>}
