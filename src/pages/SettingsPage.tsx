@@ -114,6 +114,35 @@ function EmpresaTab() {
         <CardDescription>Informações gerais da sua empresa</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Logo da Empresa */}
+        <div className="flex items-center gap-4">
+          <div
+            className="h-20 w-20 rounded-lg bg-muted border-2 border-dashed border-border flex items-center justify-center overflow-hidden relative cursor-pointer hover:border-primary/50 transition-colors"
+            onClick={() => !uploadingLogo && logoInputRef.current?.click()}
+          >
+            {uploadingLogo ? (
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            ) : form.logo_url ? (
+              <>
+                <img src={form.logo_url} alt="Logo" className="h-full w-full object-contain" />
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setForm(f => ({ ...f, logo_url: "" })); }}
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-sm"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </>
+            ) : (
+              <Upload className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+            )}
+          </div>
+          <div>
+            <Label className="text-sm font-semibold">Logo da Empresa</Label>
+            <p className="text-xs text-muted-foreground">A logo será exibida na sidebar, portal do cliente e portal operacional.</p>
+          </div>
+          <input ref={logoInputRef} type="file" accept="image/*" onChange={handleUploadLogo} className="hidden" />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Nome da Empresa</Label>
