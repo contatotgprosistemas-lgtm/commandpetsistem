@@ -49,9 +49,19 @@ const allNavItems = [
 
 export function PortalLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { logoUrl: empresaLogo } = useEmpresaLogo(logoTgPro);
+
+  useState(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUserEmail(data.session?.user?.email ?? null);
+    });
+  });
+
+  const isBetaUser = userEmail ? BETA_EMAILS.includes(userEmail) : false;
+  const navItems = allNavItems.filter(item => !item.beta || isBetaUser);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
