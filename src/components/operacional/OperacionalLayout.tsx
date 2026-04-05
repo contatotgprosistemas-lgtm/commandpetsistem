@@ -6,6 +6,7 @@ import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { toast } from "sonner";
 import { useState } from "react";
 import logoTgPro from "@/assets/logo-tgpro.jpeg";
+import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 
 const navItems = [
   { path: "/operacional", label: "Dashboard", icon: LayoutDashboard },

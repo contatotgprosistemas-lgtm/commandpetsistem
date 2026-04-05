@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoTgPro from "@/assets/logo-tgpro.jpeg";
+import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
