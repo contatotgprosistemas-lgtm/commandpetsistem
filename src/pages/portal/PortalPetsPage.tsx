@@ -14,6 +14,7 @@ interface Pet {
   sexo: string | null;
   peso: number | null;
   pelagem: string | null;
+  foto_url: string | null;
   data_nascimento: string | null;
   vacinas: string | null;
   comportamento: string | null;
@@ -91,9 +92,13 @@ export default function PortalPetsPage() {
         <Card key={pet.id}>
           <CardHeader className="pb-2">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <PawPrint className="h-6 w-6 text-primary" />
-              </div>
+              {pet.foto_url ? (
+                <img src={pet.foto_url} alt={pet.nome} className="h-12 w-12 rounded-xl object-cover" />
+              ) : (
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <PawPrint className="h-6 w-6 text-primary" />
+                </div>
+              )}
               <div>
                 <CardTitle className="text-base">{pet.nome}</CardTitle>
                 <p className="text-xs text-muted-foreground">
