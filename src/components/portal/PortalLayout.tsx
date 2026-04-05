@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -28,28 +28,40 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const navItems = [
-  { path: "/portal", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/portal/pets", label: "Meus Pets", icon: PawPrint },
-  { path: "/portal/pagamentos", label: "Pagamentos", icon: CreditCard },
-  { path: "/portal/mensagens", label: "Mensagens", icon: MessageCircle },
-  { path: "/portal/solicitacoes", label: "Solicitações", icon: ClipboardList },
-  { path: "/portal/notificacoes", label: "Notificações", icon: Bell },
-  { path: "/portal/contratos", label: "Contratos", icon: FileText },
-  { path: "/portal/estou-chegando", label: "Estou Chegando", icon: Navigation },
-  { path: "/portal/transporte", label: "Transporte", icon: Car },
-  { path: "/portal/historico", label: "Histórico", icon: History },
-  { path: "/portal/galeria", label: "Galeria", icon: Camera },
-  { path: "/portal/manejo", label: "Boletim Diário", icon: Stethoscope },
-  { path: "/portal/checklist", label: "Checklist", icon: ClipboardCheck },
-  { path: "/portal/conta", label: "Minha Conta", icon: User },
+const BETA_EMAILS = ["maria@teste.com"];
+
+const allNavItems = [
+  { path: "/portal", label: "Dashboard", icon: LayoutDashboard, beta: false },
+  { path: "/portal/pets", label: "Meus Pets", icon: PawPrint, beta: false },
+  { path: "/portal/pagamentos", label: "Pagamentos", icon: CreditCard, beta: false },
+  { path: "/portal/mensagens", label: "Mensagens", icon: MessageCircle, beta: true },
+  { path: "/portal/solicitacoes", label: "Solicitações", icon: ClipboardList, beta: true },
+  { path: "/portal/notificacoes", label: "Notificações", icon: Bell, beta: false },
+  { path: "/portal/contratos", label: "Contratos", icon: FileText, beta: false },
+  { path: "/portal/estou-chegando", label: "Estou Chegando", icon: Navigation, beta: false },
+  { path: "/portal/transporte", label: "Transporte", icon: Car, beta: true },
+  { path: "/portal/historico", label: "Histórico", icon: History, beta: false },
+  { path: "/portal/galeria", label: "Galeria", icon: Camera, beta: false },
+  { path: "/portal/manejo", label: "Boletim Diário", icon: Stethoscope, beta: false },
+  { path: "/portal/checklist", label: "Checklist", icon: ClipboardCheck, beta: false },
+  { path: "/portal/conta", label: "Minha Conta", icon: User, beta: false },
 ];
 
 export function PortalLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { logoUrl: empresaLogo } = useEmpresaLogo(logoTgPro);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUserEmail(data.session?.user?.email ?? null);
+    });
+  }, []);
+
+  const isBetaUser = userEmail ? BETA_EMAILS.includes(userEmail) : false;
+  const navItems = allNavItems.filter(item => !item.beta || isBetaUser);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
