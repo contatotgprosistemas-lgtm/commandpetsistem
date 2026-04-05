@@ -54,11 +54,11 @@ export function PortalLayout() {
   const navigate = useNavigate();
   const { logoUrl: empresaLogo } = useEmpresaLogo(logoTgPro);
 
-  useState(() => {
+  useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUserEmail(data.session?.user?.email ?? null);
     });
-  });
+  }, []);
 
   const isBetaUser = userEmail ? BETA_EMAILS.includes(userEmail) : false;
   const navItems = allNavItems.filter(item => !item.beta || isBetaUser);
