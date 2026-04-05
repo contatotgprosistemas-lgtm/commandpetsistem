@@ -14,7 +14,7 @@ export default function PortalDashboard() {
     unreadNotifications: 0,
     openRequests: 0,
     totalPets: 0,
-    nextAppointment: null as string | null,
+    nextAppointment: null as { data_hora: string; tipo_servico: string; pet_nome: string } | null,
   });
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +26,7 @@ export default function PortalDashboard() {
         supabase.from("customer_notifications").select("id", { count: "exact", head: true }).eq("cliente_id", cliente.id).eq("is_read", false),
         supabase.from("customer_requests").select("id", { count: "exact", head: true }).eq("cliente_id", cliente.id).in("status", ["aberto", "em_analise", "em_andamento"]),
         supabase.from("pets").select("id", { count: "exact", head: true }).eq("cliente_id", cliente.id),
-        supabase.from("agendamentos").select("data_hora").eq("cliente_id", cliente.id).gte("data_hora", new Date().toISOString()).order("data_hora", { ascending: true }).limit(1),
+        supabase.from("agendamentos").select("data_hora, tipo_servico, pets(nome)").eq("cliente_id", cliente.id).gte("data_hora", new Date().toISOString()).order("data_hora", { ascending: true }).limit(1),
       ]);
 
       setStats({
@@ -34,7 +34,11 @@ export default function PortalDashboard() {
         unreadNotifications: notifications.count ?? 0,
         openRequests: requests.count ?? 0,
         totalPets: pets.count ?? 0,
-        nextAppointment: appointments.data?.[0]?.data_hora ?? null,
+        nextAppointment: appointments.data?.[0] ? {
+          data_hora: appointments.data[0].data_hora,
+          tipo_servico: appointments.data[0].tipo_servico,
+          pet_nome: (appointments.data[0] as any).pets?.nome ?? "",
+        } : null,
       });
       setLoading(false);
     };
@@ -95,7 +99,11 @@ export default function PortalDashboard() {
             <div>
               <p className="text-sm font-medium text-foreground">Próximo Agendamento</p>
               <p className="text-xs text-muted-foreground">
-                {new Date(stats.nextAppointment).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                {stats.nextAppointment.tipo_servico}
+                {stats.nextAppointment.pet_nome ? ` • ${stats.nextAppointment.pet_nome}` : ""}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {new Date(stats.nextAppointment.data_hora).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
               </p>
             </div>
           </CardContent>
