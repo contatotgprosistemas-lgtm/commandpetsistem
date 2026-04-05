@@ -84,7 +84,6 @@ export default function PortalDashboard() {
               )}
               <span className="text-xs text-muted-foreground">{card.label}</span>
             </CardContent>
-            </CardContent>
           </Card>
         ))}
       </div>
