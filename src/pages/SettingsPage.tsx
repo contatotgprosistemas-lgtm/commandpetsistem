@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,7 +29,10 @@ function EmpresaTab() {
     horario_semana_inicio: "08:00", horario_semana_fim: "18:00",
     horario_sabado_inicio: "", horario_sabado_fim: "",
     horario_domingo_inicio: "", horario_domingo_fim: "",
+    logo_url: "",
   });
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   async function buscarCep(cep: string) {
     const clean = cep.replace(/\D/g, "");
@@ -54,7 +57,7 @@ function EmpresaTab() {
     if (!profile?.empresa_id) return;
     supabase
       .from("empresas")
-      .select("nome_empresa, cnpj, email, telefone, nome_fantasia, endereco, endereco_numero, cep, inscricao_estadual, inscricao_municipal, horario_semana_inicio, horario_semana_fim, horario_sabado_inicio, horario_sabado_fim, horario_domingo_inicio, horario_domingo_fim")
+      .select("nome_empresa, cnpj, email, telefone, nome_fantasia, endereco, endereco_numero, cep, inscricao_estadual, inscricao_municipal, horario_semana_inicio, horario_semana_fim, horario_sabado_inicio, horario_sabado_fim, horario_domingo_inicio, horario_domingo_fim, logo_url")
       .eq("id", profile.empresa_id)
       .single()
       .then(({ data }: any) => {
