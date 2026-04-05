@@ -1828,6 +1828,7 @@ export type Database = {
           id: string
           inscricao_estadual: string | null
           inscricao_municipal: string | null
+          logo_url: string | null
           nome_empresa: string
           nome_fantasia: string | null
           plano: string
@@ -1850,6 +1851,7 @@ export type Database = {
           id?: string
           inscricao_estadual?: string | null
           inscricao_municipal?: string | null
+          logo_url?: string | null
           nome_empresa: string
           nome_fantasia?: string | null
           plano?: string
@@ -1872,6 +1874,7 @@ export type Database = {
           id?: string
           inscricao_estadual?: string | null
           inscricao_municipal?: string | null
+          logo_url?: string | null
           nome_empresa?: string
           nome_fantasia?: string | null
           plano?: string
