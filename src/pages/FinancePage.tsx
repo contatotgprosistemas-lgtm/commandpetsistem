@@ -240,7 +240,13 @@ export default function FinancePage() {
 
 function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
-  const allSelected = contas.length > 0 && selected.length === contas.length;
+  const [search, setSearch] = useState("");
+  const filtered = contas.filter(c => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (c.descricao?.toLowerCase().includes(q)) || (c.cliente?.nome?.toLowerCase().includes(q)) || (c.categoria?.toLowerCase().includes(q));
+  });
+  const allSelected = filtered.length > 0 && selected.length === filtered.length;
 
   const toggleAll = () => {
     setSelected(allSelected ? [] : contas.map(c => c.id));

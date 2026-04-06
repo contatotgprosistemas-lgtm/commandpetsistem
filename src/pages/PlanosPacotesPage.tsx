@@ -315,6 +315,9 @@ export default function PlanosPacotesPage() {
                     </div>
                     <div className="shrink-0">{isExpired ? statusBadge("vencido") : statusBadge(s.status)}</div>
                     <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar contratação" onClick={() => { /* TODO: edit subscription dialog */ toast.info("Funcionalidade de edição em desenvolvimento"); }}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Planejar dias" onClick={() => setPlanejamentoSub(s)}>
                         <CalendarDays className="h-3.5 w-3.5" />
                       </Button>
