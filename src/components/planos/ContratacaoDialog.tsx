@@ -373,6 +373,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </div>
           )}
 
+          {showHorarios && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Hora prevista buscar</Label>
