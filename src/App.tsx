@@ -332,17 +332,15 @@ const App = () => (
             />
 
             {/* Operacional auth */}
-            <Route path="/operacional/login" element={<OperationalAuthProvider><OperacionalLoginPage /></OperationalAuthProvider>} />
+            <Route path="/operacional/login" element={<OperacionalLoginPage />} />
 
             {/* Operacional portal (protected) */}
             <Route
               path="/operacional"
               element={
-                <OperationalAuthProvider>
-                  <OperacionalProtectedRoute>
-                    <OperacionalLayout />
-                  </OperacionalProtectedRoute>
-                </OperationalAuthProvider>
+                <OperacionalProtectedRoute>
+                  <OperacionalLayout />
+                </OperacionalProtectedRoute>
               }
             >
               <Route index element={<OperacionalDashboard />} />
