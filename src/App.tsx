@@ -47,7 +47,6 @@ import OperacionalPetsPage from "@/pages/operacional/OperacionalPetsPage";
 import OperacionalPontoPage from "@/pages/operacional/OperacionalPontoPage";
 import { OperacionalLayout } from "@/components/operacional/OperacionalLayout";
 import { OperacionalProtectedRoute } from "@/components/operacional/OperacionalProtectedRoute";
-import { OperationalAuthProvider } from "@/hooks/useOperationalAuth";
 
 // Portal pages
 import PortalLoginPage from "@/pages/portal/PortalLoginPage";
@@ -78,7 +77,6 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <OperationalAuthProvider>
           <Routes>
             <Route path="/site" element={<LandingPage />} />
 
@@ -352,7 +350,6 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
-          </OperationalAuthProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
