@@ -31,10 +31,12 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
   // Poll count for badge (lightweight)
   useEffect(() => {
     const fetchCount = async () => {
-      const { count: c } = await supabase
+      let q = supabase
         .from("estou_chegando")
         .select("id", { count: "exact", head: true })
         .eq("active", true);
+      if (empresaId) q = q.eq("empresa_id", empresaId);
+      const { count: c } = await q;
       setCount(c ?? 0);
     };
     fetchCount();
@@ -48,7 +50,7 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [empresaId]);
 
   // When dialog is open, poll positions every 5 seconds
   useEffect(() => {
@@ -58,10 +60,12 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
     }
 
     const fetchEntries = async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("estou_chegando")
         .select("id, cliente_id, pet_id, latitude, longitude, updated_at, cliente:clientes(nome, foto_url), pet:pets(nome, foto_url)")
         .eq("active", true);
+      if (empresaId) q = q.eq("empresa_id", empresaId);
+      const { data, error } = await q;
 
       if (!error && data) {
         setEntries(data as unknown as TrackingEntry[]);
