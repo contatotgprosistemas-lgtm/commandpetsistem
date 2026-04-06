@@ -10,6 +10,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast, isToday } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { BaixaContaDialog } from "@/components/BaixaContaDialog";
 import { NovaContaBancariaDialog } from "@/components/NovaContaBancariaDialog";
@@ -22,6 +23,8 @@ import PlanoContasPage from "@/pages/PlanoContasPage";
 import { ImportContasReceberDialog } from "@/components/ImportContasReceberDialog";
 import { ImportContasPagarDialog } from "@/components/ImportContasPagarDialog";
 import { EditarContaReceberDialog } from "@/components/EditarContaReceberDialog";
+import { DividirFaturaDialog } from "@/components/DividirFaturaDialog";
+import { SplitSquareVertical } from "lucide-react";
 
 interface ContaReceber {
   id: string;
@@ -46,6 +49,7 @@ function statusBadge(status: string, vencimento: string) {
 }
 
 export default function FinancePage() {
+  const { profile } = useAuth();
   const [contas, setContas] = useState<ContaReceber[]>([]);
   const [contasBancarias, setContasBancarias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +61,7 @@ export default function FinancePage() {
   const [importPagarOpen, setImportPagarOpen] = useState(false);
 
   const [editConta, setEditConta] = useState<ContaReceber | null>(null);
+  const [dividirConta, setDividirConta] = useState<ContaReceber | null>(null);
 
   async function fetchContas() {
     setLoading(true);
@@ -148,6 +153,7 @@ export default function FinancePage() {
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
             onEdit={(c) => setEditConta(c)}
+            onDividir={(c) => setDividirConta(c)}
             onDelete={async (id) => {
               const { error } = await supabase.from("contas_receber").delete().eq("id", id);
               if (error) { toast.error("Erro ao excluir"); return; }
@@ -220,11 +226,19 @@ export default function FinancePage() {
         onSuccess={() => { setEditConta(null); fetchContas(); }}
         conta={editConta}
       />
+
+      <DividirFaturaDialog
+        open={!!dividirConta}
+        onOpenChange={(o) => { if (!o) setDividirConta(null); }}
+        onSuccess={() => { setDividirConta(null); fetchContas(); }}
+        conta={dividirConta}
+        empresaId={profile?.empresa_id || ""}
+      />
     </div>
   );
 }
 
-function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onEdit: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
+function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const allSelected = contas.length > 0 && selected.length === contas.length;
 
@@ -329,6 +343,10 @@ function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDelete }: { c
                       <DropdownMenuItem onClick={() => onBaixar(c)}>
                         <ArrowDownCircle className="h-4 w-4 mr-2" />
                         Baixar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onDividir(c)}>
+                        <SplitSquareVertical className="h-4 w-4 mr-2" />
+                        Dividir
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive"
