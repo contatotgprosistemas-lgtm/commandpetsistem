@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle } from "lucide-react";
+import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ export default function PlanosPacotesPage() {
   const [planejamentoSub, setPlanejamentoSub] = useState<any>(null);
   const [discountTarget, setDiscountTarget] = useState<any>(null);
   const [discountValue, setDiscountValue] = useState("");
+  const [searchContratacao, setSearchContratacao] = useState("");
 
   async function fetchAll() {
     setLoading(true);
@@ -272,14 +273,23 @@ export default function PlanosPacotesPage() {
 
         {/* CONTRATAÇÕES TAB */}
         <TabsContent value="contratações">
-          <div className="flex justify-end mt-4 mb-3">
+          <div className="flex items-center justify-between mt-4 mb-3 gap-2 flex-wrap">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar contratação..."
+                value={searchContratacao}
+                onChange={e => setSearchContratacao(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
             <Button size="sm" className="gap-1" onClick={() => setContratacaoOpen(true)}>
               <Plus className="h-4 w-4" />Nova Contratação
             </Button>
           </div>
-          {loading ? <LoadingSkeleton /> : subscriptions.length === 0 ? <EmptyState text="Nenhuma contratação" /> : (
+          {loading ? <LoadingSkeleton /> : filteredSubscriptions.length === 0 ? <EmptyState text="Nenhuma contratação" /> : (
             <div className="bg-card rounded-lg shadow-card divide-y divide-border">
-              {subscriptions.map((s: any) => {
+              {filteredSubscriptions.map((s: any) => {
                 const planName = plans.find((p: any) => p.id === s.plan_id)?.name || packages.find((p: any) => p.id === s.package_id)?.name || "—";
                 const isExpired = s.end_date && isPast(new Date(s.end_date)) && s.status === "ativo";
                 return (
