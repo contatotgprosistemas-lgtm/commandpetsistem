@@ -26,6 +26,7 @@ export default function OperacionalDashboard() {
   const [pendingCheckins, setPendingCheckins] = useState<any[]>([]);
   const [manejoTarget, setManejoTarget] = useState<any>(null);
   const [galeriaTarget, setGaleriaTarget] = useState<any>(null);
+  const [manejoFilledIds, setManejoFilledIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
