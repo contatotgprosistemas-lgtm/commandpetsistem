@@ -249,7 +249,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDe
   const allSelected = filtered.length > 0 && selected.length === filtered.length;
 
   const toggleAll = () => {
-    setSelected(allSelected ? [] : contas.map(c => c.id));
+    setSelected(allSelected ? [] : filtered.map(c => c.id));
   };
   const toggle = (id: string) => {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -277,15 +277,24 @@ function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDe
           </Button>
         </div>
       )}
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{contas.length} fatura(s)</span>
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground shrink-0">{filtered.length} fatura(s)</span>
+        <div className="relative w-full max-w-xs">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar fatura..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
       </div>
 
       {loading ? (
         <div className="p-5 space-y-3">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
         </div>
-      ) : contas.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
           Nenhuma fatura encontrada
         </div>
@@ -308,7 +317,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDe
             </TableRow>
           </TableHeader>
           <TableBody>
-            {contas.map(c => (
+            {filtered.map(c => (
               <TableRow key={c.id} className={selected.includes(c.id) ? "bg-primary/5" : ""}>
                 <TableCell>
                   <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
