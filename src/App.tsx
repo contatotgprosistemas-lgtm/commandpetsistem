@@ -78,7 +78,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
+          <OperationalAuthProvider>
             {/* Landing page pública */}
             <Route path="/site" element={<LandingPage />} />
 
