@@ -17,6 +17,7 @@ interface ManejoDialogProps {
   agendamentoId: string;
   petId: string;
   petName: string;
+  empresaIdOverride?: string;
 }
 
 interface PerguntaCustom {
@@ -43,8 +44,9 @@ function getTodayRange() {
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
-export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName }: ManejoDialogProps) {
-  const { profile } = useAuth();
+export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName, empresaIdOverride }: ManejoDialogProps) {
+  const authCtx = useAuth();
+  const empresaId = empresaIdOverride || authCtx.profile?.empresa_id;
   const [respostas, setRespostas] = useState<Record<string, string>>({});
   const [customPerguntas, setCustomPerguntas] = useState<PerguntaCustom[]>([]);
   const [novaPergunta, setNovaPergunta] = useState("");
@@ -100,7 +102,7 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
   }
 
   async function handleSave() {
-    if (!profile?.empresa_id) return;
+    if (!empresaId) return;
     setSaving(true);
     const payload = {
       respostas: { ...respostas, custom_perguntas: customPerguntas.map(p => ({ pergunta: p.pergunta, resposta: respostas[`custom_${p.id}`] || "" })) },
@@ -111,7 +113,7 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
       ({ error } = await supabase.from("manejo_registros").update(payload as any).eq("id", existingId));
     } else {
       ({ error } = await supabase.from("manejo_registros" as any).insert({
-        empresa_id: profile.empresa_id,
+        empresa_id: empresaId,
         agendamento_id: agendamentoId,
         pet_id: petId,
         ...payload,
@@ -126,7 +128,7 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
         const { data: petData } = await supabase.from("pets").select("cliente_id").eq("id", petId).single();
         if (petData?.cliente_id) {
           await supabase.from("customer_notifications").insert({
-            empresa_id: profile.empresa_id,
+            empresa_id: empresaId,
             cliente_id: petData.cliente_id,
             title: `Boletim Diário — ${petName}`,
             message: `O boletim diário de ${petName} foi preenchido. Confira os detalhes no portal.`,
