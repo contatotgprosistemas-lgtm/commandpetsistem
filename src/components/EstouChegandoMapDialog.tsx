@@ -18,7 +18,11 @@ interface TrackingEntry {
   pet?: { nome: string; foto_url: string | null } | null;
 }
 
-export function EstouChegandoMapDialog() {
+interface EstouChegandoMapDialogProps {
+  empresaId?: string;
+}
+
+export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProps = {}) {
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<TrackingEntry[]>([]);
   const [count, setCount] = useState(0);
