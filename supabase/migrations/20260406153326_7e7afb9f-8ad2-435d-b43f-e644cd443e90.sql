@@ -1,0 +1,1 @@
+GRANT SELECT ON TABLE public.operational_users TO authenticated;
