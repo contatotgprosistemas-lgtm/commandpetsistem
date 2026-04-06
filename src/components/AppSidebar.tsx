@@ -27,6 +27,8 @@ import {
   CalendarDays,
   Receipt,
   Clock,
+  Scissors,
+  ListOrdered,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -41,12 +43,21 @@ export function AppSidebar() {
   const [cadastrosOpen, setCadastrosOpen] = useState(isCadastrosActive);
   const cadastrosExpanded = cadastrosOpen;
 
+  const isAgendaActive = ["/agenda", "/banho-tosa", "/esteira-banho"].includes(location.pathname);
+  const [agendaOpen, setAgendaOpen] = useState(isAgendaActive);
+  const agendaExpanded = agendaOpen;
+
   const mainItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-    { icon: CalendarDays, label: "Agenda", path: "/agenda" },
     { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
     { icon: Kanban, label: "Pipeline Vendas", path: "/kanban" },
     { icon: Bot, label: "Chatbot", path: "/chatbot" },
+  ];
+
+  const agendaItems = [
+    { icon: CalendarDays, label: "Agenda", path: "/agenda" },
+    { icon: Scissors, label: "Banho e Tosa", path: "/banho-tosa" },
+    { icon: ListOrdered, label: "Esteira de Banho", path: "/esteira-banho" },
   ];
   const cadastrosItems = [
     { icon: Users, label: "Clientes", path: "/clientes" },
