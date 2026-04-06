@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { FaltaDialog } from "@/components/FaltaDialog";
 import { ManejoDialog } from "@/components/ManejoDialog";
 import { OperacionalGaleriaDialog } from "@/components/operacional/OperacionalGaleriaDialog";
+import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
@@ -139,13 +140,16 @@ export default function OperacionalDashboard() {
 
   return (
     <div className="space-y-6 pb-24 md:pb-0">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          Olá, {user?.nome?.split(" ")[0]}! 👋
-        </h1>
-        <p className="text-sm text-muted-foreground capitalize">
-          {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Olá, {user?.nome?.split(" ")[0]}! 👋
+          </h1>
+          <p className="text-sm text-muted-foreground capitalize">
+            {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+          </p>
+        </div>
+        <EstouChegandoMapDialog empresaId={user?.empresa_id} />
       </div>
 
       {/* Stats cards - large and touch-friendly */}
