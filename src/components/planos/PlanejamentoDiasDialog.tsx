@@ -41,17 +41,18 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
   const [saving, setSaving] = useState(false);
   const [horaBuscar, setHoraBuscar] = useState("08:00");
   const [horaLevar, setHoraLevar] = useState("17:00");
+  const [horaBanho, setHoraBanho] = useState("10:00");
   const [showHorarios, setShowHorarios] = useState(false);
+  const [showHorarioBanho, setShowHorarioBanho] = useState(false);
 
   useEffect(() => {
     if (open && subscription) {
       setSelectedDays(subscription.planned_days || []);
-      // Check if the plan/package is TaxiPet type
-      checkIfTaxiPet();
+      checkServiceType();
     }
   }, [open, subscription]);
 
-  async function checkIfTaxiPet() {
+  async function checkServiceType() {
     let name = "";
     if (subscription.plan_id) {
       const { data } = await supabase.from("service_plans" as any).select("name").eq("id", subscription.plan_id).single();
@@ -61,6 +62,7 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
       if (data) name = (data as any).name;
     }
     setShowHorarios(isTaxiPetService(name));
+    setShowHorarioBanho(isBanhoService(name));
   }
 
   function toggleDay(day: number) {
