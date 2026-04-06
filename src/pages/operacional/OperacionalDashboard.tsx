@@ -92,6 +92,17 @@ export default function OperacionalDashboard() {
       });
       setPetsNaEmpresa(naEmpresa.map(a => ({ ...a, _serviceLabel: getServiceLabel(a) })));
       setPendingCheckins(checkinsHoje);
+
+      // Check which agendamentos already have manejo records
+      const naEmpresaIds = naEmpresa.map(a => a.id);
+      if (naEmpresaIds.length > 0) {
+        const { data: manejoData } = await supabase
+          .from("manejo_registros")
+          .select("agendamento_id")
+          .in("agendamento_id", naEmpresaIds);
+        setManejoFilledIds(new Set((manejoData ?? []).map((m: any) => m.agendamento_id)));
+      }
+
       setLoading(false);
     };
     fetchData();
