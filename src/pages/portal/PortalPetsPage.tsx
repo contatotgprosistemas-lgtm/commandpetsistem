@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { PawPrint, Calendar, Weight, Scissors } from "lucide-react";
+import { PawPrint, Calendar, Weight, Scissors, Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalCliente } from "@/hooks/usePortalCliente";
 import { formatDateBR, formatDateBRCustom } from "@/lib/utils";
+import { EditarPetDialog } from "@/components/EditarPetDialog";
 
 interface Pet {
   id: string;
@@ -40,33 +42,35 @@ export default function PortalPetsPage() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [agendamentos, setAgendamentos] = useState<Record<string, Agendamento[]>>({});
   const [loading, setLoading] = useState(true);
+  const [editingPet, setEditingPet] = useState<any>(null);
+
+  const fetchPets = async () => {
+    if (!cliente) return;
+    const { data: petsData } = await supabase
+      .from("pets")
+      .select("*")
+      .eq("cliente_id", cliente.id);
+    setPets((petsData as Pet[]) ?? []);
+
+    const { data: agData } = await supabase
+      .from("agendamentos")
+      .select("id, data_hora, tipo_servico, status, pet_id")
+      .eq("cliente_id", cliente.id)
+      .gte("data_hora", new Date().toISOString())
+      .order("data_hora", { ascending: true });
+
+    const grouped: Record<string, Agendamento[]> = {};
+    (agData ?? []).forEach((a: any) => {
+      if (!grouped[a.pet_id]) grouped[a.pet_id] = [];
+      grouped[a.pet_id].push(a);
+    });
+    setAgendamentos(grouped);
+    setLoading(false);
+  };
 
   useEffect(() => {
     if (!cliente) return;
-    const fetch = async () => {
-      const { data: petsData } = await supabase
-        .from("pets")
-        .select("*")
-        .eq("cliente_id", cliente.id);
-      setPets((petsData as Pet[]) ?? []);
-
-      // Fetch upcoming appointments for all pets
-      const { data: agData } = await supabase
-        .from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, pet_id")
-        .eq("cliente_id", cliente.id)
-        .gte("data_hora", new Date().toISOString())
-        .order("data_hora", { ascending: true });
-
-      const grouped: Record<string, Agendamento[]> = {};
-      (agData ?? []).forEach((a: any) => {
-        if (!grouped[a.pet_id]) grouped[a.pet_id] = [];
-        grouped[a.pet_id].push(a);
-      });
-      setAgendamentos(grouped);
-      setLoading(false);
-    };
-    fetch();
+    fetchPets();
   }, [cliente]);
 
   if (clienteLoading || loading) {
@@ -93,20 +97,31 @@ export default function PortalPetsPage() {
       {pets.map((pet) => (
         <Card key={pet.id}>
           <CardHeader className="pb-2">
-            <div className="flex items-center gap-3">
-              {pet.foto_url ? (
-                <img src={pet.foto_url} alt={pet.nome} className="h-12 w-12 rounded-xl object-cover" />
-              ) : (
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <PawPrint className="h-6 w-6 text-primary" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {pet.foto_url ? (
+                  <img src={pet.foto_url} alt={pet.nome} className="h-12 w-12 rounded-xl object-cover" />
+                ) : (
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <PawPrint className="h-6 w-6 text-primary" />
+                  </div>
+                )}
+                <div>
+                  <CardTitle className="text-base">{pet.nome}</CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    {pet.especie} {pet.raca ? `• ${pet.raca}` : ""} {pet.sexo ? `• ${pet.sexo}` : ""}
+                  </p>
                 </div>
-              )}
-              <div>
-                <CardTitle className="text-base">{pet.nome}</CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  {pet.especie} {pet.raca ? `• ${pet.raca}` : ""} {pet.sexo ? `• ${pet.sexo}` : ""}
-                </p>
               </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={() => setEditingPet(pet)}
+                title="Editar pet"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -181,6 +196,13 @@ export default function PortalPetsPage() {
           </CardContent>
         </Card>
       ))}
+
+      <EditarPetDialog
+        pet={editingPet}
+        open={!!editingPet}
+        onOpenChange={(open) => { if (!open) setEditingPet(null); }}
+        onSuccess={() => { setEditingPet(null); fetchPets(); }}
+      />
     </div>
   );
 }
