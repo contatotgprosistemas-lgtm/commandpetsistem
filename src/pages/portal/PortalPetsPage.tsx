@@ -170,7 +170,7 @@ export default function PortalPetsPage() {
                   <div key={ag.id} className="flex items-center justify-between text-xs py-1 border-b border-border last:border-0">
                     <span className="text-muted-foreground">{ag.tipo_servico}</span>
                     <span className="text-foreground">
-                      {formatDateBRCustom(ag.data_hora)}
+                      {formatDateBRCustom(ag.data_hora, { day: "2-digit", month: "short" })}
                     </span>
                   </div>
                 ))}
