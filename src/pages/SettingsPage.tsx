@@ -806,34 +806,25 @@ function OperacionalTab() {
     }
     setSaving(true);
 
-    // Create auth user first
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: { data: { nome: form.nome } },
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke("criar-acesso-operacional", {
+        body: {
+          nome: form.nome,
+          email: form.email,
+          senha: form.password,
+          empresa_id: profile.empresa_id,
+        },
+      });
 
-    if (authError || !authData.user) {
-      toast({ title: "Erro ao criar usuário", description: authError?.message, variant: "destructive" });
-      setSaving(false);
-      return;
-    }
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-    // Create operational user record
-    const { error } = await supabase.from("operational_users").insert({
-      nome: form.nome,
-      email: form.email,
-      empresa_id: profile.empresa_id,
-      user_id: authData.user.id,
-    });
-
-    if (error) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-    } else {
       toast({ title: "Usuário operacional criado!" });
       setForm({ nome: "", email: "", password: "" });
       setDialogOpen(false);
       fetchUsers();
+    } catch (err: any) {
+      toast({ title: "Erro ao criar usuário", description: err.message, variant: "destructive" });
     }
     setSaving(false);
   };
