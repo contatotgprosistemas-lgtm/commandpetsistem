@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle } from "lucide-react";
+import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +12,8 @@ import { format, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { FaltaDialog } from "@/components/FaltaDialog";
+import { ManejoDialog } from "@/components/ManejoDialog";
+import { OperacionalGaleriaDialog } from "@/components/operacional/OperacionalGaleriaDialog";
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
@@ -21,6 +23,8 @@ export default function OperacionalDashboard() {
   const [petsNaEmpresa, setPetsNaEmpresa] = useState<any[]>([]);
   const [faltaOpen, setFaltaOpen] = useState<any>(null);
   const [pendingCheckins, setPendingCheckins] = useState<any[]>([]);
+  const [manejoTarget, setManejoTarget] = useState<any>(null);
+  const [galeriaTarget, setGaleriaTarget] = useState<any>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -31,29 +35,60 @@ export default function OperacionalDashboard() {
 
       const { data: agendamentos } = await supabase
         .from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, pet:pets(id, nome, foto_url, especie), cliente:clientes(id, nome)")
+        .select("id, data_hora, tipo_servico, status, pet:pets(id, nome, foto_url, especie), cliente:clientes(id, nome), subscription_id")
         .eq("empresa_id", user.empresa_id)
         .order("data_hora", { ascending: true });
 
       const all = agendamentos ?? [];
+      // Fetch plan/package names for subscription-linked appointments
+      const subIds = [...new Set(all.filter(a => a.subscription_id).map(a => a.subscription_id))];
+      let subsMap: Record<string, { plan_name?: string; package_name?: string }> = {};
+      if (subIds.length > 0) {
+        const { data: subs } = await supabase
+          .from("customer_pet_subscriptions")
+          .select("id, plan:service_plans(nome), package:service_packages(nome)")
+          .in("id", subIds);
+        for (const s of subs ?? []) {
+          subsMap[s.id] = { plan_name: (s.plan as any)?.nome, package_name: (s.package as any)?.nome };
+        }
+      }
+
+      // Helper to get the service label (plan/package name or tipo_servico)
+      const getServiceLabel = (a: any) => {
+        if (a.subscription_id && subsMap[a.subscription_id]) {
+          const sub = subsMap[a.subscription_id];
+          return sub.plan_name || sub.package_name || a.tipo_servico;
+        }
+        return a.tipo_servico;
+      };
+
       const agHoje = all.filter(a => {
         const d = startOfDay(new Date(a.data_hora));
         return d >= today && d < tomorrow && a.status !== "cancelado";
       });
       const naEmpresa = all.filter(a => a.status === "na_empresa");
-      const hospedados = naEmpresa.filter(a => ["hotel", "hospedagem", "hotel_e_creche"].includes(a.tipo_servico.toLowerCase()));
-      const daycare = naEmpresa.filter(a => ["daycare", "creche", "day_care"].includes(a.tipo_servico.toLowerCase()));
-      const checkinsHoje = agHoje.filter(a => a.status === "pendente" || a.status === "confirmado");
-      const checkoutsHoje = naEmpresa.length;
+
+      const hotelKeywords = ["hotel", "hospedagem", "diaria", "diária", "pernoite"];
+      const daycareKeywords = ["escola", "daycare", "creche", "day_care"];
+
+      const matchesKeywords = (a: any, keywords: string[]) => {
+        const label = getServiceLabel(a).toLowerCase();
+        const tipo = a.tipo_servico.toLowerCase();
+        return keywords.some(k => label.includes(k) || tipo.includes(k));
+      };
+
+      const hospedados = naEmpresa.filter(a => matchesKeywords(a, hotelKeywords));
+      const daycare = naEmpresa.filter(a => matchesKeywords(a, daycareKeywords));
+      const checkinsHoje = agHoje.filter(a => a.status === "pendente" || a.status === "confirmado" || a.status === "agendado");
 
       setStats({
         agendamentosHoje: agHoje.length,
         petsHospedados: hospedados.length,
         checkinsHoje: checkinsHoje.length,
-        checkoutsHoje,
+        checkoutsHoje: naEmpresa.length,
         petsDaycare: daycare.length,
       });
-      setPetsNaEmpresa(naEmpresa);
+      setPetsNaEmpresa(naEmpresa.map(a => ({ ...a, _serviceLabel: getServiceLabel(a) })));
       setPendingCheckins(checkinsHoje);
       setLoading(false);
     };
@@ -179,11 +214,19 @@ export default function OperacionalDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground text-base">{item.pet?.nome ?? "Pet"}</p>
                     <p className="text-xs text-muted-foreground">{item.cliente?.nome ?? "—"}</p>
-                    <Badge variant="outline" className="mt-1 text-[10px]">{item.tipo_servico}</Badge>
+                    <Badge variant="outline" className="mt-1 text-[10px]">{item._serviceLabel || item.tipo_servico}</Badge>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => handleCheckout(item)} className="gap-1.5 h-10 px-4">
-                    <LogOutIcon className="h-4 w-4" /> Saída
-                  </Button>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button size="sm" variant="outline" onClick={() => setManejoTarget(item)} className="gap-1 h-9 px-2.5 text-xs">
+                      <ClipboardList className="h-3.5 w-3.5" /> Manejo
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setGaleriaTarget(item)} className="gap-1 h-9 px-2.5 text-xs">
+                      <Camera className="h-3.5 w-3.5" /> Galeria
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleCheckout(item)} className="gap-1 h-9 px-2.5 text-xs">
+                      <LogOutIcon className="h-3.5 w-3.5" /> Saída
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -199,6 +242,28 @@ export default function OperacionalDashboard() {
           empresaId={user?.empresa_id ?? ""}
           allowsReplacement={true}
           onSuccess={() => window.location.reload()}
+        />
+      )}
+
+      {manejoTarget && (
+        <ManejoDialog
+          open={!!manejoTarget}
+          onOpenChange={(o) => { if (!o) setManejoTarget(null); }}
+          agendamentoId={manejoTarget.id}
+          petId={manejoTarget.pet?.id ?? ""}
+          petName={manejoTarget.pet?.nome ?? "Pet"}
+          empresaIdOverride={user?.empresa_id}
+        />
+      )}
+
+      {galeriaTarget && (
+        <OperacionalGaleriaDialog
+          open={!!galeriaTarget}
+          onOpenChange={(o) => { if (!o) setGaleriaTarget(null); }}
+          petId={galeriaTarget.pet?.id ?? ""}
+          petName={galeriaTarget.pet?.nome ?? "Pet"}
+          clienteId={galeriaTarget.cliente?.id ?? ""}
+          empresaId={user?.empresa_id ?? ""}
         />
       )}
     </div>
