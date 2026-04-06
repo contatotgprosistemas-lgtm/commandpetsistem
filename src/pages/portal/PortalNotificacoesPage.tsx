@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Bell, Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Bell, Check, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,10 +18,36 @@ interface Notificacao {
   created_at: string;
 }
 
+const typeRouteMap: Record<string, string> = {
+  galeria: "/portal/pets",
+  foto: "/portal/pets",
+  media: "/portal/pets",
+  pagamento: "/portal/pagamentos",
+  financeiro: "/portal/pagamentos",
+  agendamento: "/portal/historico",
+  agenda: "/portal/historico",
+  contrato: "/portal/contratos",
+  documento: "/portal/documentos",
+  solicitacao: "/portal/solicitacoes",
+  transporte: "/portal/transporte",
+  manejo: "/portal/pets",
+  checklist: "/portal/checklist",
+  mensagem: "/portal/mensagens",
+};
+
+function getRouteForType(type: string): string | null {
+  const lower = type.toLowerCase();
+  for (const [key, route] of Object.entries(typeRouteMap)) {
+    if (lower.includes(key)) return route;
+  }
+  return null;
+}
+
 export default function PortalNotificacoesPage() {
   const { cliente, loading: clienteLoading } = usePortalCliente();
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!cliente) return;
@@ -39,6 +66,12 @@ export default function PortalNotificacoesPage() {
   const markAsRead = async (id: string) => {
     await supabase.from("customer_notifications").update({ is_read: true }).eq("id", id);
     setNotificacoes((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+  };
+
+  const handleNotificationClick = async (n: Notificacao) => {
+    if (!n.is_read) await markAsRead(n.id);
+    const route = getRouteForType(n.type);
+    if (route) navigate(route);
   };
 
   const markAllAsRead = async () => {
@@ -74,24 +107,32 @@ export default function PortalNotificacoesPage() {
           <p className="text-muted-foreground">Nenhuma notificação.</p>
         </div>
       ) : (
-        notificacoes.map((n) => (
-          <Card key={n.id} className={cn(!n.is_read && "border-l-4 border-l-primary")}>
-            <CardContent className="p-4" onClick={() => !n.is_read && markAsRead(n.id)}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className={cn("text-sm font-medium", !n.is_read ? "text-foreground" : "text-muted-foreground")}>{n.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
+        notificacoes.map((n) => {
+          const hasRoute = !!getRouteForType(n.type);
+          return (
+            <Card
+              key={n.id}
+              className={cn("cursor-pointer hover:shadow-md transition-shadow", !n.is_read && "border-l-4 border-l-primary")}
+              onClick={() => handleNotificationClick(n)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className={cn("text-sm font-medium", !n.is_read ? "text-foreground" : "text-muted-foreground")}>{n.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 ml-3">
+                    <div className="text-right">
+                      <Badge variant="secondary" className="text-[10px]">{n.type}</Badge>
+                      <p className="text-[10px] text-muted-foreground mt-1">{formatDateBR(n.created_at)}</p>
+                    </div>
+                    {hasRoute && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                  </div>
                 </div>
-                <div className="text-right shrink-0 ml-3">
-                  <Badge variant="secondary" className="text-[10px]">{n.type}</Badge>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    {formatDateBR(n.created_at)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))
+              </CardContent>
+            </Card>
+          );
+        })
       )}
     </div>
   );
