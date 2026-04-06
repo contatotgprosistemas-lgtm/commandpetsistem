@@ -49,7 +49,10 @@ export default function PlanosPacotesPage() {
     const [plansRes, pkgRes, subsRes, usageRes] = await Promise.all([
       supabase.from("service_plans" as any).select("*").order("created_at", { ascending: false }),
       supabase.from("service_packages" as any).select("*").order("created_at", { ascending: false }),
-      supabase.from("customer_pet_subscriptions" as any).select("*, cliente:clientes(nome), pet:pets(nome)").order("created_at", { ascending: false }),
+      supabase.from("customer_pet_subscriptions" as any).select("*, cliente:clientes(nome), pet:pets(nome)").order("created_at", { ascending: false }).then(res => {
+        if (res.data) res.data.sort((a: any, b: any) => (a.cliente?.nome ?? "").localeCompare(b.cliente?.nome ?? ""));
+        return res;
+      }),
       supabase.from("subscription_usage_logs" as any).select("*").order("usage_date", { ascending: false }).limit(100),
     ]);
     if (plansRes.data) setPlans(plansRes.data as any);

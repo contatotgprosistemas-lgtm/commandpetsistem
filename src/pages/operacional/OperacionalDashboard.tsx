@@ -90,8 +90,9 @@ export default function OperacionalDashboard() {
         checkoutsHoje: naEmpresa.length,
         petsDaycare: daycare.length,
       });
-      setPetsNaEmpresa(naEmpresa.map(a => ({ ...a, _serviceLabel: getServiceLabel(a) })));
-      setPendingCheckins(checkinsHoje);
+      const sortByPetName = (a: any, b: any) => (a.pet?.nome ?? "").localeCompare(b.pet?.nome ?? "");
+      setPetsNaEmpresa(naEmpresa.map(a => ({ ...a, _serviceLabel: getServiceLabel(a) })).sort(sortByPetName));
+      setPendingCheckins([...checkinsHoje].sort(sortByPetName));
 
       // Check which agendamentos already have manejo records
       const naEmpresaIds = naEmpresa.map(a => a.id);
