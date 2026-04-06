@@ -53,21 +53,24 @@ const SERVICE_COLORS: Record<string, string> = {
   "Passeio": "bg-teal-500/80 text-white",
 };
 
-// Cores diferenciadas para agendamentos vindos de planos/pacotes
-const PLAN_SERVICE_COLORS: Record<string, string> = {
-  "Creche": "bg-blue-500/80 text-white",
-  "Daycare": "bg-blue-500/80 text-white",
-  "Escola": "bg-blue-500/80 text-white",
-  "Banho": "bg-fuchsia-500/80 text-white",
-  "Tosa": "bg-fuchsia-500/80 text-white",
-  "Banho e Tosa": "bg-fuchsia-500/80 text-white",
-  "Hotel": "bg-lime-500/80 text-white",
-  "Hospedagem": "bg-lime-500/80 text-white",
-};
+// Cores diferenciadas para agendamentos vindos de planos/pacotes (match por palavra-chave)
+const PLAN_COLOR_RULES: { keywords: string[]; color: string }[] = [
+  { keywords: ["escola", "creche", "daycare"], color: "bg-blue-500/80 text-white" },
+  { keywords: ["hotel", "hospedagem"], color: "bg-lime-500/80 text-white" },
+  { keywords: ["banho", "tosa"], color: "bg-fuchsia-500/80 text-white" },
+];
+
+function getPlanColor(tipo: string): string {
+  const lower = tipo.toLowerCase();
+  for (const rule of PLAN_COLOR_RULES) {
+    if (rule.keywords.some(k => lower.includes(k))) return rule.color;
+  }
+  return "bg-fuchsia-500/80 text-white";
+}
 
 function getServiceColor(tipo: string, isFromPlan = false) {
   if (isFromPlan) {
-    return PLAN_SERVICE_COLORS[tipo] || "bg-fuchsia-500/80 text-white";
+    return getPlanColor(tipo);
   }
   return SERVICE_COLORS[tipo] || "bg-primary/70 text-primary-foreground";
 }
