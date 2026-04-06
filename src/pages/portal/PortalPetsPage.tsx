@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalCliente } from "@/hooks/usePortalCliente";
+import { formatDateBR, formatDateBRCustom } from "@/lib/utils";
 
 interface Pet {
   id: string;
@@ -84,16 +85,6 @@ export default function PortalPetsPage() {
       </div>
     );
   }
-
-  const formatDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split("-").map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString("pt-BR");
-  };
-
-  const formatDateShort = (dateStr: string) => {
-    const [year, month, day] = dateStr.split("T")[0].split("-").map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-  };
 
   return (
     <div className="space-y-4 pb-20 md:pb-0">

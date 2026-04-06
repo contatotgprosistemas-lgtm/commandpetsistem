@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn, formatDateBR } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalCliente } from "@/hooks/usePortalCliente";
 import { toast } from "sonner";
@@ -115,7 +115,7 @@ export default function PortalMensagensPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground">{c.contato_nome}</p>
                   <p className="text-xs text-muted-foreground">
-                    {c.ultima_mensagem_at ? new Date(c.ultima_mensagem_at).toLocaleDateString("pt-BR") : ""}
+                    {c.ultima_mensagem_at ? formatDateBR(c.ultima_mensagem_at) : ""}
                   </p>
                 </div>
               </CardContent>

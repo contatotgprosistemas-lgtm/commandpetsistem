@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { FileSignature, Loader2, Copy, ExternalLink } from "lucide-react";
+import { formatDateBR } from "@/lib/utils";
 
 interface Props {
   agendamento: {
@@ -84,7 +85,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     const petEspecie = agendamento.pet?.especie || "";
     const clientName = agendamento.cliente?.nome || "";
     const valor = agendamento.valor != null ? `R$ ${Number(agendamento.valor).toFixed(2)}` : "___";
-    const dataHora = new Date(agendamento.data_hora).toLocaleDateString("pt-BR");
+    const dataHora = formatDateBR(agendamento.data_hora);
 
     return templateContent
       .replace(/\{\{cliente_nome\}\}/g, clientName)

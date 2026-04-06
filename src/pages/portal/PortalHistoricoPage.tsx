@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { History, CreditCard, Wrench, Bell, ClipboardList } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn, formatDateBRCustom } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalCliente } from "@/hooks/usePortalCliente";
 
@@ -81,7 +81,7 @@ export default function PortalHistoricoPage() {
                   <p className="text-sm font-medium text-foreground">{item.title}</p>
                   <p className="text-xs text-muted-foreground">{item.description}</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {new Date(item.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                    {formatDateBRCustom(item.date, { day: "2-digit", month: "short", year: "numeric" })}
                   </p>
                 </div>
               </div>
