@@ -40,6 +40,7 @@ export default function ClientsPage() {
       const { data, error } = await supabase
         .from("clientes")
         .select("*")
+        .is("deleted_at", null)
         .order("nome", { ascending: true });
       if (error) throw error;
       return data;
@@ -53,11 +54,14 @@ export default function ClientsPage() {
 
   const handleDelete = async (id: string, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir o contato "${nome}"?`)) return;
-    const { error } = await supabase.from("clientes").delete().eq("id", id);
+    const { error } = await supabase
+      .from("clientes")
+      .update({ deleted_at: new Date().toISOString() } as any)
+      .eq("id", id);
     if (error) {
       toast.error("Erro ao excluir contato: " + error.message);
     } else {
-      toast.success("Contato excluído");
+      toast.success("Contato excluído (pode ser recuperado)");
       handleRefresh();
     }
   };

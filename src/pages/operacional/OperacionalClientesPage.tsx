@@ -22,6 +22,7 @@ export default function OperacionalClientesPage() {
       .from("clientes")
       .select("*")
       .eq("empresa_id", user.empresa_id)
+      .is("deleted_at", null)
       .order("nome");
     setClientes(data ?? []);
     setLoading(false);

@@ -484,6 +484,7 @@ export type Database = {
           cpf: string | null
           created_at: string
           data_nascimento: string | null
+          deleted_at: string | null
           dia_vencimento_fatura: number
           dias_gerar_fatura: number
           email: string | null
@@ -506,6 +507,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
+          deleted_at?: string | null
           dia_vencimento_fatura?: number
           dias_gerar_fatura?: number
           email?: string | null
@@ -528,6 +530,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
+          deleted_at?: string | null
           dia_vencimento_fatura?: number
           dias_gerar_fatura?: number
           email?: string | null
@@ -4599,6 +4602,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_not_deleted: { Args: { p_deleted_at: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
