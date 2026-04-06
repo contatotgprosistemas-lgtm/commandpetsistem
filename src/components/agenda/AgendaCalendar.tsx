@@ -328,13 +328,14 @@ function CalendarEvent({ item }: { item: Agendamento }) {
   const hora = format(new Date(item.data_hora), "HH:mm");
   const petName = item.pet?.nome ?? "Pet";
   const isFromPlan = !!item.subscription_id;
-  const colorClass = getServiceColor(item.tipo_servico);
+  const colorClass = isFromPlan ? "bg-fuchsia-500/80 text-white" : getServiceColor(item.tipo_servico);
 
   return (
     <div
       className={cn(
         "rounded px-1.5 py-0.5 text-[10px] leading-tight transition-colors",
-        isFromPlan ? "border border-primary/30 " + colorClass : colorClass
+        colorClass,
+        isFromPlan && "ring-1 ring-fuchsia-400/50"
       )}
       onClick={(e) => e.stopPropagation()}
     >
@@ -343,7 +344,7 @@ function CalendarEvent({ item }: { item: Agendamento }) {
         <span className="truncate">{petName}</span>
         {isFromPlan && <span className="opacity-70">📋</span>}
       </div>
-      <div className="opacity-70 truncate">{item.tipo_servico}</div>
+      <div className="opacity-70 truncate">{isFromPlan ? `${item.tipo_servico} (Pacote)` : item.tipo_servico}</div>
     </div>
   );
 }
