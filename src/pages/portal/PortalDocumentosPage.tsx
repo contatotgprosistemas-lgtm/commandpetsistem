@@ -58,7 +58,7 @@ export default function PortalDocumentosPage() {
                 <p className="text-sm font-medium text-foreground truncate">{d.title}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <Badge variant="secondary" className="text-[10px]">{d.type}</Badge>
-                  <span className="text-[10px] text-muted-foreground">{new Date(d.created_at).toLocaleDateString("pt-BR")}</span>
+                  <span className="text-[10px] text-muted-foreground">{(() => { const [y,m,d] = d.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}</span>
                 </div>
               </div>
               <Button variant="ghost" size="icon" className="shrink-0" onClick={() => window.open(d.file_url, "_blank")}>
