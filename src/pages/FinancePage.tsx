@@ -48,6 +48,7 @@ function statusBadge(status: string, vencimento: string) {
 }
 
 export default function FinancePage() {
+  const { profile } = useAuth();
   const [contas, setContas] = useState<ContaReceber[]>([]);
   const [contasBancarias, setContasBancarias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,7 +237,7 @@ export default function FinancePage() {
   );
 }
 
-function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onEdit: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
+function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const allSelected = contas.length > 0 && selected.length === contas.length;
 
