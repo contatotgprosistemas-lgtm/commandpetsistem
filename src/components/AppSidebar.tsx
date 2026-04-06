@@ -143,6 +143,53 @@ export function AppSidebar() {
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
         {mainItems.map(renderNavItem)}
 
+        {/* Agenda submenu */}
+        <button
+          onClick={() => setAgendaOpen(!agendaExpanded)}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+            isAgendaActive
+              ? "text-sidebar-foreground"
+              : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/70"
+          }`}
+        >
+          <CalendarDays className="h-[17px] w-[17px] shrink-0" strokeWidth={1.6} />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="whitespace-nowrap overflow-hidden flex-1 text-left"
+              >
+                Agenda
+              </motion.span>
+            )}
+          </AnimatePresence>
+          {!collapsed && (
+            <ChevronDown
+              className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+                agendaExpanded ? "rotate-0" : "-rotate-90"
+              }`}
+            />
+          )}
+        </button>
+
+        <AnimatePresence>
+          {agendaExpanded && !collapsed && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="overflow-hidden pl-4 space-y-0.5"
+            >
+              {agendaItems.map(renderNavItem)}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {collapsed && agendaItems.map(renderNavItem)}
+
         {/* Cadastros submenu */}
         <button
           onClick={() => setCadastrosOpen(!cadastrosExpanded)}
