@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle } from "lucide-react";
+import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ export default function PlanosPacotesPage() {
   const [planejamentoSub, setPlanejamentoSub] = useState<any>(null);
   const [discountTarget, setDiscountTarget] = useState<any>(null);
   const [discountValue, setDiscountValue] = useState("");
+  const [searchContratacao, setSearchContratacao] = useState("");
 
   async function fetchAll() {
     setLoading(true);
@@ -146,6 +147,15 @@ export default function PlanosPacotesPage() {
   const expiredSubs = subscriptions.filter((s: any) => s.status === "ativo" && s.end_date && isPast(new Date(s.end_date)));
   const monthlyRevenue = activeSubs.reduce((acc: number, s: any) => acc + Number(s.final_price || 0), 0);
   const totalUsage = usageLogs.length;
+
+  const filteredSubscriptions = subscriptions.filter((s: any) => {
+    if (!searchContratacao) return true;
+    const q = searchContratacao.toLowerCase();
+    const clienteNome = (s.cliente as any)?.nome?.toLowerCase() || "";
+    const petNome = (s.pet as any)?.nome?.toLowerCase() || "";
+    const planName = plans.find((p: any) => p.id === s.plan_id)?.name?.toLowerCase() || packages.find((p: any) => p.id === s.package_id)?.name?.toLowerCase() || "";
+    return clienteNome.includes(q) || petNome.includes(q) || planName.includes(q);
+  });
 
   function statusBadge(status: string) {
     const map: Record<string, { className: string; label: string }> = {
@@ -272,14 +282,23 @@ export default function PlanosPacotesPage() {
 
         {/* CONTRATAÇÕES TAB */}
         <TabsContent value="contratações">
-          <div className="flex justify-end mt-4 mb-3">
+          <div className="flex items-center justify-between mt-4 mb-3 gap-2 flex-wrap">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar contratação..."
+                value={searchContratacao}
+                onChange={e => setSearchContratacao(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
             <Button size="sm" className="gap-1" onClick={() => setContratacaoOpen(true)}>
               <Plus className="h-4 w-4" />Nova Contratação
             </Button>
           </div>
-          {loading ? <LoadingSkeleton /> : subscriptions.length === 0 ? <EmptyState text="Nenhuma contratação" /> : (
+          {loading ? <LoadingSkeleton /> : filteredSubscriptions.length === 0 ? <EmptyState text="Nenhuma contratação" /> : (
             <div className="bg-card rounded-lg shadow-card divide-y divide-border">
-              {subscriptions.map((s: any) => {
+              {filteredSubscriptions.map((s: any) => {
                 const planName = plans.find((p: any) => p.id === s.plan_id)?.name || packages.find((p: any) => p.id === s.package_id)?.name || "—";
                 const isExpired = s.end_date && isPast(new Date(s.end_date)) && s.status === "ativo";
                 return (
@@ -296,6 +315,9 @@ export default function PlanosPacotesPage() {
                     </div>
                     <div className="shrink-0">{isExpired ? statusBadge("vencido") : statusBadge(s.status)}</div>
                     <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar contratação" onClick={() => { /* TODO: edit subscription dialog */ toast.info("Funcionalidade de edição em desenvolvimento"); }}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Planejar dias" onClick={() => setPlanejamentoSub(s)}>
                         <CalendarDays className="h-3.5 w-3.5" />
                       </Button>
