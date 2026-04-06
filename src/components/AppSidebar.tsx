@@ -161,7 +161,7 @@ export function AppSidebar() {
                 exit={{ opacity: 0 }}
                 className="whitespace-nowrap overflow-hidden flex-1 text-left"
               >
-                Agenda
+                Operações
               </motion.span>
             )}
           </AnimatePresence>
