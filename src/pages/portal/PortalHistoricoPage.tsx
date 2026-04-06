@@ -18,7 +18,7 @@ const iconMap = {
   pagamento: CreditCard,
   notificacao: Bell,
   solicitacao: ClipboardList,
-  contrato: FileText,
+  contrato_plano: FileText,
 };
 
 const colorMap = {
@@ -26,7 +26,7 @@ const colorMap = {
   pagamento: "bg-emerald-500/10 text-emerald-600",
   notificacao: "bg-amber-500/10 text-amber-600",
   solicitacao: "bg-accent/10 text-accent",
-  contrato: "bg-destructive/10 text-destructive",
+  contrato_plano: "bg-destructive/10 text-destructive",
 };
 
 export default function PortalHistoricoPage() {
@@ -37,12 +37,12 @@ export default function PortalHistoricoPage() {
   useEffect(() => {
     if (!cliente) return;
     const fetch = async () => {
-      const [servicos, pagamentos, notificacoes, solicitacoes, contratos] = await Promise.all([
+      const [servicos, pagamentos, notificacoes, solicitacoes, assinaturas] = await Promise.all([
         supabase.from("historico_servicos").select("id, tipo_servico, notas, data_servico").eq("cliente_id", cliente.id).order("data_servico", { ascending: false }).limit(20),
         supabase.from("contas_receber").select("id, descricao, valor, vencimento, status").eq("cliente_id", cliente.id).eq("status", "pago").order("vencimento", { ascending: false }).limit(20),
         supabase.from("customer_notifications").select("id, title, message, created_at").eq("cliente_id", cliente.id).order("created_at", { ascending: false }).limit(20),
         supabase.from("customer_requests").select("id, subject, status, created_at").eq("cliente_id", cliente.id).order("created_at", { ascending: false }).limit(20),
-        supabase.from("contracts").select("id, title, status, token_expires_at, created_at").eq("cliente_id", cliente.id).eq("status", "enviado").not("token_expires_at", "is", null).lt("token_expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(20),
+        supabase.from("customer_pet_subscriptions").select("id, plan_id, package_id, contract_end_date, status, final_price, service_plans(name), service_packages(name)").eq("cliente_id", cliente.id).not("contract_end_date", "is", null).order("contract_end_date", { ascending: true }).limit(20),
       ]);
 
       const timeline: TimelineItem[] = [
