@@ -35,6 +35,11 @@ function isTaxiPetService(name: string) {
   return lower.includes("taxi") || lower.includes("transport") || lower.includes("leva");
 }
 
+function isBanhoService(name: string) {
+  const lower = (name || "").toLowerCase();
+  return lower.includes("banho") || lower.includes("tosa");
+}
+
 function countWeekdaysInRange(start: Date, end: Date, days: number[]): number {
   let count = 0;
   let current = new Date(start);
@@ -86,6 +91,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const selectedPlan = planType === "plan" ? plans.find((p: any) => p.id === selectedId) : packages.find((p: any) => p.id === selectedId);
   const priceContracted = selectedPlan ? Number(selectedPlan.price) : 0;
   const showHorarios = selectedPlan ? isTaxiPetService(selectedPlan.name) : false;
+  const showHorarioBanho = selectedPlan ? isBanhoService(selectedPlan.name) : false;
   const contractDurationMonths = selectedPlan?.min_loyalty_months ? Number(selectedPlan.min_loyalty_months) : null;
 
   // Calculate end date as last day of the month of startDate
