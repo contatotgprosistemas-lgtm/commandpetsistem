@@ -365,7 +365,14 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             <p className="text-xs text-muted-foreground">{plannedDays.length} dia(s) — reservas serão criadas automaticamente</p>
           </div>
 
-          {showHorarios && (
+          {showHorarioBanho && plannedDays.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Horário agendado para o banho</Label>
+              <Input type="time" value={horaBanho} onChange={e => setHoraBanho(e.target.value)} />
+              <p className="text-xs text-muted-foreground">Horário será aplicado a todos os dias selecionados</p>
+            </div>
+          )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Hora prevista buscar</Label>
