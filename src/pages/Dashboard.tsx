@@ -431,7 +431,6 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
             <Phone className="h-3.5 w-3.5 text-emerald-600" />
           </Button>
         )}
-        <GerarContratoButton agendamento={item} />
         {showDelete && (
           <>
             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" title="Excluir" onClick={() => setConfirmOpen(true)}>
@@ -516,7 +515,7 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Serviço" onClick={() => onFicha(item)}>
                 <FileText className="h-3.5 w-3.5 text-primary" />
               </Button>
-              <GerarContratoButton agendamento={item} />
+              
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Manejo" onClick={() => onManejo(item)}>
                 <Stethoscope className="h-3.5 w-3.5 text-primary" />
               </Button>
