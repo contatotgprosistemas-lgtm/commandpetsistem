@@ -117,7 +117,7 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
             cliente_id: subscription.cliente_id,
             pet_id: subscription.pet_id,
             tipo_servico: tipoServico,
-            data_hora: format(current, "yyyy-MM-dd") + "T08:00:00",
+            data_hora: format(current, "yyyy-MM-dd") + "T" + (showHorarioBanho ? horaBanho : "08:00") + ":00",
             status: "agendado",
             subscription_id: subscription.id,
             notas: "Gerado automaticamente pelo plano",
