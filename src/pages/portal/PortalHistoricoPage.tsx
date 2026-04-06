@@ -7,7 +7,7 @@ import { usePortalCliente } from "@/hooks/usePortalCliente";
 
 interface TimelineItem {
   id: string;
-  type: "servico" | "pagamento" | "notificacao" | "solicitacao" | "contrato";
+  type: "servico" | "pagamento" | "notificacao" | "solicitacao" | "contrato_plano";
   title: string;
   description: string;
   date: string;
