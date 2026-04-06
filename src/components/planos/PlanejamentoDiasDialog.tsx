@@ -31,22 +31,28 @@ function isTaxiPetService(name: string) {
   return lower.includes("taxi") || lower.includes("transport") || lower.includes("leva");
 }
 
+function isBanhoService(name: string) {
+  const lower = (name || "").toLowerCase();
+  return lower.includes("banho") || lower.includes("tosa");
+}
+
 export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuccess }: Props) {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [horaBuscar, setHoraBuscar] = useState("08:00");
   const [horaLevar, setHoraLevar] = useState("17:00");
+  const [horaBanho, setHoraBanho] = useState("10:00");
   const [showHorarios, setShowHorarios] = useState(false);
+  const [showHorarioBanho, setShowHorarioBanho] = useState(false);
 
   useEffect(() => {
     if (open && subscription) {
       setSelectedDays(subscription.planned_days || []);
-      // Check if the plan/package is TaxiPet type
-      checkIfTaxiPet();
+      checkServiceType();
     }
   }, [open, subscription]);
 
-  async function checkIfTaxiPet() {
+  async function checkServiceType() {
     let name = "";
     if (subscription.plan_id) {
       const { data } = await supabase.from("service_plans" as any).select("name").eq("id", subscription.plan_id).single();
@@ -56,6 +62,7 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
       if (data) name = (data as any).name;
     }
     setShowHorarios(isTaxiPetService(name));
+    setShowHorarioBanho(isBanhoService(name));
   }
 
   function toggleDay(day: number) {
@@ -110,7 +117,7 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
             cliente_id: subscription.cliente_id,
             pet_id: subscription.pet_id,
             tipo_servico: tipoServico,
-            data_hora: format(current, "yyyy-MM-dd") + "T08:00:00",
+            data_hora: format(current, "yyyy-MM-dd") + "T" + (showHorarioBanho ? horaBanho : "08:00") + ":00",
             status: "agendado",
             subscription_id: subscription.id,
             notas: "Gerado automaticamente pelo plano",
@@ -184,6 +191,15 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
             <div className="space-y-1.5">
               <Label>Hora prevista levar</Label>
               <Input type="time" value={horaLevar} onChange={e => setHoraLevar(e.target.value)} />
+            </div>
+          </div>
+        )}
+
+        {showHorarioBanho && (
+          <div className="py-2">
+            <div className="space-y-1.5">
+              <Label>Horário agendado para o banho</Label>
+              <Input type="time" value={horaBanho} onChange={e => setHoraBanho(e.target.value)} />
             </div>
           </div>
         )}
