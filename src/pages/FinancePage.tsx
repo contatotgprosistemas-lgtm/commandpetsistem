@@ -22,6 +22,8 @@ import PlanoContasPage from "@/pages/PlanoContasPage";
 import { ImportContasReceberDialog } from "@/components/ImportContasReceberDialog";
 import { ImportContasPagarDialog } from "@/components/ImportContasPagarDialog";
 import { EditarContaReceberDialog } from "@/components/EditarContaReceberDialog";
+import { DividirFaturaDialog } from "@/components/DividirFaturaDialog";
+import { SplitSquareVertical } from "lucide-react";
 
 interface ContaReceber {
   id: string;
@@ -57,6 +59,7 @@ export default function FinancePage() {
   const [importPagarOpen, setImportPagarOpen] = useState(false);
 
   const [editConta, setEditConta] = useState<ContaReceber | null>(null);
+  const [dividirConta, setDividirConta] = useState<ContaReceber | null>(null);
 
   async function fetchContas() {
     setLoading(true);
@@ -148,6 +151,7 @@ export default function FinancePage() {
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
             onEdit={(c) => setEditConta(c)}
+            onDividir={(c) => setDividirConta(c)}
             onDelete={async (id) => {
               const { error } = await supabase.from("contas_receber").delete().eq("id", id);
               if (error) { toast.error("Erro ao excluir"); return; }
@@ -219,6 +223,14 @@ export default function FinancePage() {
         onOpenChange={(o) => { if (!o) setEditConta(null); }}
         onSuccess={() => { setEditConta(null); fetchContas(); }}
         conta={editConta}
+      />
+
+      <DividirFaturaDialog
+        open={!!dividirConta}
+        onOpenChange={(o) => { if (!o) setDividirConta(null); }}
+        onSuccess={() => { setDividirConta(null); fetchContas(); }}
+        conta={dividirConta}
+        empresaId={profile?.empresa_id || ""}
       />
     </div>
   );
