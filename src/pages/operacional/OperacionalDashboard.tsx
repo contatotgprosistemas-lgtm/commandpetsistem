@@ -233,7 +233,8 @@ export default function OperacionalDashboard() {
                     <Badge variant="outline" className="mt-1 text-[10px]">{item._serviceLabel || item.tipo_servico}</Badge>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    <Button size="sm" variant="outline" onClick={() => setManejoTarget(item)} className="gap-1 h-9 px-2.5 text-xs">
+                    <Button size="sm" variant="outline" onClick={() => setManejoTarget(item)}
+                      className={`gap-1 h-9 px-2.5 text-xs ${manejoFilledIds.has(item.id) ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 hover:text-emerald-700" : ""}`}>
                       <ClipboardList className="h-3.5 w-3.5" /> Manejo
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => setGaleriaTarget(item)} className="gap-1 h-9 px-2.5 text-xs">
