@@ -18,7 +18,17 @@ interface OperationalAuthContextType {
   signOut: () => Promise<void>;
 }
 
-const OperationalAuthContext = createContext<OperationalAuthContextType | undefined>(undefined);
+const OPERATIONAL_AUTH_CONTEXT_KEY = "__lovable_operational_auth_context__";
+
+type GlobalWithOperationalAuthContext = typeof globalThis & {
+  [OPERATIONAL_AUTH_CONTEXT_KEY]?: ReturnType<typeof createContext<OperationalAuthContextType | undefined>>;
+};
+
+const globalWithOperationalAuthContext = globalThis as GlobalWithOperationalAuthContext;
+
+const OperationalAuthContext =
+  globalWithOperationalAuthContext[OPERATIONAL_AUTH_CONTEXT_KEY] ??
+  (globalWithOperationalAuthContext[OPERATIONAL_AUTH_CONTEXT_KEY] = createContext<OperationalAuthContextType | undefined>(undefined));
 
 export function OperationalAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<OperationalUser | null>(null);
