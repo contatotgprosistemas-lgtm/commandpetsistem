@@ -14,6 +14,7 @@ import { NovoPlanoDialog } from "@/components/planos/NovoPlanoDialog";
 import { NovoPacoteDialog } from "@/components/planos/NovoPacoteDialog";
 import { ContratacaoDialog } from "@/components/planos/ContratacaoDialog";
 import { PlanejamentoDiasDialog } from "@/components/planos/PlanejamentoDiasDialog";
+import { EditarContratacaoDialog } from "@/components/planos/EditarContratacaoDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ export default function PlanosPacotesPage() {
   const [actionTarget, setActionTarget] = useState<{ action: string; id: string } | null>(null);
   const [planejamentoSub, setPlanejamentoSub] = useState<any>(null);
   const [discountTarget, setDiscountTarget] = useState<any>(null);
+  const [editingSub, setEditingSub] = useState<any>(null);
   const [discountValue, setDiscountValue] = useState("");
   const [searchContratacao, setSearchContratacao] = useState("");
 
@@ -315,7 +317,7 @@ export default function PlanosPacotesPage() {
                     </div>
                     <div className="shrink-0">{isExpired ? statusBadge("vencido") : statusBadge(s.status)}</div>
                     <div className="flex gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar contratação" onClick={() => { /* TODO: edit subscription dialog */ toast.info("Funcionalidade de edição em desenvolvimento"); }}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar contratação" onClick={() => setEditingSub(s)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Planejar dias" onClick={() => setPlanejamentoSub(s)}>
@@ -393,6 +395,15 @@ export default function PlanosPacotesPage() {
       {empresaId && <NovoPacoteDialog open={novoPacoteOpen || !!editingPackage} onOpenChange={o => { if (!o) { setNovoPacoteOpen(false); setEditingPackage(null); } }} onSuccess={fetchAll} empresaId={empresaId} editingPackage={editingPackage} />}
       {empresaId && <ContratacaoDialog open={contratacaoOpen} onOpenChange={setContratacaoOpen} onSuccess={fetchAll} empresaId={empresaId} />}
       {planejamentoSub && <PlanejamentoDiasDialog open={!!planejamentoSub} onOpenChange={o => { if (!o) setPlanejamentoSub(null); }} subscription={planejamentoSub} onSuccess={fetchAll} />}
+      {editingSub && (
+        <EditarContratacaoDialog
+          open={!!editingSub}
+          onOpenChange={o => { if (!o) setEditingSub(null); }}
+          onSuccess={fetchAll}
+          subscription={editingSub}
+          planName={plans.find((p: any) => p.id === editingSub.plan_id)?.name || packages.find((p: any) => p.id === editingSub.package_id)?.name || "—"}
+        />
+      )}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={o => { if (!o) setDeleteTarget(null); }}>
         <AlertDialogContent>
