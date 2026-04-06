@@ -287,7 +287,7 @@ export default function SuperAdminPage() {
                             <Badge variant="outline">{p.cargo || "—"}</Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground text-sm">
-                            {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                            {(() => { const [y,m,d] = p.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
@@ -405,7 +405,7 @@ export default function SuperAdminPage() {
                             </Select>
                           </TableCell>
                           <TableCell className="text-muted-foreground text-sm">
-                            {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                            {(() => { const [y,m,d] = p.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1 items-center">
