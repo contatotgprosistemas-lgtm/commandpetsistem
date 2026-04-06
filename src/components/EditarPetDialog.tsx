@@ -40,6 +40,7 @@ const schema = z.object({
   v10_data: z.date().optional(),
   raiva_data: z.date().optional(),
   gripe_data: z.date().optional(),
+  giardia_data: z.date().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -82,6 +83,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         v10_data: pet.v10_data ? new Date(pet.v10_data + "T00:00:00") : undefined,
         raiva_data: pet.raiva_data ? new Date(pet.raiva_data + "T00:00:00") : undefined,
         gripe_data: pet.gripe_data ? new Date(pet.gripe_data + "T00:00:00") : undefined,
+        giardia_data: (pet as any).giardia_data ? new Date((pet as any).giardia_data + "T00:00:00") : undefined,
       });
     }
   }, [pet, form]);
@@ -109,6 +111,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         v10_data: data.v10_data ? format(data.v10_data, "yyyy-MM-dd") : null,
         raiva_data: data.raiva_data ? format(data.raiva_data, "yyyy-MM-dd") : null,
         gripe_data: data.gripe_data ? format(data.gripe_data, "yyyy-MM-dd") : null,
+        giardia_data: data.giardia_data ? format(data.giardia_data, "yyyy-MM-dd") : null,
       }).eq("id", pet.id);
 
       if (error) throw error;
@@ -259,6 +262,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
                 { dataName: "v10_data" as const, label: "V10" },
                 { dataName: "raiva_data" as const, label: "Raiva" },
                 { dataName: "gripe_data" as const, label: "Gripe" },
+                { dataName: "giardia_data" as const, label: "Giárdia" },
               ]).map((vacina) => (
                 <div key={vacina.dataName} className="grid grid-cols-2 gap-3 items-center">
                   <span className="text-sm font-medium text-foreground">{vacina.label}</span>

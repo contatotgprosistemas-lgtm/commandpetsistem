@@ -46,6 +46,8 @@ const schema = z.object({
   raiva_data: z.date().optional(),
   gripe: z.string().optional().or(z.literal("")),
   gripe_data: z.date().optional(),
+  giardia: z.string().optional().or(z.literal("")),
+  giardia_data: z.date().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -112,6 +114,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
         v10_data: data.v10_data ? format(data.v10_data, "yyyy-MM-dd") : null,
         raiva_data: data.raiva_data ? format(data.raiva_data, "yyyy-MM-dd") : null,
         gripe_data: data.gripe_data ? format(data.gripe_data, "yyyy-MM-dd") : null,
+        giardia_data: data.giardia_data ? format(data.giardia_data, "yyyy-MM-dd") : null,
         restricoes_alimentares: data.restricoes_alimentares || null,
         medicacoes: data.medicacoes || null,
         foto_url: fotoUrl,
@@ -304,6 +307,7 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
                 { dataName: "v10_data" as const, label: "V10" },
                 { dataName: "raiva_data" as const, label: "Raiva" },
                 { dataName: "gripe_data" as const, label: "Gripe" },
+                { dataName: "giardia_data" as const, label: "Giárdia" },
               ]).map((vacina) => (
                 <div key={vacina.dataName} className="grid grid-cols-2 gap-3 items-center">
                   <span className="text-sm font-medium text-foreground">{vacina.label}</span>

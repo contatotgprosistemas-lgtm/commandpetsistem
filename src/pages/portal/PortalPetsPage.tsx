@@ -25,6 +25,7 @@ interface Pet {
   raiva_data: string | null;
   antiparasitario_data: string | null;
   gripe_data: string | null;
+  giardia_data: string | null;
 }
 
 interface Agendamento {
@@ -135,7 +136,8 @@ export default function PortalPetsPage() {
                 {pet.raiva_data && <Badge variant="secondary" className="text-[10px]">Raiva: {formatDateBR(pet.raiva_data)}</Badge>}
                 {pet.antiparasitario_data && <Badge variant="secondary" className="text-[10px]">Antiparasitário: {formatDateBR(pet.antiparasitario_data)}</Badge>}
                 {pet.gripe_data && <Badge variant="secondary" className="text-[10px]">Gripe: {formatDateBR(pet.gripe_data)}</Badge>}
-                {!pet.v10_data && !pet.raiva_data && !pet.antiparasitario_data && !pet.gripe_data && (
+                {pet.giardia_data && <Badge variant="secondary" className="text-[10px]">Giárdia: {formatDateBR(pet.giardia_data)}</Badge>}
+                {!pet.v10_data && !pet.raiva_data && !pet.antiparasitario_data && !pet.gripe_data && !pet.giardia_data && (
                   <span className="text-xs text-muted-foreground">Sem registros</span>
                 )}
               </div>
