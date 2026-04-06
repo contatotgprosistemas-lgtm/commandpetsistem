@@ -35,6 +35,11 @@ function isTaxiPetService(name: string) {
   return lower.includes("taxi") || lower.includes("transport") || lower.includes("leva");
 }
 
+function isBanhoService(name: string) {
+  const lower = (name || "").toLowerCase();
+  return lower.includes("banho") || lower.includes("tosa");
+}
+
 function countWeekdaysInRange(start: Date, end: Date, days: number[]): number {
   let count = 0;
   let current = new Date(start);
@@ -70,6 +75,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [plannedDays, setPlannedDays] = useState<number[]>([]);
   const [horaBuscar, setHoraBuscar] = useState("08:00");
   const [horaLevar, setHoraLevar] = useState("17:00");
+  const [horaBanho, setHoraBanho] = useState("09:00");
 
   useEffect(() => {
     if (!open) return;
@@ -86,6 +92,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const selectedPlan = planType === "plan" ? plans.find((p: any) => p.id === selectedId) : packages.find((p: any) => p.id === selectedId);
   const priceContracted = selectedPlan ? Number(selectedPlan.price) : 0;
   const showHorarios = selectedPlan ? isTaxiPetService(selectedPlan.name) : false;
+  const showHorarioBanho = selectedPlan ? isBanhoService(selectedPlan.name) : false;
   const contractDurationMonths = selectedPlan?.min_loyalty_months ? Number(selectedPlan.min_loyalty_months) : null;
 
   // Calculate end date as last day of the month of startDate
@@ -184,7 +191,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               cliente_id: clienteId,
               pet_id: petId,
               tipo_servico: tipoServico,
-              data_hora: format(current, "yyyy-MM-dd") + "T07:00:00-03:00",
+              data_hora: format(current, "yyyy-MM-dd") + "T" + (showHorarioBanho ? horaBanho : "07") + ":00:00-03:00",
               status: "agendado",
               subscription_id: subscriptionId,
               notas: "Gerado automaticamente pelo plano",
@@ -224,6 +231,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setPlannedDays([]);
     setHoraBuscar("08:00");
     setHoraLevar("17:00");
+    setHoraBanho("09:00");
     setSaving(false); onSuccess(); onOpenChange(false);
   }
 
@@ -356,6 +364,14 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </div>
             <p className="text-xs text-muted-foreground">{plannedDays.length} dia(s) — reservas serão criadas automaticamente</p>
           </div>
+
+          {showHorarioBanho && plannedDays.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Horário agendado para o banho</Label>
+              <Input type="time" value={horaBanho} onChange={e => setHoraBanho(e.target.value)} />
+              <p className="text-xs text-muted-foreground">Horário será aplicado a todos os dias selecionados</p>
+            </div>
+          )}
 
           {showHorarios && (
             <div className="grid grid-cols-2 gap-4">
