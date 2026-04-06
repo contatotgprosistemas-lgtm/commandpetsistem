@@ -26,6 +26,7 @@ export default function OperacionalDashboard() {
   const [pendingCheckins, setPendingCheckins] = useState<any[]>([]);
   const [manejoTarget, setManejoTarget] = useState<any>(null);
   const [galeriaTarget, setGaleriaTarget] = useState<any>(null);
+  const [manejoFilledIds, setManejoFilledIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -91,6 +92,17 @@ export default function OperacionalDashboard() {
       });
       setPetsNaEmpresa(naEmpresa.map(a => ({ ...a, _serviceLabel: getServiceLabel(a) })));
       setPendingCheckins(checkinsHoje);
+
+      // Check which agendamentos already have manejo records
+      const naEmpresaIds = naEmpresa.map(a => a.id);
+      if (naEmpresaIds.length > 0) {
+        const { data: manejoData } = await supabase
+          .from("manejo_registros")
+          .select("agendamento_id")
+          .in("agendamento_id", naEmpresaIds);
+        setManejoFilledIds(new Set((manejoData ?? []).map((m: any) => m.agendamento_id)));
+      }
+
       setLoading(false);
     };
     fetchData();
@@ -221,7 +233,8 @@ export default function OperacionalDashboard() {
                     <Badge variant="outline" className="mt-1 text-[10px]">{item._serviceLabel || item.tipo_servico}</Badge>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    <Button size="sm" variant="outline" onClick={() => setManejoTarget(item)} className="gap-1 h-9 px-2.5 text-xs">
+                    <Button size="sm" variant="outline" onClick={() => setManejoTarget(item)}
+                      className={`gap-1 h-9 px-2.5 text-xs ${manejoFilledIds.has(item.id) ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 hover:text-emerald-700" : ""}`}>
                       <ClipboardList className="h-3.5 w-3.5" /> Manejo
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => setGaleriaTarget(item)} className="gap-1 h-9 px-2.5 text-xs">
