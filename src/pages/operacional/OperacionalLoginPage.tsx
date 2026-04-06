@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, Wrench } from "lucide-react";
 import logoTgPro from "@/assets/logo-tgpro.jpeg";
+import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 
 export default function OperacionalLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, session, loading: authLoading } = useOperationalAuth();
+
+  useEffect(() => {
+    if (!authLoading && session && user) {
+      navigate("/operacional", { replace: true });
+    }
+  }, [authLoading, session, user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +35,6 @@ export default function OperacionalLoginPage() {
       return;
     }
 
-    // Check if user is an operational user
     const { data: opUser } = await supabase
       .from("operational_users")
       .select("id")
@@ -43,7 +50,6 @@ export default function OperacionalLoginPage() {
     }
 
     toast.success("Login realizado!");
-    navigate("/operacional");
     setLoading(false);
   };
 
