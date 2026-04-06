@@ -35,7 +35,8 @@ export default function OperacionalAgendaPage() {
       .neq("status", "cancelado")
       .order("data_hora", { ascending: true });
 
-    setAgendamentos(data ?? []);
+    const sorted = [...(data ?? [])].sort((a: any, b: any) => (a.pet?.nome ?? "").localeCompare(b.pet?.nome ?? ""));
+    setAgendamentos(sorted);
     setLoading(false);
   };
 

@@ -71,7 +71,10 @@ export default function FinancePage() {
       .select("id, descricao, valor, vencimento, categoria, status, cliente_id, banco, cliente:clientes(nome)")
       .neq("status", "pago")
       .order("vencimento", { ascending: false });
-    if (data) setContas(data as any);
+    if (data) {
+      const sorted = [...data].sort((a: any, b: any) => (a.cliente?.nome ?? "").localeCompare(b.cliente?.nome ?? ""));
+      setContas(sorted as any);
+    }
     setLoading(false);
   }
 
