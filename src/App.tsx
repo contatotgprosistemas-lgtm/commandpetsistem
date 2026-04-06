@@ -24,6 +24,8 @@ import ChatbotPage from "@/pages/ChatbotPage";
 import TaxiPetPage from "@/pages/TaxiPetPage";
 import ContratosPage from "@/pages/ContratosPage";
 import NotasFiscaisPage from "@/pages/NotasFiscaisPage";
+import BanhoTosaPage from "@/pages/BanhoTosaPage";
+import EsteiraBanhoPage from "@/pages/EsteiraBanhoPage";
 
 import ContractSignPage from "@/pages/ContractSignPage";
 import PontoPage from "@/pages/PontoPage";
@@ -138,6 +140,28 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <AgendaPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/banho-tosa"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <BanhoTosaPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/esteira-banho"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <EsteiraBanhoPage />
                   </AppLayout>
                 </ProtectedRoute>
               }
