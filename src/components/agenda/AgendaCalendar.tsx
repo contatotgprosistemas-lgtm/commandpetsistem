@@ -44,14 +44,31 @@ const SERVICE_COLORS: Record<string, string> = {
   "Tosa": "bg-violet-500/80 text-white",
   "Banho e Tosa": "bg-indigo-500/80 text-white",
   "Hotel": "bg-amber-500/80 text-white",
+  "Hospedagem": "bg-amber-500/80 text-white",
   "Creche": "bg-emerald-500/80 text-white",
   "Daycare": "bg-emerald-500/80 text-white",
+  "Escola": "bg-emerald-500/80 text-white",
   "Veterinário": "bg-red-500/80 text-white",
   "Adestramento": "bg-orange-500/80 text-white",
   "Passeio": "bg-teal-500/80 text-white",
 };
 
-function getServiceColor(tipo: string) {
+// Cores diferenciadas para agendamentos vindos de planos/pacotes
+const PLAN_SERVICE_COLORS: Record<string, string> = {
+  "Creche": "bg-blue-500/80 text-white",
+  "Daycare": "bg-blue-500/80 text-white",
+  "Escola": "bg-blue-500/80 text-white",
+  "Banho": "bg-fuchsia-500/80 text-white",
+  "Tosa": "bg-fuchsia-500/80 text-white",
+  "Banho e Tosa": "bg-fuchsia-500/80 text-white",
+  "Hotel": "bg-lime-500/80 text-white",
+  "Hospedagem": "bg-lime-500/80 text-white",
+};
+
+function getServiceColor(tipo: string, isFromPlan = false) {
+  if (isFromPlan) {
+    return PLAN_SERVICE_COLORS[tipo] || "bg-fuchsia-500/80 text-white";
+  }
   return SERVICE_COLORS[tipo] || "bg-primary/70 text-primary-foreground";
 }
 
@@ -270,7 +287,7 @@ function DayListItem({ item, onEdit }: { item: Agendamento; onEdit?: (a: Agendam
   const clientWhatsapp = item.cliente?.whatsapp;
   const initials = petName.slice(0, 2).toUpperCase();
   const isFromPlan = !!item.subscription_id;
-  const colorClass = isFromPlan ? "bg-fuchsia-500/80 text-white" : getServiceColor(item.tipo_servico);
+  const colorClass = getServiceColor(item.tipo_servico, isFromPlan);
 
   return (
     <div
@@ -329,7 +346,7 @@ function CalendarEvent({ item }: { item: Agendamento }) {
   const hora = format(new Date(item.data_hora), "HH:mm");
   const petName = item.pet?.nome ?? "Pet";
   const isFromPlan = !!item.subscription_id;
-  const colorClass = isFromPlan ? "bg-fuchsia-500/80 text-white" : getServiceColor(item.tipo_servico);
+  const colorClass = getServiceColor(item.tipo_servico, isFromPlan);
 
   return (
     <div
