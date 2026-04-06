@@ -3141,6 +3141,7 @@ export type Database = {
           empresa_id: string
           especie: string
           foto_url: string | null
+          giardia_data: string | null
           gripe_data: string | null
           id: string
           idade: string | null
@@ -3168,6 +3169,7 @@ export type Database = {
           empresa_id: string
           especie?: string
           foto_url?: string | null
+          giardia_data?: string | null
           gripe_data?: string | null
           id?: string
           idade?: string | null
@@ -3195,6 +3197,7 @@ export type Database = {
           empresa_id?: string
           especie?: string
           foto_url?: string | null
+          giardia_data?: string | null
           gripe_data?: string | null
           id?: string
           idade?: string | null
