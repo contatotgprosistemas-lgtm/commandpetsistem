@@ -85,6 +85,16 @@ export default function PortalPetsPage() {
     );
   }
 
+  const formatDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString("pt-BR");
+  };
+
+  const formatDateShort = (dateStr: string) => {
+    const [year, month, day] = dateStr.split("T")[0].split("-").map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  };
+
   return (
     <div className="space-y-4 pb-20 md:pb-0">
       <h1 className="text-xl font-bold text-foreground">Meus Pets</h1>
@@ -121,7 +131,7 @@ export default function PortalPetsPage() {
               )}
               {pet.data_nascimento && (
                 <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5" /> {new Date(pet.data_nascimento).toLocaleDateString("pt-BR")}
+                  <Calendar className="h-3.5 w-3.5" /> {formatDate(pet.data_nascimento)}
                 </div>
               )}
             </div>
@@ -130,10 +140,10 @@ export default function PortalPetsPage() {
             <div className="space-y-1">
               <p className="text-xs font-medium text-foreground">Vacinas</p>
               <div className="flex flex-wrap gap-1">
-                {pet.v10_data && <Badge variant="secondary" className="text-[10px]">V10: {new Date(pet.v10_data).toLocaleDateString("pt-BR")}</Badge>}
-                {pet.raiva_data && <Badge variant="secondary" className="text-[10px]">Raiva: {new Date(pet.raiva_data).toLocaleDateString("pt-BR")}</Badge>}
-                {pet.antiparasitario_data && <Badge variant="secondary" className="text-[10px]">Antiparasitário: {new Date(pet.antiparasitario_data).toLocaleDateString("pt-BR")}</Badge>}
-                {pet.gripe_data && <Badge variant="secondary" className="text-[10px]">Gripe: {new Date(pet.gripe_data).toLocaleDateString("pt-BR")}</Badge>}
+                {pet.v10_data && <Badge variant="secondary" className="text-[10px]">V10: {formatDate(pet.v10_data)}</Badge>}
+                {pet.raiva_data && <Badge variant="secondary" className="text-[10px]">Raiva: {formatDate(pet.raiva_data)}</Badge>}
+                {pet.antiparasitario_data && <Badge variant="secondary" className="text-[10px]">Antiparasitário: {formatDate(pet.antiparasitario_data)}</Badge>}
+                {pet.gripe_data && <Badge variant="secondary" className="text-[10px]">Gripe: {formatDate(pet.gripe_data)}</Badge>}
                 {!pet.v10_data && !pet.raiva_data && !pet.antiparasitario_data && !pet.gripe_data && (
                   <span className="text-xs text-muted-foreground">Sem registros</span>
                 )}
@@ -169,7 +179,7 @@ export default function PortalPetsPage() {
                   <div key={ag.id} className="flex items-center justify-between text-xs py-1 border-b border-border last:border-0">
                     <span className="text-muted-foreground">{ag.tipo_servico}</span>
                     <span className="text-foreground">
-                      {new Date(ag.data_hora).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                      {formatDateShort(ag.data_hora)}
                     </span>
                   </div>
                 ))}
