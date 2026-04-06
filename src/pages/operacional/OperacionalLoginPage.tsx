@@ -35,12 +35,19 @@ export default function OperacionalLoginPage() {
       return;
     }
 
-    const { data: opUser } = await supabase
+    const { data: opUser, error: opUserError } = await supabase
       .from("operational_users")
       .select("id")
       .eq("user_id", data.user.id)
       .eq("ativo", true)
       .maybeSingle();
+
+    if (opUserError) {
+      await supabase.auth.signOut();
+      toast.error("Não foi possível validar o acesso ao portal operacional.");
+      setLoading(false);
+      return;
+    }
 
     if (!opUser) {
       await supabase.auth.signOut();
@@ -51,6 +58,7 @@ export default function OperacionalLoginPage() {
 
     toast.success("Login realizado!");
     setLoading(false);
+    navigate("/operacional", { replace: true });
   };
 
   return (

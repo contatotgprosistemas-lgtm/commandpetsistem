@@ -25,9 +25,14 @@ export function OperationalAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const hasInitialized = useRef(false);
+  const latestRequestId = useRef(0);
 
   const loadData = useCallback(async (s: Session | null) => {
+    const requestId = ++latestRequestId.current;
+
     if (!s?.user) {
+      if (requestId !== latestRequestId.current) return;
+
       setSession(null);
       setUser(null);
       setLoading(false);
@@ -37,21 +42,26 @@ export function OperationalAuthProvider({ children }: { children: ReactNode }) {
 
     setLoading(true);
 
-    setSession(s);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("operational_users")
       .select("*")
       .eq("user_id", s.user.id)
       .eq("ativo", true)
       .maybeSingle();
-    setUser((data as OperationalUser) ?? null);
+
+    if (requestId !== latestRequestId.current) return;
+
+    setSession(s);
+    setUser(error ? null : (data as OperationalUser) ?? null);
     setLoading(false);
     hasInitialized.current = true;
   }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      void loadData(s);
+      queueMicrotask(() => {
+        void loadData(s);
+      });
     });
     void supabase.auth.getSession().then(({ data }) => void loadData(data.session));
     return () => subscription.unsubscribe();
