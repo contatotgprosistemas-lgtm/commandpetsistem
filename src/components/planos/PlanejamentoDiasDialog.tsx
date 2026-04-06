@@ -195,6 +195,15 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
           </div>
         )}
 
+        {showHorarioBanho && (
+          <div className="py-2">
+            <div className="space-y-1.5">
+              <Label>Horário agendado para o banho</Label>
+              <Input type="time" value={horaBanho} onChange={e => setHoraBanho(e.target.value)} />
+            </div>
+          </div>
+        )}
+
         <p className="text-xs text-muted-foreground">
           {selectedDays.length} dia(s) selecionado(s)
         </p>
