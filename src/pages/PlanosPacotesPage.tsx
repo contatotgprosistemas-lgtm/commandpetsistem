@@ -148,6 +148,15 @@ export default function PlanosPacotesPage() {
   const monthlyRevenue = activeSubs.reduce((acc: number, s: any) => acc + Number(s.final_price || 0), 0);
   const totalUsage = usageLogs.length;
 
+  const filteredSubscriptions = subscriptions.filter((s: any) => {
+    if (!searchContratacao) return true;
+    const q = searchContratacao.toLowerCase();
+    const clienteNome = (s.cliente as any)?.nome?.toLowerCase() || "";
+    const petNome = (s.pet as any)?.nome?.toLowerCase() || "";
+    const planName = plans.find((p: any) => p.id === s.plan_id)?.name?.toLowerCase() || packages.find((p: any) => p.id === s.package_id)?.name?.toLowerCase() || "";
+    return clienteNome.includes(q) || petNome.includes(q) || planName.includes(q);
+  });
+
   function statusBadge(status: string) {
     const map: Record<string, { className: string; label: string }> = {
       ativo: { className: "bg-emerald-500/15 text-emerald-600 border-0", label: "Ativo" },
