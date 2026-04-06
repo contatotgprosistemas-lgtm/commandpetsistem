@@ -96,14 +96,16 @@ Deno.serve(async (req) => {
       .update({ user_id: userId })
       .eq("id", cliente_id);
 
-    // Create a profile for the client user (linked to same empresa)
-    await adminClient.from("profiles").insert({
+    // Create/update profile for the client user (linked to same empresa, pre-approved)
+    // The handle_new_user trigger may have already created a profile, so we upsert
+    await adminClient.from("profiles").upsert({
       user_id: userId,
       nome: cliente.nome,
       email,
       empresa_id: cliente.empresa_id,
       cargo: "cliente",
-    });
+      aprovado: true,
+    }, { onConflict: "user_id" });
 
     return new Response(
       JSON.stringify({ success: true, user_id: userId, email }),
