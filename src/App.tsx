@@ -78,8 +78,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <OperationalAuthProvider>
           <Routes>
-            {/* Landing page pública */}
             <Route path="/site" element={<LandingPage />} />
 
             {/* Admin auth */}
@@ -332,17 +332,15 @@ const App = () => (
             />
 
             {/* Operacional auth */}
-            <Route path="/operacional/login" element={<OperationalAuthProvider><OperacionalLoginPage /></OperationalAuthProvider>} />
+            <Route path="/operacional/login" element={<OperacionalLoginPage />} />
 
             {/* Operacional portal (protected) */}
             <Route
               path="/operacional"
               element={
-                <OperationalAuthProvider>
-                  <OperacionalProtectedRoute>
-                    <OperacionalLayout />
-                  </OperacionalProtectedRoute>
-                </OperationalAuthProvider>
+                <OperacionalProtectedRoute>
+                  <OperacionalLayout />
+                </OperacionalProtectedRoute>
               }
             >
               <Route index element={<OperacionalDashboard />} />
@@ -354,6 +352,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </OperationalAuthProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
