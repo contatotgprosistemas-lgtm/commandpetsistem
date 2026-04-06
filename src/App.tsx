@@ -352,6 +352,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </OperationalAuthProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
