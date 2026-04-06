@@ -31,6 +31,11 @@ function isTaxiPetService(name: string) {
   return lower.includes("taxi") || lower.includes("transport") || lower.includes("leva");
 }
 
+function isBanhoService(name: string) {
+  const lower = (name || "").toLowerCase();
+  return lower.includes("banho") || lower.includes("tosa");
+}
+
 export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuccess }: Props) {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
