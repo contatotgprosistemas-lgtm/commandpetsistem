@@ -344,6 +344,10 @@ function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDe
                         <ArrowDownCircle className="h-4 w-4 mr-2" />
                         Baixar
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onDividir(c)}>
+                        <SplitSquareVertical className="h-4 w-4 mr-2" />
+                        Dividir
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => onDelete(c.id)}
