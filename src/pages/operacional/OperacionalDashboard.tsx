@@ -186,24 +186,26 @@ export default function OperacionalDashboard() {
           <div className="space-y-2">
             {pendingCheckins.map((item) => (
               <Card key={item.id} className="rounded-xl">
-                <CardContent className="p-4 flex items-center gap-4">
-                  <Avatar className="h-12 w-12">
-                    {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
-                      {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground text-base">{item.pet?.nome ?? "Pet"}</p>
-                    <p className="text-xs text-muted-foreground">{item.cliente?.nome ?? "—"}</p>
-                    <Badge variant="outline" className="mt-1 text-[10px]">{item.tipo_servico}</Badge>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 shrink-0">
+                      {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                        {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground text-sm">{item.pet?.nome ?? "Pet"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{item.cliente?.nome ?? "—"}</p>
+                      <Badge variant="outline" className="mt-1 text-[10px]">{item.tipo_servico}</Badge>
+                    </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleCheckin(item)} className="gap-1.5 h-10 px-3">
-                      <LogIn className="h-4 w-4" /> Entrada
+                    <Button size="sm" variant="outline" onClick={() => handleCheckin(item)} className="flex-1 gap-1.5 h-9 text-xs">
+                      <LogIn className="h-3.5 w-3.5" /> Entrada
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setFaltaOpen(item)} className="gap-1.5 h-10 px-3 text-destructive hover:text-destructive">
-                      <XCircle className="h-4 w-4" /> Falta
+                    <Button size="sm" variant="outline" onClick={() => setFaltaOpen(item)} className="flex-1 gap-1.5 h-9 text-xs text-destructive hover:text-destructive">
+                      <XCircle className="h-3.5 w-3.5" /> Falta
                     </Button>
                   </div>
                 </CardContent>
@@ -220,27 +222,29 @@ export default function OperacionalDashboard() {
           <div className="space-y-2">
             {petsNaEmpresa.map((item) => (
               <Card key={item.id} className="rounded-xl">
-                <CardContent className="p-4 flex items-center gap-4">
-                  <Avatar className="h-12 w-12">
-                    {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
-                      {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground text-base">{item.pet?.nome ?? "Pet"}</p>
-                    <p className="text-xs text-muted-foreground">{item.cliente?.nome ?? "—"}</p>
-                    <Badge variant="outline" className="mt-1 text-[10px]">{item._serviceLabel || item.tipo_servico}</Badge>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 shrink-0">
+                      {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                        {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground text-sm">{item.pet?.nome ?? "Pet"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{item.cliente?.nome ?? "—"}</p>
+                      <Badge variant="outline" className="mt-1 text-[10px]">{item._serviceLabel || item.tipo_servico}</Badge>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="grid grid-cols-3 gap-2">
                     <Button size="sm" variant="outline" onClick={() => setManejoTarget(item)}
-                      className={`gap-1 h-9 px-2.5 text-xs ${manejoFilledIds.has(item.id) ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 hover:text-emerald-700" : ""}`}>
+                      className={`gap-1 h-9 text-xs ${manejoFilledIds.has(item.id) ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 hover:text-emerald-700" : ""}`}>
                       <ClipboardList className="h-3.5 w-3.5" /> Manejo
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setGaleriaTarget(item)} className="gap-1 h-9 px-2.5 text-xs">
+                    <Button size="sm" variant="outline" onClick={() => setGaleriaTarget(item)} className="gap-1 h-9 text-xs">
                       <Camera className="h-3.5 w-3.5" /> Galeria
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleCheckout(item)} className="gap-1 h-9 px-2.5 text-xs">
+                    <Button size="sm" variant="outline" onClick={() => handleCheckout(item)} className="gap-1 h-9 text-xs">
                       <LogOutIcon className="h-3.5 w-3.5" /> Saída
                     </Button>
                   </div>
