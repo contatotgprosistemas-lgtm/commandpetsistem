@@ -103,7 +103,7 @@ export default function PortalContaPage() {
               <div className="flex justify-between"><span className="text-muted-foreground">WhatsApp</span><span className="text-foreground">{cliente.whatsapp ?? "—"}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Endereço</span><span className="text-foreground">{cliente.endereco ?? "—"}</span></div>
               {cliente.data_nascimento && (
-                <div className="flex justify-between"><span className="text-muted-foreground">Nascimento</span><span className="text-foreground">{new Date(cliente.data_nascimento).toLocaleDateString("pt-BR")}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Nascimento</span><span className="text-foreground">{(() => { const [y,m,d] = cliente.data_nascimento!.split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}</span></div>
               )}
             </div>
           )}
