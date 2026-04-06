@@ -269,7 +269,8 @@ function DayListItem({ item, onEdit }: { item: Agendamento; onEdit?: (a: Agendam
   const clientName = item.cliente?.nome ?? "—";
   const clientWhatsapp = item.cliente?.whatsapp;
   const initials = petName.slice(0, 2).toUpperCase();
-  const colorClass = getServiceColor(item.tipo_servico);
+  const isFromPlan = !!item.subscription_id;
+  const colorClass = isFromPlan ? "bg-fuchsia-500/80 text-white" : getServiceColor(item.tipo_servico);
 
   return (
     <div
@@ -304,7 +305,7 @@ function DayListItem({ item, onEdit }: { item: Agendamento; onEdit?: (a: Agendam
       </div>
 
       {/* Service badge */}
-      <Badge className={cn("text-[10px] shrink-0", colorClass)}>{item.tipo_servico}</Badge>
+      <Badge className={cn("text-[10px] shrink-0", colorClass)}>{item.tipo_servico}{isFromPlan ? " (Pacote)" : ""}</Badge>
 
       {/* Status */}
       <Badge className={cn("text-[10px] shrink-0", statusBadgeColor(item.status))}>
