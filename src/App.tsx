@@ -79,7 +79,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <OperationalAuthProvider>
-            {/* Landing page pública */}
+          <Routes>
             <Route path="/site" element={<LandingPage />} />
 
             {/* Admin auth */}
