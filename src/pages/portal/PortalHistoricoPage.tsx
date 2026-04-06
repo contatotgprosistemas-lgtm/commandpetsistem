@@ -7,7 +7,7 @@ import { usePortalCliente } from "@/hooks/usePortalCliente";
 
 interface TimelineItem {
   id: string;
-  type: "servico" | "pagamento" | "notificacao" | "solicitacao" | "contrato";
+  type: "servico" | "pagamento" | "notificacao" | "solicitacao" | "contrato_plano";
   title: string;
   description: string;
   date: string;
@@ -18,7 +18,7 @@ const iconMap = {
   pagamento: CreditCard,
   notificacao: Bell,
   solicitacao: ClipboardList,
-  contrato: FileText,
+  contrato_plano: FileText,
 };
 
 const colorMap = {
@@ -26,7 +26,7 @@ const colorMap = {
   pagamento: "bg-emerald-500/10 text-emerald-600",
   notificacao: "bg-amber-500/10 text-amber-600",
   solicitacao: "bg-accent/10 text-accent",
-  contrato: "bg-destructive/10 text-destructive",
+  contrato_plano: "bg-destructive/10 text-destructive",
 };
 
 export default function PortalHistoricoPage() {
@@ -37,12 +37,12 @@ export default function PortalHistoricoPage() {
   useEffect(() => {
     if (!cliente) return;
     const fetch = async () => {
-      const [servicos, pagamentos, notificacoes, solicitacoes, contratos] = await Promise.all([
+      const [servicos, pagamentos, notificacoes, solicitacoes, assinaturas] = await Promise.all([
         supabase.from("historico_servicos").select("id, tipo_servico, notas, data_servico").eq("cliente_id", cliente.id).order("data_servico", { ascending: false }).limit(20),
         supabase.from("contas_receber").select("id, descricao, valor, vencimento, status").eq("cliente_id", cliente.id).eq("status", "pago").order("vencimento", { ascending: false }).limit(20),
         supabase.from("customer_notifications").select("id, title, message, created_at").eq("cliente_id", cliente.id).order("created_at", { ascending: false }).limit(20),
         supabase.from("customer_requests").select("id, subject, status, created_at").eq("cliente_id", cliente.id).order("created_at", { ascending: false }).limit(20),
-        supabase.from("contracts").select("id, title, status, token_expires_at, created_at").eq("cliente_id", cliente.id).eq("status", "enviado").not("token_expires_at", "is", null).lt("token_expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(20),
+        supabase.from("customer_pet_subscriptions").select("id, plan_id, package_id, contract_end_date, status, final_price, service_plans(name), service_packages(name)").eq("cliente_id", cliente.id).not("contract_end_date", "is", null).order("contract_end_date", { ascending: true }).limit(20),
       ]);
 
       const timeline: TimelineItem[] = [
@@ -50,7 +50,23 @@ export default function PortalHistoricoPage() {
         ...(pagamentos.data ?? []).map((p: any) => ({ id: p.id, type: "pagamento" as const, title: p.descricao, description: `R$ ${p.valor.toFixed(2)}`, date: p.vencimento })),
         ...(notificacoes.data ?? []).map((n: any) => ({ id: n.id, type: "notificacao" as const, title: n.title, description: n.message, date: n.created_at })),
         ...(solicitacoes.data ?? []).map((r: any) => ({ id: r.id, type: "solicitacao" as const, title: r.subject, description: r.status, date: r.created_at })),
-        ...(contratos.data ?? []).map((c: any) => ({ id: c.id, type: "contrato" as const, title: c.title, description: "Contrato vencido — não assinado a tempo", date: c.token_expires_at || c.created_at })),
+        ...(assinaturas.data ?? []).filter((s: any) => {
+          const end = new Date(s.contract_end_date + "T00:00:00");
+          const now = new Date();
+          const diffDays = Math.round((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          return diffDays <= 30;
+        }).map((s: any) => {
+          const planName = s.service_plans?.name || s.service_packages?.name || "Plano";
+          const end = new Date(s.contract_end_date + "T00:00:00");
+          const now = new Date();
+          const diffDays = Math.round((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          const desc = diffDays < 0
+            ? `Contrato de ${planName} vencido há ${Math.abs(diffDays)} dia(s)`
+            : diffDays === 0
+              ? `Contrato de ${planName} vence hoje`
+              : `Contrato de ${planName} vence em ${diffDays} dia(s)`;
+          return { id: s.id, type: "contrato_plano" as const, title: planName, description: desc, date: s.contract_end_date };
+        }),
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       setItems(timeline);
