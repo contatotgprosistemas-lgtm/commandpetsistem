@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalCliente } from "@/hooks/usePortalCliente";
+import { formatDateBR } from "@/lib/utils";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 
@@ -57,8 +58,8 @@ function gerarComprovante(pagamento: Pagamento, clienteNome: string) {
     ["Cliente", clienteNome],
     ["Descrição", pagamento.descricao],
     ["Valor", `R$ ${(pagamento.valor_pago ?? pagamento.valor).toFixed(2)}`],
-    ["Vencimento", new Date(pagamento.vencimento).toLocaleDateString("pt-BR")],
-    ["Data do Pagamento", pagamento.data_baixa ? new Date(pagamento.data_baixa).toLocaleDateString("pt-BR") : new Date().toLocaleDateString("pt-BR")],
+    ["Vencimento", formatDateBR(pagamento.vencimento)],
+    ["Data do Pagamento", pagamento.data_baixa ? formatDateBR(pagamento.data_baixa) : new Date().toLocaleDateString("pt-BR")],
     ["Forma de Pagamento", pagamento.banco || "PIX"],
     ["Status", "Pago"],
   ];
@@ -223,8 +224,8 @@ export default function PortalPagamentosPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{p.descricao}</p>
                   <p className="text-xs text-muted-foreground">
-                    Vencimento: {new Date(p.vencimento).toLocaleDateString("pt-BR")}
-                    {p.data_baixa && ` • Pago em: ${new Date(p.data_baixa).toLocaleDateString("pt-BR")}`}
+                    Vencimento: {formatDateBR(p.vencimento)}
+                    {p.data_baixa && ` • Pago em: ${formatDateBR(p.data_baixa)}`}
                   </p>
                 </div>
                 <div className="text-right shrink-0 ml-3">

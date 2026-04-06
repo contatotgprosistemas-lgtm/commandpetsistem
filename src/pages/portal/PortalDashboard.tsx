@@ -103,7 +103,7 @@ export default function PortalDashboard() {
                 {stats.nextAppointment.pet_nome ? ` • ${stats.nextAppointment.pet_nome}` : ""}
               </p>
               <p className="text-xs text-muted-foreground">
-                {new Date(stats.nextAppointment.data_hora).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
+                {(() => { const [y,m,d] = stats.nextAppointment.data_hora.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }); })()}
               </p>
             </div>
           </CardContent>

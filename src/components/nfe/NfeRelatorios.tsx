@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { NfeStatusBadge } from "./NfeStatusBadge";
+import { formatDateBR } from "@/lib/utils";
 import { Download, FileSpreadsheet } from "lucide-react";
 
 interface Props { empresaId: string }
@@ -49,7 +50,7 @@ export function NfeRelatorios({ empresaId }: Props) {
       n.dest_cpf_cnpj,
       Number(n.valor_total).toFixed(2),
       n.status,
-      n.data_emissao ? new Date(n.data_emissao).toLocaleDateString("pt-BR") : "",
+      n.data_emissao ? formatDateBR(n.data_emissao) : "",
       n.chave_nfe || "",
     ]);
 
@@ -132,7 +133,7 @@ export function NfeRelatorios({ empresaId }: Props) {
                     <TableCell className="text-xs">{n.dest_cpf_cnpj || "—"}</TableCell>
                     <TableCell>{Number(n.valor_total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
                     <TableCell><NfeStatusBadge status={n.status} /></TableCell>
-                    <TableCell className="text-xs">{n.data_emissao ? new Date(n.data_emissao).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                    <TableCell className="text-xs">{n.data_emissao ? formatDateBR(n.data_emissao) : "—"}</TableCell>
                     <TableCell className="font-mono text-xs max-w-[150px] truncate">{n.chave_nfe || "—"}</TableCell>
                   </TableRow>
                 ))}

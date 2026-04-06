@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn, formatDateBR } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalCliente } from "@/hooks/usePortalCliente";
 
@@ -85,7 +85,7 @@ export default function PortalNotificacoesPage() {
                 <div className="text-right shrink-0 ml-3">
                   <Badge variant="secondary" className="text-[10px]">{n.type}</Badge>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    {new Date(n.created_at).toLocaleDateString("pt-BR")}
+                    {formatDateBR(n.created_at)}
                   </p>
                 </div>
               </div>

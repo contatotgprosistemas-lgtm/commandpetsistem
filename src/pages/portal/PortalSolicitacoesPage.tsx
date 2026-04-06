@@ -110,7 +110,7 @@ export default function PortalSolicitacoesPage() {
                 </div>
                 <div className="text-right shrink-0 ml-3 space-y-1">
                   {statusBadge(s.status)}
-                  <p className="text-[10px] text-muted-foreground">{new Date(s.created_at).toLocaleDateString("pt-BR")}</p>
+                  <p className="text-[10px] text-muted-foreground">{(() => { const [y,m,d] = s.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}</p>
                 </div>
               </div>
             </CardContent>

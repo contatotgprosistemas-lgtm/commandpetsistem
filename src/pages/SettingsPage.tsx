@@ -400,7 +400,7 @@ function UsuariosTab() {
                       </Select>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                      {(() => { const [y,m,d] = u.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
                     </TableCell>
                   </TableRow>
                 ))}

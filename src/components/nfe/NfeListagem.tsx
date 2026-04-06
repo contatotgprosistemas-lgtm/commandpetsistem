@@ -174,7 +174,7 @@ export function NfeListagem({ empresaId }: Props) {
                       <TableCell>{nota.dest_nome || "—"}</TableCell>
                       <TableCell>{Number(nota.valor_total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</TableCell>
                       <TableCell><NfeStatusBadge status={nota.status} /></TableCell>
-                      <TableCell className="text-xs">{new Date(nota.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                      <TableCell className="text-xs">{(() => { const [y,m,d] = nota.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
                           <Button variant="ghost" size="sm" onClick={() => setSelectedNfe(nota)} title="Detalhes">

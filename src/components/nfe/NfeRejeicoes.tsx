@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle, Eye, RefreshCw } from "lucide-react";
+import { formatDateBR } from "@/lib/utils";
 import { useState } from "react";
 
 interface Props { empresaId: string }
@@ -81,7 +82,7 @@ export function NfeRejeicoes({ empresaId }: Props) {
                     <TableCell>{rej.nfe_documents?.dest_nome || "—"}</TableCell>
                     <TableCell><Badge variant="destructive">{rej.rejection_code}</Badge></TableCell>
                     <TableCell className="max-w-[300px] truncate text-xs">{rej.rejection_message}</TableCell>
-                    <TableCell className="text-xs">{new Date(rej.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="text-xs">{formatDateBR(rej.created_at)}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" onClick={() => setSelectedRej(rej)}>
                         <Eye className="h-4 w-4" />
@@ -119,7 +120,7 @@ export function NfeRejeicoes({ empresaId }: Props) {
                     <TableCell className="font-mono text-xs">{rej.nfe_documents?.reference}</TableCell>
                     <TableCell>{rej.rejection_code}</TableCell>
                     <TableCell className="text-xs">{rej.resolution_notes || "—"}</TableCell>
-                    <TableCell className="text-xs">{rej.resolved_at ? new Date(rej.resolved_at).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                    <TableCell className="text-xs">{rej.resolved_at ? formatDateBR(rej.resolved_at) : "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
