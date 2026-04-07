@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, DollarSign, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle } from "lucide-react";
+import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, TreePine, ShowerHead } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -64,7 +64,8 @@ export default function Dashboard() {
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
   const [transportBookings, setTransportBookings] = useState<any[]>([]);
   const [expiringContracts, setExpiringContracts] = useState<any[]>([]);
-  const [clientesComPlano, setClientesComPlano] = useState(0);
+  const [petsPlanoEscola, setPetsPlanoEscola] = useState(0);
+  const [petsPlanoBanho, setPetsPlanoBanho] = useState(0);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
@@ -112,14 +113,28 @@ export default function Dashboard() {
         setExpiringContracts(expiring);
       });
     // Fetch distinct clients with active plan/package
+    // Fetch pets with active escola and banho plans
     supabase
       .from("customer_pet_subscriptions" as any)
-      .select("cliente_id")
+      .select("pet_id, plan:service_plans(nome), package:service_packages(nome)")
       .eq("status", "ativo")
       .then(({ data }) => {
         if (!data) return;
-        const unique = new Set((data as any[]).map(d => d.cliente_id));
-        setClientesComPlano(unique.size);
+        const escolaKeywords = ["escola", "daycare", "creche", "day_care"];
+        const banhoKeywords = ["banho", "tosa", "banho e tosa", "grooming"];
+        let escolaSet = new Set<string>();
+        let banhoSet = new Set<string>();
+        for (const sub of data as any[]) {
+          const label = ((sub.plan as any)?.nome || (sub.package as any)?.nome || "").toLowerCase();
+          if (escolaKeywords.some(k => label.includes(k))) {
+            if (sub.pet_id) escolaSet.add(sub.pet_id);
+          }
+          if (banhoKeywords.some(k => label.includes(k))) {
+            if (sub.pet_id) banhoSet.add(sub.pet_id);
+          }
+        }
+        setPetsPlanoEscola(escolaSet.size);
+        setPetsPlanoBanho(banhoSet.size);
       });
   }, []);
 
@@ -232,8 +247,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Chats Ativos" value="0" change="—" changeType="neutral" icon={<MessageSquare className="h-4 w-4" strokeWidth={1.5} />} />
         <MetricCard title="Pets na Empresa" value={String(petsNaEmpresa.length)} change="—" changeType="neutral" icon={<PawPrint className="h-4 w-4" strokeWidth={1.5} />} />
-        <MetricCard title="Clientes com Plano/Pacote" value={String(clientesComPlano)} change="—" changeType="neutral" icon={<DollarSign className="h-4 w-4" strokeWidth={1.5} />} />
-        <MetricCard title="Contas Pendentes" value="0" change="—" changeType="neutral" icon={<Users className="h-4 w-4" strokeWidth={1.5} />} />
+        <MetricCard title="Pets Plano Escola" value={String(petsPlanoEscola)} change="—" changeType="neutral" icon={<TreePine className="h-4 w-4" strokeWidth={1.5} />} />
+        <MetricCard title="Pets Plano Banho" value={String(petsPlanoBanho)} change="—" changeType="neutral" icon={<ShowerHead className="h-4 w-4" strokeWidth={1.5} />} />
       </div>
 
       {/* Agenda section */}
