@@ -95,8 +95,9 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [pets, setPets] = useState<{ id: string; nome: string; cliente_id: string }[]>([]);
   const [servicos, setServicos] = useState<ServicoItem[]>([]);
   const [availableReplacements, setAvailableReplacements] = useState<any[]>([]);
-  const [showReplacementDialog, setShowReplacementDialog] = useState(false);
-  const [pendingSubmitData, setPendingSubmitData] = useState<FormValues | null>(null);
+  const [useReplacement, setUseReplacement] = useState(false);
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -149,6 +150,9 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
   useEffect(() => {
     if (open) {
+      supabase.from("profiles").select("empresa_id").single().then(({ data }) => {
+        if (data?.empresa_id) setEmpresaId(data.empresa_id);
+      });
       supabase.from("clientes").select("id, nome").order("nome").then(({ data }) => { if (data) setClientes(data); });
       supabase.from("pets").select("id, nome, cliente_id").order("nome").then(({ data }) => { if (data) setPets(data); });
       supabase.from("servicos").select("id, descricao, valor, tipo").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data as ServicoItem[]); });
@@ -157,66 +161,56 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
   useEffect(() => { form.setValue("pet_ids", []); }, [selectedCliente]);
 
+  // Check for available replacements when pets or service change
+  useEffect(() => {
+    setAvailableReplacements([]);
+    setUseReplacement(false);
+
+    if (selectedPetIds.length === 0 || !selectedServico || !empresaId) return;
+
+    const check = async () => {
+      const { data: absences } = await supabase
+        .from("agendamento_absences" as any)
+        .select("id, agendamento_id, tipo, reposicao_utilizada, notes")
+        .eq("empresa_id", empresaId)
+        .eq("tipo", "com_reposicao")
+        .eq("reposicao_utilizada", false);
+
+      if (!absences || absences.length === 0) return;
+
+      const absenceAgendamentoIds = absences.map((a: any) => a.agendamento_id);
+      const { data: agendamentos } = await supabase
+        .from("agendamentos")
+        .select("id, pet_id, tipo_servico, pet:pets(nome), cliente:clientes(nome)")
+        .in("id", absenceAgendamentoIds);
+
+      if (!agendamentos) return;
+
+      const matching = absences.filter((abs: any) => {
+        const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
+        if (!ag) return false;
+        return selectedPetIds.includes(ag.pet_id) && ag.tipo_servico === selectedServico;
+      }).map((abs: any) => {
+        const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
+        return { ...abs, agendamento: ag };
+      });
+
+      if (matching.length > 0) {
+        setAvailableReplacements(matching);
+      }
+    };
+
+    check();
+  }, [selectedPetIds, selectedServico, empresaId]);
+
   function togglePet(petId: string) {
     const current = form.getValues("pet_ids");
     const updated = current.includes(petId) ? current.filter(id => id !== petId) : [...current, petId];
     form.setValue("pet_ids", updated, { shouldValidate: true });
   }
 
-  // Check for available replacements when pets and service are selected
-  const checkReplacements = async (petIds: string[], tipoServico: string) => {
-    if (petIds.length === 0 || !tipoServico) {
-      setAvailableReplacements([]);
-      return [];
-    }
-
-    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
-    if (!profile?.empresa_id) return [];
-
-    // Find absences with tipo=com_reposicao that haven't been used yet
-    // for pets that have subscriptions matching the service type
-    const { data: absences } = await supabase
-      .from("agendamento_absences" as any)
-      .select("id, agendamento_id, tipo, reposicao_utilizada, notes")
-      .eq("empresa_id", profile.empresa_id)
-      .eq("tipo", "com_reposicao")
-      .eq("reposicao_utilizada", false);
-
-    if (!absences || absences.length === 0) return [];
-
-    // Get the agendamento details for these absences to check pet + service match
-    const absenceAgendamentoIds = absences.map((a: any) => a.agendamento_id);
-    const { data: agendamentos } = await supabase
-      .from("agendamentos")
-      .select("id, pet_id, tipo_servico, pet:pets(nome), cliente:clientes(nome)")
-      .in("id", absenceAgendamentoIds);
-
-    if (!agendamentos) return [];
-
-    // Filter: match pet_id in selected pets AND same service type
-    const matching = absences.filter((abs: any) => {
-      const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
-      if (!ag) return false;
-      return petIds.includes(ag.pet_id) && ag.tipo_servico === tipoServico;
-    }).map((abs: any) => {
-      const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
-      return { ...abs, agendamento: ag };
-    });
-
-    setAvailableReplacements(matching);
-    return matching;
-  };
-
   async function onSubmit(data: FormValues) {
-    // Check for replacements before proceeding
-    const replacements = await checkReplacements(data.pet_ids, data.tipo_servico);
-    if (replacements.length > 0 && !pendingSubmitData) {
-      setPendingSubmitData(data);
-      setShowReplacementDialog(true);
-      return;
-    }
-
-    await executeSubmit(data, false);
+    await executeSubmit(data, useReplacement);
   }
 
   async function executeSubmit(data: FormValues, useReplacement: boolean) {
