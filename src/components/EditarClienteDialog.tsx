@@ -11,13 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { PawPrint, Loader2, DollarSign, Pencil, ClipboardList } from "lucide-react";
+import { PawPrint, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { EditarContaReceberDialog } from "@/components/EditarContaReceberDialog";
 import { ClienteTimelineTab } from "@/components/ClienteTimelineTab";
 
 const schema = z.object({
@@ -42,23 +39,9 @@ interface EditarClienteDialogProps {
   onSuccess?: () => void;
 }
 
-interface Fatura {
-  id: string;
-  descricao: string;
-  valor: number;
-  vencimento: string;
-  categoria: string | null;
-  status: string;
-  cliente_id: string | null;
-  banco: string | null;
-}
-
 export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: EditarClienteDialogProps) {
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
-  const [faturas, setFaturas] = useState<Fatura[]>([]);
-  const [loadingFaturas, setLoadingFaturas] = useState(false);
-  const [editFatura, setEditFatura] = useState<Fatura | null>(null);
   const [diaVencimento, setDiaVencimento] = useState(10);
   const [diasGerarFatura, setDiasGerarFatura] = useState(5);
 
