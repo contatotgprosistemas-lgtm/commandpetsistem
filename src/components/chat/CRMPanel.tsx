@@ -120,7 +120,7 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
   const updateFunnel = useMutation({
     mutationFn: async ({ estagio, valor_estimado }: { estagio?: string; valor_estimado?: number }) => {
       if (!clienteId || !empresaId) throw new Error("Missing");
-      const updateData: Record<string, unknown> = {};
+      const updateData: { estagio?: string; valor_estimado?: number } = {};
       if (estagio !== undefined) updateData.estagio = estagio;
       if (valor_estimado !== undefined) updateData.valor_estimado = valor_estimado;
 
