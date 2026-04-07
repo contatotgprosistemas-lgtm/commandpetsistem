@@ -419,7 +419,7 @@ export default function PlanosPacotesPage() {
           pkg={packages.find((p: any) => p.id === cancelSub.package_id)}
           empresaId={empresaId}
         />
-      )
+      )}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={o => { if (!o) setDeleteTarget(null); }}>
         <AlertDialogContent>
