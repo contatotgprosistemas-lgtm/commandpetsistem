@@ -44,9 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (!hasInitialized.current) {
-      setLoading(true);
-    }
+    setLoading(true);
 
     setSession(currentSession);
 
