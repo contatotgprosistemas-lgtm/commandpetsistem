@@ -181,7 +181,7 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         <Tabs defaultValue="dados" className="w-full">
           <TabsList className="w-full">
             <TabsTrigger value="dados" className="flex-1">Dados</TabsTrigger>
-            <TabsTrigger value="historico" className="flex-1">Histórico</TabsTrigger>
+            <TabsTrigger value="timeline" className="flex-1">Timeline</TabsTrigger>
             <TabsTrigger value="faturas" className="flex-1">Faturas</TabsTrigger>
           </TabsList>
           <TabsContent value="dados">
