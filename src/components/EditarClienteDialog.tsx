@@ -56,8 +56,6 @@ interface Fatura {
 export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: EditarClienteDialogProps) {
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
-  const [historico, setHistorico] = useState<HistoricoServico[]>([]);
-  const [loadingHistorico, setLoadingHistorico] = useState(false);
   const [faturas, setFaturas] = useState<Fatura[]>([]);
   const [loadingFaturas, setLoadingFaturas] = useState(false);
   const [editFatura, setEditFatura] = useState<Fatura | null>(null);
