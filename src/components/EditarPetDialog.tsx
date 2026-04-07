@@ -132,149 +132,126 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
         <DialogHeader>
           <DialogTitle>Editar Pet</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField control={form.control} name="nome" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome do Pet *</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="especie" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Espécie *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="Cachorro">Cachorro</SelectItem>
-                      <SelectItem value="Gato">Gato</SelectItem>
-                      <SelectItem value="Ave">Ave</SelectItem>
-                      <SelectItem value="Outro">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="raca" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Raça</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                </FormItem>
-              )} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="cor" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cor</FormLabel>
-                  <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="porte" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Porte</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="Micro">Micro</SelectItem>
-                      <SelectItem value="Pequeno">Pequeno</SelectItem>
-                      <SelectItem value="Médio">Médio</SelectItem>
-                      <SelectItem value="Grande">Grande</SelectItem>
-                      <SelectItem value="Gigante">Gigante</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              <FormField control={form.control} name="sexo" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sexo</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="Macho">Macho</SelectItem>
-                      <SelectItem value="Fêmea">Fêmea</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="castrado" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Castrado</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="Sim">Sim</SelectItem>
-                      <SelectItem value="Não">Não</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="peso" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Peso (kg)</FormLabel>
-                  <FormControl><Input type="number" step="0.1" {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="pelagem" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Pelagem</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="Curta">Curta</SelectItem>
-                      <SelectItem value="Média">Média</SelectItem>
-                      <SelectItem value="Longa">Longa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-            </div>
+        <Tabs defaultValue="dados" className="w-full">
+          <TabsList className="w-full">
+            <TabsTrigger value="dados" className="flex-1 gap-1.5">
+              <PawPrint className="h-3.5 w-3.5" /> Dados
+            </TabsTrigger>
+            <TabsTrigger value="faltas" className="flex-1 gap-1.5">
+              <XCircle className="h-3.5 w-3.5" /> Faltas
+            </TabsTrigger>
+          </TabsList>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="data_nascimento" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data de Nascimento</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                          {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} />
-                    </PopoverContent>
-                  </Popover>
-                </FormItem>
-              )} />
-              <FormItem className="flex flex-col">
-                <FormLabel>Idade</FormLabel>
-                <Input value={idadeCalculada} readOnly placeholder="Calculada automaticamente" className="bg-muted" />
-              </FormItem>
-            </div>
-
-            <div className="space-y-3">
-              <FormLabel>Vacinas</FormLabel>
-              {([
-                { dataName: "antiparasitario_data" as const, label: "Antiparasitário" },
-                { dataName: "v10_data" as const, label: "V10" },
-                { dataName: "raiva_data" as const, label: "Raiva" },
-                { dataName: "gripe_data" as const, label: "Gripe" },
-                { dataName: "giardia_data" as const, label: "Giárdia" },
-              ]).map((vacina) => (
-                <div key={vacina.dataName} className="grid grid-cols-2 gap-3 items-center">
-                  <span className="text-sm font-medium text-foreground">{vacina.label}</span>
-                  <FormField control={form.control} name={vacina.dataName} render={({ field }) => (
+          <TabsContent value="dados">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField control={form.control} name="nome" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Pet *</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="especie" render={({ field }) => (
                     <FormItem>
+                      <FormLabel>Espécie *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="Cachorro">Cachorro</SelectItem>
+                          <SelectItem value="Gato">Gato</SelectItem>
+                          <SelectItem value="Ave">Ave</SelectItem>
+                          <SelectItem value="Outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="raca" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Raça</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="cor" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cor</FormLabel>
+                      <FormControl><Input placeholder="Ex: Caramelo" {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="porte" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Porte</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="Micro">Micro</SelectItem>
+                          <SelectItem value="Pequeno">Pequeno</SelectItem>
+                          <SelectItem value="Médio">Médio</SelectItem>
+                          <SelectItem value="Grande">Grande</SelectItem>
+                          <SelectItem value="Gigante">Gigante</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-4 gap-4">
+                  <FormField control={form.control} name="sexo" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sexo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="Macho">Macho</SelectItem>
+                          <SelectItem value="Fêmea">Fêmea</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="castrado" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Castrado</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="Sim">Sim</SelectItem>
+                          <SelectItem value="Não">Não</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="peso" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peso (kg)</FormLabel>
+                      <FormControl><Input type="number" step="0.1" {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="pelagem" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pelagem</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="Curta">Curta</SelectItem>
+                          <SelectItem value="Média">Média</SelectItem>
+                          <SelectItem value="Longa">Longa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="data_nascimento" render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Data de Nascimento</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                              {field.value ? format(field.value, "dd/MM/yyyy") : <span>Data aplicação</span>}
+                              {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione</span>}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -285,50 +262,90 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
                       </Popover>
                     </FormItem>
                   )} />
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Idade</FormLabel>
+                    <Input value={idadeCalculada} readOnly placeholder="Calculada automaticamente" className="bg-muted" />
+                  </FormItem>
                 </div>
-              ))}
-            </div>
 
-            <FormField control={form.control} name="comportamento" render={({ field }) => {
-              const selected = field.value ? field.value.split(", ").filter(Boolean) : [];
-              const toggle = (opt: string) => {
-                const next = selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt];
-                field.onChange(next.join(", "));
-              };
-              return (
-                <FormItem>
-                  <FormLabel>Comportamento</FormLabel>
-                  <div className="flex flex-wrap gap-2">
-                    {["Dócil", "Agitado", "Ativo", "Adestrado", "Individual", "Inseguro"].map(opt => (
-                      <Button key={opt} type="button" size="sm" variant={selected.includes(opt) ? "default" : "outline"} onClick={() => toggle(opt)}>
-                        {opt}
-                      </Button>
-                    ))}
-                  </div>
-                </FormItem>
-              );
-            }} />
+                <div className="space-y-3">
+                  <FormLabel>Vacinas</FormLabel>
+                  {([
+                    { dataName: "antiparasitario_data" as const, label: "Antiparasitário" },
+                    { dataName: "v10_data" as const, label: "V10" },
+                    { dataName: "raiva_data" as const, label: "Raiva" },
+                    { dataName: "gripe_data" as const, label: "Gripe" },
+                    { dataName: "giardia_data" as const, label: "Giárdia" },
+                  ]).map((vacina) => (
+                    <div key={vacina.dataName} className="grid grid-cols-2 gap-3 items-center">
+                      <span className="text-sm font-medium text-foreground">{vacina.label}</span>
+                      <FormField control={form.control} name={vacina.dataName} render={({ field }) => (
+                        <FormItem>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                  {field.value ? format(field.value, "dd/MM/yyyy") : <span>Data aplicação</span>}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} />
+                            </PopoverContent>
+                          </Popover>
+                        </FormItem>
+                      )} />
+                    </div>
+                  ))}
+                </div>
 
-            <FormField control={form.control} name="restricoes_alimentares" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Restrições alimentares</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
-              </FormItem>
-            )} />
+                <FormField control={form.control} name="comportamento" render={({ field }) => {
+                  const selected = field.value ? field.value.split(", ").filter(Boolean) : [];
+                  const toggle = (opt: string) => {
+                    const next = selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt];
+                    field.onChange(next.join(", "));
+                  };
+                  return (
+                    <FormItem>
+                      <FormLabel>Comportamento</FormLabel>
+                      <div className="flex flex-wrap gap-2">
+                        {["Dócil", "Agitado", "Ativo", "Adestrado", "Individual", "Inseguro"].map(opt => (
+                          <Button key={opt} type="button" size="sm" variant={selected.includes(opt) ? "default" : "outline"} onClick={() => toggle(opt)}>
+                            {opt}
+                          </Button>
+                        ))}
+                      </div>
+                    </FormItem>
+                  );
+                }} />
 
-            <FormField control={form.control} name="medicacoes" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Medicações</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
-              </FormItem>
-            )} />
+                <FormField control={form.control} name="restricoes_alimentares" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Restrições alimentares</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                  </FormItem>
+                )} />
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>
-            </div>
-          </form>
-        </Form>
+                <FormField control={form.control} name="medicacoes" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Medicações</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                  </FormItem>
+                )} />
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={loading}>{loading ? "Salvando..." : "Salvar"}</Button>
+                </div>
+              </form>
+            </Form>
+          </TabsContent>
+
+          <TabsContent value="faltas">
+            {pet?.id && <PetFaltasTab petId={pet.id} />}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
