@@ -193,7 +193,7 @@ export default function Dashboard() {
   };
   const reservasHoje = agendamentos.filter(a => {
     const d = startOfDay(new Date(a.data_hora));
-    return d >= today && d < tomorrow && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido" && a.status !== "falta" && !isTransportService(a.tipo_servico);
+    return d >= today && d < tomorrow && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido" && a.status !== "falta" && a.status !== "troca" && !isTransportService(a.tipo_servico);
   }).sort(sortByPetName);
   const agendamentosTransporteHoje = agendamentos.filter(a => {
     const d = startOfDay(new Date(a.data_hora));
