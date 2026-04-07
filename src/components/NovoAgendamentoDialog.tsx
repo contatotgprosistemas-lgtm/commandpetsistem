@@ -565,56 +565,6 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           </form>
         </Form>
       </DialogContent>
-
-      <AlertDialog open={showReplacementDialog} onOpenChange={setShowReplacementDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <RotateCcw className="h-5 w-5 text-primary" />
-              Reposição Disponível
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>
-                  {availableReplacements.length === 1
-                    ? "Este pet possui 1 falta justificada com direito a reposição para este serviço."
-                    : `Este pet possui ${availableReplacements.length} falta(s) justificada(s) com direito a reposição para este serviço.`}
-                </p>
-                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                  {availableReplacements.map((r: any) => (
-                    <p key={r.id} className="text-sm">
-                      <span className="font-medium">{r.agendamento?.pet?.nome}</span>
-                      {" — "}
-                      <span className="text-muted-foreground">{r.agendamento?.tipo_servico}</span>
-                    </p>
-                  ))}
-                </div>
-                <p className="font-medium">Deseja utilizar a reposição? O valor será zerado e nenhuma fatura será gerada.</p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setShowReplacementDialog(false);
-              if (pendingSubmitData) {
-                executeSubmit(pendingSubmitData, false);
-                setPendingSubmitData(null);
-              }
-            }}>
-              Não, cobrar normalmente
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              setShowReplacementDialog(false);
-              if (pendingSubmitData) {
-                executeSubmit(pendingSubmitData, true);
-                setPendingSubmitData(null);
-              }
-            }}>
-              Sim, usar reposição
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Dialog>
   );
 }
