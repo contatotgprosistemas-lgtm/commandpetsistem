@@ -13,11 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { PawPrint, Loader2, DollarSign, Pencil } from "lucide-react";
+import { PawPrint, Loader2, DollarSign, Pencil, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { EditarContaReceberDialog } from "@/components/EditarContaReceberDialog";
+import { ClienteTimelineTab } from "@/components/ClienteTimelineTab";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
@@ -41,14 +42,6 @@ interface EditarClienteDialogProps {
   onSuccess?: () => void;
 }
 
-interface HistoricoServico {
-  id: string;
-  tipo_servico: string;
-  valor: number | null;
-  data_servico: string;
-  notas: string | null;
-}
-
 interface Fatura {
   id: string;
   descricao: string;
@@ -63,8 +56,6 @@ interface Fatura {
 export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: EditarClienteDialogProps) {
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
-  const [historico, setHistorico] = useState<HistoricoServico[]>([]);
-  const [loadingHistorico, setLoadingHistorico] = useState(false);
   const [faturas, setFaturas] = useState<Fatura[]>([]);
   const [loadingFaturas, setLoadingFaturas] = useState(false);
   const [editFatura, setEditFatura] = useState<Fatura | null>(null);
@@ -92,7 +83,6 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
       });
       setDiaVencimento(cliente.dia_vencimento_fatura ?? 10);
       setDiasGerarFatura(cliente.dias_gerar_fatura ?? 5);
-      fetchHistorico(cliente.id);
       fetchFaturas(cliente.id);
     }
   }, [cliente, form]);
@@ -114,17 +104,6 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
     } finally {
       setCepLoading(false);
     }
-  }
-
-  async function fetchHistorico(clienteId: string) {
-    setLoadingHistorico(true);
-    const { data } = await supabase
-      .from("historico_servicos" as any)
-      .select("id, tipo_servico, valor, data_servico, notas")
-      .eq("cliente_id", clienteId)
-      .order("data_servico", { ascending: false });
-    setHistorico((data as any) ?? []);
-    setLoadingHistorico(false);
   }
 
   async function fetchFaturas(clienteId: string) {
@@ -180,7 +159,7 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         <Tabs defaultValue="dados" className="w-full">
           <TabsList className="w-full">
             <TabsTrigger value="dados" className="flex-1">Dados</TabsTrigger>
-            <TabsTrigger value="historico" className="flex-1">Histórico</TabsTrigger>
+            <TabsTrigger value="timeline" className="flex-1">Timeline</TabsTrigger>
             <TabsTrigger value="faturas" className="flex-1">Faturas</TabsTrigger>
           </TabsList>
           <TabsContent value="dados">
@@ -319,30 +298,8 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
               </form>
             </Form>
           </TabsContent>
-          <TabsContent value="historico">
-            {loadingHistorico ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">Carregando histórico...</div>
-            ) : historico.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <PawPrint className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">Nenhum serviço registrado</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-border mt-2">
-                {historico.map(h => (
-                  <div key={h.id} className="py-3 px-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">{h.tipo_servico}</span>
-                      <span className="text-xs text-muted-foreground">{format(new Date(h.data_servico), "dd/MM/yyyy HH:mm")}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-1">
-                      {h.valor != null && <span className="text-sm text-primary font-medium">R$ {Number(h.valor).toFixed(2)}</span>}
-                      {h.notas && <span className="text-xs text-muted-foreground">{h.notas}</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <TabsContent value="timeline">
+            <ClienteTimelineTab clienteId={cliente?.id} empresaId={cliente?.empresa_id} />
           </TabsContent>
           <TabsContent value="faturas">
             {loadingFaturas ? (
