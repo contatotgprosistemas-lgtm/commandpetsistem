@@ -137,9 +137,6 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
             <TabsTrigger value="dados" className="flex-1 gap-1.5">
               <PawPrint className="h-3.5 w-3.5" /> Dados
             </TabsTrigger>
-            <TabsTrigger value="faltas" className="flex-1 gap-1.5">
-              <XCircle className="h-3.5 w-3.5" /> Faltas
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dados">
@@ -342,9 +339,6 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
             </Form>
           </TabsContent>
 
-          <TabsContent value="faltas">
-            {pet?.id && <PetFaltasTab petId={pet.id} />}
-          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
