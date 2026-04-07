@@ -320,30 +320,8 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
               </form>
             </Form>
           </TabsContent>
-          <TabsContent value="historico">
-            {loadingHistorico ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">Carregando histórico...</div>
-            ) : historico.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <PawPrint className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">Nenhum serviço registrado</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-border mt-2">
-                {historico.map(h => (
-                  <div key={h.id} className="py-3 px-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">{h.tipo_servico}</span>
-                      <span className="text-xs text-muted-foreground">{format(new Date(h.data_servico), "dd/MM/yyyy HH:mm")}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-1">
-                      {h.valor != null && <span className="text-sm text-primary font-medium">R$ {Number(h.valor).toFixed(2)}</span>}
-                      {h.notas && <span className="text-xs text-muted-foreground">{h.notas}</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <TabsContent value="timeline">
+            <ClienteTimelineTab clienteId={cliente?.id} empresaId={cliente?.empresa_id} />
           </TabsContent>
           <TabsContent value="faturas">
             {loadingFaturas ? (
