@@ -64,6 +64,7 @@ export default function Dashboard() {
   const [editingAgendamento, setEditingAgendamento] = useState<Agendamento | null>(null);
   const [transportBookings, setTransportBookings] = useState<any[]>([]);
   const [expiringContracts, setExpiringContracts] = useState<any[]>([]);
+  const [clientesComPlano, setClientesComPlano] = useState(0);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
@@ -109,6 +110,16 @@ export default function Dashboard() {
           daysLeft: differenceInDays(new Date(sub.contract_end_date), now),
         })).sort((a, b) => a.daysLeft - b.daysLeft);
         setExpiringContracts(expiring);
+      });
+    // Fetch distinct clients with active plan/package
+    supabase
+      .from("customer_pet_subscriptions" as any)
+      .select("cliente_id")
+      .eq("status", "ativo")
+      .then(({ data }) => {
+        if (!data) return;
+        const unique = new Set((data as any[]).map(d => d.cliente_id));
+        setClientesComPlano(unique.size);
       });
   }, []);
 
@@ -221,7 +232,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Chats Ativos" value="0" change="—" changeType="neutral" icon={<MessageSquare className="h-4 w-4" strokeWidth={1.5} />} />
         <MetricCard title="Pets na Empresa" value={String(petsNaEmpresa.length)} change="—" changeType="neutral" icon={<PawPrint className="h-4 w-4" strokeWidth={1.5} />} />
-        <MetricCard title="Faturamento Hoje" value="R$ 0" change="—" changeType="neutral" icon={<DollarSign className="h-4 w-4" strokeWidth={1.5} />} />
+        <MetricCard title="Clientes com Plano/Pacote" value={String(clientesComPlano)} change="—" changeType="neutral" icon={<DollarSign className="h-4 w-4" strokeWidth={1.5} />} />
         <MetricCard title="Contas Pendentes" value="0" change="—" changeType="neutral" icon={<Users className="h-4 w-4" strokeWidth={1.5} />} />
       </div>
 
