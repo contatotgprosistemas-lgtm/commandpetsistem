@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, Search, Loader2, Shield, Activity, CheckCircle, XCircle, Clock, Trash2, LogIn } from "lucide-react";
+import { Users, UserCheck, UserX, Search, Loader2, Shield, Activity, CheckCircle, XCircle, Clock, Trash2, LogIn, PawPrint } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -33,32 +33,36 @@ const statusColors: Record<string, string> = {
 
 export default function SuperAdminPage() {
   const { profile } = useAuth();
-  const [profiles, setProfiles] = useState<ProfileRow[]>([]);
+  const [allProfiles, setAllProfiles] = useState<ProfileRow[]>([]);
+  const [clientUserIds, setClientUserIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterCargo, setFilterCargo] = useState("todos");
   const [filterStatus, setFilterStatus] = useState("todos");
+  const [searchClientes, setSearchClientes] = useState("");
 
   const fetchProfiles = async () => {
     setLoading(true);
-    // Fetch profiles and client role user_ids to filter them out
     const [profilesRes, clientRolesRes] = await Promise.all([
       supabase.from("profiles").select("*, empresas(nome_empresa)").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id").eq("role", "cliente"),
     ]);
     if (!profilesRes.error && profilesRes.data) {
-      const clientUserIds = new Set((clientRolesRes.data || []).map((r: any) => r.user_id));
-      setProfiles(
-        profilesRes.data
-          .filter((p: any) => !clientUserIds.has(p.user_id))
-          .map((p: any) => ({
-            ...p,
-            empresa_nome: p.empresas?.nome_empresa || null,
-          })) as ProfileRow[]
+      const cIds = new Set((clientRolesRes.data || []).map((r: any) => r.user_id));
+      setClientUserIds(cIds);
+      setAllProfiles(
+        profilesRes.data.map((p: any) => ({
+          ...p,
+          empresa_nome: p.empresas?.nome_empresa || null,
+        })) as ProfileRow[]
       );
     }
     setLoading(false);
   };
+
+  // Separate system users from portal clients
+  const profiles = allProfiles.filter((p) => !clientUserIds.has(p.user_id));
+  const clientProfiles = allProfiles.filter((p) => clientUserIds.has(p.user_id));
 
   useEffect(() => {
     fetchProfiles();
@@ -251,7 +255,12 @@ export default function SuperAdminPage() {
           </TabsTrigger>
           <TabsTrigger value="aprovados" className="gap-2">
             <UserCheck className="h-4 w-4" />
-            Aprovados
+            Usuários do Sistema
+          </TabsTrigger>
+          <TabsTrigger value="clientes" className="gap-2">
+            <PawPrint className="h-4 w-4" />
+            Portal do Cliente
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{clientProfiles.length}</Badge>
           </TabsTrigger>
         </TabsList>
 
@@ -451,6 +460,98 @@ export default function SuperAdminPage() {
                         <TableRow>
                           <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                             Nenhum usuário encontrado
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Portal do Cliente Tab */}
+        <TabsContent value="clientes">
+          <Card className="mb-4">
+            <CardContent className="p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Buscar cliente por nome ou email..." className="pl-9" value={searchClientes} onChange={(e) => setSearchClientes(e.target.value)} />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Clientes do Portal ({clientProfiles.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Empresa</TableHead>
+                        <TableHead>Criado em</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clientProfiles
+                        .filter((p) => {
+                          if (!searchClientes) return true;
+                          const s = searchClientes.toLowerCase();
+                          return p.nome.toLowerCase().includes(s) || (p.email || "").toLowerCase().includes(s);
+                        })
+                        .map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-medium">{p.nome}</TableCell>
+                          <TableCell className="text-muted-foreground">{p.email || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{p.empresa_nome || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {(() => { const [y,m,d] = p.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 items-center">
+                              <Button variant="ghost" size="sm" className="gap-1 text-primary hover:text-primary" onClick={() => impersonateUser(p.user_id, p.nome)} title="Acessar conta deste cliente">
+                                <LogIn className="h-4 w-4" />
+                                Acessar
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive h-8 w-8">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir acesso do cliente?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Isso removerá permanentemente o acesso de <strong>{p.nome}</strong> ({p.email}) ao portal do cliente. Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deleteUser(p.user_id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {clientProfiles.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            Nenhum cliente do portal encontrado
                           </TableCell>
                         </TableRow>
                       )}
