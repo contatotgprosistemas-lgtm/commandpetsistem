@@ -51,16 +51,28 @@ export function FaltaDialog({ open, onOpenChange, agendamento, empresaId, allows
     const monthStart = format(startOfMonth(now), "yyyy-MM-dd");
     const monthEnd = format(endOfMonth(now), "yyyy-MM-dd");
 
+    // Get all absence IDs for swaps this month
     supabase
       .from("agendamento_absences" as any)
-      .select("id, agendamento_id, agendamentos!inner(cliente_id)", { count: "exact", head: true })
+      .select("id, agendamento_id")
       .eq("empresa_id", empresaId)
       .eq("tipo", "troca")
       .gte("created_at", monthStart)
       .lte("created_at", monthEnd + "T23:59:59")
-      .eq("agendamentos.cliente_id" as any, agendamento.cliente_id)
-      .then(({ count }) => {
-        setTrocasUsadas(count ?? 0);
+      .then(async ({ data: absences }) => {
+        if (!absences || absences.length === 0) {
+          setTrocasUsadas(0);
+          setLoadingTrocas(false);
+          return;
+        }
+        // Filter by checking which agendamentos belong to this client
+        const agIds = absences.map((a: any) => a.agendamento_id);
+        const { data: ags } = await supabase
+          .from("agendamentos")
+          .select("id")
+          .in("id", agIds)
+          .eq("cliente_id", agendamento.cliente_id);
+        setTrocasUsadas(ags?.length ?? 0);
         setLoadingTrocas(false);
       });
   }, [open, agendamento?.cliente_id, empresaId]);
