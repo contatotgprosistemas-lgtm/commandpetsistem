@@ -42,6 +42,7 @@ export default function PlanosPacotesPage() {
   const [planejamentoSub, setPlanejamentoSub] = useState<any>(null);
   const [discountTarget, setDiscountTarget] = useState<any>(null);
   const [editingSub, setEditingSub] = useState<any>(null);
+  const [cancelSub, setCancelSub] = useState<any>(null);
   const [discountValue, setDiscountValue] = useState("");
   const [searchContratacao, setSearchContratacao] = useState("");
 
