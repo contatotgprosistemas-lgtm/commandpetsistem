@@ -185,7 +185,8 @@ export default function Dashboard() {
   const today = startOfDay(new Date());
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const petsNaEmpresa = agendamentos.filter(a => a.status === "na_empresa");
+  const sortByPetName = (a: Agendamento, b: Agendamento) => (a.pet?.nome ?? "").localeCompare(b.pet?.nome ?? "");
+  const petsNaEmpresa = agendamentos.filter(a => a.status === "na_empresa").sort(sortByPetName);
   const isTransportService = (tipo: string) => {
     const t = tipo.toLowerCase();
     return t.includes("taxi") || t.includes("transporte") || t.includes("leva") || t.includes("busca");
@@ -193,7 +194,7 @@ export default function Dashboard() {
   const reservasHoje = agendamentos.filter(a => {
     const d = startOfDay(new Date(a.data_hora));
     return d >= today && d < tomorrow && a.status !== "cancelado" && a.status !== "na_empresa" && a.status !== "concluido" && a.status !== "falta" && !isTransportService(a.tipo_servico);
-  });
+  }).sort(sortByPetName);
   const agendamentosTransporteHoje = agendamentos.filter(a => {
     const d = startOfDay(new Date(a.data_hora));
     return d >= today && d < tomorrow && a.status !== "cancelado" && isTransportService(a.tipo_servico);
