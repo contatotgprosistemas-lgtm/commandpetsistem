@@ -213,12 +213,11 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     await executeSubmit(data, useReplacement);
   }
 
-  async function executeSubmit(data: FormValues, useReplacement: boolean) {
+  async function executeSubmit(data: FormValues, useRepl: boolean) {
     setLoading(true);
     try {
-      const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
-      if (!profile?.empresa_id) {
-        toast({ title: "Erro", description: "Empresa não encontrada.", variant: "destructive" });
+      if (!empresaId) {
+        toast({ title: "Erro", description: "Empresa não encontrada. Faça login novamente.", variant: "destructive" });
         return;
       }
 
