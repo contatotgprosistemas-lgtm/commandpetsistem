@@ -111,6 +111,16 @@ export default function Dashboard() {
         })).sort((a, b) => a.daysLeft - b.daysLeft);
         setExpiringContracts(expiring);
       });
+    // Fetch distinct clients with active plan/package
+    supabase
+      .from("customer_pet_subscriptions" as any)
+      .select("cliente_id")
+      .eq("status", "ativo")
+      .then(({ data }) => {
+        if (!data) return;
+        const unique = new Set((data as any[]).map(d => d.cliente_id));
+        setClientesComPlano(unique.size);
+      });
   }, []);
 
   // Auto-refresh at midnight
