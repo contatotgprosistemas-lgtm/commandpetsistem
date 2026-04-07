@@ -409,6 +409,17 @@ export default function PlanosPacotesPage() {
           planName={plans.find((p: any) => p.id === editingSub.plan_id)?.name || packages.find((p: any) => p.id === editingSub.package_id)?.name || "—"}
         />
       )}
+      {cancelSub && (
+        <CancelamentoContratacaoDialog
+          open={!!cancelSub}
+          onOpenChange={o => { if (!o) setCancelSub(null); }}
+          onSuccess={fetchAll}
+          subscription={cancelSub}
+          plan={plans.find((p: any) => p.id === cancelSub.plan_id)}
+          pkg={packages.find((p: any) => p.id === cancelSub.package_id)}
+          empresaId={empresaId}
+        />
+      )
 
       <AlertDialog open={!!deleteTarget} onOpenChange={o => { if (!o) setDeleteTarget(null); }}>
         <AlertDialogContent>
