@@ -228,10 +228,10 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         return new Date(d + "T" + (h || "00:00") + ":00").toISOString();
       };
 
-      const finalValor = useReplacement ? 0 : (data.valor ? parseFloat(data.valor) : null);
+      const finalValor = useRepl ? 0 : (data.valor ? parseFloat(data.valor) : null);
 
       const rows = data.pet_ids.map(pet_id => ({
-        empresa_id: profile.empresa_id,
+        empresa_id: empresaId,
         cliente_id: data.cliente_id,
         pet_id,
         tipo_servico: data.tipo_servico,
@@ -245,7 +245,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         baia: data.baia || null,
         valor: finalValor,
         forma_pagamento: data.forma_pagamento || null,
-        notas: useReplacement
+        notas: useRepl
           ? `${data.notas || ""} [Reposição de falta justificada]`.trim()
           : data.notas || null,
       }));
@@ -254,7 +254,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       if (error) throw error;
 
       // Mark replacement absences as used
-      if (useReplacement && insertedRows) {
+      if (useRepl && insertedRows) {
         for (const row of insertedRows) {
           const matchingAbsence = availableReplacements.find(
             (abs: any) => abs.agendamento?.pet_id === row.pet_id
@@ -272,14 +272,14 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       }
 
       // Generate invoice only if NOT using replacement and valor > 0
-      const valorNum = useReplacement ? 0 : (data.valor ? parseFloat(data.valor) : 0);
+      const valorNum = useRepl ? 0 : (data.valor ? parseFloat(data.valor) : 0);
       if (valorNum > 0) {
         const petNames = data.pet_ids.map(pid => {
           const pet = pets.find(p => p.id === pid);
           return pet?.nome || "Pet";
         });
         const faturas = data.pet_ids.map((_, idx) => ({
-          empresa_id: profile.empresa_id,
+          empresa_id: empresaId,
           cliente_id: data.cliente_id,
           descricao: `${data.tipo_servico} — ${petNames[idx]}`,
           valor: valorNum / data.pet_ids.length,
@@ -291,13 +291,13 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       }
 
       toast({
-        title: useReplacement
+        title: useRepl
           ? `Reposição utilizada! ${data.pet_ids.length} agendamento(s) criado(s) sem cobrança.`
           : `${data.pet_ids.length} agendamento(s) criado(s) com sucesso!`,
       });
       form.reset();
       setAvailableReplacements([]);
-      setPendingSubmitData(null);
+      setUseReplacement(false);
       setOpen(false);
       onSuccess?.();
     } catch (err: any) {
