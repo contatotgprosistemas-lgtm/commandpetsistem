@@ -45,13 +45,13 @@ export function FaltaDialog({ open, onOpenChange, agendamento, empresaId, allows
 
   // Fetch monthly swap count for this client
   useEffect(() => {
-    if (!open || !agendamento?.cliente_id || !empresaId) return;
+    if (!open || !agendamento?.pet_id || !empresaId) return;
     setLoadingTrocas(true);
     const now = new Date();
     const monthStart = format(startOfMonth(now), "yyyy-MM-dd");
     const monthEnd = format(endOfMonth(now), "yyyy-MM-dd");
 
-    // Get all absence IDs for swaps this month
+    // Get all swap absences this month
     supabase
       .from("agendamento_absences" as any)
       .select("id, agendamento_id")
@@ -65,13 +65,13 @@ export function FaltaDialog({ open, onOpenChange, agendamento, empresaId, allows
           setLoadingTrocas(false);
           return;
         }
-        // Filter by checking which agendamentos belong to this client
+        // Filter by checking which agendamentos belong to this pet
         const agIds = absences.map((a: any) => a.agendamento_id);
         const { data: ags } = await supabase
           .from("agendamentos")
           .select("id")
           .in("id", agIds)
-          .eq("cliente_id", agendamento.cliente_id);
+          .eq("pet_id", agendamento.pet_id);
         setTrocasUsadas(ags?.length ?? 0);
         setLoadingTrocas(false);
       });
