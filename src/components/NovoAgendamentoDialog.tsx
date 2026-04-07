@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, CalendarIcon, BedDouble } from "lucide-react";
+import { Plus, CalendarIcon, BedDouble, RotateCcw } from "lucide-react";
 import { format, differenceInCalendarDays } from "date-fns";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -93,7 +94,9 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
   const [pets, setPets] = useState<{ id: string; nome: string; cliente_id: string }[]>([]);
   const [servicos, setServicos] = useState<ServicoItem[]>([]);
-
+  const [availableReplacements, setAvailableReplacements] = useState<any[]>([]);
+  const [showReplacementDialog, setShowReplacementDialog] = useState(false);
+  const [pendingSubmitData, setPendingSubmitData] = useState<FormValues | null>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -160,7 +163,63 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     form.setValue("pet_ids", updated, { shouldValidate: true });
   }
 
+  // Check for available replacements when pets and service are selected
+  const checkReplacements = async (petIds: string[], tipoServico: string) => {
+    if (petIds.length === 0 || !tipoServico) {
+      setAvailableReplacements([]);
+      return [];
+    }
+
+    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
+    if (!profile?.empresa_id) return [];
+
+    // Find absences with tipo=com_reposicao that haven't been used yet
+    // for pets that have subscriptions matching the service type
+    const { data: absences } = await supabase
+      .from("agendamento_absences" as any)
+      .select("id, agendamento_id, tipo, reposicao_utilizada, notes")
+      .eq("empresa_id", profile.empresa_id)
+      .eq("tipo", "com_reposicao")
+      .eq("reposicao_utilizada", false);
+
+    if (!absences || absences.length === 0) return [];
+
+    // Get the agendamento details for these absences to check pet + service match
+    const absenceAgendamentoIds = absences.map((a: any) => a.agendamento_id);
+    const { data: agendamentos } = await supabase
+      .from("agendamentos")
+      .select("id, pet_id, tipo_servico, pet:pets(nome), cliente:clientes(nome)")
+      .in("id", absenceAgendamentoIds);
+
+    if (!agendamentos) return [];
+
+    // Filter: match pet_id in selected pets AND same service type
+    const matching = absences.filter((abs: any) => {
+      const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
+      if (!ag) return false;
+      return petIds.includes(ag.pet_id) && ag.tipo_servico === tipoServico;
+    }).map((abs: any) => {
+      const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
+      return { ...abs, agendamento: ag };
+    });
+
+    setAvailableReplacements(matching);
+    return matching;
+  };
+
   async function onSubmit(data: FormValues) {
+    // Check for replacements before proceeding
+    const replacements = await checkReplacements(data.pet_ids, data.tipo_servico);
+    if (replacements.length > 0 && !pendingSubmitData) {
+      setPendingSubmitData(data);
+      setShowReplacementDialog(true);
+      return;
+    }
+
+    await executeSubmit(data, false);
+  }
+
+  async function executeSubmit(data: FormValues, useReplacement: boolean) {
     setLoading(true);
     try {
       const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
@@ -176,6 +235,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         return new Date(d + "T" + (h || "00:00") + ":00").toISOString();
       };
 
+      const finalValor = useReplacement ? 0 : (data.valor ? parseFloat(data.valor) : null);
+
       const rows = data.pet_ids.map(pet_id => ({
         empresa_id: profile.empresa_id,
         cliente_id: data.cliente_id,
@@ -189,16 +250,36 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         data_saida: buildTs(data.data_saida || "", data.hora_saida || ""),
         hora_saida: data.hora_saida || null,
         baia: data.baia || null,
-        valor: data.valor ? parseFloat(data.valor) : null,
+        valor: finalValor,
         forma_pagamento: data.forma_pagamento || null,
-        notas: data.notas || null,
+        notas: useReplacement
+          ? `${data.notas || ""} [Reposição de falta justificada]`.trim()
+          : data.notas || null,
       }));
 
-      const { error } = await supabase.from("agendamentos").insert(rows as any);
+      const { data: insertedRows, error } = await supabase.from("agendamentos").insert(rows as any).select("id, pet_id");
       if (error) throw error;
 
-      // Gerar fatura em contas_receber para cada pet
-      const valorNum = data.valor ? parseFloat(data.valor) : 0;
+      // Mark replacement absences as used
+      if (useReplacement && insertedRows) {
+        for (const row of insertedRows) {
+          const matchingAbsence = availableReplacements.find(
+            (abs: any) => abs.agendamento?.pet_id === row.pet_id
+          );
+          if (matchingAbsence) {
+            await supabase
+              .from("agendamento_absences" as any)
+              .update({
+                reposicao_utilizada: true,
+                reposicao_agendamento_id: row.id,
+              })
+              .eq("id", matchingAbsence.id);
+          }
+        }
+      }
+
+      // Generate invoice only if NOT using replacement and valor > 0
+      const valorNum = useReplacement ? 0 : (data.valor ? parseFloat(data.valor) : 0);
       if (valorNum > 0) {
         const petNames = data.pet_ids.map(pid => {
           const pet = pets.find(p => p.id === pid);
@@ -215,9 +296,15 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         }));
         await supabase.from("contas_receber").insert(faturas as any);
       }
-      if (error) throw error;
-      toast({ title: `${data.pet_ids.length} agendamento(s) criado(s) com sucesso!` });
+
+      toast({
+        title: useReplacement
+          ? `Reposição utilizada! ${data.pet_ids.length} agendamento(s) criado(s) sem cobrança.`
+          : `${data.pet_ids.length} agendamento(s) criado(s) com sucesso!`,
+      });
       form.reset();
+      setAvailableReplacements([]);
+      setPendingSubmitData(null);
       setOpen(false);
       onSuccess?.();
     } catch (err: any) {
@@ -461,6 +548,56 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           </form>
         </Form>
       </DialogContent>
+
+      <AlertDialog open={showReplacementDialog} onOpenChange={setShowReplacementDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-primary" />
+              Reposição Disponível
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  {availableReplacements.length === 1
+                    ? "Este pet possui 1 falta justificada com direito a reposição para este serviço."
+                    : `Este pet possui ${availableReplacements.length} falta(s) justificada(s) com direito a reposição para este serviço.`}
+                </p>
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  {availableReplacements.map((r: any) => (
+                    <p key={r.id} className="text-sm">
+                      <span className="font-medium">{r.agendamento?.pet?.nome}</span>
+                      {" — "}
+                      <span className="text-muted-foreground">{r.agendamento?.tipo_servico}</span>
+                    </p>
+                  ))}
+                </div>
+                <p className="font-medium">Deseja utilizar a reposição? O valor será zerado e nenhuma fatura será gerada.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowReplacementDialog(false);
+              if (pendingSubmitData) {
+                executeSubmit(pendingSubmitData, false);
+                setPendingSubmitData(null);
+              }
+            }}>
+              Não, cobrar normalmente
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowReplacementDialog(false);
+              if (pendingSubmitData) {
+                executeSubmit(pendingSubmitData, true);
+                setPendingSubmitData(null);
+              }
+            }}>
+              Sim, usar reposição
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
