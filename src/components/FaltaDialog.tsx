@@ -75,7 +75,7 @@ export function FaltaDialog({ open, onOpenChange, agendamento, empresaId, allows
         setTrocasUsadas(ags?.length ?? 0);
         setLoadingTrocas(false);
       });
-  }, [open, agendamento?.cliente_id, empresaId]);
+  }, [open, agendamento?.pet_id, empresaId]);
 
   const trocasRestantes = MAX_TROCAS_MES - trocasUsadas;
   const podeTrocar = trocasRestantes > 0;
