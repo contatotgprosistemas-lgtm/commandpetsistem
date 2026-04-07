@@ -112,11 +112,10 @@ export default function Dashboard() {
         })).sort((a, b) => a.daysLeft - b.daysLeft);
         setExpiringContracts(expiring);
       });
-    // Fetch distinct clients with active plan/package
     // Fetch pets with active escola and banho plans
     supabase
       .from("customer_pet_subscriptions" as any)
-      .select("pet_id, plan:service_plans(name), package:service_packages(nome)")
+      .select("pet_id, plan:service_plans(name), package:service_packages(name)")
       .eq("status", "ativo")
       .then(({ data }) => {
         if (!data) return;
@@ -125,7 +124,7 @@ export default function Dashboard() {
         let escolaSet = new Set<string>();
         let banhoSet = new Set<string>();
         for (const sub of data as any[]) {
-          const label = ((sub.plan as any)?.name || (sub.package as any)?.nome || "").toLowerCase();
+          const label = ((sub.plan as any)?.name || (sub.package as any)?.name || "").toLowerCase();
           if (escolaKeywords.some(k => label.includes(k))) {
             if (sub.pet_id) escolaSet.add(sub.pet_id);
           }
