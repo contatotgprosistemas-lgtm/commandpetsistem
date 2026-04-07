@@ -41,15 +41,21 @@ export default function SuperAdminPage() {
 
   const fetchProfiles = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*, empresas(nome_empresa)")
-      .order("created_at", { ascending: false });
-    if (!error && data) {
-      setProfiles(data.map((p: any) => ({
-        ...p,
-        empresa_nome: p.empresas?.nome_empresa || null,
-      })) as ProfileRow[]);
+    // Fetch profiles and client role user_ids to filter them out
+    const [profilesRes, clientRolesRes] = await Promise.all([
+      supabase.from("profiles").select("*, empresas(nome_empresa)").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("user_id").eq("role", "cliente"),
+    ]);
+    if (!profilesRes.error && profilesRes.data) {
+      const clientUserIds = new Set((clientRolesRes.data || []).map((r: any) => r.user_id));
+      setProfiles(
+        profilesRes.data
+          .filter((p: any) => !clientUserIds.has(p.user_id))
+          .map((p: any) => ({
+            ...p,
+            empresa_nome: p.empresas?.nome_empresa || null,
+          })) as ProfileRow[]
+      );
     }
     setLoading(false);
   };
