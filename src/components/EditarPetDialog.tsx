@@ -11,11 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, PawPrint, XCircle } from "lucide-react";
+import { CalendarIcon, PawPrint } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { PetFaltasTab } from "@/components/PetFaltasTab";
 
 function calcularIdade(nascimento: Date): string {
   const anos = differenceInYears(new Date(), nascimento);
@@ -136,9 +135,6 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
           <TabsList className="w-full">
             <TabsTrigger value="dados" className="flex-1 gap-1.5">
               <PawPrint className="h-3.5 w-3.5" /> Dados
-            </TabsTrigger>
-            <TabsTrigger value="faltas" className="flex-1 gap-1.5">
-              <XCircle className="h-3.5 w-3.5" /> Faltas
             </TabsTrigger>
           </TabsList>
 
@@ -342,9 +338,6 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
             </Form>
           </TabsContent>
 
-          <TabsContent value="faltas">
-            {pet?.id && <PetFaltasTab petId={pet.id} />}
-          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
