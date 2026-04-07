@@ -91,7 +91,7 @@ export function ClienteTimelineTab({ clienteId, empresaId }: Props) {
     const { data: subs } = await supabase
       .from("customer_pet_subscriptions" as any)
       .select("id, plan_id, package_id, status, created_at, pet:pets(nome), service_plans(name), service_packages(name)")
-      .eq("cliente_id", clienteId);
+      .eq("cliente_id", clienteId) as { data: any[] | null };
 
     let subEvents: any[] = [];
     if (subs && subs.length > 0) {
