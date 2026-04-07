@@ -189,10 +189,13 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
       if (!agendamentos) return;
 
+      // Match by pet_id only — the tipo_servico on plan agendamentos is the plan name
+      // (e.g. "Plano Escola Premium 1x Semana"), not the service name (e.g. "Escola").
+      // So we match by pet and show the user which plan the credit comes from.
       const matching = absences.filter((abs: any) => {
         const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
         if (!ag) return false;
-        return selectedPetIds.includes(ag.pet_id) && ag.tipo_servico === selectedServico;
+        return selectedPetIds.includes(ag.pet_id);
       }).map((abs: any) => {
         const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
         return { ...abs, agendamento: ag };
