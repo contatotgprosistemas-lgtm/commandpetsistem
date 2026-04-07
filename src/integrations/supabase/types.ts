@@ -23,6 +23,8 @@ export type Database = {
           empresa_id: string
           id: string
           notes: string | null
+          reposicao_agendamento_id: string | null
+          reposicao_utilizada: boolean
           tipo: string
         }
         Insert: {
@@ -33,6 +35,8 @@ export type Database = {
           empresa_id: string
           id?: string
           notes?: string | null
+          reposicao_agendamento_id?: string | null
+          reposicao_utilizada?: boolean
           tipo?: string
         }
         Update: {
@@ -43,6 +47,8 @@ export type Database = {
           empresa_id?: string
           id?: string
           notes?: string | null
+          reposicao_agendamento_id?: string | null
+          reposicao_utilizada?: boolean
           tipo?: string
         }
         Relationships: [
@@ -58,6 +64,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agendamento_absences_reposicao_agendamento_id_fkey"
+            columns: ["reposicao_agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
             referencedColumns: ["id"]
           },
         ]
