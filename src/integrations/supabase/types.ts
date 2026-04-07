@@ -26,6 +26,7 @@ export type Database = {
           reposicao_agendamento_id: string | null
           reposicao_utilizada: boolean
           tipo: string
+          troca_data: string | null
         }
         Insert: {
           admin_authorized_by?: string | null
@@ -38,6 +39,7 @@ export type Database = {
           reposicao_agendamento_id?: string | null
           reposicao_utilizada?: boolean
           tipo?: string
+          troca_data?: string | null
         }
         Update: {
           admin_authorized_by?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           reposicao_agendamento_id?: string | null
           reposicao_utilizada?: boolean
           tipo?: string
+          troca_data?: string | null
         }
         Relationships: [
           {

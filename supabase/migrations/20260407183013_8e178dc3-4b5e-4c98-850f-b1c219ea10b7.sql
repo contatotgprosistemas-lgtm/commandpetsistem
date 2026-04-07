@@ -1,0 +1,1 @@
+ALTER TABLE public.agendamento_absences ADD COLUMN troca_data date;
