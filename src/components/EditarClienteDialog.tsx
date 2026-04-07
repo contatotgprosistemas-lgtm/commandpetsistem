@@ -42,14 +42,6 @@ interface EditarClienteDialogProps {
   onSuccess?: () => void;
 }
 
-interface HistoricoServico {
-  id: string;
-  tipo_servico: string;
-  valor: number | null;
-  data_servico: string;
-  notas: string | null;
-}
-
 interface Fatura {
   id: string;
   descricao: string;
