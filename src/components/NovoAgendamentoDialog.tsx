@@ -150,8 +150,11 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
   useEffect(() => {
     if (open) {
-      supabase.from("profiles").select("empresa_id").single().then(({ data }) => {
-        if (data?.empresa_id) setEmpresaId(data.empresa_id);
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) return;
+        supabase.from("profiles").select("empresa_id").eq("user_id", user.id).single().then(({ data }) => {
+          if (data?.empresa_id) setEmpresaId(data.empresa_id);
+        });
       });
       supabase.from("clientes").select("id, nome").order("nome").then(({ data }) => { if (data) setClientes(data); });
       supabase.from("pets").select("id, nome, cliente_id").order("nome").then(({ data }) => { if (data) setPets(data); });
