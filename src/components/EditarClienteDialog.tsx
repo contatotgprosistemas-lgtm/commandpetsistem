@@ -106,17 +106,6 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
     }
   }
 
-  async function fetchHistorico(clienteId: string) {
-    setLoadingHistorico(true);
-    const { data } = await supabase
-      .from("historico_servicos" as any)
-      .select("id, tipo_servico, valor, data_servico, notas")
-      .eq("cliente_id", clienteId)
-      .order("data_servico", { ascending: false });
-    setHistorico((data as any) ?? []);
-    setLoadingHistorico(false);
-  }
-
   async function fetchFaturas(clienteId: string) {
     setLoadingFaturas(true);
     const { data } = await supabase
