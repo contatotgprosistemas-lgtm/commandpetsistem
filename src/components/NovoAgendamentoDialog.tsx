@@ -94,7 +94,9 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
   const [pets, setPets] = useState<{ id: string; nome: string; cliente_id: string }[]>([]);
   const [servicos, setServicos] = useState<ServicoItem[]>([]);
-
+  const [availableReplacements, setAvailableReplacements] = useState<any[]>([]);
+  const [showReplacementDialog, setShowReplacementDialog] = useState(false);
+  const [pendingSubmitData, setPendingSubmitData] = useState<FormValues | null>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
