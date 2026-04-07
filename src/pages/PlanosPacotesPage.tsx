@@ -15,6 +15,7 @@ import { NovoPacoteDialog } from "@/components/planos/NovoPacoteDialog";
 import { ContratacaoDialog } from "@/components/planos/ContratacaoDialog";
 import { PlanejamentoDiasDialog } from "@/components/planos/PlanejamentoDiasDialog";
 import { EditarContratacaoDialog } from "@/components/planos/EditarContratacaoDialog";
+import { CancelamentoContratacaoDialog } from "@/components/planos/CancelamentoContratacaoDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
