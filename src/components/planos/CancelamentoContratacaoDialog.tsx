@@ -47,7 +47,10 @@ export function CancelamentoContratacaoDialog({ open, onOpenChange, onSuccess, s
   async function handleConfirm() {
     setSaving(true);
     try {
-      // 1. Update subscription status
+      // 1. Delete all linked appointments
+      await supabase.from("agendamentos").delete().eq("subscription_id", subscription.id);
+
+      // 2. Update subscription status
       await supabase.from("customer_pet_subscriptions" as any).update({ status: "cancelado" }).eq("id", subscription.id);
 
       // 2. Log event
