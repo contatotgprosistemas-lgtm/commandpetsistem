@@ -339,7 +339,7 @@ export default function PlanosPacotesPage() {
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="Pausar" onClick={() => setActionTarget({ action: "pause", id: s.id })}>
                             <Pause className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Cancelar" onClick={() => setActionTarget({ action: "cancel", id: s.id })}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Cancelar" onClick={() => setCancelSub(s)}>
                             <XCircle className="h-3.5 w-3.5" />
                           </Button>
                         </>
