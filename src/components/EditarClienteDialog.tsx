@@ -66,7 +66,7 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
       });
       setDiaVencimento(cliente.dia_vencimento_fatura ?? 10);
       setDiasGerarFatura(cliente.dias_gerar_fatura ?? 5);
-      fetchFaturas(cliente.id);
+      
     }
   }, [cliente, form]);
 
@@ -89,16 +89,6 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
     }
   }
 
-  async function fetchFaturas(clienteId: string) {
-    setLoadingFaturas(true);
-    const { data } = await supabase
-      .from("contas_receber")
-      .select("id, descricao, valor, vencimento, categoria, status, cliente_id, banco")
-      .eq("cliente_id", clienteId)
-      .order("vencimento", { ascending: false });
-    setFaturas((data as any) ?? []);
-    setLoadingFaturas(false);
-  }
 
   async function onSubmit(data: FormValues) {
     if (!cliente?.id) return;
