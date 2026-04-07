@@ -375,6 +375,30 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               </FormItem>
             )} />
 
+            {/* Replacement banner */}
+            {availableReplacements.length > 0 && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <RotateCcw className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">
+                    Reposição disponível! ({availableReplacements.length} falta{availableReplacements.length > 1 ? "s" : ""} justificada{availableReplacements.length > 1 ? "s" : ""})
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {availableReplacements.map((r: any) => (
+                    <p key={r.id}>{r.agendamento?.pet?.nome} — {r.agendamento?.tipo_servico}</p>
+                  ))}
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={useReplacement} onCheckedChange={(v) => {
+                    setUseReplacement(!!v);
+                    if (v) form.setValue("valor", "0");
+                  }} />
+                  <span className="text-sm font-medium">Usar reposição (valor zerado, sem fatura)</span>
+                </label>
+              </div>
+            )}
+
             {/* Row 1: Reserva + Hora Reserva + Saída Prevista + Hr Saída Prevista */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <FormField control={form.control} name="data_reserva" render={({ field }) => (
