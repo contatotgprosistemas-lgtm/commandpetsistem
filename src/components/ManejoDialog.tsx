@@ -123,16 +123,28 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
     if (error) {
       toast.error("Erro ao salvar manejo: " + error.message);
     } else {
-      // Send notification to client (only on new records)
-      if (!existingId) {
-        const { data: petData } = await supabase.from("pets").select("cliente_id").eq("id", petId).single();
-        if (petData?.cliente_id) {
+      // Send notification to client
+      const { data: petData } = await supabase.from("pets").select("cliente_id").eq("id", petId).single();
+      if (petData?.cliente_id) {
+        // Standard daily bulletin notification (only on new records)
+        if (!existingId) {
           await supabase.from("customer_notifications").insert({
             empresa_id: empresaId,
             cliente_id: petData.cliente_id,
             title: `Boletim Diário — ${petName}`,
             message: `O boletim diário de ${petName} foi preenchido. Confira os detalhes no portal.`,
             type: "sistema",
+          });
+        }
+
+        // Occurrence notification (new or updated with occurrence)
+        if (respostas["ocorrencia"] === "sim" && respostas["ocorrencia_detalhes"]?.trim()) {
+          await supabase.from("customer_notifications").insert({
+            empresa_id: empresaId,
+            cliente_id: petData.cliente_id,
+            title: `⚠️ Ocorrência — ${petName}`,
+            message: respostas["ocorrencia_detalhes"].trim(),
+            type: "alerta",
           });
         }
       }
