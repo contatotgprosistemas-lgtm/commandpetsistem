@@ -43,17 +43,27 @@ export default function SuperAdminPage() {
 
   const fetchProfiles = async () => {
     setLoading(true);
-    const [profilesRes, clientRolesRes] = await Promise.all([
+    const [profilesRes, clientRolesRes, clientesRes] = await Promise.all([
       supabase.from("profiles").select("*, empresas(nome_empresa)").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id").eq("role", "cliente"),
+      supabase.from("clientes").select("user_id, empresa_id, empresas(nome_empresa)").not("user_id", "is", null),
     ]);
     if (!profilesRes.error && profilesRes.data) {
       const cIds = new Set((clientRolesRes.data || []).map((r: any) => r.user_id));
       setClientUserIds(cIds);
+
+      // Build map of user_id -> empresa name from clientes table
+      const clienteEmpresaMap = new Map<string, string>();
+      (clientesRes.data || []).forEach((c: any) => {
+        if (c.user_id && c.empresas?.nome_empresa) {
+          clienteEmpresaMap.set(c.user_id, c.empresas.nome_empresa);
+        }
+      });
+
       setAllProfiles(
         profilesRes.data.map((p: any) => ({
           ...p,
-          empresa_nome: p.empresas?.nome_empresa || null,
+          empresa_nome: p.empresas?.nome_empresa || clienteEmpresaMap.get(p.user_id) || null,
         })) as ProfileRow[]
       );
     }
