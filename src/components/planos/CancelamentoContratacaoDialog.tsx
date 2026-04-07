@@ -27,8 +27,8 @@ export function CancelamentoContratacaoDialog({ open, onOpenChange, onSuccess, s
 
   const planOrPkg = plan || pkg;
   const planName = planOrPkg?.name || "Plano/Pacote";
-  const cancellationFeePercent = plan?.cancellation_fee || 0;
-  const contractDurationMonths = plan?.contract_duration_months || 0;
+  const cancellationFeePercent = planOrPkg?.cancellation_fee || 0;
+  const contractDurationMonths = planOrPkg?.contract_duration_months || planOrPkg?.min_loyalty_months || 0;
   const monthlyPrice = Number(subscription?.final_price || 0);
 
   // Calculate remaining months
