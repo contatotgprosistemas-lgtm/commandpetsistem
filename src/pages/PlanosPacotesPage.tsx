@@ -15,6 +15,7 @@ import { NovoPacoteDialog } from "@/components/planos/NovoPacoteDialog";
 import { ContratacaoDialog } from "@/components/planos/ContratacaoDialog";
 import { PlanejamentoDiasDialog } from "@/components/planos/PlanejamentoDiasDialog";
 import { EditarContratacaoDialog } from "@/components/planos/EditarContratacaoDialog";
+import { CancelamentoContratacaoDialog } from "@/components/planos/CancelamentoContratacaoDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,7 @@ export default function PlanosPacotesPage() {
   const [planejamentoSub, setPlanejamentoSub] = useState<any>(null);
   const [discountTarget, setDiscountTarget] = useState<any>(null);
   const [editingSub, setEditingSub] = useState<any>(null);
+  const [cancelSub, setCancelSub] = useState<any>(null);
   const [discountValue, setDiscountValue] = useState("");
   const [searchContratacao, setSearchContratacao] = useState("");
 
@@ -337,7 +339,7 @@ export default function PlanosPacotesPage() {
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="Pausar" onClick={() => setActionTarget({ action: "pause", id: s.id })}>
                             <Pause className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Cancelar" onClick={() => setActionTarget({ action: "cancel", id: s.id })}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Cancelar" onClick={() => setCancelSub(s)}>
                             <XCircle className="h-3.5 w-3.5" />
                           </Button>
                         </>
@@ -405,6 +407,17 @@ export default function PlanosPacotesPage() {
           onSuccess={fetchAll}
           subscription={editingSub}
           planName={plans.find((p: any) => p.id === editingSub.plan_id)?.name || packages.find((p: any) => p.id === editingSub.package_id)?.name || "—"}
+        />
+      )}
+      {cancelSub && (
+        <CancelamentoContratacaoDialog
+          open={!!cancelSub}
+          onOpenChange={o => { if (!o) setCancelSub(null); }}
+          onSuccess={fetchAll}
+          subscription={cancelSub}
+          plan={plans.find((p: any) => p.id === cancelSub.plan_id)}
+          pkg={packages.find((p: any) => p.id === cancelSub.package_id)}
+          empresaId={empresaId}
         />
       )}
 
