@@ -48,12 +48,14 @@ export function CancelamentoContratacaoDialog({ open, onOpenChange, onSuccess, s
     setSaving(true);
     try {
       // 1. Delete all linked appointments
-      await supabase.from("agendamentos").delete().eq("subscription_id", subscription.id);
+      const { error: errAg } = await supabase.from("agendamentos").delete().eq("subscription_id", subscription.id);
+      if (errAg) console.error("Erro ao excluir agendamentos:", errAg);
 
       // 2. Update subscription status
-      await supabase.from("customer_pet_subscriptions" as any).update({ status: "cancelado" }).eq("id", subscription.id);
+      const { error: errSub } = await supabase.from("customer_pet_subscriptions" as any).update({ status: "cancelado" }).eq("id", subscription.id);
+      if (errSub) throw errSub;
 
-      // 2. Log event
+      // 3. Log event
       await supabase.from("subscription_events" as any).insert({
         empresa_id: empresaId,
         subscription_id: subscription.id,
@@ -61,9 +63,9 @@ export function CancelamentoContratacaoDialog({ open, onOpenChange, onSuccess, s
         description: `Cancelamento${cobrarMulta && hasContractInfo ? ` com multa de R$ ${valorMulta.toFixed(2)}` : " sem multa"}. ${motivo ? `Motivo: ${motivo}` : ""}`
       });
 
-      // 3. Generate penalty invoice if applicable
+      // 4. Generate penalty invoice if applicable
       if (cobrarMulta && hasContractInfo && valorMulta > 0) {
-        await supabase.from("contas_receber").insert({
+        const { error: errConta } = await supabase.from("contas_receber").insert({
           empresa_id: empresaId,
           cliente_id: subscription.cliente_id,
           descricao: `Multa cancelamento: ${planName} (${cancellationFeePercent}% de ${mesesRestantes} meses restantes)`,
@@ -72,8 +74,9 @@ export function CancelamentoContratacaoDialog({ open, onOpenChange, onSuccess, s
           status: "pendente",
           categoria: "Multas e Penalidades",
         });
+        if (errConta) console.error("Erro ao gerar multa:", errConta);
 
-        // 4. Notify client
+        // 5. Notify client
         await supabase.from("customer_notifications").insert({
           empresa_id: empresaId,
           cliente_id: subscription.cliente_id,
@@ -88,8 +91,9 @@ export function CancelamentoContratacaoDialog({ open, onOpenChange, onSuccess, s
         : "Contratação cancelada com sucesso.");
       onSuccess();
       onOpenChange(false);
-    } catch (err) {
-      toast.error("Erro ao cancelar contratação");
+    } catch (err: any) {
+      console.error("Erro ao cancelar contratação:", err);
+      toast.error("Erro ao cancelar contratação: " + (err?.message || ""));
     }
     setSaving(false);
   }
