@@ -153,24 +153,37 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
             <span>Resposta</span>
           </div>
           {defaultPerguntas.map(p => (
-            <div key={p.key} className="grid grid-cols-[1fr_1fr] px-2 py-3 items-center gap-2">
-              <span className="text-sm text-foreground">{p.label}</span>
-              <div>
-                {p.tipo === "sim_nao" && (
-                  <RadioGroup value={respostas[p.key] || ""} onValueChange={v => setResposta(p.key, v)} className="flex gap-4">
-                    <div className="flex items-center gap-1"><RadioGroupItem value="sim" id={`${p.key}-sim`} /><Label htmlFor={`${p.key}-sim`} className="text-sm">Sim</Label></div>
-                    <div className="flex items-center gap-1"><RadioGroupItem value="nao" id={`${p.key}-nao`} /><Label htmlFor={`${p.key}-nao`} className="text-sm">Não</Label></div>
-                  </RadioGroup>
-                )}
-                {p.tipo === "select" && (
-                  <Select value={respostas[p.key] || ""} onValueChange={v => setResposta(p.key, v)}>
-                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>{p.opcoes?.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-                  </Select>
-                )}
-                {p.tipo === "numero" && <Input type="number" className="h-8 text-sm w-20" value={respostas[p.key] || ""} onChange={e => setResposta(p.key, e.target.value)} />}
-                {p.tipo === "texto" && <Textarea className="text-sm min-h-[60px]" value={respostas[p.key] || ""} onChange={e => setResposta(p.key, e.target.value)} />}
+            <div key={p.key}>
+              <div className="grid grid-cols-[1fr_1fr] px-2 py-3 items-center gap-2">
+                <span className="text-sm text-foreground">{p.label}</span>
+                <div>
+                  {p.tipo === "sim_nao" && (
+                    <RadioGroup value={respostas[p.key] || ""} onValueChange={v => setResposta(p.key, v)} className="flex gap-4">
+                      <div className="flex items-center gap-1"><RadioGroupItem value="sim" id={`${p.key}-sim`} /><Label htmlFor={`${p.key}-sim`} className="text-sm">Sim</Label></div>
+                      <div className="flex items-center gap-1"><RadioGroupItem value="nao" id={`${p.key}-nao`} /><Label htmlFor={`${p.key}-nao`} className="text-sm">Não</Label></div>
+                    </RadioGroup>
+                  )}
+                  {p.tipo === "select" && (
+                    <Select value={respostas[p.key] || ""} onValueChange={v => setResposta(p.key, v)}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>{p.opcoes?.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                    </Select>
+                  )}
+                  {p.tipo === "numero" && <Input type="number" className="h-8 text-sm w-20" value={respostas[p.key] || ""} onChange={e => setResposta(p.key, e.target.value)} />}
+                  {p.tipo === "texto" && <Textarea className="text-sm min-h-[60px]" value={respostas[p.key] || ""} onChange={e => setResposta(p.key, e.target.value)} />}
+                </div>
               </div>
+              {/* Show occurrence details field when "Ocorrência?" is answered "sim" */}
+              {p.key === "ocorrencia" && respostas["ocorrencia"] === "sim" && (
+                <div className="px-2 pb-3">
+                  <Textarea
+                    className="text-sm min-h-[80px] border-destructive/50"
+                    placeholder="Descreva a ocorrência em detalhes..."
+                    value={respostas["ocorrencia_detalhes"] || ""}
+                    onChange={e => setResposta("ocorrencia_detalhes", e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           ))}
           {customPerguntas.map(p => (
