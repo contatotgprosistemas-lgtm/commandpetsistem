@@ -459,7 +459,7 @@ export default function Dashboard() {
           <DialogHeader>
             <DialogTitle>Check-out em Massa</DialogTitle>
             <DialogDescription>
-              Deseja realizar o check-out de todos os <strong>{petsNaEmpresa.length}</strong> pets que estão na empresa agora?
+              Deseja realizar o check-out de <strong>{selectedNaEmpresa.size}</strong> pet(s) selecionado(s)?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
