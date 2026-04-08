@@ -136,6 +136,36 @@ export default function OperacionalDashboard() {
     window.location.reload();
   };
 
+  const handleMassCheckin = async () => {
+    const targets = pendingCheckins.filter(p => selectedCheckins.has(p.id));
+    if (targets.length === 0) return;
+    setMassLoading(true);
+    for (const item of targets) {
+      const now = new Date();
+      await supabase.from("agendamentos").update({
+        status: "na_empresa", data_entrada: now.toISOString(), hora_entrada: format(now, "HH:mm"),
+      }).eq("id", item.id);
+    }
+    setMassLoading(false);
+    toast.success(`Check-in em massa: ${targets.length} pet(s).`);
+    window.location.reload();
+  };
+
+  const handleMassCheckout = async () => {
+    const targets = petsNaEmpresa.filter(p => selectedNaEmpresa.has(p.id));
+    if (targets.length === 0) return;
+    setMassLoading(true);
+    const now = new Date();
+    for (const item of targets) {
+      await supabase.from("agendamentos").update({
+        status: "concluido", data_saida: now.toISOString(), hora_saida: format(now, "HH:mm"),
+      }).eq("id", item.id);
+    }
+    setMassLoading(false);
+    toast.success(`Check-out em massa: ${targets.length} pet(s).`);
+    window.location.reload();
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
