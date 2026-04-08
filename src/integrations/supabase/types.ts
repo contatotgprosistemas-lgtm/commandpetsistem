@@ -4039,6 +4039,56 @@ export type Database = {
         }
         Relationships: []
       }
+      taxas_financeiras: {
+        Row: {
+          ativo: boolean
+          bandeira: string | null
+          created_at: string
+          empresa_id: string
+          id: string
+          parcelas_ate: number | null
+          parcelas_de: number | null
+          percentual: number
+          tipo: string
+          updated_at: string
+          valor_fixo: number
+        }
+        Insert: {
+          ativo?: boolean
+          bandeira?: string | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+          parcelas_ate?: number | null
+          parcelas_de?: number | null
+          percentual?: number
+          tipo?: string
+          updated_at?: string
+          valor_fixo?: number
+        }
+        Update: {
+          ativo?: boolean
+          bandeira?: string | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          parcelas_ate?: number | null
+          parcelas_de?: number | null
+          percentual?: number
+          tipo?: string
+          updated_at?: string
+          valor_fixo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxas_financeiras_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tipos_servico: {
         Row: {
           ativo: boolean
