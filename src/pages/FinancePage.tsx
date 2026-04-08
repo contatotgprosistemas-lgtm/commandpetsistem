@@ -399,6 +399,35 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
           </TableBody>
         </Table>
       )}
+
+      {/* Summary cards */}
+      {(() => {
+        const totalTitulos = filtered.reduce((s, c) => s + c.valor, 0);
+        const totalPago = filtered.filter(c => c.status === "pago").reduce((s, c) => s + c.valor, 0);
+        const totalAberto = filtered.filter(c => c.status !== "pago").reduce((s, c) => s + c.valor, 0);
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 border-t border-border">
+            <div className="rounded-lg border border-border p-4 text-center">
+              <p className="text-sm text-muted-foreground">Total de Títulos</p>
+              <p className="text-xl font-bold text-foreground mt-1">
+                R$ {totalTitulos.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border p-4 text-center">
+              <p className="text-sm text-muted-foreground">Total Pago</p>
+              <p className="text-xl font-bold text-foreground mt-1">
+                R$ {totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div className="rounded-lg bg-emerald-500 p-4 text-center">
+              <p className="text-sm text-white/90">Total em Aberto</p>
+              <p className="text-xl font-bold text-white mt-1">
+                R$ {totalAberto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
