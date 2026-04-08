@@ -538,7 +538,7 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showD
   );
 }
 
-function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete, onFalta }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void; onFalta?: (item: Agendamento) => void }) {
+function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete, onFalta, selected, onToggleSelect }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void; onFalta?: (item: Agendamento) => void; selected?: boolean; onToggleSelect?: () => void }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
@@ -549,6 +549,9 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
 
   return (
     <div className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+      {onToggleSelect && (
+        <Checkbox checked={!!selected} onCheckedChange={onToggleSelect} className="shrink-0" />
+      )}
       <div className="flex items-center gap-1 -space-x-2">
         <Avatar className="h-11 w-11 border-2 border-card z-10">
           {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}
