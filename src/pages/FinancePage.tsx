@@ -157,6 +157,14 @@ export default function FinancePage() {
             contas={contas}
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
+            onBaixarLote={(items) => {
+              const totalValor = items.reduce((s, c) => s + c.valor, 0);
+              setBaixaLote({
+                ids: items.map(c => c.id),
+                descricao: `Baixa em lote (${items.length} faturas)`,
+                valor: totalValor,
+              });
+            }}
             onEdit={(c) => setEditConta(c)}
             onDividir={(c) => setDividirConta(c)}
             onDelete={async (id) => {
