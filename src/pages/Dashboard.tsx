@@ -851,7 +851,7 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
 }
 
 function FaturamentoChart({ data }: { data: { dia: string; pendente: number; pago: number }[] }) {
-  const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = require("recharts");
+  const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = await import("recharts") as any;
 
   const formatCurrency = (value: number) => {
     if (value >= 1000) return `R$${(value / 1000).toFixed(1)}k`;
