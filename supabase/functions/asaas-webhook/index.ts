@@ -106,13 +106,14 @@ async function processPayment(supabase: any, conta: any, payment: any, valorIndi
     })
     .eq("id", conta.id);
 
-  // Find the first bank account of the company to credit
-  const { data: banco } = await supabase
+  // Find the Asaas bank account (prefer bank with "asaas" in name, fallback to first)
+  const { data: bancos } = await supabase
     .from("contas_bancarias")
-    .select("id, saldo_atual")
+    .select("id, saldo_atual, banco")
     .eq("empresa_id", conta.empresa_id)
-    .limit(1)
-    .single();
+    .order("banco");
+
+  const banco = bancos?.find((b: any) => b.banco.toLowerCase().includes("asaas")) || bancos?.[0] || null;
 
   if (banco) {
     // Update bank balance
