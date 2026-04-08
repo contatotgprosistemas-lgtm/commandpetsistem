@@ -623,11 +623,12 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
   );
 }
 
-function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist, onCheckout }: {
+function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist, onCheckout, selectedIds, onToggleSelect }: {
   items: Agendamento[]; loading: boolean;
   onEdit: (a: Agendamento) => void; onFicha: (a: Agendamento) => void;
   onManejo: (a: Agendamento) => void; onChecklist: (a: Agendamento) => void;
   onCheckout: (a: Agendamento) => void;
+  selectedIds?: Set<string>; onToggleSelect?: (id: string) => void;
 }) {
   if (loading) return <div className="space-y-3 mt-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}</div>;
   if (items.length === 0) return (
@@ -644,6 +645,9 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
         const clientWhatsapp = item.cliente?.whatsapp;
         return (
           <div key={item.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+            {onToggleSelect && (
+              <Checkbox checked={selectedIds?.has(item.id) ?? false} onCheckedChange={() => onToggleSelect(item.id)} className="shrink-0" />
+            )}
             <div className="flex items-center gap-1 -space-x-2">
               <Avatar className="h-11 w-11 border-2 border-card z-10">
                 {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}
