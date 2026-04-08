@@ -2055,6 +2055,41 @@ export type Database = {
           },
         ]
       }
+      formas_pagamento: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formas_pagamento_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funil_vendas: {
         Row: {
           cliente_id: string

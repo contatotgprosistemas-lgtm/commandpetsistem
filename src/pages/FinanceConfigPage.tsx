@@ -10,8 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, CreditCard, QrCode } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Plus, Pencil, Trash2, CreditCard, QrCode, Wallet } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 interface TaxaFinanceira {
   id: string;
@@ -24,86 +24,157 @@ interface TaxaFinanceira {
   ativo: boolean;
 }
 
-const TIPOS = [
-  { value: "cartao_credito", label: "Cartão de Crédito" },
-  { value: "cartao_debito", label: "Cartão de Débito" },
-  { value: "pix", label: "PIX" },
-];
+interface FormaPagamento {
+  id: string;
+  nome: string;
+  codigo: string;
+  ativo: boolean;
+}
 
 const BANDEIRAS = ["Visa", "Mastercard", "Elo", "Amex", "Hipercard", "Outras"];
 
-const tipoLabel = (t: string) => TIPOS.find(x => x.value === t)?.label ?? t;
-
 export default function FinanceConfigPage() {
   const { profile } = useAuth();
-  const [taxas, setTaxas] = useState<TaxaFinanceira[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<TaxaFinanceira | null>(null);
 
-  const [tipo, setTipo] = useState("cartao_credito");
-  const [bandeira, setBandeira] = useState("");
-  const [parcelasDe, setParcelasDe] = useState(1);
-  const [parcelasAte, setParcelasAte] = useState(1);
-  const [percentual, setPercentual] = useState("");
-  const [valorFixo, setValorFixo] = useState("");
-  const [ativo, setAtivo] = useState(true);
+  // === Formas de Pagamento ===
+  const [formas, setFormas] = useState<FormaPagamento[]>([]);
+  const [loadingFormas, setLoadingFormas] = useState(true);
+  const [formaDialogOpen, setFormaDialogOpen] = useState(false);
+  const [editingForma, setEditingForma] = useState<FormaPagamento | null>(null);
+  const [formaNome, setFormaNome] = useState("");
+  const [formaCodigo, setFormaCodigo] = useState("");
+  const [formaAtivo, setFormaAtivo] = useState(true);
+
+  // === Taxas ===
+  const [taxas, setTaxas] = useState<TaxaFinanceira[]>([]);
+  const [loadingTaxas, setLoadingTaxas] = useState(true);
+  const [taxaDialogOpen, setTaxaDialogOpen] = useState(false);
+  const [editingTaxa, setEditingTaxa] = useState<TaxaFinanceira | null>(null);
+  const [taxaTipo, setTaxaTipo] = useState("");
+  const [taxaBandeira, setTaxaBandeira] = useState("");
+  const [taxaParcelasDe, setTaxaParcelasDe] = useState(1);
+  const [taxaParcelasAte, setTaxaParcelasAte] = useState(1);
+  const [taxaPercentual, setTaxaPercentual] = useState("");
+  const [taxaValorFixo, setTaxaValorFixo] = useState("");
+  const [taxaAtivo, setTaxaAtivo] = useState(true);
+
+  async function fetchFormas() {
+    setLoadingFormas(true);
+    const { data } = await supabase.from("formas_pagamento").select("*").order("nome");
+    if (data) setFormas(data as any);
+    setLoadingFormas(false);
+  }
 
   async function fetchTaxas() {
-    setLoading(true);
-    const { data } = await supabase
-      .from("taxas_financeiras")
-      .select("*")
-      .order("tipo")
-      .order("parcelas_de");
+    setLoadingTaxas(true);
+    const { data } = await supabase.from("taxas_financeiras").select("*").order("tipo").order("parcelas_de");
     if (data) setTaxas(data as any);
-    setLoading(false);
+    setLoadingTaxas(false);
   }
 
-  useEffect(() => { fetchTaxas(); }, []);
+  useEffect(() => {
+    fetchFormas();
+    fetchTaxas();
+  }, []);
 
-  function openNew() {
-    setEditing(null);
-    setTipo("cartao_credito");
-    setBandeira("");
-    setParcelasDe(1);
-    setParcelasAte(1);
-    setPercentual("");
-    setValorFixo("");
-    setAtivo(true);
-    setDialogOpen(true);
+  // --- Formas de Pagamento handlers ---
+  function openNewForma() {
+    setEditingForma(null);
+    setFormaNome("");
+    setFormaCodigo("");
+    setFormaAtivo(true);
+    setFormaDialogOpen(true);
   }
 
-  function openEdit(t: TaxaFinanceira) {
-    setEditing(t);
-    setTipo(t.tipo);
-    setBandeira(t.bandeira ?? "");
-    setParcelasDe(t.parcelas_de);
-    setParcelasAte(t.parcelas_ate);
-    setPercentual(String(t.percentual));
-    setValorFixo(String(t.valor_fixo));
-    setAtivo(t.ativo);
-    setDialogOpen(true);
+  function openEditForma(f: FormaPagamento) {
+    setEditingForma(f);
+    setFormaNome(f.nome);
+    setFormaCodigo(f.codigo);
+    setFormaAtivo(f.ativo);
+    setFormaDialogOpen(true);
   }
 
-  async function handleSave() {
+  async function handleSaveForma() {
     if (!profile?.empresa_id) { toast.error("Empresa não encontrada"); return; }
-    const pct = parseFloat(percentual) || 0;
-    const vf = parseFloat(valorFixo) || 0;
+    if (!formaNome.trim() || !formaCodigo.trim()) { toast.error("Preencha nome e código"); return; }
 
     const payload = {
       empresa_id: profile.empresa_id,
-      tipo,
-      bandeira: tipo === "pix" ? null : (bandeira || null),
-      parcelas_de: tipo === "pix" ? 1 : parcelasDe,
-      parcelas_ate: tipo === "pix" ? 1 : parcelasAte,
-      percentual: pct,
-      valor_fixo: vf,
-      ativo,
+      nome: formaNome.trim(),
+      codigo: formaCodigo.trim().toLowerCase().replace(/\s+/g, "_"),
+      ativo: formaAtivo,
     };
 
-    if (editing) {
-      const { error } = await supabase.from("taxas_financeiras").update(payload).eq("id", editing.id);
+    if (editingForma) {
+      const { error } = await supabase.from("formas_pagamento").update(payload).eq("id", editingForma.id);
+      if (error) { toast.error("Erro ao atualizar"); return; }
+      toast.success("Forma de pagamento atualizada");
+    } else {
+      const { error } = await supabase.from("formas_pagamento").insert(payload as any);
+      if (error) { toast.error("Erro ao criar"); return; }
+      toast.success("Forma de pagamento cadastrada");
+    }
+    setFormaDialogOpen(false);
+    fetchFormas();
+  }
+
+  async function handleDeleteForma(id: string) {
+    const { error } = await supabase.from("formas_pagamento").delete().eq("id", id);
+    if (error) { toast.error("Erro ao excluir"); return; }
+    toast.success("Forma de pagamento excluída");
+    fetchFormas();
+  }
+
+  async function handleToggleForma(id: string, val: boolean) {
+    await supabase.from("formas_pagamento").update({ ativo: val }).eq("id", id);
+    fetchFormas();
+  }
+
+  // --- Taxas handlers ---
+  const isCartao = taxaTipo.startsWith("cartao");
+
+  function openNewTaxa() {
+    setEditingTaxa(null);
+    setTaxaTipo(formas.length > 0 ? formas[0].codigo : "");
+    setTaxaBandeira("");
+    setTaxaParcelasDe(1);
+    setTaxaParcelasAte(1);
+    setTaxaPercentual("");
+    setTaxaValorFixo("");
+    setTaxaAtivo(true);
+    setTaxaDialogOpen(true);
+  }
+
+  function openEditTaxa(t: TaxaFinanceira) {
+    setEditingTaxa(t);
+    setTaxaTipo(t.tipo);
+    setTaxaBandeira(t.bandeira ?? "");
+    setTaxaParcelasDe(t.parcelas_de);
+    setTaxaParcelasAte(t.parcelas_ate);
+    setTaxaPercentual(String(t.percentual));
+    setTaxaValorFixo(String(t.valor_fixo));
+    setTaxaAtivo(t.ativo);
+    setTaxaDialogOpen(true);
+  }
+
+  async function handleSaveTaxa() {
+    if (!profile?.empresa_id) { toast.error("Empresa não encontrada"); return; }
+    const pct = parseFloat(taxaPercentual) || 0;
+    const vf = parseFloat(taxaValorFixo) || 0;
+
+    const payload = {
+      empresa_id: profile.empresa_id,
+      tipo: taxaTipo,
+      bandeira: isCartao ? (taxaBandeira || null) : null,
+      parcelas_de: isCartao ? taxaParcelasDe : 1,
+      parcelas_ate: isCartao ? taxaParcelasAte : 1,
+      percentual: pct,
+      valor_fixo: vf,
+      ativo: taxaAtivo,
+    };
+
+    if (editingTaxa) {
+      const { error } = await supabase.from("taxas_financeiras").update(payload).eq("id", editingTaxa.id);
       if (error) { toast.error("Erro ao atualizar"); return; }
       toast.success("Taxa atualizada");
     } else {
@@ -111,120 +182,214 @@ export default function FinanceConfigPage() {
       if (error) { toast.error("Erro ao criar taxa"); return; }
       toast.success("Taxa cadastrada");
     }
-    setDialogOpen(false);
+    setTaxaDialogOpen(false);
     fetchTaxas();
   }
 
-  async function handleDelete(id: string) {
+  async function handleDeleteTaxa(id: string) {
     const { error } = await supabase.from("taxas_financeiras").delete().eq("id", id);
     if (error) { toast.error("Erro ao excluir"); return; }
     toast.success("Taxa excluída");
     fetchTaxas();
   }
 
-  async function handleToggle(id: string, val: boolean) {
+  async function handleToggleTaxa(id: string, val: boolean) {
     await supabase.from("taxas_financeiras").update({ ativo: val }).eq("id", id);
     fetchTaxas();
   }
 
-  const tipoIcon = (t: string) => t === "pix" ? <QrCode className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />;
+  const formaLabel = (codigo: string) => formas.find(f => f.codigo === codigo)?.nome ?? codigo;
+  const tipoIcon = (t: string) => t.includes("pix") ? <QrCode className="h-4 w-4" /> : t.startsWith("cartao") ? <CreditCard className="h-4 w-4" /> : <Wallet className="h-4 w-4" />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Configuração de Taxas</h2>
-          <p className="text-sm text-muted-foreground">
-            Configure as taxas de máquina de cartão e PIX. Ao dar baixa em faturas, as taxas serão lançadas automaticamente como despesas financeiras.
-          </p>
+    <div className="space-y-8">
+      {/* === FORMAS DE PAGAMENTO === */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Formas de Pagamento</h2>
+            <p className="text-sm text-muted-foreground">
+              Crie e gerencie as formas de pagamento utilizadas na baixa de faturas.
+            </p>
+          </div>
+          <Button size="sm" className="gap-1" onClick={openNewForma}>
+            <Plus className="h-4 w-4" /> Nova Forma
+          </Button>
         </div>
-        <Button size="sm" className="gap-1" onClick={openNew}>
-          <Plus className="h-4 w-4" /> Nova Taxa
-        </Button>
-      </div>
 
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
-        </div>
-      ) : taxas.length === 0 ? (
-        <div className="text-center py-12 text-sm text-muted-foreground">
-          Nenhuma taxa configurada. Clique em "Nova Taxa" para começar.
-        </div>
-      ) : (
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Bandeira</TableHead>
-                <TableHead>Parcelas</TableHead>
-                <TableHead className="text-right">Taxa (%)</TableHead>
-                <TableHead className="text-right">Valor Fixo (R$)</TableHead>
-                <TableHead className="text-center">Ativo</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {taxas.map(t => (
-                <TableRow key={t.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {tipoIcon(t.tipo)}
-                      <span className="text-sm font-medium">{tipoLabel(t.tipo)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{t.bandeira || "—"}</TableCell>
-                  <TableCell className="text-sm">
-                    {t.tipo === "pix" ? "—" : `${t.parcelas_de}x - ${t.parcelas_ate}x`}
-                  </TableCell>
-                  <TableCell className="text-sm text-right tabular-nums">{Number(t.percentual).toFixed(2)}%</TableCell>
-                  <TableCell className="text-sm text-right tabular-nums">
-                    {Number(t.valor_fixo) > 0 ? `R$ ${Number(t.valor_fixo).toFixed(2)}` : "—"}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Switch checked={t.ativo} onCheckedChange={(v) => handleToggle(t.id, v)} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(t)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(t.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </TableCell>
+        {loadingFormas ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+          </div>
+        ) : formas.length === 0 ? (
+          <div className="text-center py-8 text-sm text-muted-foreground">
+            Nenhuma forma de pagamento cadastrada.
+          </div>
+        ) : (
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead className="text-center">Ativo</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+              </TableHeader>
+              <TableBody>
+                {formas.map(f => (
+                  <TableRow key={f.id}>
+                    <TableCell className="font-medium text-sm">{f.nome}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{f.codigo}</TableCell>
+                    <TableCell className="text-center">
+                      <Switch checked={f.ativo} onCheckedChange={v => handleToggleForma(f.id, v)} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditForma(f)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteForma(f.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </section>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Separator />
+
+      {/* === TAXAS FINANCEIRAS === */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Configuração de Taxas</h2>
+            <p className="text-sm text-muted-foreground">
+              Configure as taxas por forma de pagamento. Ao dar baixa em faturas, as taxas serão lançadas automaticamente como despesas financeiras.
+            </p>
+          </div>
+          <Button size="sm" className="gap-1" onClick={openNewTaxa}>
+            <Plus className="h-4 w-4" /> Nova Taxa
+          </Button>
+        </div>
+
+        {loadingTaxas ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+          </div>
+        ) : taxas.length === 0 ? (
+          <div className="text-center py-8 text-sm text-muted-foreground">
+            Nenhuma taxa configurada. Clique em "Nova Taxa" para começar.
+          </div>
+        ) : (
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Forma</TableHead>
+                  <TableHead>Bandeira</TableHead>
+                  <TableHead>Parcelas</TableHead>
+                  <TableHead className="text-right">Taxa (%)</TableHead>
+                  <TableHead className="text-right">Valor Fixo (R$)</TableHead>
+                  <TableHead className="text-center">Ativo</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {taxas.map(t => (
+                  <TableRow key={t.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {tipoIcon(t.tipo)}
+                        <span className="text-sm font-medium">{formaLabel(t.tipo)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{t.bandeira || "—"}</TableCell>
+                    <TableCell className="text-sm">
+                      {t.tipo.startsWith("cartao") ? `${t.parcelas_de}x - ${t.parcelas_ate}x` : "—"}
+                    </TableCell>
+                    <TableCell className="text-sm text-right tabular-nums">{Number(t.percentual).toFixed(2)}%</TableCell>
+                    <TableCell className="text-sm text-right tabular-nums">
+                      {Number(t.valor_fixo) > 0 ? `R$ ${Number(t.valor_fixo).toFixed(2)}` : "—"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch checked={t.ativo} onCheckedChange={v => handleToggleTaxa(t.id, v)} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditTaxa(t)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteTaxa(t.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </section>
+
+      {/* === Dialog Forma de Pagamento === */}
+      <Dialog open={formaDialogOpen} onOpenChange={setFormaDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? "Editar Taxa" : "Nova Taxa"}</DialogTitle>
+            <DialogTitle>{editingForma ? "Editar Forma de Pagamento" : "Nova Forma de Pagamento"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <Label>Tipo</Label>
-              <Select value={tipo} onValueChange={setTipo}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Label>Nome</Label>
+              <Input placeholder="Ex: PIX - Asaas" value={formaNome} onChange={e => setFormaNome(e.target.value)} />
+            </div>
+            <div>
+              <Label>Código (identificador interno)</Label>
+              <Input placeholder="Ex: pix_asaas" value={formaCodigo} onChange={e => setFormaCodigo(e.target.value)} />
+              <p className="text-xs text-muted-foreground mt-1">Usado internamente para vincular taxas.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={formaAtivo} onCheckedChange={setFormaAtivo} />
+              <Label>Ativo</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFormaDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveForma}>{editingForma ? "Salvar" : "Cadastrar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* === Dialog Taxa === */}
+      <Dialog open={taxaDialogOpen} onOpenChange={setTaxaDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingTaxa ? "Editar Taxa" : "Nova Taxa"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Forma de Pagamento</Label>
+              <Select value={taxaTipo} onValueChange={setTaxaTipo}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {TIPOS.map(t => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  {formas.filter(f => f.ativo).map(f => (
+                    <SelectItem key={f.codigo} value={f.codigo}>{f.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {tipo !== "pix" && (
+            {isCartao && (
               <>
                 <div>
                   <Label>Bandeira</Label>
-                  <Select value={bandeira} onValueChange={setBandeira}>
+                  <Select value={taxaBandeira} onValueChange={setTaxaBandeira}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
                       {BANDEIRAS.map(b => (
@@ -236,11 +401,11 @@ export default function FinanceConfigPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Parcelas De</Label>
-                    <Input type="number" min={1} value={parcelasDe} onChange={e => setParcelasDe(Number(e.target.value))} />
+                    <Input type="number" min={1} value={taxaParcelasDe} onChange={e => setTaxaParcelasDe(Number(e.target.value))} />
                   </div>
                   <div>
                     <Label>Parcelas Até</Label>
-                    <Input type="number" min={1} value={parcelasAte} onChange={e => setParcelasAte(Number(e.target.value))} />
+                    <Input type="number" min={1} value={taxaParcelasAte} onChange={e => setTaxaParcelasAte(Number(e.target.value))} />
                   </div>
                 </div>
               </>
@@ -249,22 +414,22 @@ export default function FinanceConfigPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Taxa (%)</Label>
-                <Input type="number" step="0.01" min={0} placeholder="0.00" value={percentual} onChange={e => setPercentual(e.target.value)} />
+                <Input type="number" step="0.01" min={0} placeholder="0.00" value={taxaPercentual} onChange={e => setTaxaPercentual(e.target.value)} />
               </div>
               <div>
                 <Label>Valor Fixo (R$)</Label>
-                <Input type="number" step="0.01" min={0} placeholder="0.00" value={valorFixo} onChange={e => setValorFixo(e.target.value)} />
+                <Input type="number" step="0.01" min={0} placeholder="0.00" value={taxaValorFixo} onChange={e => setTaxaValorFixo(e.target.value)} />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Switch checked={ativo} onCheckedChange={setAtivo} />
+              <Switch checked={taxaAtivo} onCheckedChange={setTaxaAtivo} />
               <Label>Ativo</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>{editing ? "Salvar" : "Cadastrar"}</Button>
+            <Button variant="outline" onClick={() => setTaxaDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveTaxa}>{editingTaxa ? "Salvar" : "Cadastrar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

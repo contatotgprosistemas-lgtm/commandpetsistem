@@ -27,6 +27,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
   const [formaPagamento, setFormaPagamento] = useState("");
   const [saving, setSaving] = useState(false);
   const [contasBancarias, setContasBancarias] = useState<{ id: string; banco: string; titular: string }[]>([]);
+  const [formasPagamento, setFormasPagamento] = useState<{ id: string; nome: string; codigo: string }[]>([]);
 
   const isBatch = contaIds && contaIds.length > 1;
 
@@ -34,6 +35,9 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
     if (open) {
       supabase.from("contas_bancarias").select("id, banco, titular").then(({ data }) => {
         if (data) setContasBancarias(data);
+      });
+      supabase.from("formas_pagamento").select("id, nome, codigo").eq("ativo", true).order("nome").then(({ data }) => {
+        if (data) setFormasPagamento(data as any);
       });
       if (conta) {
         setDataBaixa(format(new Date(), "yyyy-MM-dd"));
@@ -211,12 +215,12 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
                 <SelectValue placeholder="Selecione (opcional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
-                <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="boleto">Boleto</SelectItem>
-                <SelectItem value="transferencia">Transferência</SelectItem>
+                {formasPagamento.map(fp => (
+                  <SelectItem key={fp.id} value={fp.codigo}>{fp.nome}</SelectItem>
+                ))}
+                {formasPagamento.length === 0 && (
+                  <SelectItem value="_none" disabled>Nenhuma forma cadastrada</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-1">Se houver taxa configurada, será lançada automaticamente como despesa</p>
