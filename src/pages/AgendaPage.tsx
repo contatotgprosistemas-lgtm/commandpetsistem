@@ -185,7 +185,7 @@ export default function AgendaPage() {
         </TabsList>
 
         <TabsContent value="calendar" className="mt-4">
-          <AgendaCalendar agendamentos={agendamentos} onEditAgendamento={(a) => setEditingAgendamento(a as any)} />
+          <AgendaCalendar agendamentos={agendamentos} onEditAgendamento={(a) => setEditingAgendamento(a as any)} serviceKeywords={["escola", "creche", "daycare", "hotel", "hospedagem", "diaria", "pernoite"]} />
         </TabsContent>
 
         <TabsContent value="list" className="mt-4 space-y-4">

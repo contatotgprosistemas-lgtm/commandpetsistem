@@ -181,7 +181,7 @@ export function AgendaCalendar({ agendamentos, onEditAgendamento, serviceKeyword
           Todos ({keywordFiltered.filter(a => a.status !== "cancelado").length})
         </Button>
         {serviceTypes.map(tipo => {
-          const count = agendamentos.filter(a => a.tipo_servico === tipo && a.status !== "cancelado").length;
+          const count = keywordFiltered.filter(a => a.tipo_servico === tipo && a.status !== "cancelado").length;
           return (
             <Button
               key={tipo}
