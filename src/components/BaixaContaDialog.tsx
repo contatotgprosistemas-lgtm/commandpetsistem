@@ -22,7 +22,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
   const [banco, setBanco] = useState("");
   const [valorPago, setValorPago] = useState("");
   const [valorJuros, setValorJuros] = useState("");
-  const [valorDesconto, setValorDesconto] = useState("");
+  const [valorDescontoRaw, setValorDescontoRaw] = useState("");
   const [observacao, setObservacao] = useState("");
   const [formaPagamento, setFormaPagamento] = useState("");
   const [saving, setSaving] = useState(false);
