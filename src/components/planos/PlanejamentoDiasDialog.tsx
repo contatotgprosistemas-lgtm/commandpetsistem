@@ -49,8 +49,33 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
     if (open && subscription) {
       setSelectedDays(subscription.planned_days || []);
       checkServiceType();
+      loadExistingTimes();
     }
   }, [open, subscription]);
+
+  async function loadExistingTimes() {
+    if (!subscription?.id) return;
+    // Load the first existing agendamento to get the scheduled time
+    const { data: ag } = await supabase
+      .from("agendamentos")
+      .select("data_hora, hora_prevista_buscar, hora_prevista_levar")
+      .eq("subscription_id", subscription.id)
+      .order("data_hora", { ascending: true })
+      .limit(1);
+
+    if (ag && ag.length > 0) {
+      const existing = ag[0] as any;
+      // Extract time from data_hora (format: "YYYY-MM-DDTHH:mm:ss")
+      if (existing.data_hora) {
+        const timePart = existing.data_hora.split("T")[1]?.substring(0, 5);
+        if (timePart && timePart !== "08:00") {
+          setHoraBanho(timePart);
+        }
+      }
+      if (existing.hora_prevista_buscar) setHoraBuscar(existing.hora_prevista_buscar);
+      if (existing.hora_prevista_levar) setHoraLevar(existing.hora_prevista_levar);
+    }
+  }
 
   async function checkServiceType() {
     let name = "";
