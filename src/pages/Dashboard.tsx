@@ -849,3 +849,55 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
     </div>
   );
 }
+
+function FaturamentoChart({ data }: { data: { dia: string; pendente: number; pago: number }[] }) {
+  const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = require("recharts");
+
+  const formatCurrency = (value: number) => {
+    if (value >= 1000) return `R$${(value / 1000).toFixed(1)}k`;
+    return `R$${value.toFixed(0)}`;
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-xs">
+        <p className="font-medium text-foreground mb-1.5">Dia {label}</p>
+        {payload.map((entry: any, i: number) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span className="text-muted-foreground">{entry.name}:</span>
+            <span className="font-semibold text-foreground">
+              R$ {Number(entry.value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="h-[220px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+          <defs>
+            <linearGradient id="gradPago" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="gradPendente" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <XAxis dataKey="dia" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} interval={4} />
+          <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} tickFormatter={formatCurrency} />
+          <Tooltip content={<CustomTooltip />} />
+          <Area type="monotone" dataKey="pago" name="Recebido" stroke="#10b981" strokeWidth={2} fill="url(#gradPago)" />
+          <Area type="monotone" dataKey="pendente" name="Pendente" stroke="#0ea5e9" strokeWidth={2} fill="url(#gradPendente)" />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
