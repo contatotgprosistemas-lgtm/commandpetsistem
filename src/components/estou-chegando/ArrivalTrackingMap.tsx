@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+import type { LatLngExpression, LatLngTuple, PathOptions } from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 export interface ArrivalTrackingMapEntry {
@@ -16,7 +17,13 @@ interface ArrivalTrackingMapProps {
   entries: ArrivalTrackingMapEntry[];
 }
 
-const DEFAULT_CENTER: [number, number] = [-14.235, -51.9253];
+const DEFAULT_CENTER: LatLngTuple = [-14.235, -51.9253];
+const MARKER_STYLE: PathOptions = {
+  fillColor: "hsl(var(--success))",
+  color: "hsl(var(--card))",
+  fillOpacity: 0.92,
+  weight: 3,
+};
 
 function MapViewport({ active, entries }: ArrivalTrackingMapProps) {
   const map = useMap();
@@ -39,7 +46,7 @@ function MapViewport({ active, entries }: ArrivalTrackingMapProps) {
       }
 
       map.fitBounds(
-        entries.map((entry) => [entry.latitude!, entry.longitude!] as [number, number]),
+        entries.map((entry) => [entry.latitude!, entry.longitude!] as LatLngTuple),
         {
           animate: false,
           maxZoom: 15,
@@ -60,8 +67,8 @@ export function ArrivalTrackingMap({ active, entries }: ArrivalTrackingMapProps)
     [entries]
   );
 
-  const initialCenter = validEntries[0]
-    ? ([validEntries[0].latitude!, validEntries[0].longitude!] as [number, number])
+  const initialCenter: LatLngExpression = validEntries[0]
+    ? ([validEntries[0].latitude!, validEntries[0].longitude!] as LatLngTuple)
     : DEFAULT_CENTER;
 
   return (
@@ -69,7 +76,7 @@ export function ArrivalTrackingMap({ active, entries }: ArrivalTrackingMapProps)
       <MapContainer
         center={initialCenter}
         className="h-full w-full"
-        scrollWheelZoom
+        scrollWheelZoom={true}
         zoom={validEntries.length > 0 ? 15 : 4}
       >
         <TileLayer
@@ -86,13 +93,9 @@ export function ArrivalTrackingMap({ active, entries }: ArrivalTrackingMapProps)
           return (
             <CircleMarker
               key={entry.id}
-              center={[entry.latitude!, entry.longitude!]}
-              fillColor="hsl(var(--success))"
-              color="hsl(var(--card))"
-              fillOpacity={0.92}
+              center={[entry.latitude!, entry.longitude!] as LatLngTuple}
+              pathOptions={MARKER_STYLE}
               radius={12}
-              stroke
-              weight={3}
             >
               <Popup>
                 <div className="space-y-1">
