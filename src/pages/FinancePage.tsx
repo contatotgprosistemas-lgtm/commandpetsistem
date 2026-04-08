@@ -203,6 +203,14 @@ export default function FinancePage() {
         onSuccess={() => { setBaixaConta(null); fetchContas(); }}
       />
 
+      <BaixaContaDialog
+        conta={baixaLote ? { id: baixaLote.ids[0], descricao: baixaLote.descricao, valor: baixaLote.valor } : null}
+        contaIds={baixaLote?.ids}
+        open={!!baixaLote}
+        onOpenChange={(o) => { if (!o) setBaixaLote(null); }}
+        onSuccess={() => { setBaixaLote(null); fetchContas(); }}
+      />
+
       <NovaContaReceberDialog
         open={novaContaReceberOpen}
         onOpenChange={setNovaContaReceberOpen}
