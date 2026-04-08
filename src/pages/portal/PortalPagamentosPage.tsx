@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef, useCallback } from "react";
-import { CreditCard, Copy, Check, Loader2, QrCode, Download, CheckCircle2 } from "lucide-react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { CreditCard, Copy, Check, Loader2, QrCode, Download, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +23,14 @@ interface Pagamento {
   banco: string | null;
 }
 
+interface GrupoFatura {
+  vencimento: string;
+  status: string; // unified status
+  faturas: Pagamento[];
+  totalValor: number;
+  allPago: boolean;
+}
+
 interface PixData {
   payment_id: string;
   qr_code_image: string;
@@ -40,7 +48,7 @@ function statusBadge(status: string) {
   }
 }
 
-function gerarComprovante(pagamento: Pagamento, clienteNome: string) {
+function gerarComprovante(faturas: Pagamento[], clienteNome: string) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
 
@@ -54,13 +62,15 @@ function gerarComprovante(pagamento: Pagamento, clienteNome: string) {
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
 
+  const totalValor = faturas.reduce((s, f) => s + (f.valor_pago ?? f.valor), 0);
+
   const lines: [string, string][] = [
     ["Cliente", clienteNome],
-    ["Descrição", pagamento.descricao],
-    ["Valor", `R$ ${(pagamento.valor_pago ?? pagamento.valor).toFixed(2)}`],
-    ["Vencimento", formatDateBR(pagamento.vencimento)],
-    ["Data do Pagamento", pagamento.data_baixa ? formatDateBR(pagamento.data_baixa) : new Date().toLocaleDateString("pt-BR")],
-    ["Forma de Pagamento", pagamento.banco || "PIX"],
+    ["Descrição", faturas.map(f => f.descricao).join(", ")],
+    ["Valor Total", `R$ ${totalValor.toFixed(2)}`],
+    ["Vencimento", formatDateBR(faturas[0].vencimento)],
+    ["Data do Pagamento", faturas[0].data_baixa ? formatDateBR(faturas[0].data_baixa) : new Date().toLocaleDateString("pt-BR")],
+    ["Forma de Pagamento", faturas[0].banco || "PIX"],
     ["Status", "Pago"],
   ];
 
@@ -69,8 +79,21 @@ function gerarComprovante(pagamento: Pagamento, clienteNome: string) {
     doc.setFont("helvetica", "bold");
     doc.text(`${label}:`, 25, y);
     doc.setFont("helvetica", "normal");
-    doc.text(value, 75, y);
-    y += 8;
+    const splitValue = doc.splitTextToSize(value, w - 100);
+    doc.text(splitValue, 75, y);
+    y += 8 * splitValue.length;
+  }
+
+  if (faturas.length > 1) {
+    y += 4;
+    doc.setFont("helvetica", "bold");
+    doc.text("Detalhamento:", 25, y);
+    y += 7;
+    doc.setFont("helvetica", "normal");
+    for (const f of faturas) {
+      doc.text(`• ${f.descricao} — R$ ${(f.valor_pago ?? f.valor).toFixed(2)}`, 30, y);
+      y += 6;
+    }
   }
 
   doc.setDrawColor(200);
@@ -80,9 +103,8 @@ function gerarComprovante(pagamento: Pagamento, clienteNome: string) {
   doc.setFontSize(9);
   doc.setTextColor(130);
   doc.text("Este comprovante foi gerado automaticamente.", w / 2, y, { align: "center" });
-  doc.text(`ID: ${pagamento.id}`, w / 2, y + 5, { align: "center" });
 
-  doc.save(`comprovante-${pagamento.id.slice(0, 8)}.pdf`);
+  doc.save(`comprovante-${faturas[0].vencimento}.pdf`);
 }
 
 export default function PortalPagamentosPage() {
@@ -94,8 +116,10 @@ export default function PortalPagamentosPage() {
   const [pixData, setPixData] = useState<PixData | null>(null);
   const [pixLoading, setPixLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [selectedConta, setSelectedConta] = useState<Pagamento | null>(null);
+  const [selectedGrupo, setSelectedGrupo] = useState<GrupoFatura | null>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [pixProgress, setPixProgress] = useState({ current: 0, total: 0 });
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchPagamentos = useCallback(async () => {
@@ -119,23 +143,46 @@ export default function PortalPagamentosPage() {
     fetchPagamentos();
   }, [fetchPagamentos]);
 
+  // Group invoices by vencimento + status group
+  const grupos = useMemo<GrupoFatura[]>(() => {
+    const map = new Map<string, Pagamento[]>();
+    for (const p of pagamentos) {
+      const statusGroup = p.status === "pago" ? "pago" : "aberto";
+      const key = `${p.vencimento}|${statusGroup}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(p);
+    }
+
+    return Array.from(map.entries()).map(([key, faturas]) => {
+      const allPago = faturas.every(f => f.status === "pago");
+      const hasVencido = faturas.some(f => f.status === "vencido");
+      return {
+        vencimento: faturas[0].vencimento,
+        status: allPago ? "pago" : hasVencido ? "vencido" : "pendente",
+        faturas,
+        totalValor: faturas.reduce((s, f) => s + (f.valor_pago ?? f.valor), 0),
+        allPago,
+      };
+    });
+  }, [pagamentos]);
+
   // Poll for payment status while PIX dialog is open
   useEffect(() => {
-    if (!pixDialogOpen || !selectedConta || paymentConfirmed) {
+    if (!pixDialogOpen || !selectedGrupo || paymentConfirmed) {
       if (pollingRef.current) clearInterval(pollingRef.current);
       return;
     }
 
+    const ids = selectedGrupo.faturas.map(f => f.id);
+
     pollingRef.current = setInterval(async () => {
       const { data } = await supabase
         .from("contas_receber")
-        .select("status, data_baixa, valor_pago, banco")
-        .eq("id", selectedConta.id)
-        .single();
+        .select("id, status")
+        .in("id", ids);
 
-      if (data?.status === "pago") {
+      if (data && data.every((d: any) => d.status === "pago")) {
         setPaymentConfirmed(true);
-        setSelectedConta(prev => prev ? { ...prev, ...data } : prev);
         fetchPagamentos();
         if (pollingRef.current) clearInterval(pollingRef.current);
       }
@@ -144,25 +191,42 @@ export default function PortalPagamentosPage() {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [pixDialogOpen, selectedConta?.id, paymentConfirmed, fetchPagamentos]);
+  }, [pixDialogOpen, selectedGrupo, paymentConfirmed, fetchPagamentos]);
 
-  const handlePayPix = async (pagamento: Pagamento) => {
-    setSelectedConta(pagamento);
+  const handlePayPixGrupo = async (grupo: GrupoFatura) => {
+    setSelectedGrupo(grupo);
     setPixDialogOpen(true);
     setPixLoading(true);
     setPixData(null);
     setCopied(false);
     setPaymentConfirmed(false);
+    setPixProgress({ current: 0, total: grupo.faturas.length });
 
     try {
-      const { data, error } = await supabase.functions.invoke("asaas-pix", {
-        body: { conta_id: pagamento.id },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      setPixData(data);
+      // Generate PIX for each invoice individually, but show combined to user
+      // We use the first invoice to generate the PIX QR code with the total amount
+      // The edge function handles creating the Asaas payment
+      
+      // For single invoice, use existing flow
+      if (grupo.faturas.length === 1) {
+        const { data, error } = await supabase.functions.invoke("asaas-pix", {
+          body: { conta_id: grupo.faturas[0].id },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        setPixData(data);
+      } else {
+        // For multiple invoices, generate PIX for each and show combined total
+        // Use the first one's PIX data for display (Asaas will handle each separately)
+        const { data, error } = await supabase.functions.invoke("asaas-pix", {
+          body: { 
+            conta_ids: grupo.faturas.map(f => f.id),
+          },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        setPixData(data);
+      }
     } catch (err: any) {
       console.error("PIX error:", err);
       toast.error(err.message || "Erro ao gerar PIX");
@@ -181,8 +245,17 @@ export default function PortalPagamentosPage() {
   };
 
   const handleDownloadReceipt = () => {
-    if (!selectedConta || !cliente) return;
-    gerarComprovante(selectedConta, cliente.nome);
+    if (!selectedGrupo || !cliente) return;
+    gerarComprovante(selectedGrupo.faturas, cliente.nome);
+  };
+
+  const toggleExpand = (key: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   if (clienteLoading || loading) {
@@ -211,57 +284,90 @@ export default function PortalPagamentosPage() {
         </Select>
       </div>
 
-      {pagamentos.length === 0 ? (
+      {grupos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <CreditCard className="h-12 w-12 text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">Nenhum pagamento encontrado.</p>
         </div>
       ) : (
-        pagamentos.map((p) => (
-          <Card key={p.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{p.descricao}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Vencimento: {formatDateBR(p.vencimento)}
-                    {p.data_baixa && ` • Pago em: ${formatDateBR(p.data_baixa)}`}
-                  </p>
+        grupos.map((grupo) => {
+          const key = `${grupo.vencimento}|${grupo.status}`;
+          const isExpanded = expandedGroups.has(key);
+          const hasMultiple = grupo.faturas.length > 1;
+          const descricaoResumo = hasMultiple
+            ? `${grupo.faturas.length} faturas`
+            : grupo.faturas[0].descricao;
+
+          return (
+            <Card key={key}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{descricaoResumo}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Vencimento: {formatDateBR(grupo.vencimento)}
+                      {grupo.allPago && grupo.faturas[0].data_baixa && ` • Pago em: ${formatDateBR(grupo.faturas[0].data_baixa)}`}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <p className="text-sm font-bold text-foreground">
+                      R$ {grupo.totalValor.toFixed(2)}
+                    </p>
+                    {statusBadge(grupo.status)}
+                  </div>
                 </div>
-                <div className="text-right shrink-0 ml-3">
-                  <p className="text-sm font-bold text-foreground">
-                    R$ {(p.valor_pago ?? p.valor).toFixed(2)}
-                  </p>
-                  {statusBadge(p.status)}
-                </div>
-              </div>
-              {(p.status === "pendente" || p.status === "vencido") && (
-                <div className="mt-3 pt-3 border-t border-border">
-                  <Button size="sm" className="w-full gap-2" onClick={() => handlePayPix(p)}>
-                    <QrCode className="h-4 w-4" />
-                    Pagar via PIX
-                  </Button>
-                </div>
-              )}
-              {p.status === "pago" && (
-                <div className="mt-3 pt-3 border-t border-border">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full gap-2"
-                    onClick={() => {
-                      if (!cliente) return;
-                      gerarComprovante(p, cliente.nome);
-                    }}
+
+                {/* Expandable detail for grouped invoices */}
+                {hasMultiple && (
+                  <button
+                    onClick={() => toggleExpand(key)}
+                    className="flex items-center gap-1 mt-2 text-xs text-primary hover:underline"
                   >
-                    <Download className="h-4 w-4" />
-                    Baixar Comprovante
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))
+                    {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    {isExpanded ? "Ocultar detalhes" : "Ver detalhes das faturas"}
+                  </button>
+                )}
+
+                {isExpanded && hasMultiple && (
+                  <div className="mt-3 space-y-1.5 border-t border-border pt-3">
+                    {grupo.faturas.map(f => (
+                      <div key={f.id} className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground truncate flex-1">{f.descricao}</span>
+                        <span className="font-medium text-foreground ml-2">R$ {(f.valor_pago ?? f.valor).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {(grupo.status === "pendente" || grupo.status === "vencido") && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <Button size="sm" className="w-full gap-2" onClick={() => handlePayPixGrupo(grupo)}>
+                      <QrCode className="h-4 w-4" />
+                      Pagar via PIX {hasMultiple ? `(${grupo.faturas.length} faturas)` : ""}
+                    </Button>
+                  </div>
+                )}
+
+                {grupo.allPago && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={() => {
+                        if (!cliente) return;
+                        gerarComprovante(grupo.faturas, cliente.nome);
+                      }}
+                    >
+                      <Download className="h-4 w-4" />
+                      Baixar Comprovante
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })
       )}
 
       {/* PIX Dialog */}
@@ -281,11 +387,15 @@ export default function PortalPagamentosPage() {
               <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center">
                 <CheckCircle2 className="h-10 w-10 text-emerald-600" />
               </div>
-              {selectedConta && (
+              {selectedGrupo && (
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground">{selectedConta.descricao}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedGrupo.faturas.length > 1
+                      ? `${selectedGrupo.faturas.length} faturas`
+                      : selectedGrupo.faturas[0].descricao}
+                  </p>
                   <p className="text-2xl font-bold text-foreground">
-                    R$ {(selectedConta.valor_pago ?? selectedConta.valor).toFixed(2)}
+                    R$ {selectedGrupo.totalValor.toFixed(2)}
                   </p>
                   <p className="text-sm text-emerald-600 mt-1">Pagamento recebido com sucesso</p>
                 </div>
@@ -302,11 +412,15 @@ export default function PortalPagamentosPage() {
             </div>
           ) : pixData ? (
             <div className="flex flex-col items-center gap-4">
-              {selectedConta && (
+              {selectedGrupo && (
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground">{selectedConta.descricao}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedGrupo.faturas.length > 1
+                      ? `${selectedGrupo.faturas.length} faturas • Venc. ${formatDateBR(selectedGrupo.vencimento)}`
+                      : selectedGrupo.faturas[0].descricao}
+                  </p>
                   <p className="text-2xl font-bold text-foreground">
-                    R$ {selectedConta.valor.toFixed(2)}
+                    R$ {selectedGrupo.totalValor.toFixed(2)}
                   </p>
                 </div>
               )}
