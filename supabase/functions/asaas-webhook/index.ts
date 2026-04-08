@@ -37,38 +37,45 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find the invoice by asaas_payment_id
+    // Find invoices by asaas_payment_id (may be multiple for grouped payments)
     const asaasPaymentId = payment.id;
-    const { data: conta, error: contaErr } = await supabase
+    const { data: contas } = await supabase
       .from("contas_receber")
       .select("*")
-      .eq("asaas_payment_id", asaasPaymentId)
-      .single();
+      .eq("asaas_payment_id", asaasPaymentId);
 
-    if (contaErr || !conta) {
-      // Try by externalReference (conta.id)
-      if (payment.externalReference) {
-        const { data: contaByRef } = await supabase
-          .from("contas_receber")
-          .select("*")
-          .eq("id", payment.externalReference)
-          .single();
-        if (!contaByRef) {
-          console.error("Invoice not found for payment:", asaasPaymentId);
-          return new Response(JSON.stringify({ received: true, error: "Invoice not found" }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+    if (contas && contas.length > 0) {
+      // Process each invoice individually
+      for (const conta of contas) {
+        if (conta.status !== "pago") {
+          await processPayment(supabase, conta, payment, conta.valor);
         }
-        // Process this one
-        await processPayment(supabase, contaByRef, payment);
+      }
+    } else if (payment.externalReference) {
+      // Fallback: externalReference may contain comma-separated IDs
+      const refIds = payment.externalReference.split(",").map((s: string) => s.trim()).filter(Boolean);
+      const { data: contasByRef } = await supabase
+        .from("contas_receber")
+        .select("*")
+        .in("id", refIds);
+
+      if (contasByRef && contasByRef.length > 0) {
+        for (const conta of contasByRef) {
+          if (conta.status !== "pago") {
+            await processPayment(supabase, conta, payment, conta.valor);
+          }
+        }
       } else {
-        console.error("Invoice not found for payment:", asaasPaymentId);
+        console.error("Invoice(s) not found for payment:", asaasPaymentId);
         return new Response(JSON.stringify({ received: true, error: "Invoice not found" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     } else {
-      await processPayment(supabase, conta, payment);
+      console.error("Invoice not found for payment:", asaasPaymentId);
+      return new Response(JSON.stringify({ received: true, error: "Invoice not found" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify({ received: true, processed: true }), {
@@ -83,9 +90,9 @@ Deno.serve(async (req) => {
   }
 });
 
-async function processPayment(supabase: any, conta: any, payment: any) {
+async function processPayment(supabase: any, conta: any, payment: any, valorIndividual?: number) {
   const today = new Date().toISOString().split("T")[0];
-  const valorPago = payment.value || conta.valor;
+  const valorPago = valorIndividual ?? payment.value ?? conta.valor;
 
   // Update invoice as paid
   await supabase
