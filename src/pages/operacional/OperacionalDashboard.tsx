@@ -216,12 +216,36 @@ export default function OperacionalDashboard() {
       {/* Pending check-ins with Falta button */}
       {pendingCheckins.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">Check-ins Pendentes</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Check-ins Pendentes</h2>
+            {selectedCheckins.size > 0 && (
+              <Button size="sm" variant="outline" onClick={handleMassCheckin} disabled={massLoading} className="gap-1.5 text-xs">
+                <LogIn className="h-3.5 w-3.5" /> {massLoading ? "Processando..." : `Check-in (${selectedCheckins.size})`}
+              </Button>
+            )}
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+            <Checkbox
+              checked={selectedCheckins.size === pendingCheckins.length && pendingCheckins.length > 0}
+              onCheckedChange={(checked) => setSelectedCheckins(checked ? new Set(pendingCheckins.map(p => p.id)) : new Set())}
+            />
+            Selecionar todos
+          </label>
           <div className="space-y-2">
             {pendingCheckins.map((item) => (
               <Card key={item.id} className="rounded-xl">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={selectedCheckins.has(item.id)}
+                      onCheckedChange={() => {
+                        setSelectedCheckins(prev => {
+                          const next = new Set(prev);
+                          next.has(item.id) ? next.delete(item.id) : next.add(item.id);
+                          return next;
+                        });
+                      }}
+                    />
                     <Avatar className="h-10 w-10 shrink-0">
                       {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
                       <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
