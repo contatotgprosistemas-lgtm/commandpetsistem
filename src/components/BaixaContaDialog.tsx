@@ -23,6 +23,19 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
   const [valorPago, setValorPago] = useState("");
   const [valorJuros, setValorJuros] = useState("");
   const [valorDescontoRaw, setValorDescontoRaw] = useState("");
+
+  // Compute actual discount value from raw input (supports "10%" or "5.00")
+  const computeDesconto = (raw: string, base: number): number => {
+    const trimmed = raw.trim();
+    if (!trimmed) return 0;
+    if (trimmed.endsWith("%")) {
+      const pct = parseFloat(trimmed.replace("%", "")) || 0;
+      return Math.round(base * pct) / 100;
+    }
+    return parseFloat(trimmed) || 0;
+  };
+
+  const valorDescontoCalculado = computeDesconto(valorDescontoRaw, conta?.valor ?? 0);
   const [observacao, setObservacao] = useState("");
   const [formaPagamento, setFormaPagamento] = useState("");
   const [saving, setSaving] = useState(false);
