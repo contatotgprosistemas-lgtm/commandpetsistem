@@ -195,6 +195,7 @@ export default function FinancePage() {
         <TabsContent value="dre"><DREPage /></TabsContent>
         <TabsContent value="movimentação"><MovimentacaoPage /></TabsContent>
         <TabsContent value="plano-de-contas"><PlanoContasPage /></TabsContent>
+        <TabsContent value="configuração"><FinanceConfigPage /></TabsContent>
       </Tabs>
 
       <BaixaContaDialog
