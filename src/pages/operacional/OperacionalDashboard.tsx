@@ -28,7 +28,9 @@ export default function OperacionalDashboard() {
   const [manejoTarget, setManejoTarget] = useState<any>(null);
   const [galeriaTarget, setGaleriaTarget] = useState<any>(null);
   const [manejoFilledIds, setManejoFilledIds] = useState<Set<string>>(new Set());
-
+  const [selectedCheckins, setSelectedCheckins] = useState<Set<string>>(new Set());
+  const [selectedNaEmpresa, setSelectedNaEmpresa] = useState<Set<string>>(new Set());
+  const [massLoading, setMassLoading] = useState(false);
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
