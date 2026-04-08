@@ -69,6 +69,9 @@ export default function Dashboard() {
   const [petsPlanoBanho, setPetsPlanoBanho] = useState(0);
   const [massCheckoutOpen, setMassCheckoutOpen] = useState(false);
   const [massCheckoutLoading, setMassCheckoutLoading] = useState(false);
+  const [selectedNaEmpresa, setSelectedNaEmpresa] = useState<Set<string>>(new Set());
+  const [selectedReservas, setSelectedReservas] = useState<Set<string>>(new Set());
+  const [massCheckinLoading, setMassCheckinLoading] = useState(false);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
