@@ -72,6 +72,8 @@ export default function Dashboard() {
   const [selectedNaEmpresa, setSelectedNaEmpresa] = useState<Set<string>>(new Set());
   const [selectedReservas, setSelectedReservas] = useState<Set<string>>(new Set());
   const [massCheckinLoading, setMassCheckinLoading] = useState(false);
+  const [faturamentoData, setFaturamentoData] = useState<{ dia: string; pendente: number; pago: number }[]>([]);
+  const [faturamentoTotal, setFaturamentoTotal] = useState({ pendente: 0, pago: 0 });
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
