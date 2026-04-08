@@ -143,6 +143,49 @@ export default function Dashboard() {
         setPetsPlanoEscola(escolaSet.size);
         setPetsPlanoBanho(banhoSet.size);
       });
+    // Fetch faturamento mensal (contas a receber do mês atual)
+    const now = new Date();
+    const monthStart = format(new Date(now.getFullYear(), now.getMonth(), 1), "yyyy-MM-dd");
+    const monthEnd = format(new Date(now.getFullYear(), now.getMonth() + 1, 0), "yyyy-MM-dd");
+    supabase
+      .from("contas_receber")
+      .select("valor, valor_pago, status, vencimento, data_baixa")
+      .gte("vencimento", monthStart)
+      .lte("vencimento", monthEnd)
+      .then(({ data: faturas }) => {
+        if (!faturas) return;
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const dailyMap: Record<string, { pendente: number; pago: number }> = {};
+        for (let d = 1; d <= daysInMonth; d++) {
+          const key = String(d).padStart(2, "0");
+          dailyMap[key] = { pendente: 0, pago: 0 };
+        }
+        let totalPendente = 0;
+        let totalPago = 0;
+        for (const f of faturas as any[]) {
+          const vencDay = String(new Date(f.vencimento + "T00:00:00").getDate()).padStart(2, "0");
+          if (f.status === "pago") {
+            const val = Number(f.valor_pago || f.valor || 0);
+            const baixaDay = f.data_baixa ? String(new Date(f.data_baixa + "T00:00:00").getDate()).padStart(2, "0") : vencDay;
+            if (dailyMap[baixaDay]) dailyMap[baixaDay].pago += val;
+            totalPago += val;
+          } else {
+            const val = Number(f.valor || 0);
+            if (dailyMap[vencDay]) dailyMap[vencDay].pendente += val;
+            totalPendente += val;
+          }
+        }
+        // Build cumulative data
+        let accPendente = 0;
+        let accPago = 0;
+        const chartData = Object.entries(dailyMap).sort().map(([dia, vals]) => {
+          accPendente += vals.pendente;
+          accPago += vals.pago;
+          return { dia, pendente: accPendente, pago: accPago };
+        });
+        setFaturamentoData(chartData);
+        setFaturamentoTotal({ pendente: totalPendente, pago: totalPago });
+      });
   }, []);
 
   // Auto-refresh at midnight
