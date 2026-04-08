@@ -251,7 +251,7 @@ export default function FinancePage() {
   );
 }
 
-function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
+function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const filtered = contas.filter(c => {
@@ -270,7 +270,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDe
 
   const handleBulkBaixar = () => {
     const items = contas.filter(c => selected.includes(c.id));
-    items.forEach(c => onBaixar(c));
+    onBaixarLote(items);
     setSelected([]);
   };
   const handleBulkDelete = async () => {
