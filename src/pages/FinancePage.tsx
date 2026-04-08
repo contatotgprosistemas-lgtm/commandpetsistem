@@ -55,6 +55,7 @@ export default function FinancePage() {
   const [contasBancarias, setContasBancarias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [baixaConta, setBaixaConta] = useState<{ id: string; descricao: string; valor: number } | null>(null);
+  const [baixaLote, setBaixaLote] = useState<{ ids: string[]; descricao: string; valor: number } | null>(null);
   const [novaContaOpen, setNovaContaOpen] = useState(false);
   const [novaContaReceberOpen, setNovaContaReceberOpen] = useState(false);
   const [novaContaPagarOpen, setNovaContaPagarOpen] = useState(false);
@@ -156,6 +157,14 @@ export default function FinancePage() {
             contas={contas}
             loading={loading}
             onBaixar={(c) => setBaixaConta({ id: c.id, descricao: c.descricao, valor: c.valor })}
+            onBaixarLote={(items) => {
+              const totalValor = items.reduce((s, c) => s + c.valor, 0);
+              setBaixaLote({
+                ids: items.map(c => c.id),
+                descricao: `Baixa em lote (${items.length} faturas)`,
+                valor: totalValor,
+              });
+            }}
             onEdit={(c) => setEditConta(c)}
             onDividir={(c) => setDividirConta(c)}
             onDelete={async (id) => {
@@ -192,6 +201,14 @@ export default function FinancePage() {
         open={!!baixaConta}
         onOpenChange={(o) => { if (!o) setBaixaConta(null); }}
         onSuccess={() => { setBaixaConta(null); fetchContas(); }}
+      />
+
+      <BaixaContaDialog
+        conta={baixaLote ? { id: baixaLote.ids[0], descricao: baixaLote.descricao, valor: baixaLote.valor } : null}
+        contaIds={baixaLote?.ids}
+        open={!!baixaLote}
+        onOpenChange={(o) => { if (!o) setBaixaLote(null); }}
+        onSuccess={() => { setBaixaLote(null); fetchContas(); }}
       />
 
       <NovaContaReceberDialog
@@ -242,7 +259,7 @@ export default function FinancePage() {
   );
 }
 
-function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
+function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const filtered = contas.filter(c => {
@@ -261,7 +278,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onEdit, onDividir, onDe
 
   const handleBulkBaixar = () => {
     const items = contas.filter(c => selected.includes(c.id));
-    items.forEach(c => onBaixar(c));
+    onBaixarLote(items);
     setSelected([]);
   };
   const handleBulkDelete = async () => {
