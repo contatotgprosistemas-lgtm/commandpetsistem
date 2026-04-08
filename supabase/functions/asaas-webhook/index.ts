@@ -116,12 +116,6 @@ async function processPayment(supabase: any, conta: any, payment: any, valorIndi
   const banco = bancos?.find((b: any) => b.banco.toLowerCase().includes("asaas")) || bancos?.[0] || null;
 
   if (banco) {
-    // Update bank balance
-    await supabase
-      .from("contas_bancarias")
-      .update({ saldo_atual: banco.saldo_atual + valorPago })
-      .eq("id", banco.id);
-
     // Get client name for movimentacao
     const { data: cliente } = await supabase
       .from("clientes")
@@ -129,7 +123,7 @@ async function processPayment(supabase: any, conta: any, payment: any, valorIndi
       .eq("id", conta.cliente_id)
       .single();
 
-    // Insert movimentacao
+    // Insert movimentacao with conta_bancaria_id
     await supabase.from("movimentacoes").insert({
       empresa_id: conta.empresa_id,
       data_movimentacao: today,
@@ -140,7 +134,11 @@ async function processPayment(supabase: any, conta: any, payment: any, valorIndi
       valor: valorPago,
       tipo: "contas_a_receber",
       conta_receber_id: conta.id,
+      conta_bancaria_id: banco.id,
     });
+
+    // Sync bank balance from movements (single source of truth)
+    await supabase.rpc("sincronizar_saldo_bancario", { p_conta_bancaria_id: banco.id });
   }
 
   console.log(`Payment processed: Invoice ${conta.id}, Value: ${valorPago}`);
