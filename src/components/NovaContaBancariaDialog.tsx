@@ -26,7 +26,9 @@ export function NovaContaBancariaDialog({ open, onOpenChange, onSuccess }: Props
       return;
     }
     setSaving(true);
-    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setSaving(false); toast.error("Usuário não autenticado"); return; }
+    const { data: profile } = await supabase.from("profiles").select("empresa_id").eq("user_id", session.user.id).single();
     if (!profile?.empresa_id) { setSaving(false); toast.error("Empresa não encontrada"); return; }
 
     const saldo = parseFloat(saldoInicial.replace(",", ".")) || 0;
