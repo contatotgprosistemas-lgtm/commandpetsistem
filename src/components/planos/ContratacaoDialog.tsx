@@ -315,11 +315,13 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Data Contrato</Label>
-              <Input type="date" value={contractDate} onChange={e => setContractDate(e.target.value)} />
-            </div>
+          <div className={planType === "plan" ? "grid grid-cols-2 gap-4" : ""}>
+            {planType === "plan" && (
+              <div className="space-y-1.5">
+                <Label>Data Contrato</Label>
+                <Input type="date" value={contractDate} onChange={e => setContractDate(e.target.value)} />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Data Início</Label>
               <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
