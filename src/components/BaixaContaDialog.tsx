@@ -31,8 +31,16 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
       supabase.from("contas_bancarias").select("id, banco, titular").then(({ data }) => {
         if (data) setContasBancarias(data);
       });
+      if (conta) {
+        setDataBaixa(format(new Date(), "yyyy-MM-dd"));
+        setBanco("");
+        setValorPago(conta.valor.toFixed(2));
+        setValorJuros("");
+        setValorDesconto("");
+        setObservacao(conta.descricao);
+      }
     }
-  }, [open]);
+  }, [open, conta]);
 
   const handleOpen = (o: boolean) => {
     if (o && conta) {
