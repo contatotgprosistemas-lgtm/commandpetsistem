@@ -209,6 +209,38 @@ export default function Dashboard() {
     fetchAgendamentos();
   }
 
+  async function handleMassCheckout() {
+    const naEmpresa = agendamentos.filter(a => a.status === "na_empresa");
+    if (naEmpresa.length === 0) { toast.info("Nenhum pet na empresa para checkout."); return; }
+    setMassCheckoutLoading(true);
+    const now = new Date();
+    const horaSaida = format(now, "HH:mm");
+    let successCount = 0;
+    for (const item of naEmpresa) {
+      const { error } = await supabase.from("agendamentos").update({
+        status: "concluido", data_saida: now.toISOString(), hora_saida: horaSaida,
+      }).eq("id", item.id);
+      if (error) { console.error("Erro checkout:", error.message); continue; }
+      const { data: existing } = await supabase.from("historico_servicos").select("id").eq("agendamento_id", item.id).maybeSingle();
+      if (existing) {
+        await supabase.from("historico_servicos").update({
+          notas: `Check-in: ${item.data_entrada ? format(new Date(item.data_entrada), "dd/MM/yyyy") : "—"} ${item.hora_entrada ?? ""} | Check-out: ${format(now, "dd/MM/yyyy")} ${horaSaida}`,
+        } as any).eq("id", existing.id);
+      } else {
+        await supabase.from("historico_servicos" as any).insert({
+          empresa_id: item.empresa_id, cliente_id: item.cliente_id, pet_id: item.pet_id,
+          tipo_servico: item.tipo_servico, valor: item.valor, data_servico: item.data_hora,
+          agendamento_id: item.id, notas: `Check-out: ${format(now, "dd/MM/yyyy")} ${horaSaida}`,
+        } as any);
+      }
+      successCount++;
+    }
+    setMassCheckoutLoading(false);
+    setMassCheckoutOpen(false);
+    toast.success(`Check-out em massa concluído: ${successCount} pet(s).`);
+    fetchAgendamentos();
+  }
+
   const today = startOfDay(new Date());
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
