@@ -125,12 +125,24 @@ export default function PlanoContasPage() {
     });
   };
 
+  async function getEmpresaId() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("empresa_id")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    return profile?.empresa_id ?? null;
+  }
+
   // Seed default data
   async function seedDefaults() {
     setSeeding(true);
-    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
-    if (!profile?.empresa_id) { toast.error("Empresa não encontrada"); setSeeding(false); return; }
-    const empresaId = profile.empresa_id;
+    const empresaId = await getEmpresaId();
+    if (!empresaId) { toast.error("Empresa não encontrada"); setSeeding(false); return; }
 
     for (const cat of CATEGORIAS_PADRAO) {
       const { data: inserted, error } = await supabase
