@@ -373,6 +373,24 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Mass checkout confirmation */}
+      <Dialog open={massCheckoutOpen} onOpenChange={setMassCheckoutOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Check-out em Massa</DialogTitle>
+            <DialogDescription>
+              Deseja realizar o check-out de todos os <strong>{petsNaEmpresa.length}</strong> pets que estão na empresa agora?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMassCheckoutOpen(false)} disabled={massCheckoutLoading}>Cancelar</Button>
+            <Button onClick={handleMassCheckout} disabled={massCheckoutLoading}>
+              {massCheckoutLoading ? "Processando..." : "Confirmar Check-out"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialogs */}
       {manejoOpen && (
         <ManejoDialog open={!!manejoOpen} onOpenChange={() => setManejoOpen(null)} agendamentoId={manejoOpen.id} petId={manejoOpen.pet?.id ?? ""} petName={manejoOpen.pet?.nome ?? "Pet"} />
