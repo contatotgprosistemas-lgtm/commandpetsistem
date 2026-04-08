@@ -36,9 +36,11 @@ export default function MovimentacaoPage() {
   useEffect(() => { fetchMovs(); }, []);
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("movimentacoes").delete().eq("id", id);
-    if (error) { toast.error("Erro ao excluir"); return; }
-    toast.success("Movimentação excluída");
+    const { data, error } = await supabase.rpc("excluir_movimentacao", { p_movimentacao_id: id });
+    if (error) { toast.error("Erro ao excluir: " + error.message); return; }
+    const result = data as any;
+    if (result && !result.success) { toast.error(result.error); return; }
+    toast.success("Movimentação excluída e valores revertidos");
     fetchMovs();
   };
 
