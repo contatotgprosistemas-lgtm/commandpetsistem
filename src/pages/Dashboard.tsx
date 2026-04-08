@@ -214,13 +214,15 @@ export default function Dashboard() {
   }
 
   async function handleMassCheckout() {
-    const naEmpresa = agendamentos.filter(a => a.status === "na_empresa");
-    if (naEmpresa.length === 0) { toast.info("Nenhum pet na empresa para checkout."); return; }
+    const targets = selectedNaEmpresa.size > 0
+      ? agendamentos.filter(a => a.status === "na_empresa" && selectedNaEmpresa.has(a.id))
+      : agendamentos.filter(a => a.status === "na_empresa");
+    if (targets.length === 0) { toast.info("Nenhum pet selecionado para checkout."); return; }
     setMassCheckoutLoading(true);
     const now = new Date();
     const horaSaida = format(now, "HH:mm");
     let successCount = 0;
-    for (const item of naEmpresa) {
+    for (const item of targets) {
       const { error } = await supabase.from("agendamentos").update({
         status: "concluido", data_saida: now.toISOString(), hora_saida: horaSaida,
       }).eq("id", item.id);
@@ -241,7 +243,33 @@ export default function Dashboard() {
     }
     setMassCheckoutLoading(false);
     setMassCheckoutOpen(false);
+    setSelectedNaEmpresa(new Set());
     toast.success(`Check-out em massa concluído: ${successCount} pet(s).`);
+    fetchAgendamentos();
+  }
+
+  async function handleMassCheckin() {
+    const targets = agendamentos.filter(a => selectedReservas.has(a.id));
+    if (targets.length === 0) { toast.info("Nenhum pet selecionado para check-in."); return; }
+    setMassCheckinLoading(true);
+    let successCount = 0;
+    for (const item of targets) {
+      const now = new Date();
+      const horaEntrada = format(now, "HH:mm");
+      const { error } = await supabase.from("agendamentos").update({
+        status: "na_empresa", data_entrada: now.toISOString(), hora_entrada: horaEntrada,
+      }).eq("id", item.id);
+      if (error) { console.error("Erro checkin:", error.message); continue; }
+      await supabase.from("historico_servicos" as any).insert({
+        empresa_id: item.empresa_id, cliente_id: item.cliente_id, pet_id: item.pet_id,
+        tipo_servico: item.tipo_servico, valor: item.valor, data_servico: item.data_hora,
+        agendamento_id: item.id, notas: `Check-in realizado em ${format(now, "dd/MM/yyyy")} às ${horaEntrada}`,
+      } as any);
+      successCount++;
+    }
+    setMassCheckinLoading(false);
+    setSelectedReservas(new Set());
+    toast.success(`Check-in em massa concluído: ${successCount} pet(s).`);
     fetchAgendamentos();
   }
 
