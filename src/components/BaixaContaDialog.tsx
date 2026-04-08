@@ -220,6 +220,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-1">Se houver taxa configurada, será lançada automaticamente como despesa</p>
+          </div>
 
           {!isBatch && (
             <div className="grid grid-cols-3 gap-3">
