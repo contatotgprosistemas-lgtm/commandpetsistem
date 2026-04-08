@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
 import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, TreePine, ShowerHead, CheckSquare, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -851,7 +852,6 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
 }
 
 function FaturamentoChart({ data }: { data: { dia: string; pendente: number; pago: number }[] }) {
-  const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = await import("recharts") as any;
 
   const formatCurrency = (value: number) => {
     if (value >= 1000) return `R$${(value / 1000).toFixed(1)}k`;
