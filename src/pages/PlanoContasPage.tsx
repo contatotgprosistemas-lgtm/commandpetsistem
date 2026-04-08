@@ -166,8 +166,11 @@ export default function PlanoContasPage() {
 
   // Category CRUD
   async function saveCategoria() {
-    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
-    if (!profile?.empresa_id) return;
+    const empresaId = await getEmpresaId();
+    if (!empresaId) {
+      toast.error("Empresa não encontrada");
+      return;
+    }
 
     if (catDialog.editing) {
       const { error } = await supabase.from("plano_contas_categorias")
@@ -178,7 +181,7 @@ export default function PlanoContasPage() {
     } else {
       const maxOrdem = categorias.length > 0 ? Math.max(...categorias.map(c => c.ordem)) + 1 : 1;
       const { error } = await supabase.from("plano_contas_categorias")
-        .insert({ empresa_id: profile.empresa_id, nome: catForm.nome, tipo: catForm.tipo, ordem: maxOrdem });
+        .insert({ empresa_id: empresaId, nome: catForm.nome, tipo: catForm.tipo, ordem: maxOrdem });
       if (error) { toast.error("Erro ao criar"); return; }
       toast.success("Categoria criada");
     }
@@ -195,8 +198,11 @@ export default function PlanoContasPage() {
 
   // Conta CRUD
   async function saveConta() {
-    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
-    if (!profile?.empresa_id) return;
+    const empresaId = await getEmpresaId();
+    if (!empresaId) {
+      toast.error("Empresa não encontrada");
+      return;
+    }
 
     if (contaDialog.editing) {
       const { error } = await supabase.from("plano_contas_items")
@@ -206,7 +212,7 @@ export default function PlanoContasPage() {
       toast.success("Conta atualizada");
     } else {
       const { error } = await supabase.from("plano_contas_items")
-        .insert({ empresa_id: profile.empresa_id, nome: contaForm.nome, descricao: contaForm.descricao || null, categoria_id: contaForm.categoria_id });
+        .insert({ empresa_id: empresaId, nome: contaForm.nome, descricao: contaForm.descricao || null, categoria_id: contaForm.categoria_id });
       if (error) { toast.error("Erro ao criar"); return; }
       toast.success("Conta criada");
     }
