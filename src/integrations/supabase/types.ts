@@ -2450,6 +2450,7 @@ export type Database = {
         Row: {
           banco: string | null
           complemento: string | null
+          conta_bancaria_id: string | null
           conta_pagar_id: string | null
           conta_receber_id: string | null
           created_at: string
@@ -2464,6 +2465,7 @@ export type Database = {
         Insert: {
           banco?: string | null
           complemento?: string | null
+          conta_bancaria_id?: string | null
           conta_pagar_id?: string | null
           conta_receber_id?: string | null
           created_at?: string
@@ -2478,6 +2480,7 @@ export type Database = {
         Update: {
           banco?: string | null
           complemento?: string | null
+          conta_bancaria_id?: string | null
           conta_pagar_id?: string | null
           conta_receber_id?: string | null
           created_at?: string
@@ -2490,6 +2493,13 @@ export type Database = {
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "movimentacoes_conta_bancaria_id_fkey"
+            columns: ["conta_bancaria_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "movimentacoes_conta_pagar_id_fkey"
             columns: ["conta_pagar_id"]
@@ -4734,6 +4744,14 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      sincronizar_saldo_bancario: {
+        Args: { p_conta_bancaria_id: string }
+        Returns: number
+      }
+      sincronizar_todos_saldos: {
+        Args: { p_empresa_id: string }
+        Returns: Json
       }
       verify_operational_pin: {
         Args: { p_email: string; p_empresa_id: string; p_pin: string }
