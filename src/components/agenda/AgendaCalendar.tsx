@@ -105,12 +105,18 @@ export function AgendaCalendar({ agendamentos, onEditAgendamento, serviceKeyword
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   const serviceTypes = useMemo(() => {
+    const base = serviceKeywords?.length
+      ? agendamentos.filter(a => {
+          const lower = a.tipo_servico.toLowerCase();
+          return serviceKeywords.some(kw => lower.includes(kw.toLowerCase()));
+        })
+      : agendamentos;
     const types = new Set<string>();
-    agendamentos.forEach(a => {
+    base.forEach(a => {
       if (a.status !== "cancelado") types.add(a.tipo_servico);
     });
     return Array.from(types).sort();
-  }, [agendamentos]);
+  }, [agendamentos, serviceKeywords]);
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -172,7 +178,7 @@ export function AgendaCalendar({ agendamentos, onEditAgendamento, serviceKeyword
           className="h-7 text-xs"
           onClick={() => setSelectedFilter(null)}
         >
-          Todos ({agendamentos.filter(a => a.status !== "cancelado").length})
+          Todos ({keywordFiltered.filter(a => a.status !== "cancelado").length})
         </Button>
         {serviceTypes.map(tipo => {
           const count = agendamentos.filter(a => a.tipo_servico === tipo && a.status !== "cancelado").length;
