@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, TreePine, ShowerHead } from "lucide-react";
+import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, TreePine, ShowerHead, CheckSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { format, isToday, isAfter, startOfDay, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -68,6 +69,9 @@ export default function Dashboard() {
   const [petsPlanoBanho, setPetsPlanoBanho] = useState(0);
   const [massCheckoutOpen, setMassCheckoutOpen] = useState(false);
   const [massCheckoutLoading, setMassCheckoutLoading] = useState(false);
+  const [selectedNaEmpresa, setSelectedNaEmpresa] = useState<Set<string>>(new Set());
+  const [selectedReservas, setSelectedReservas] = useState<Set<string>>(new Set());
+  const [massCheckinLoading, setMassCheckinLoading] = useState(false);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
@@ -210,13 +214,15 @@ export default function Dashboard() {
   }
 
   async function handleMassCheckout() {
-    const naEmpresa = agendamentos.filter(a => a.status === "na_empresa");
-    if (naEmpresa.length === 0) { toast.info("Nenhum pet na empresa para checkout."); return; }
+    const targets = selectedNaEmpresa.size > 0
+      ? agendamentos.filter(a => a.status === "na_empresa" && selectedNaEmpresa.has(a.id))
+      : agendamentos.filter(a => a.status === "na_empresa");
+    if (targets.length === 0) { toast.info("Nenhum pet selecionado para checkout."); return; }
     setMassCheckoutLoading(true);
     const now = new Date();
     const horaSaida = format(now, "HH:mm");
     let successCount = 0;
-    for (const item of naEmpresa) {
+    for (const item of targets) {
       const { error } = await supabase.from("agendamentos").update({
         status: "concluido", data_saida: now.toISOString(), hora_saida: horaSaida,
       }).eq("id", item.id);
@@ -237,7 +243,33 @@ export default function Dashboard() {
     }
     setMassCheckoutLoading(false);
     setMassCheckoutOpen(false);
+    setSelectedNaEmpresa(new Set());
     toast.success(`Check-out em massa concluído: ${successCount} pet(s).`);
+    fetchAgendamentos();
+  }
+
+  async function handleMassCheckin() {
+    const targets = agendamentos.filter(a => selectedReservas.has(a.id));
+    if (targets.length === 0) { toast.info("Nenhum pet selecionado para check-in."); return; }
+    setMassCheckinLoading(true);
+    let successCount = 0;
+    for (const item of targets) {
+      const now = new Date();
+      const horaEntrada = format(now, "HH:mm");
+      const { error } = await supabase.from("agendamentos").update({
+        status: "na_empresa", data_entrada: now.toISOString(), hora_entrada: horaEntrada,
+      }).eq("id", item.id);
+      if (error) { console.error("Erro checkin:", error.message); continue; }
+      await supabase.from("historico_servicos" as any).insert({
+        empresa_id: item.empresa_id, cliente_id: item.cliente_id, pet_id: item.pet_id,
+        tipo_servico: item.tipo_servico, valor: item.valor, data_servico: item.data_hora,
+        agendamento_id: item.id, notas: `Check-in realizado em ${format(now, "dd/MM/yyyy")} às ${horaEntrada}`,
+      } as any);
+      successCount++;
+    }
+    setMassCheckinLoading(false);
+    setSelectedReservas(new Set());
+    toast.success(`Check-in em massa concluído: ${successCount} pet(s).`);
     fetchAgendamentos();
   }
 
@@ -316,9 +348,18 @@ export default function Dashboard() {
 
           <TabsContent value="na_empresa">
             {petsNaEmpresa.length > 0 && (
-              <div className="flex justify-end mt-2 mb-1">
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setMassCheckoutOpen(true)}>
-                  <LogOut className="h-3.5 w-3.5" /> Check-out em Massa ({petsNaEmpresa.length})
+              <div className="flex items-center justify-between mt-2 mb-1">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <Checkbox
+                    checked={selectedNaEmpresa.size === petsNaEmpresa.length && petsNaEmpresa.length > 0}
+                    onCheckedChange={(checked) => {
+                      setSelectedNaEmpresa(checked ? new Set(petsNaEmpresa.map(p => p.id)) : new Set());
+                    }}
+                  />
+                  Selecionar todos
+                </label>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setMassCheckoutOpen(true)} disabled={selectedNaEmpresa.size === 0}>
+                  <LogOut className="h-3.5 w-3.5" /> Check-out Selecionados ({selectedNaEmpresa.size})
                 </Button>
               </div>
             )}
@@ -330,10 +371,49 @@ export default function Dashboard() {
               onManejo={setManejoOpen}
               onChecklist={setChecklistOpen}
               onCheckout={handleCheckout}
+              selectedIds={selectedNaEmpresa}
+              onToggleSelect={(id) => {
+                setSelectedNaEmpresa(prev => {
+                  const next = new Set(prev);
+                  next.has(id) ? next.delete(id) : next.add(id);
+                  return next;
+                });
+              }}
             />
           </TabsContent>
           <TabsContent value="hoje">
-            <AgendamentoList items={reservasHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} onFalta={setFaltaOpen} />
+            {reservasHoje.length > 0 && (
+              <div className="flex items-center justify-between mt-2 mb-1">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <Checkbox
+                    checked={selectedReservas.size === reservasHoje.length && reservasHoje.length > 0}
+                    onCheckedChange={(checked) => {
+                      setSelectedReservas(checked ? new Set(reservasHoje.map(r => r.id)) : new Set());
+                    }}
+                  />
+                  Selecionar todos
+                </label>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleMassCheckin} disabled={selectedReservas.size === 0 || massCheckinLoading}>
+                  <LogIn className="h-3.5 w-3.5" /> {massCheckinLoading ? "Processando..." : `Check-in Selecionados (${selectedReservas.size})`}
+                </Button>
+              </div>
+            )}
+            <AgendamentoList
+              items={reservasHoje}
+              loading={agendaLoading}
+              showCheckin
+              onCheckin={handleCheckin}
+              onEdit={setEditingAgendamento}
+              onFalta={setFaltaOpen}
+              selectedIds={selectedReservas}
+              onToggleSelect={(id) => {
+                setSelectedReservas(prev => {
+                  const next = new Set(prev);
+                  next.has(id) ? next.delete(id) : next.add(id);
+                  return next;
+                });
+              }}
+            />
           </TabsContent>
           <TabsContent value="taxipet">
             <TaxiPetTodayList items={transportHoje} loading={agendaLoading} />
@@ -379,7 +459,7 @@ export default function Dashboard() {
           <DialogHeader>
             <DialogTitle>Check-out em Massa</DialogTitle>
             <DialogDescription>
-              Deseja realizar o check-out de todos os <strong>{petsNaEmpresa.length}</strong> pets que estão na empresa agora?
+              Deseja realizar o check-out de <strong>{selectedNaEmpresa.size}</strong> pet(s) selecionado(s)?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -443,7 +523,7 @@ export default function Dashboard() {
 }
 
 /* Agenda sub-components */
-function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showDelete, onDelete, onFalta }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void; onFalta?: (item: Agendamento) => void }) {
+function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showDelete, onDelete, onFalta, selectedIds, onToggleSelect }: { items: Agendamento[]; loading: boolean; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void; onFalta?: (item: Agendamento) => void; selectedIds?: Set<string>; onToggleSelect?: (id: string) => void }) {
   if (loading) return <div className="space-y-3 mt-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}</div>;
   if (items.length === 0) return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -453,12 +533,12 @@ function AgendamentoList({ items, loading, showCheckin, onCheckin, onEdit, showD
   );
   return (
     <div className="bg-card rounded-xl border border-border/60 shadow-card mt-4 divide-y divide-border/60">
-      {items.map(item => <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} showDelete={showDelete} onDelete={onDelete} onFalta={onFalta} />)}
+      {items.map(item => <AgendamentoRow key={item.id} item={item} showCheckin={showCheckin} onCheckin={onCheckin} onEdit={onEdit} showDelete={showDelete} onDelete={onDelete} onFalta={onFalta} selected={selectedIds?.has(item.id)} onToggleSelect={onToggleSelect ? () => onToggleSelect(item.id) : undefined} />)}
     </div>
   );
 }
 
-function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete, onFalta }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void; onFalta?: (item: Agendamento) => void }) {
+function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDelete, onFalta, selected, onToggleSelect }: { item: Agendamento; showCheckin?: boolean; onCheckin?: (item: Agendamento) => void; onEdit?: (a: Agendamento) => void; showDelete?: boolean; onDelete?: (id: string) => void; onFalta?: (item: Agendamento) => void; selected?: boolean; onToggleSelect?: () => void }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const petName = item.pet?.nome ?? "Pet";
   const petBreed = item.pet?.raca;
@@ -469,6 +549,9 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
 
   return (
     <div className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+      {onToggleSelect && (
+        <Checkbox checked={!!selected} onCheckedChange={onToggleSelect} className="shrink-0" />
+      )}
       <div className="flex items-center gap-1 -space-x-2">
         <Avatar className="h-11 w-11 border-2 border-card z-10">
           {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}
@@ -540,11 +623,12 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
   );
 }
 
-function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist, onCheckout }: {
+function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist, onCheckout, selectedIds, onToggleSelect }: {
   items: Agendamento[]; loading: boolean;
   onEdit: (a: Agendamento) => void; onFicha: (a: Agendamento) => void;
   onManejo: (a: Agendamento) => void; onChecklist: (a: Agendamento) => void;
   onCheckout: (a: Agendamento) => void;
+  selectedIds?: Set<string>; onToggleSelect?: (id: string) => void;
 }) {
   if (loading) return <div className="space-y-3 mt-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}</div>;
   if (items.length === 0) return (
@@ -561,6 +645,9 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
         const clientWhatsapp = item.cliente?.whatsapp;
         return (
           <div key={item.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+            {onToggleSelect && (
+              <Checkbox checked={selectedIds?.has(item.id) ?? false} onCheckedChange={() => onToggleSelect(item.id)} className="shrink-0" />
+            )}
             <div className="flex items-center gap-1 -space-x-2">
               <Avatar className="h-11 w-11 border-2 border-card z-10">
                 {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}

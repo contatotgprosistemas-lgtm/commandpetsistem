@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera } from "lucide-react";
+import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera, CheckSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { format, startOfDay } from "date-fns";
@@ -27,7 +28,9 @@ export default function OperacionalDashboard() {
   const [manejoTarget, setManejoTarget] = useState<any>(null);
   const [galeriaTarget, setGaleriaTarget] = useState<any>(null);
   const [manejoFilledIds, setManejoFilledIds] = useState<Set<string>>(new Set());
-
+  const [selectedCheckins, setSelectedCheckins] = useState<Set<string>>(new Set());
+  const [selectedNaEmpresa, setSelectedNaEmpresa] = useState<Set<string>>(new Set());
+  const [massLoading, setMassLoading] = useState(false);
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
@@ -133,6 +136,36 @@ export default function OperacionalDashboard() {
     window.location.reload();
   };
 
+  const handleMassCheckin = async () => {
+    const targets = pendingCheckins.filter(p => selectedCheckins.has(p.id));
+    if (targets.length === 0) return;
+    setMassLoading(true);
+    for (const item of targets) {
+      const now = new Date();
+      await supabase.from("agendamentos").update({
+        status: "na_empresa", data_entrada: now.toISOString(), hora_entrada: format(now, "HH:mm"),
+      }).eq("id", item.id);
+    }
+    setMassLoading(false);
+    toast.success(`Check-in em massa: ${targets.length} pet(s).`);
+    window.location.reload();
+  };
+
+  const handleMassCheckout = async () => {
+    const targets = petsNaEmpresa.filter(p => selectedNaEmpresa.has(p.id));
+    if (targets.length === 0) return;
+    setMassLoading(true);
+    const now = new Date();
+    for (const item of targets) {
+      await supabase.from("agendamentos").update({
+        status: "concluido", data_saida: now.toISOString(), hora_saida: format(now, "HH:mm"),
+      }).eq("id", item.id);
+    }
+    setMassLoading(false);
+    toast.success(`Check-out em massa: ${targets.length} pet(s).`);
+    window.location.reload();
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -183,12 +216,36 @@ export default function OperacionalDashboard() {
       {/* Pending check-ins with Falta button */}
       {pendingCheckins.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">Check-ins Pendentes</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Check-ins Pendentes</h2>
+            {selectedCheckins.size > 0 && (
+              <Button size="sm" variant="outline" onClick={handleMassCheckin} disabled={massLoading} className="gap-1.5 text-xs">
+                <LogIn className="h-3.5 w-3.5" /> {massLoading ? "Processando..." : `Check-in (${selectedCheckins.size})`}
+              </Button>
+            )}
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+            <Checkbox
+              checked={selectedCheckins.size === pendingCheckins.length && pendingCheckins.length > 0}
+              onCheckedChange={(checked) => setSelectedCheckins(checked ? new Set(pendingCheckins.map(p => p.id)) : new Set())}
+            />
+            Selecionar todos
+          </label>
           <div className="space-y-2">
             {pendingCheckins.map((item) => (
               <Card key={item.id} className="rounded-xl">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={selectedCheckins.has(item.id)}
+                      onCheckedChange={() => {
+                        setSelectedCheckins(prev => {
+                          const next = new Set(prev);
+                          next.has(item.id) ? next.delete(item.id) : next.add(item.id);
+                          return next;
+                        });
+                      }}
+                    />
                     <Avatar className="h-10 w-10 shrink-0">
                       {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
                       <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
@@ -219,12 +276,36 @@ export default function OperacionalDashboard() {
       {/* Pets na empresa */}
       {petsNaEmpresa.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">Pets na Empresa</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Pets na Empresa</h2>
+            {selectedNaEmpresa.size > 0 && (
+              <Button size="sm" variant="outline" onClick={handleMassCheckout} disabled={massLoading} className="gap-1.5 text-xs">
+                <LogOutIcon className="h-3.5 w-3.5" /> {massLoading ? "Processando..." : `Saída (${selectedNaEmpresa.size})`}
+              </Button>
+            )}
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+            <Checkbox
+              checked={selectedNaEmpresa.size === petsNaEmpresa.length && petsNaEmpresa.length > 0}
+              onCheckedChange={(checked) => setSelectedNaEmpresa(checked ? new Set(petsNaEmpresa.map(p => p.id)) : new Set())}
+            />
+            Selecionar todos
+          </label>
           <div className="space-y-2">
             {petsNaEmpresa.map((item) => (
               <Card key={item.id} className="rounded-xl">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={selectedNaEmpresa.has(item.id)}
+                      onCheckedChange={() => {
+                        setSelectedNaEmpresa(prev => {
+                          const next = new Set(prev);
+                          next.has(item.id) ? next.delete(item.id) : next.add(item.id);
+                          return next;
+                        });
+                      }}
+                    />
                     <Avatar className="h-10 w-10 shrink-0">
                       {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
                       <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
