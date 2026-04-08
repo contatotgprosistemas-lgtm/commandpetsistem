@@ -276,12 +276,36 @@ export default function OperacionalDashboard() {
       {/* Pets na empresa */}
       {petsNaEmpresa.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">Pets na Empresa</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Pets na Empresa</h2>
+            {selectedNaEmpresa.size > 0 && (
+              <Button size="sm" variant="outline" onClick={handleMassCheckout} disabled={massLoading} className="gap-1.5 text-xs">
+                <LogOutIcon className="h-3.5 w-3.5" /> {massLoading ? "Processando..." : `Saída (${selectedNaEmpresa.size})`}
+              </Button>
+            )}
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+            <Checkbox
+              checked={selectedNaEmpresa.size === petsNaEmpresa.length && petsNaEmpresa.length > 0}
+              onCheckedChange={(checked) => setSelectedNaEmpresa(checked ? new Set(petsNaEmpresa.map(p => p.id)) : new Set())}
+            />
+            Selecionar todos
+          </label>
           <div className="space-y-2">
             {petsNaEmpresa.map((item) => (
               <Card key={item.id} className="rounded-xl">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={selectedNaEmpresa.has(item.id)}
+                      onCheckedChange={() => {
+                        setSelectedNaEmpresa(prev => {
+                          const next = new Set(prev);
+                          next.has(item.id) ? next.delete(item.id) : next.add(item.id);
+                          return next;
+                        });
+                      }}
+                    />
                     <Avatar className="h-10 w-10 shrink-0">
                       {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
                       <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
