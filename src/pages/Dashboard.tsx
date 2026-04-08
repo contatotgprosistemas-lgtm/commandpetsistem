@@ -468,8 +468,29 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-card rounded-xl border border-border/60 p-5 shadow-card">
-          <h2 className="text-sm font-medium text-foreground mb-4">Faturamento Semanal</h2>
-          <div className="flex items-center justify-center h-[220px] text-[13px] text-muted-foreground">Sem dados para exibir</div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Faturamento Mensal</h2>
+              <p className="text-xs text-muted-foreground capitalize">{format(new Date(), "MMMM yyyy", { locale: ptBR })}</p>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <span className="text-muted-foreground">Recebido</span>
+                <span className="font-semibold text-foreground">R$ {faturamentoTotal.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
+                <span className="text-muted-foreground">Pendente</span>
+                <span className="font-semibold text-foreground">R$ {faturamentoTotal.pendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          </div>
+          {faturamentoData.length > 0 ? (
+            <FaturamentoChart data={faturamentoData} />
+          ) : (
+            <div className="flex items-center justify-center h-[220px] text-[13px] text-muted-foreground">Sem dados para exibir</div>
+          )}
         </div>
         <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
