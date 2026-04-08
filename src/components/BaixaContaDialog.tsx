@@ -24,6 +24,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
   const [valorJuros, setValorJuros] = useState("");
   const [valorDesconto, setValorDesconto] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [formaPagamento, setFormaPagamento] = useState("");
   const [saving, setSaving] = useState(false);
   const [contasBancarias, setContasBancarias] = useState<{ id: string; banco: string; titular: string }[]>([]);
 
@@ -41,6 +42,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
         setValorJuros("");
         setValorDesconto("");
         setObservacao(conta.descricao);
+        setFormaPagamento("");
       }
     }
   }, [open, conta]);
@@ -89,6 +91,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
           p_valor_juros: 0,
           p_valor_desconto: 0,
           p_observacao: observacao || null,
+          p_forma_pagamento: formaPagamento || null,
         });
 
         if (error) {
@@ -133,6 +136,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
         p_valor_juros: vJuros,
         p_valor_desconto: vDesconto,
         p_observacao: observacao || null,
+        p_forma_pagamento: formaPagamento || null,
       });
 
       setSaving(false);
