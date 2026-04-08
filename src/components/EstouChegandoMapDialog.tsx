@@ -78,7 +78,7 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [open]);
+  }, [open, empresaId]);
 
   const timeSince = (dateStr: string) => {
     const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
