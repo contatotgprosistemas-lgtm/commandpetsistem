@@ -66,6 +66,8 @@ export default function Dashboard() {
   const [expiringContracts, setExpiringContracts] = useState<any[]>([]);
   const [petsPlanoEscola, setPetsPlanoEscola] = useState(0);
   const [petsPlanoBanho, setPetsPlanoBanho] = useState(0);
+  const [massCheckoutOpen, setMassCheckoutOpen] = useState(false);
+  const [massCheckoutLoading, setMassCheckoutLoading] = useState(false);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
