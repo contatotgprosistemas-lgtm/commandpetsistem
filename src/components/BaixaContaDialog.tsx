@@ -27,6 +27,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
   const [formaPagamento, setFormaPagamento] = useState("");
   const [saving, setSaving] = useState(false);
   const [contasBancarias, setContasBancarias] = useState<{ id: string; banco: string; titular: string }[]>([]);
+  const [formasPagamento, setFormasPagamento] = useState<{ id: string; nome: string; codigo: string }[]>([]);
 
   const isBatch = contaIds && contaIds.length > 1;
 
