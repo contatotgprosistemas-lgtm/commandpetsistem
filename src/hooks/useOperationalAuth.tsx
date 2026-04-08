@@ -50,7 +50,9 @@ export function OperationalAuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setLoading(true);
+    if (!hasInitialized.current) {
+      setLoading(true);
+    }
 
     const { data, error } = await supabase
       .from("operational_users")

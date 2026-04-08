@@ -44,7 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setLoading(true);
+    // Only show loading on first initialization to avoid
+    // unmounting dialogs/modals on token refresh (e.g. alt+tab)
+    if (!hasInitialized.current) {
+      setLoading(true);
+    }
 
     setSession(currentSession);
 
