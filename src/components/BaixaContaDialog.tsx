@@ -201,8 +201,25 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+          </Select>
           </div>
+
+          <div>
+            <Label>Forma de Pagamento</Label>
+            <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                <SelectItem value="pix">PIX</SelectItem>
+                <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                <SelectItem value="boleto">Boleto</SelectItem>
+                <SelectItem value="transferencia">Transferência</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">Se houver taxa configurada, será lançada automaticamente como despesa</p>
 
           {!isBatch && (
             <div className="grid grid-cols-3 gap-3">
