@@ -143,20 +143,29 @@ export default function AgendaPage() {
     fetchAgendamentos();
   }
 
+  const AGENDA_KEYWORDS = ["escola", "creche", "daycare", "hotel", "hospedagem", "diaria", "pernoite"];
+
+  const agendaFiltered = useMemo(() => {
+    return agendamentos.filter(a => {
+      const lower = a.tipo_servico.toLowerCase();
+      return AGENDA_KEYWORDS.some(kw => lower.includes(kw));
+    });
+  }, [agendamentos]);
+
   // Unique service types for filter
   const serviceTypes = useMemo(() => {
-    const types = new Set(agendamentos.map(a => a.tipo_servico));
+    const types = new Set(agendaFiltered.map(a => a.tipo_servico));
     return Array.from(types).sort();
-  }, [agendamentos]);
+  }, [agendaFiltered]);
 
   // Filtered list for "Lista" view
   const filteredList = useMemo(() => {
-    return agendamentos.filter(a => {
+    return agendaFiltered.filter(a => {
       const dateMatch = format(new Date(a.data_hora), "yyyy-MM-dd") === filterDate;
       const serviceMatch = filterService === "all" || a.tipo_servico === filterService;
       return dateMatch && serviceMatch;
     });
-  }, [agendamentos, filterDate, filterService]);
+  }, [agendaFiltered, filterDate, filterService]);
 
   const todayFormatted = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
@@ -185,7 +194,7 @@ export default function AgendaPage() {
         </TabsList>
 
         <TabsContent value="calendar" className="mt-4">
-          <AgendaCalendar agendamentos={agendamentos} onEditAgendamento={(a) => setEditingAgendamento(a as any)} />
+          <AgendaCalendar agendamentos={agendamentos} onEditAgendamento={(a) => setEditingAgendamento(a as any)} serviceKeywords={["escola", "creche", "daycare", "hotel", "hospedagem", "diaria", "pernoite"]} />
         </TabsContent>
 
         <TabsContent value="list" className="mt-4 space-y-4">

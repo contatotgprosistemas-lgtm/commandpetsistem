@@ -35,6 +35,8 @@ interface Agendamento {
 interface AgendaCalendarProps {
   agendamentos: Agendamento[];
   onEditAgendamento?: (agendamento: Agendamento) => void;
+  /** If provided, only show agendamentos whose tipo_servico matches one of these keywords (case-insensitive partial match) */
+  serviceKeywords?: string[];
 }
 
 const WEEKDAYS = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
@@ -97,18 +99,24 @@ function statusBadgeColor(status: string) {
   }
 }
 
-export function AgendaCalendar({ agendamentos, onEditAgendamento }: AgendaCalendarProps) {
+export function AgendaCalendar({ agendamentos, onEditAgendamento, serviceKeywords }: AgendaCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   const serviceTypes = useMemo(() => {
+    const base = serviceKeywords?.length
+      ? agendamentos.filter(a => {
+          const lower = a.tipo_servico.toLowerCase();
+          return serviceKeywords.some(kw => lower.includes(kw.toLowerCase()));
+        })
+      : agendamentos;
     const types = new Set<string>();
-    agendamentos.forEach(a => {
+    base.forEach(a => {
       if (a.status !== "cancelado") types.add(a.tipo_servico);
     });
     return Array.from(types).sort();
-  }, [agendamentos]);
+  }, [agendamentos, serviceKeywords]);
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -125,13 +133,21 @@ export function AgendaCalendar({ agendamentos, onEditAgendamento }: AgendaCalend
     return days;
   }, [currentMonth]);
 
-  const filteredAgendamentos = useMemo(() => {
+  const keywordFiltered = useMemo(() => {
+    if (!serviceKeywords || serviceKeywords.length === 0) return agendamentos;
     return agendamentos.filter(a => {
+      const lower = a.tipo_servico.toLowerCase();
+      return serviceKeywords.some(kw => lower.includes(kw.toLowerCase()));
+    });
+  }, [agendamentos, serviceKeywords]);
+
+  const filteredAgendamentos = useMemo(() => {
+    return keywordFiltered.filter(a => {
       if (a.status === "cancelado") return false;
       if (selectedFilter && a.tipo_servico !== selectedFilter) return false;
       return true;
     });
-  }, [agendamentos, selectedFilter]);
+  }, [keywordFiltered, selectedFilter]);
 
   const agendamentosByDay = useMemo(() => {
     const map = new Map<string, Agendamento[]>();
@@ -162,10 +178,10 @@ export function AgendaCalendar({ agendamentos, onEditAgendamento }: AgendaCalend
           className="h-7 text-xs"
           onClick={() => setSelectedFilter(null)}
         >
-          Todos ({agendamentos.filter(a => a.status !== "cancelado").length})
+          Todos ({keywordFiltered.filter(a => a.status !== "cancelado").length})
         </Button>
         {serviceTypes.map(tipo => {
-          const count = agendamentos.filter(a => a.tipo_servico === tipo && a.status !== "cancelado").length;
+          const count = keywordFiltered.filter(a => a.tipo_servico === tipo && a.status !== "cancelado").length;
           return (
             <Button
               key={tipo}
