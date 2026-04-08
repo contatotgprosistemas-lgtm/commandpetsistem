@@ -315,6 +315,13 @@ export default function Dashboard() {
           </TabsList>
 
           <TabsContent value="na_empresa">
+            {petsNaEmpresa.length > 0 && (
+              <div className="flex justify-end mt-2 mb-1">
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setMassCheckoutOpen(true)}>
+                  <LogOut className="h-3.5 w-3.5" /> Check-out em Massa ({petsNaEmpresa.length})
+                </Button>
+              </div>
+            )}
             <NaEmpresaList
               items={petsNaEmpresa}
               loading={agendaLoading}
