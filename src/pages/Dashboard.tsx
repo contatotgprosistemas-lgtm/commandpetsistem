@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, TreePine, ShowerHead, CheckSquare } from "lucide-react";
+import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, TreePine, ShowerHead, CheckSquare, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +73,8 @@ export default function Dashboard() {
   const [selectedNaEmpresa, setSelectedNaEmpresa] = useState<Set<string>>(new Set());
   const [selectedReservas, setSelectedReservas] = useState<Set<string>>(new Set());
   const [massCheckinLoading, setMassCheckinLoading] = useState(false);
+  const [faturamentoData, setFaturamentoData] = useState<{ dia: string; pendente: number; pago: number }[]>([]);
+  const [faturamentoTotal, setFaturamentoTotal] = useState({ pendente: 0, pago: 0 });
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
@@ -140,6 +143,49 @@ export default function Dashboard() {
         }
         setPetsPlanoEscola(escolaSet.size);
         setPetsPlanoBanho(banhoSet.size);
+      });
+    // Fetch faturamento mensal (contas a receber do mês atual)
+    const now = new Date();
+    const monthStart = format(new Date(now.getFullYear(), now.getMonth(), 1), "yyyy-MM-dd");
+    const monthEnd = format(new Date(now.getFullYear(), now.getMonth() + 1, 0), "yyyy-MM-dd");
+    supabase
+      .from("contas_receber")
+      .select("valor, valor_pago, status, vencimento, data_baixa")
+      .gte("vencimento", monthStart)
+      .lte("vencimento", monthEnd)
+      .then(({ data: faturas }) => {
+        if (!faturas) return;
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const dailyMap: Record<string, { pendente: number; pago: number }> = {};
+        for (let d = 1; d <= daysInMonth; d++) {
+          const key = String(d).padStart(2, "0");
+          dailyMap[key] = { pendente: 0, pago: 0 };
+        }
+        let totalPendente = 0;
+        let totalPago = 0;
+        for (const f of faturas as any[]) {
+          const vencDay = String(new Date(f.vencimento + "T00:00:00").getDate()).padStart(2, "0");
+          if (f.status === "pago") {
+            const val = Number(f.valor_pago || f.valor || 0);
+            const baixaDay = f.data_baixa ? String(new Date(f.data_baixa + "T00:00:00").getDate()).padStart(2, "0") : vencDay;
+            if (dailyMap[baixaDay]) dailyMap[baixaDay].pago += val;
+            totalPago += val;
+          } else {
+            const val = Number(f.valor || 0);
+            if (dailyMap[vencDay]) dailyMap[vencDay].pendente += val;
+            totalPendente += val;
+          }
+        }
+        // Build cumulative data
+        let accPendente = 0;
+        let accPago = 0;
+        const chartData = Object.entries(dailyMap).sort().map(([dia, vals]) => {
+          accPendente += vals.pendente;
+          accPago += vals.pago;
+          return { dia, pendente: accPendente, pago: accPago };
+        });
+        setFaturamentoData(chartData);
+        setFaturamentoTotal({ pendente: totalPendente, pago: totalPago });
       });
   }, []);
 
@@ -423,8 +469,29 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-card rounded-xl border border-border/60 p-5 shadow-card">
-          <h2 className="text-sm font-medium text-foreground mb-4">Faturamento Semanal</h2>
-          <div className="flex items-center justify-center h-[220px] text-[13px] text-muted-foreground">Sem dados para exibir</div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Faturamento Mensal</h2>
+              <p className="text-xs text-muted-foreground capitalize">{format(new Date(), "MMMM yyyy", { locale: ptBR })}</p>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <span className="text-muted-foreground">Recebido</span>
+                <span className="font-semibold text-foreground">R$ {faturamentoTotal.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
+                <span className="text-muted-foreground">Pendente</span>
+                <span className="font-semibold text-foreground">R$ {faturamentoTotal.pendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          </div>
+          {faturamentoData.length > 0 ? (
+            <FaturamentoChart data={faturamentoData} />
+          ) : (
+            <div className="flex items-center justify-center h-[220px] text-[13px] text-muted-foreground">Sem dados para exibir</div>
+          )}
         </div>
         <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
@@ -780,6 +847,57 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function FaturamentoChart({ data }: { data: { dia: string; pendente: number; pago: number }[] }) {
+
+  const formatCurrency = (value: number) => {
+    if (value >= 1000) return `R$${(value / 1000).toFixed(1)}k`;
+    return `R$${value.toFixed(0)}`;
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-xs">
+        <p className="font-medium text-foreground mb-1.5">Dia {label}</p>
+        {payload.map((entry: any, i: number) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span className="text-muted-foreground">{entry.name}:</span>
+            <span className="font-semibold text-foreground">
+              R$ {Number(entry.value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="h-[220px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+          <defs>
+            <linearGradient id="gradPago" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="gradPendente" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <XAxis dataKey="dia" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} interval={4} />
+          <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} tickFormatter={formatCurrency} />
+          <Tooltip content={<CustomTooltip />} />
+          <Area type="monotone" dataKey="pago" name="Recebido" stroke="#10b981" strokeWidth={2} fill="url(#gradPago)" />
+          <Area type="monotone" dataKey="pendente" name="Pendente" stroke="#0ea5e9" strokeWidth={2} fill="url(#gradPendente)" />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
