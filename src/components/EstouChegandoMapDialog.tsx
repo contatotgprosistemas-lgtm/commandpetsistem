@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef } from "react";
-import { MapPin, X, RefreshCw } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { ArrivalTrackingMap } from "@/components/estou-chegando/ArrivalTrackingMap";
 
 interface TrackingEntry {
   id: string;
@@ -120,55 +120,7 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
             </div>
           ) : (
             <div className="space-y-2">
-              {/* Map visualization using CSS grid positions */}
-              <div className="relative bg-muted/30 rounded-xl border border-border overflow-hidden" style={{ height: 400 }}>
-                {/* Map grid background */}
-                <div className="absolute inset-0 opacity-10" style={{
-                  backgroundImage: "radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)",
-                  backgroundSize: "20px 20px"
-                }} />
-
-                {/* Center marker = empresa */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
-                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center shadow-lg border-2 border-primary-foreground">
-                    <MapPin className="h-5 w-5 text-primary-foreground" />
-                  </div>
-                  <span className="text-[10px] font-semibold text-primary mt-1 bg-card/80 px-1.5 py-0.5 rounded">Empresa</span>
-                </div>
-
-                {/* Client markers distributed around center */}
-                {entries.map((entry, idx) => {
-                  const angle = (idx / entries.length) * 2 * Math.PI - Math.PI / 2;
-                  const radius = 120 + (idx % 3) * 40;
-                  const x = 50 + (Math.cos(angle) * radius / 4);
-                  const y = 50 + (Math.sin(angle) * radius / 4);
-                  const petName = (entry.pet as any)?.nome ?? "Pet";
-                  const petFoto = (entry.pet as any)?.foto_url;
-                  const clienteNome = (entry.cliente as any)?.nome ?? "Cliente";
-
-                  return (
-                    <div
-                      key={entry.id}
-                      className="absolute z-20 flex flex-col items-center transition-all duration-1000 ease-in-out"
-                      style={{ top: `${Math.min(90, Math.max(10, y))}%`, left: `${Math.min(90, Math.max(10, x))}%`, transform: "translate(-50%, -50%)" }}
-                    >
-                      <div className="relative">
-                        <Avatar className="h-10 w-10 border-2 border-emerald-500 shadow-lg">
-                          {petFoto && <AvatarImage src={petFoto} alt={petName} />}
-                          <AvatarFallback className="bg-emerald-500/10 text-emerald-700 text-xs font-bold">
-                            {petName.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-card animate-pulse" />
-                      </div>
-                      <span className="text-[10px] font-medium text-foreground mt-1 bg-card/90 px-1.5 py-0.5 rounded shadow-sm max-w-[80px] truncate text-center">
-                        {petName}
-                      </span>
-                      <span className="text-[9px] text-muted-foreground">{clienteNome.split(" ")[0]}</span>
-                    </div>
-                  );
-                })}
-              </div>
+                <ArrivalTrackingMap active={open} entries={entries} />
 
               {/* List view */}
               <div className="space-y-1.5 mt-3">
