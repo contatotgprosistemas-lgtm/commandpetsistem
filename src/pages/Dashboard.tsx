@@ -66,6 +66,8 @@ export default function Dashboard() {
   const [expiringContracts, setExpiringContracts] = useState<any[]>([]);
   const [petsPlanoEscola, setPetsPlanoEscola] = useState(0);
   const [petsPlanoBanho, setPetsPlanoBanho] = useState(0);
+  const [massCheckoutOpen, setMassCheckoutOpen] = useState(false);
+  const [massCheckoutLoading, setMassCheckoutLoading] = useState(false);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
@@ -207,6 +209,38 @@ export default function Dashboard() {
     fetchAgendamentos();
   }
 
+  async function handleMassCheckout() {
+    const naEmpresa = agendamentos.filter(a => a.status === "na_empresa");
+    if (naEmpresa.length === 0) { toast.info("Nenhum pet na empresa para checkout."); return; }
+    setMassCheckoutLoading(true);
+    const now = new Date();
+    const horaSaida = format(now, "HH:mm");
+    let successCount = 0;
+    for (const item of naEmpresa) {
+      const { error } = await supabase.from("agendamentos").update({
+        status: "concluido", data_saida: now.toISOString(), hora_saida: horaSaida,
+      }).eq("id", item.id);
+      if (error) { console.error("Erro checkout:", error.message); continue; }
+      const { data: existing } = await supabase.from("historico_servicos").select("id").eq("agendamento_id", item.id).maybeSingle();
+      if (existing) {
+        await supabase.from("historico_servicos").update({
+          notas: `Check-in: ${item.data_entrada ? format(new Date(item.data_entrada), "dd/MM/yyyy") : "—"} ${item.hora_entrada ?? ""} | Check-out: ${format(now, "dd/MM/yyyy")} ${horaSaida}`,
+        } as any).eq("id", existing.id);
+      } else {
+        await supabase.from("historico_servicos" as any).insert({
+          empresa_id: item.empresa_id, cliente_id: item.cliente_id, pet_id: item.pet_id,
+          tipo_servico: item.tipo_servico, valor: item.valor, data_servico: item.data_hora,
+          agendamento_id: item.id, notas: `Check-out: ${format(now, "dd/MM/yyyy")} ${horaSaida}`,
+        } as any);
+      }
+      successCount++;
+    }
+    setMassCheckoutLoading(false);
+    setMassCheckoutOpen(false);
+    toast.success(`Check-out em massa concluído: ${successCount} pet(s).`);
+    fetchAgendamentos();
+  }
+
   const today = startOfDay(new Date());
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -281,6 +315,13 @@ export default function Dashboard() {
           </TabsList>
 
           <TabsContent value="na_empresa">
+            {petsNaEmpresa.length > 0 && (
+              <div className="flex justify-end mt-2 mb-1">
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setMassCheckoutOpen(true)}>
+                  <LogOut className="h-3.5 w-3.5" /> Check-out em Massa ({petsNaEmpresa.length})
+                </Button>
+              </div>
+            )}
             <NaEmpresaList
               items={petsNaEmpresa}
               loading={agendaLoading}
@@ -331,6 +372,24 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Mass checkout confirmation */}
+      <Dialog open={massCheckoutOpen} onOpenChange={setMassCheckoutOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Check-out em Massa</DialogTitle>
+            <DialogDescription>
+              Deseja realizar o check-out de todos os <strong>{petsNaEmpresa.length}</strong> pets que estão na empresa agora?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMassCheckoutOpen(false)} disabled={massCheckoutLoading}>Cancelar</Button>
+            <Button onClick={handleMassCheckout} disabled={massCheckoutLoading}>
+              {massCheckoutLoading ? "Processando..." : "Confirmar Check-out"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialogs */}
       {manejoOpen && (
