@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { addDays, format, getDay, isBefore, startOfDay, lastDayOfMonth, startOfMonth, addMonths } from "date-fns";
-import { Check } from "lucide-react";
+import { Check, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface Props {
   open: boolean;
@@ -56,6 +57,33 @@ function countWeekdaysInMonth(year: number, month: number, days: number[]): numb
   return countWeekdaysInRange(start, end, days);
 }
 
+/** Generate biweekly dates: every 14 days starting from startDate, within the month */
+function generateBiweeklyDates(startDate: Date, endOfMonth: Date, plannedDays: number[]): Date[] {
+  const dates: Date[] = [];
+  if (plannedDays.length === 0) return dates;
+
+  // Find the first occurrence of the selected weekday on or after startDate
+  let current = new Date(startDate);
+  while (!isBefore(endOfMonth, current)) {
+    if (plannedDays.includes(getDay(current))) {
+      break;
+    }
+    current = addDays(current, 1);
+  }
+
+  // Generate dates every 14 days
+  while (!isBefore(endOfMonth, current)) {
+    if (plannedDays.includes(getDay(current))) {
+      dates.push(new Date(current));
+      current = addDays(current, 14);
+    } else {
+      current = addDays(current, 1);
+    }
+  }
+
+  return dates;
+}
+
 export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: Props) {
   const [saving, setSaving] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
@@ -76,6 +104,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [horaBuscar, setHoraBuscar] = useState("08:00");
   const [horaLevar, setHoraLevar] = useState("17:00");
   const [horaBanho, setHoraBanho] = useState("09:00");
+  const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
+  const [extraSessionPolicy, setExtraSessionPolicy] = useState<"skip" | "charge">("skip");
 
   useEffect(() => {
     if (!open) return;
@@ -93,6 +123,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const priceContracted = selectedPlan ? Number(selectedPlan.price) : 0;
   const showHorarios = selectedPlan ? isTaxiPetService(selectedPlan.name) : false;
   const showHorarioBanho = selectedPlan ? isBanhoService(selectedPlan.name) : false;
+  const showFrequency = planType === "package" && showHorarioBanho;
+  const isQuinzenal = showFrequency && frequency === "quinzenal";
   const contractDurationMonths = selectedPlan?.min_loyalty_months ? Number(selectedPlan.min_loyalty_months) : null;
 
   // Calculate end date as last day of the month of startDate
@@ -100,12 +132,35 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const endOfMonth = lastDayOfMonth(startDateObj);
   const endDate = format(endOfMonth, "yyyy-MM-dd");
 
-  // Calculate proportional price if not starting on the 1st
+  // Biweekly dates calculation
+  const biweeklyDates = useMemo(() => {
+    if (!isQuinzenal) return [];
+    return generateBiweeklyDates(startDateObj, endOfMonth, plannedDays);
+  }, [isQuinzenal, startDate, plannedDays]);
+
+  const hasThreeOccurrences = isQuinzenal && biweeklyDates.length >= 3;
+  const biweeklyCount = isQuinzenal
+    ? (extraSessionPolicy === "skip" && hasThreeOccurrences ? 2 : biweeklyDates.length)
+    : 0;
+
+  // Price per session for biweekly (base price = 2 sessions)
+  const pricePerSession = priceContracted / 2;
+
+  // Calculate proportional price
   const isFirstDay = startDateObj.getDate() === 1;
   let proportionalPrice = priceContracted;
   let proportionalInfo = "";
 
-  if (!isFirstDay && plannedDays.length > 0) {
+  if (isQuinzenal) {
+    if (hasThreeOccurrences && extraSessionPolicy === "charge") {
+      proportionalPrice = priceContracted + pricePerSession;
+      proportionalInfo = `3 ocorrências no mês: R$ ${priceContracted.toFixed(2)} + R$ ${pricePerSession.toFixed(2)} (sessão extra) = R$ ${proportionalPrice.toFixed(2)}`;
+    } else if (hasThreeOccurrences && extraSessionPolicy === "skip") {
+      proportionalInfo = `3ª ocorrência será pulada. Valor normal: R$ ${priceContracted.toFixed(2)} (2 banhos)`;
+    } else {
+      proportionalInfo = `${biweeklyDates.length} banho(s) quinzenal(is) no período`;
+    }
+  } else if (!isFirstDay && plannedDays.length > 0) {
     const totalDaysInMonth = countWeekdaysInMonth(startDateObj.getFullYear(), startDateObj.getMonth(), plannedDays);
     const remainingDays = countWeekdaysInRange(startDateObj, endOfMonth, plannedDays);
     if (totalDaysInMonth > 0) {
@@ -117,12 +172,24 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const finalPrice = Math.max(0, proportionalPrice - Number(discount || 0));
 
   function toggleDay(day: number) {
-    setPlannedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+    if (isQuinzenal) {
+      // For biweekly, only allow one day
+      setPlannedDays(prev => prev.includes(day) ? [] : [day]);
+    } else {
+      setPlannedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+    }
   }
+
+  // Reset frequency when plan type or selected plan changes
+  useEffect(() => {
+    setFrequency("semanal");
+    setExtraSessionPolicy("skip");
+  }, [planType, selectedId]);
 
   async function handleSave() {
     if (!clienteId || !selectedId) { toast.error("Selecione cliente e plano/pacote"); return; }
     if (selectedPetIds.length === 0) { toast.error("Selecione ao menos um pet"); return; }
+    if (isQuinzenal && plannedDays.length !== 1) { toast.error("Selecione exatamente 1 dia da semana para quinzenal"); return; }
     setSaving(true);
 
     const nextMonthStart = format(startOfMonth(addMonths(startDateObj, 1)), "yyyy-MM-dd");
@@ -138,12 +205,14 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       const payload: any = {
         empresa_id: empresaId, cliente_id: clienteId, pet_id: petId,
         start_date: startDate, end_date: endDate,
-        contract_date: contractDate,
-        contract_end_date: contractEndDate,
+        contract_date: planType === "plan" ? contractDate : null,
+        contract_end_date: planType === "plan" ? contractEndDate : null,
         next_renewal_date: autoRenew ? nextMonthStart : null,
         price_contracted: priceContracted, discount_amount: Number(discount || 0),
         final_price: finalPrice, auto_renew: autoRenew,
-        notes, status: "ativo", planned_days: plannedDays
+        notes, status: "ativo", planned_days: plannedDays,
+        frequency: isQuinzenal ? "quinzenal" : "semanal",
+        extra_session_policy: isQuinzenal && hasThreeOccurrences ? extraSessionPolicy : null,
       };
       if (planType === "plan") payload.plan_id = selectedId;
       else payload.package_id = selectedId;
@@ -160,7 +229,6 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       const startObj = new Date(startDate + "T00:00:00");
       let vencMonth = startObj.getMonth();
       let vencYear = startObj.getFullYear();
-      // If start day already passed the due day, use next month
       if (startObj.getDate() > diaVenc) {
         vencMonth += 1;
         if (vencMonth > 11) { vencMonth = 0; vencYear += 1; }
@@ -168,13 +236,51 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       const vencimentoDate = new Date(vencYear, vencMonth, diaVenc);
       const vencimentoStr = format(vencimentoDate, "yyyy-MM-dd");
 
+      const descFreq = isQuinzenal ? " (quinzenal)" : "";
+      const descProp = !isFirstDay && !isQuinzenal ? " (proporcional)" : "";
+      const descExtra = isQuinzenal && hasThreeOccurrences && extraSessionPolicy === "charge" ? " (+1 sessão extra)" : "";
+
       await supabase.from("contas_receber").insert({
         empresa_id: empresaId, cliente_id: clienteId,
-        descricao: `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name} - ${petNome}${!isFirstDay ? " (proporcional)" : ""}`,
+        descricao: `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name} - ${petNome}${descFreq}${descProp}${descExtra}`,
         valor: finalPrice, vencimento: vencimentoStr, status: "pendente", categoria: "Planos e Pacotes"
       });
 
-      if (plannedDays.length > 0) {
+      // Generate agendamentos
+      if (isQuinzenal && plannedDays.length === 1) {
+        const today = startOfDay(new Date());
+        const tipoServico = selectedPlan?.name || "Pacote";
+
+        // Use biweekly dates, applying the skip policy
+        const datesToSchedule = hasThreeOccurrences && extraSessionPolicy === "skip"
+          ? biweeklyDates.slice(0, 2)
+          : biweeklyDates;
+
+        const agendamentos: any[] = [];
+        for (const date of datesToSchedule) {
+          if (isBefore(date, today)) continue;
+          const ag: any = {
+            empresa_id: empresaId,
+            cliente_id: clienteId,
+            pet_id: petId,
+            tipo_servico: tipoServico,
+            data_hora: format(date, "yyyy-MM-dd") + "T" + horaBanho + ":00-03:00",
+            status: "agendado",
+            subscription_id: subscriptionId,
+            notas: "Gerado automaticamente pelo pacote (quinzenal)",
+          };
+          if (showHorarios) {
+            ag.hora_prevista_buscar = horaBuscar;
+            ag.hora_prevista_levar = horaLevar;
+          }
+          agendamentos.push(ag);
+        }
+
+        for (let i = 0; i < agendamentos.length; i += 50) {
+          await supabase.from("agendamentos").insert(agendamentos.slice(i, i + 50) as any);
+        }
+        totalAgendamentos += agendamentos.length;
+      } else if (plannedDays.length > 0) {
         const start = startOfDay(startDateObj);
         const end = startOfDay(endOfMonth);
         const today = startOfDay(new Date());
@@ -232,6 +338,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setHoraBuscar("08:00");
     setHoraLevar("17:00");
     setHoraBanho("09:00");
+    setFrequency("semanal");
+    setExtraSessionPolicy("skip");
     setSaving(false); onSuccess(); onOpenChange(false);
   }
 
@@ -315,6 +423,21 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               </Select>
             </div>
           </div>
+
+          {/* Frequency selector for bath packages */}
+          {showFrequency && (
+            <div className="space-y-1.5">
+              <Label>Frequência</Label>
+              <Select value={frequency} onValueChange={v => { setFrequency(v as any); setPlannedDays([]); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="semanal">Semanal</SelectItem>
+                  <SelectItem value="quinzenal">Quinzenal (a cada 14 dias)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className={planType === "plan" ? "grid grid-cols-2 gap-4" : ""}>
             {planType === "plan" && (
               <div className="space-y-1.5">
@@ -338,7 +461,10 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
           )}
 
           <div className="space-y-2">
-            <Label>Dias de uso na semana</Label>
+            <Label>{isQuinzenal ? "Dia da semana (quinzenal)" : "Dias de uso na semana"}</Label>
+            {isQuinzenal && (
+              <p className="text-xs text-muted-foreground">Selecione apenas 1 dia — o banho será a cada 14 dias neste dia da semana</p>
+            )}
             <div className="flex flex-wrap gap-2">
               {DIAS_SEMANA.map(dia => {
                 const isSelected = plannedDays.includes(dia.value);
@@ -364,8 +490,64 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
                 );
               })}
             </div>
-            <p className="text-xs text-muted-foreground">{plannedDays.length} dia(s) — reservas serão criadas automaticamente</p>
+            <p className="text-xs text-muted-foreground">
+              {isQuinzenal
+                ? `${plannedDays.length} dia selecionado — ${biweeklyDates.length} ocorrência(s) no mês`
+                : `${plannedDays.length} dia(s) — reservas serão criadas automaticamente`}
+            </p>
           </div>
+
+          {/* Biweekly preview of dates */}
+          {isQuinzenal && biweeklyDates.length > 0 && (
+            <div className="rounded-md bg-muted p-3 space-y-2">
+              <p className="text-xs font-medium text-foreground">Datas previstas:</p>
+              <div className="flex flex-wrap gap-2">
+                {biweeklyDates.map((d, i) => {
+                  const willSkip = hasThreeOccurrences && extraSessionPolicy === "skip" && i === 2;
+                  return (
+                    <span
+                      key={i}
+                      className={cn(
+                        "text-xs px-2 py-1 rounded-md border",
+                        willSkip
+                          ? "bg-destructive/10 text-destructive border-destructive/30 line-through"
+                          : "bg-primary/10 text-primary border-primary/30"
+                      )}
+                    >
+                      {format(d, "dd/MM")}
+                      {willSkip && " (pulado)"}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 3 occurrences decision */}
+          {hasThreeOccurrences && (
+            <div className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3 space-y-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs font-medium text-yellow-800">
+                  Este mês possui 3 ocorrências no intervalo quinzenal. Como deseja proceder?
+                </p>
+              </div>
+              <RadioGroup value={extraSessionPolicy} onValueChange={v => setExtraSessionPolicy(v as any)}>
+                <div className="flex items-start gap-2">
+                  <RadioGroupItem value="skip" id="skip" />
+                  <Label htmlFor="skip" className="text-xs font-normal leading-tight cursor-pointer">
+                    Pular a 3ª semana (2 banhos — R$ {priceContracted.toFixed(2)})
+                  </Label>
+                </div>
+                <div className="flex items-start gap-2">
+                  <RadioGroupItem value="charge" id="charge" />
+                  <Label htmlFor="charge" className="text-xs font-normal leading-tight cursor-pointer">
+                    Realizar 3 banhos (+R$ {pricePerSession.toFixed(2)} = R$ {(priceContracted + pricePerSession).toFixed(2)})
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
 
           {showHorarioBanho && plannedDays.length > 0 && (
             <div className="space-y-1.5">
@@ -391,7 +573,9 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
           {proportionalInfo && (
             <div className="rounded-md bg-muted p-3">
               <p className="text-xs font-medium text-muted-foreground">{proportionalInfo}</p>
-              <p className="text-xs text-muted-foreground mt-1">A partir do próximo mês, o valor será R$ {priceContracted.toFixed(2)} (mês cheio).</p>
+              {!isQuinzenal && (
+                <p className="text-xs text-muted-foreground mt-1">A partir do próximo mês, o valor será R$ {priceContracted.toFixed(2)} (mês cheio).</p>
+              )}
             </div>
           )}
 
