@@ -525,10 +525,10 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
           {/* 3 occurrences decision */}
           {hasThreeOccurrences && (
-            <div className="rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3 space-y-3">
+            <div className="rounded-md border border-accent bg-accent/50 p-3 space-y-3">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs font-medium text-yellow-800">
+                <AlertTriangle className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
+                <p className="text-xs font-medium text-foreground">
                   Este mês possui 3 ocorrências no intervalo quinzenal. Como deseja proceder?
                 </p>
               </div>
