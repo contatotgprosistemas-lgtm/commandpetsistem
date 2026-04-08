@@ -24,6 +24,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
   const [valorJuros, setValorJuros] = useState("");
   const [valorDesconto, setValorDesconto] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [formaPagamento, setFormaPagamento] = useState("");
   const [saving, setSaving] = useState(false);
   const [contasBancarias, setContasBancarias] = useState<{ id: string; banco: string; titular: string }[]>([]);
 
@@ -41,6 +42,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
         setValorJuros("");
         setValorDesconto("");
         setObservacao(conta.descricao);
+        setFormaPagamento("");
       }
     }
   }, [open, conta]);
@@ -89,6 +91,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
           p_valor_juros: 0,
           p_valor_desconto: 0,
           p_observacao: observacao || null,
+          p_forma_pagamento: formaPagamento || null,
         });
 
         if (error) {
@@ -133,6 +136,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
         p_valor_juros: vJuros,
         p_valor_desconto: vDesconto,
         p_observacao: observacao || null,
+        p_forma_pagamento: formaPagamento || null,
       });
 
       setSaving(false);
@@ -197,7 +201,25 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
                   </SelectItem>
                 ))}
               </SelectContent>
+          </Select>
+          </div>
+
+          <div>
+            <Label>Forma de Pagamento</Label>
+            <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                <SelectItem value="pix">PIX</SelectItem>
+                <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                <SelectItem value="boleto">Boleto</SelectItem>
+                <SelectItem value="transferencia">Transferência</SelectItem>
+              </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground mt-1">Se houver taxa configurada, será lançada automaticamente como despesa</p>
           </div>
 
           {!isBatch && (
