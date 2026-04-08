@@ -55,6 +55,7 @@ export default function FinancePage() {
   const [contasBancarias, setContasBancarias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [baixaConta, setBaixaConta] = useState<{ id: string; descricao: string; valor: number } | null>(null);
+  const [baixaLote, setBaixaLote] = useState<{ ids: string[]; descricao: string; valor: number } | null>(null);
   const [novaContaOpen, setNovaContaOpen] = useState(false);
   const [novaContaReceberOpen, setNovaContaReceberOpen] = useState(false);
   const [novaContaPagarOpen, setNovaContaPagarOpen] = useState(false);
