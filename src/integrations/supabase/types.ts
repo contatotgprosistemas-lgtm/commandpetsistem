@@ -1444,7 +1444,9 @@ export type Database = {
           discount_amount: number | null
           empresa_id: string
           end_date: string | null
+          extra_session_policy: string | null
           final_price: number
+          frequency: string
           id: string
           next_renewal_date: string | null
           notes: string | null
@@ -1468,7 +1470,9 @@ export type Database = {
           discount_amount?: number | null
           empresa_id: string
           end_date?: string | null
+          extra_session_policy?: string | null
           final_price?: number
+          frequency?: string
           id?: string
           next_renewal_date?: string | null
           notes?: string | null
@@ -1492,7 +1496,9 @@ export type Database = {
           discount_amount?: number | null
           empresa_id?: string
           end_date?: string | null
+          extra_session_policy?: string | null
           final_price?: number
+          frequency?: string
           id?: string
           next_renewal_date?: string | null
           notes?: string | null
