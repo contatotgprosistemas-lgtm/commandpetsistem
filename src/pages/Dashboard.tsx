@@ -348,9 +348,18 @@ export default function Dashboard() {
 
           <TabsContent value="na_empresa">
             {petsNaEmpresa.length > 0 && (
-              <div className="flex justify-end mt-2 mb-1">
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setMassCheckoutOpen(true)}>
-                  <LogOut className="h-3.5 w-3.5" /> Check-out em Massa ({petsNaEmpresa.length})
+              <div className="flex items-center justify-between mt-2 mb-1">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <Checkbox
+                    checked={selectedNaEmpresa.size === petsNaEmpresa.length && petsNaEmpresa.length > 0}
+                    onCheckedChange={(checked) => {
+                      setSelectedNaEmpresa(checked ? new Set(petsNaEmpresa.map(p => p.id)) : new Set());
+                    }}
+                  />
+                  Selecionar todos
+                </label>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setMassCheckoutOpen(true)} disabled={selectedNaEmpresa.size === 0}>
+                  <LogOut className="h-3.5 w-3.5" /> Check-out Selecionados ({selectedNaEmpresa.size})
                 </Button>
               </div>
             )}
@@ -362,10 +371,49 @@ export default function Dashboard() {
               onManejo={setManejoOpen}
               onChecklist={setChecklistOpen}
               onCheckout={handleCheckout}
+              selectedIds={selectedNaEmpresa}
+              onToggleSelect={(id) => {
+                setSelectedNaEmpresa(prev => {
+                  const next = new Set(prev);
+                  next.has(id) ? next.delete(id) : next.add(id);
+                  return next;
+                });
+              }}
             />
           </TabsContent>
           <TabsContent value="hoje">
-            <AgendamentoList items={reservasHoje} loading={agendaLoading} showCheckin onCheckin={handleCheckin} onEdit={setEditingAgendamento} onFalta={setFaltaOpen} />
+            {reservasHoje.length > 0 && (
+              <div className="flex items-center justify-between mt-2 mb-1">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <Checkbox
+                    checked={selectedReservas.size === reservasHoje.length && reservasHoje.length > 0}
+                    onCheckedChange={(checked) => {
+                      setSelectedReservas(checked ? new Set(reservasHoje.map(r => r.id)) : new Set());
+                    }}
+                  />
+                  Selecionar todos
+                </label>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleMassCheckin} disabled={selectedReservas.size === 0 || massCheckinLoading}>
+                  <LogIn className="h-3.5 w-3.5" /> {massCheckinLoading ? "Processando..." : `Check-in Selecionados (${selectedReservas.size})`}
+                </Button>
+              </div>
+            )}
+            <AgendamentoList
+              items={reservasHoje}
+              loading={agendaLoading}
+              showCheckin
+              onCheckin={handleCheckin}
+              onEdit={setEditingAgendamento}
+              onFalta={setFaltaOpen}
+              selectedIds={selectedReservas}
+              onToggleSelect={(id) => {
+                setSelectedReservas(prev => {
+                  const next = new Set(prev);
+                  next.has(id) ? next.delete(id) : next.add(id);
+                  return next;
+                });
+              }}
+            />
           </TabsContent>
           <TabsContent value="taxipet">
             <TaxiPetTodayList items={transportHoje} loading={agendaLoading} />
