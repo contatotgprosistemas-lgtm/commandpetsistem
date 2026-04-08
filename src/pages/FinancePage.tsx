@@ -26,6 +26,7 @@ import { ImportContasPagarDialog } from "@/components/ImportContasPagarDialog";
 import { EditarContaReceberDialog } from "@/components/EditarContaReceberDialog";
 import { DividirFaturaDialog } from "@/components/DividirFaturaDialog";
 import { SplitSquareVertical } from "lucide-react";
+import FinanceConfigPage from "@/pages/FinanceConfigPage";
 
 interface ContaReceber {
   id: string;
@@ -109,7 +110,7 @@ export default function FinancePage() {
 
       <Tabs defaultValue="contas-a-receber" className="w-full">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4 flex-wrap">
-          {["Contas a Receber", "Contas a Pagar", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas", "Contas Bancárias"].map(tab => (
+          {["Contas a Receber", "Contas a Pagar", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas", "Contas Bancárias", "Configuração"].map(tab => (
             <TabsTrigger
               key={tab}
               value={tab.toLowerCase().replace(/ /g, "-")}
