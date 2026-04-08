@@ -57,7 +57,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
         setBanco("");
         setValorPago(conta.valor.toFixed(2));
         setValorJuros("");
-        setValorDesconto("");
+        setValorDescontoRaw("");
         setObservacao(conta.descricao);
         setFormaPagamento("");
       }
@@ -86,7 +86,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
     if (isBatch) {
       // Batch: call efetuar_baixa for each invoice individually
       const vJuros = parseFloat(valorJuros) || 0;
-      const vDesconto = parseFloat(valorDesconto) || 0;
+      const vDesconto = valorDescontoCalculado;
       let hasError = false;
 
       for (const contaId of contaIds!) {
@@ -135,7 +135,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
       // Single invoice
       const vPago = parseFloat(valorPago) || 0;
       const vJuros = parseFloat(valorJuros) || 0;
-      const vDesconto = parseFloat(valorDesconto) || 0;
+      const vDesconto = valorDescontoCalculado;
       const valorLiquido = vPago + vJuros - vDesconto;
 
       if (valorLiquido > conta.valor) {
@@ -240,7 +240,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
           </div>
 
           {!isBatch && (
-            <div className="grid grid-cols-3 gap-3">
+             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label>Valor Pago</Label>
                 <Input type="number" step="0.01" value={valorPago} onChange={e => setValorPago(e.target.value)} />
@@ -251,7 +251,26 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
               </div>
               <div>
                 <Label>Valor Desconto</Label>
-                <Input type="number" step="0.01" value={valorDesconto} onChange={e => setValorDesconto(e.target.value)} />
+                <Input 
+                  type="text" 
+                  placeholder="Ex: 10 ou 5%" 
+                  value={valorDescontoRaw} 
+                  onChange={e => {
+                    const raw = e.target.value;
+                    setValorDescontoRaw(raw);
+                    // Auto-update valor pago based on discount
+                    if (conta) {
+                      const desc = computeDesconto(raw, conta.valor);
+                      const newPago = Math.max(0, conta.valor - desc);
+                      setValorPago(newPago.toFixed(2));
+                    }
+                  }} 
+                />
+                {valorDescontoCalculado > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Desconto: R$ {valorDescontoCalculado.toFixed(2)}
+                  </p>
+                )}
               </div>
             </div>
           )}
