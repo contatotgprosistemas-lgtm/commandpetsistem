@@ -11,12 +11,13 @@ import { format } from "date-fns";
 
 interface BaixaContaDialogProps {
   conta: { id: string; descricao: string; valor: number } | null;
+  contaIds?: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
 
-export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: BaixaContaDialogProps) {
+export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSuccess }: BaixaContaDialogProps) {
   const [dataBaixa, setDataBaixa] = useState(format(new Date(), "yyyy-MM-dd"));
   const [banco, setBanco] = useState("");
   const [valorPago, setValorPago] = useState("");
@@ -25,6 +26,8 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
   const [observacao, setObservacao] = useState("");
   const [saving, setSaving] = useState(false);
   const [contasBancarias, setContasBancarias] = useState<{ id: string; banco: string; titular: string }[]>([]);
+
+  const isBatch = contaIds && contaIds.length > 1;
 
   useEffect(() => {
     if (open) {
@@ -43,14 +46,6 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
   }, [open, conta]);
 
   const handleOpen = (o: boolean) => {
-    if (o && conta) {
-      setDataBaixa(format(new Date(), "yyyy-MM-dd"));
-      setBanco("");
-      setValorPago(conta.valor.toFixed(2));
-      setValorJuros("");
-      setValorDesconto("");
-      setObservacao(conta.descricao);
-    }
     onOpenChange(o);
   };
 
@@ -61,16 +56,6 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
       return;
     }
 
-    const vPago = parseFloat(valorPago) || 0;
-    const vJuros = parseFloat(valorJuros) || 0;
-    const vDesconto = parseFloat(valorDesconto) || 0;
-    const valorLiquido = vPago + vJuros - vDesconto;
-
-    if (valorLiquido > conta.valor) {
-      toast.error("Valor da baixa maior que o valor da fatura. Corrija o valor na fatura primeiro.");
-      return;
-    }
-
     const selectedBank = contasBancarias.find(cb => `${cb.banco} - ${cb.titular}` === banco);
     if (!selectedBank) {
       toast.error("Banco não encontrado");
@@ -78,46 +63,120 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
     }
 
     setSaving(true);
-    const { data, error } = await supabase.rpc("efetuar_baixa", {
-      p_conta_id: conta.id,
-      p_data_baixa: dataBaixa,
-      p_banco_id: selectedBank.id,
-      p_banco_nome: banco,
-      p_valor_pago: vPago,
-      p_valor_juros: vJuros,
-      p_valor_desconto: vDesconto,
-      p_observacao: observacao || null,
-    });
 
-    setSaving(false);
-    if (error) {
-      toast.error("Erro ao efetuar baixa: " + error.message);
-      return;
-    }
+    if (isBatch) {
+      // Batch: call efetuar_baixa for each invoice individually
+      const vJuros = parseFloat(valorJuros) || 0;
+      const vDesconto = parseFloat(valorDesconto) || 0;
+      let hasError = false;
 
-    const result = data as any;
-    if (result && !result.success) {
-      toast.error(result.error);
-      return;
-    }
+      for (const contaId of contaIds!) {
+        // Get the individual invoice value
+        const { data: invoiceData } = await supabase
+          .from("contas_receber")
+          .select("id, valor, descricao")
+          .eq("id", contaId)
+          .single();
 
-    if (result?.valor_restante > 0.01) {
-      toast.success(`Baixa parcial efetuada! Saldo restante de R$ ${Number(result.valor_restante).toFixed(2)} mantido em aberto.`);
+        if (!invoiceData) continue;
+
+        const { data, error } = await supabase.rpc("efetuar_baixa", {
+          p_conta_id: contaId,
+          p_data_baixa: dataBaixa,
+          p_banco_id: selectedBank.id,
+          p_banco_nome: banco,
+          p_valor_pago: invoiceData.valor,
+          p_valor_juros: 0,
+          p_valor_desconto: 0,
+          p_observacao: observacao || null,
+        });
+
+        if (error) {
+          toast.error(`Erro na fatura ${invoiceData.descricao}: ${error.message}`);
+          hasError = true;
+          break;
+        }
+
+        const result = data as any;
+        if (result && !result.success) {
+          toast.error(result.error);
+          hasError = true;
+          break;
+        }
+      }
+
+      setSaving(false);
+      if (!hasError) {
+        toast.success(`${contaIds!.length} faturas baixadas com sucesso!`);
+        onOpenChange(false);
+        onSuccess();
+      }
     } else {
-      toast.success("Baixa efetuada com sucesso!");
+      // Single invoice
+      const vPago = parseFloat(valorPago) || 0;
+      const vJuros = parseFloat(valorJuros) || 0;
+      const vDesconto = parseFloat(valorDesconto) || 0;
+      const valorLiquido = vPago + vJuros - vDesconto;
+
+      if (valorLiquido > conta.valor) {
+        toast.error("Valor da baixa maior que o valor da fatura. Corrija o valor na fatura primeiro.");
+        setSaving(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc("efetuar_baixa", {
+        p_conta_id: conta.id,
+        p_data_baixa: dataBaixa,
+        p_banco_id: selectedBank.id,
+        p_banco_nome: banco,
+        p_valor_pago: vPago,
+        p_valor_juros: vJuros,
+        p_valor_desconto: vDesconto,
+        p_observacao: observacao || null,
+      });
+
+      setSaving(false);
+      if (error) {
+        toast.error("Erro ao efetuar baixa: " + error.message);
+        return;
+      }
+
+      const result = data as any;
+      if (result && !result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      if (result?.valor_restante > 0.01) {
+        toast.success(`Baixa parcial efetuada! Saldo restante de R$ ${Number(result.valor_restante).toFixed(2)} mantido em aberto.`);
+      } else {
+        toast.success("Baixa efetuada com sucesso!");
+      }
+      onOpenChange(false);
+      onSuccess();
     }
-    onOpenChange(false);
-    onSuccess();
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Dados da Baixa</DialogTitle>
+          <DialogTitle>
+            {isBatch ? `Baixa em Lote (${contaIds!.length} faturas)` : "Dados da Baixa"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
+          {isBatch && (
+            <div className="bg-muted/50 rounded-lg p-3 text-sm">
+              <p className="font-medium">Total das faturas selecionadas:</p>
+              <p className="text-lg font-bold text-foreground">
+                R$ {Number(conta?.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">{contaIds!.length} faturas serão baixadas individualmente com seus respectivos valores</p>
+            </div>
+          )}
+
           <div>
             <Label>Data de Baixa</Label>
             <Input type="date" value={dataBaixa} onChange={e => setDataBaixa(e.target.value)} />
@@ -141,47 +200,30 @@ export function BaixaContaDialog({ conta, open, onOpenChange, onSuccess }: Baixa
             </Select>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <Label>Valor Pago</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={valorPago}
-                onChange={e => setValorPago(e.target.value)}
-              />
+          {!isBatch && (
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label>Valor Pago</Label>
+                <Input type="number" step="0.01" value={valorPago} onChange={e => setValorPago(e.target.value)} />
+              </div>
+              <div>
+                <Label>Valor Juros</Label>
+                <Input type="number" step="0.01" value={valorJuros} onChange={e => setValorJuros(e.target.value)} />
+              </div>
+              <div>
+                <Label>Valor Desconto</Label>
+                <Input type="number" step="0.01" value={valorDesconto} onChange={e => setValorDesconto(e.target.value)} />
+              </div>
             </div>
-            <div>
-              <Label>Valor Juros</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={valorJuros}
-                onChange={e => setValorJuros(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Valor Desconto</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={valorDesconto}
-                onChange={e => setValorDesconto(e.target.value)}
-              />
-            </div>
-          </div>
+          )}
 
           <div>
             <Label>Observação da baixa</Label>
-            <Textarea
-              value={observacao}
-              onChange={e => setObservacao(e.target.value)}
-              rows={2}
-            />
+            <Textarea value={observacao} onChange={e => setObservacao(e.target.value)} rows={2} />
           </div>
 
           <Button onClick={handleSubmit} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            {saving ? "Processando..." : "Efetuar Baixa"}
+            {saving ? "Processando..." : isBatch ? `Baixar ${contaIds!.length} Faturas` : "Efetuar Baixa"}
           </Button>
         </div>
       </DialogContent>
