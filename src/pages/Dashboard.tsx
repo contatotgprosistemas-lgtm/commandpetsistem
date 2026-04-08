@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { format, isToday, isAfter, startOfDay, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
