@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Heart, MessageCircle, PawPrint, Play, Image as ImageIcon } from "lucide-react";
+import { PawPrint, Image as ImageIcon, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalCliente } from "@/hooks/usePortalCliente";
@@ -123,9 +125,37 @@ export default function PortalFeedPage() {
                 {post.pet?.raca ?? post.pet?.especie}
               </p>
             </div>
-            <span className="ml-auto text-xs text-muted-foreground">
-              {format(new Date(post.created_at), "dd MMM yyyy", { locale: ptBR })}
-            </span>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {format(new Date(post.created_at), "dd MMM yyyy", { locale: ptBR })}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const response = await fetch(post.media_url);
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    const ext = post.media_type === "video" ? "mp4" : "jpg";
+                    a.download = `${post.pet?.nome || "pet"}_${format(new Date(post.created_at), "yyyyMMdd")}.${ext}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    toast.success("Download iniciado!");
+                  } catch {
+                    toast.error("Erro ao baixar arquivo");
+                  }
+                }}
+              >
+                <Download className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </div>
           </div>
 
           {/* Media */}
