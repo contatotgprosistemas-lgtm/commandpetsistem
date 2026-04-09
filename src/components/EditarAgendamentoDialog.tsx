@@ -128,7 +128,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         }
       }
 
-      const { error } = await supabase.from("agendamentos").update(updatePayload).eq("id", agendamento.id);
+      const { error } = await supabase.from("agendamentos").update(updatePayload as any).eq("id", agendamento.id);
 
       if (error) throw error;
       toast({ title: "Agendamento atualizado!" });
