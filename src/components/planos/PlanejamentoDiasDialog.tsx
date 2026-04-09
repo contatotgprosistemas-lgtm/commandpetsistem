@@ -107,8 +107,63 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
     );
   }
 
+  // Availability check
+  const relevantDates = useMemo(() => {
+    if (!showHorarioBanho || selectedDays.length === 0 || !subscription?.start_date || !subscription?.end_date) return [];
+    const startDate = startOfDay(new Date(subscription.start_date + "T00:00:00"));
+    const endDate = startOfDay(new Date(subscription.end_date + "T00:00:00"));
+    const today = startOfDay(new Date());
+    const dates: string[] = [];
+    let current = isBefore(startDate, today) ? today : startDate;
+    while (!isBefore(endDate, current)) {
+      if (selectedDays.includes(getDay(current))) {
+        dates.push(format(current, "yyyy-MM-dd"));
+      }
+      current = addDays(current, 1);
+    }
+    return dates;
+  }, [showHorarioBanho, selectedDays, subscription?.start_date, subscription?.end_date]);
+
+  useEffect(() => {
+    if (showHorarioBanho && selectedDays.length > 0 && subscription?.start_date && subscription?.end_date && empresaId) {
+      const startDate = startOfDay(new Date(subscription.start_date + "T00:00:00"));
+      const endDate = startOfDay(new Date(subscription.end_date + "T00:00:00"));
+      checkPlannedDaysAvailability(startDate, endDate, selectedDays, subscription.id);
+    }
+  }, [showHorarioBanho, selectedDays, subscription?.start_date, subscription?.end_date, empresaId]);
+
+  const banhoConflicts = useMemo(() => {
+    if (!showHorarioBanho || relevantDates.length === 0) return [];
+    return getConflictingDates(horaBanho, relevantDates);
+  }, [horaBanho, availabilityMap, relevantDates, showHorarioBanho]);
+
+  const banhoSuggestions = useMemo(() => {
+    if (banhoConflicts.length === 0) return [];
+    const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+    const preferred = toMin(horaBanho);
+    const allSlots = Object.keys(availabilityMap).length > 0
+      ? (availabilityMap[Object.keys(availabilityMap)[0]] || []).map(s => s.time)
+      : [];
+    const sorted = [...allSlots].sort((a, b) =>
+      Math.abs(toMin(a) - preferred) - Math.abs(toMin(b) - preferred)
+    );
+    const suggestions: string[] = [];
+    for (const t of sorted) {
+      if (t === horaBanho) continue;
+      if (isTimeAvailableOnAllDates(t, relevantDates)) {
+        suggestions.push(t);
+        if (suggestions.length >= 3) break;
+      }
+    }
+    return suggestions;
+  }, [banhoConflicts, horaBanho, availabilityMap, relevantDates]);
+
   async function handleSave() {
     if (!subscription) return;
+    if (showHorarioBanho && banhoConflicts.length > 0) {
+      toast.error("O horário selecionado possui conflito. Escolha outro horário disponível.");
+      return;
+    }
     setSaving(true);
 
     const { error } = await supabase
