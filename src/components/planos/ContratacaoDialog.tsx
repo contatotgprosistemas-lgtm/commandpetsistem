@@ -609,9 +609,16 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
           {showHorarioBanho && plannedDays.length > 0 && (
             <div className="space-y-1.5">
-              <Label>Horário agendado para o banho</Label>
-              <Input type="time" value={horaBanho} onChange={e => setHoraBanho(e.target.value)} />
-              <p className="text-xs text-muted-foreground">Horário será aplicado a todos os dias selecionados</p>
+              <Label>Horário agendado para o banho (slots de 30 min)</Label>
+              <BanhoTimeSlotPicker
+                value={horaBanho}
+                onChange={setHoraBanho}
+                availabilityMap={availabilityMap}
+                relevantDates={relevantDates}
+                loading={availLoading}
+                conflictingDates={banhoConflicts}
+                suggestions={banhoSuggestions}
+              />
             </div>
           )}
 
