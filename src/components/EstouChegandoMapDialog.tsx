@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
-import { lazy, Suspense } from "react";
+
 const ArrivalTrackingMap = lazy(() => import("@/components/estou-chegando/ArrivalTrackingMap").then(m => ({ default: m.ArrivalTrackingMap })));
 
 interface TrackingEntry {
