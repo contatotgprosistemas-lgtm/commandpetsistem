@@ -248,6 +248,10 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     if (!clienteId || !selectedId) { toast.error("Selecione cliente e plano/pacote"); return; }
     if (selectedPetIds.length === 0) { toast.error("Selecione ao menos um pet"); return; }
     if (isQuinzenal && plannedDays.length !== 1) { toast.error("Selecione exatamente 1 dia da semana para quinzenal"); return; }
+    if (showHorarioBanho && banhoConflicts.length > 0) {
+      toast.error("O horário selecionado possui conflito. Escolha outro horário disponível.");
+      return;
+    }
     setSaving(true);
 
     const nextMonthStart = format(startOfMonth(addMonths(startDateObj, 1)), "yyyy-MM-dd");
