@@ -1,11 +1,12 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import { MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrivalTrackingMap } from "@/components/estou-chegando/ArrivalTrackingMap";
+
+const ArrivalTrackingMap = lazy(() => import("@/components/estou-chegando/ArrivalTrackingMap").then(m => ({ default: m.ArrivalTrackingMap })));
 
 interface TrackingEntry {
   id: string;
@@ -120,7 +121,9 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
             </div>
           ) : (
             <div className="space-y-2">
-                <ArrivalTrackingMap active={open} entries={entries} />
+                <Suspense fallback={<div className="h-[400px] flex items-center justify-center bg-muted rounded-xl"><span className="text-sm text-muted-foreground">Carregando mapa…</span></div>}>
+                  <ArrivalTrackingMap active={open} entries={entries} />
+                </Suspense>
 
               {/* List view */}
               <div className="space-y-1.5 mt-3">
