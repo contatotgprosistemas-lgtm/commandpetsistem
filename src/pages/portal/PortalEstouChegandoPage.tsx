@@ -176,7 +176,7 @@ export default function PortalEstouChegandoPage() {
           await supabase
             .from("agendamentos")
             .update({
-              status: "finalizado",
+              status: "concluido",
               data_saida: now.toISOString(),
               hora_saida: now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
             })
