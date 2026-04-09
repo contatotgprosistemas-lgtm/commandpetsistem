@@ -96,10 +96,11 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
     if (!agendamento?.id) return;
     setLoading(true);
     try {
+      const now = new Date();
       const dataHora = new Date(data.data_reserva + "T" + data.hora_reserva + ":00");
       const buildTs = (d: string, h: string) => d ? new Date(d + "T" + (h || "00:00") + ":00").toISOString() : null;
 
-      const { error } = await supabase.from("agendamentos").update({
+      const updatePayload: Record<string, any> = {
         tipo_servico: data.tipo_servico,
         data_hora: dataHora.toISOString(),
         data_saida_provavel: buildTs(data.data_saida_provavel || "", data.hora_saida_provavel || ""),
@@ -109,7 +110,25 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         forma_pagamento: data.forma_pagamento || null,
         status: data.status,
         notas: data.notas || null,
-      }).eq("id", agendamento.id);
+      };
+
+      // Auto-register check-in timestamp when status changes to "na_empresa"
+      if (data.status === "na_empresa" && agendamento.status !== "na_empresa") {
+        if (!agendamento.data_entrada) {
+          updatePayload.data_entrada = now.toISOString();
+          updatePayload.hora_entrada = format(now, "HH:mm");
+        }
+      }
+
+      // Auto-register check-out timestamp when status changes to "concluido"
+      if (data.status === "concluido" && agendamento.status !== "concluido") {
+        if (!agendamento.data_saida) {
+          updatePayload.data_saida = now.toISOString();
+          updatePayload.hora_saida = format(now, "HH:mm");
+        }
+      }
+
+      const { error } = await supabase.from("agendamentos").update(updatePayload as any).eq("id", agendamento.id);
 
       if (error) throw error;
       toast({ title: "Agendamento atualizado!" });
