@@ -197,6 +197,51 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setExtraSessionPolicy("skip");
   }, [planType, selectedId]);
 
+  // Check availability when planned days, date, or banho visibility changes
+  const relevantDates = useMemo(() => {
+    if (!showHorarioBanho || plannedDays.length === 0) return [];
+    const dates: string[] = [];
+    const today = startOfDay(new Date());
+    let current = isBefore(startDateObj, today) ? today : startDateObj;
+    while (!isBefore(endOfMonth, current)) {
+      if (plannedDays.includes(getDay(current))) {
+        dates.push(format(current, "yyyy-MM-dd"));
+      }
+      current = addDays(current, 1);
+    }
+    return dates;
+  }, [showHorarioBanho, plannedDays, startDate]);
+
+  useEffect(() => {
+    if (showHorarioBanho && plannedDays.length > 0 && empresaId) {
+      checkPlannedDaysAvailability(startDateObj, endOfMonth, plannedDays);
+    }
+  }, [showHorarioBanho, plannedDays, startDate, empresaId]);
+
+  const banhoConflicts = useMemo(() => {
+    if (!showHorarioBanho || relevantDates.length === 0) return [];
+    return getConflictingDates(horaBanho, relevantDates);
+  }, [horaBanho, availabilityMap, relevantDates, showHorarioBanho]);
+
+  const banhoSuggestions = useMemo(() => {
+    if (banhoConflicts.length === 0) return [];
+    // Find up to 3 times that are available on ALL dates
+    const suggestions: string[] = [];
+    const { BANHO_TIME_SLOTS } = require("@/hooks/useBanhoAvailability");
+    const preferred = timeToMin(horaBanho);
+    const sorted = [...BANHO_TIME_SLOTS].sort((a: string, b: string) =>
+      Math.abs(timeToMin(a) - preferred) - Math.abs(timeToMin(b) - preferred)
+    );
+    for (const t of sorted) {
+      if (t === horaBanho) continue;
+      if (isTimeAvailableOnAllDates(t, relevantDates)) {
+        suggestions.push(t);
+        if (suggestions.length >= 3) break;
+      }
+    }
+    return suggestions;
+  }, [banhoConflicts, horaBanho, availabilityMap, relevantDates]);
+
   async function handleSave() {
     if (!clienteId || !selectedId) { toast.error("Selecione cliente e plano/pacote"); return; }
     if (selectedPetIds.length === 0) { toast.error("Selecione ao menos um pet"); return; }
