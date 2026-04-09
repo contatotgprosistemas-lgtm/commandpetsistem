@@ -228,31 +228,45 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     }
   }, [showHorarioBanho, plannedDays, startDate, empresaId]);
 
-  const banhoConflicts = useMemo(() => {
-    if (!showHorarioBanho || relevantDates.length === 0) return [];
-    return getConflictingDates(horaBanho, relevantDates);
-  }, [horaBanho, availabilityMap, relevantDates, showHorarioBanho]);
-
-  const banhoSuggestions = useMemo(() => {
-    if (banhoConflicts.length === 0) return [];
-    const suggestions: string[] = [];
-    const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
-    const preferred = toMin(horaBanho);
-    const allSlots = Object.keys(availabilityMap).length > 0
-      ? (availabilityMap[Object.keys(availabilityMap)[0]] || []).map(s => s.time)
-      : [];
-    const sorted = [...allSlots].sort((a, b) =>
-      Math.abs(toMin(a) - preferred) - Math.abs(toMin(b) - preferred)
-    );
-    for (const t of sorted) {
-      if (t === horaBanho) continue;
-      if (isTimeAvailableOnAllDates(t, relevantDates)) {
-        suggestions.push(t);
-        if (suggestions.length >= 3) break;
-      }
+  // Per-pet conflict checking
+  const banhoConflictsPerPet = useMemo(() => {
+    if (!showHorarioBanho || relevantDates.length === 0) return {} as Record<string, string[]>;
+    const result: Record<string, string[]> = {};
+    const petIds = selectedPetIds.length > 1 ? selectedPetIds : ["_default"];
+    for (const pid of petIds) {
+      const time = getHoraBanho(pid === "_default" ? undefined : pid);
+      result[pid] = getConflictingDates(time, relevantDates);
     }
-    return suggestions;
-  }, [banhoConflicts, horaBanho, availabilityMap, relevantDates]);
+    return result;
+  }, [horaBanhoPorPet, availabilityMap, relevantDates, showHorarioBanho, selectedPetIds]);
+
+  const banhoSuggestionsPerPet = useMemo(() => {
+    const result: Record<string, string[]> = {};
+    const petIds = selectedPetIds.length > 1 ? selectedPetIds : ["_default"];
+    for (const pid of petIds) {
+      const conflicts = banhoConflictsPerPet[pid] || [];
+      if (conflicts.length === 0) { result[pid] = []; continue; }
+      const time = getHoraBanho(pid === "_default" ? undefined : pid);
+      const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+      const preferred = toMin(time);
+      const allSlots = Object.keys(availabilityMap).length > 0
+        ? (availabilityMap[Object.keys(availabilityMap)[0]] || []).map(s => s.time)
+        : [];
+      const sorted = [...allSlots].sort((a, b) =>
+        Math.abs(toMin(a) - preferred) - Math.abs(toMin(b) - preferred)
+      );
+      const suggestions: string[] = [];
+      for (const t of sorted) {
+        if (t === time) continue;
+        if (isTimeAvailableOnAllDates(t, relevantDates)) {
+          suggestions.push(t);
+          if (suggestions.length >= 3) break;
+        }
+      }
+      result[pid] = suggestions;
+    }
+    return result;
+  }, [banhoConflictsPerPet, horaBanhoPorPet, availabilityMap, relevantDates]);
 
   async function handleSave() {
     if (!clienteId || !selectedId) { toast.error("Selecione cliente e plano/pacote"); return; }
