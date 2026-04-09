@@ -13,6 +13,8 @@ import { addDays, format, getDay, isBefore, startOfDay, lastDayOfMonth, startOfM
 import { Check, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useBanhoAvailability } from "@/hooks/useBanhoAvailability";
+import { BanhoTimeSlotPicker } from "./BanhoTimeSlotPicker";
 
 interface Props {
   open: boolean;
