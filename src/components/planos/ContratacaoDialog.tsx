@@ -105,7 +105,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [plannedDays, setPlannedDays] = useState<number[]>([]);
   const [horaBuscar, setHoraBuscar] = useState("08:00");
   const [horaLevar, setHoraLevar] = useState("17:00");
-  const [horaBanho, setHoraBanho] = useState("09:00");
+  const [horaBanhoPorPet, setHoraBanhoPorPet] = useState<Record<string, string>>({});
   const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
   const [extraSessionPolicy, setExtraSessionPolicy] = useState<"skip" | "charge">("skip");
 
