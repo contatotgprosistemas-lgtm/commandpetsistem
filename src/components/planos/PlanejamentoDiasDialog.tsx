@@ -47,6 +47,15 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
   const [showHorarios, setShowHorarios] = useState(false);
   const [showHorarioBanho, setShowHorarioBanho] = useState(false);
 
+  const empresaId = subscription?.empresa_id || "";
+  const {
+    loading: availLoading,
+    availabilityMap,
+    checkPlannedDaysAvailability,
+    getConflictingDates,
+    isTimeAvailableOnAllDates,
+  } = useBanhoAvailability(empresaId);
+
   useEffect(() => {
     if (open && subscription) {
       setSelectedDays(subscription.planned_days || []);
