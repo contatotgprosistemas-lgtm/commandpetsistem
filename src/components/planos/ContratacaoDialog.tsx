@@ -225,12 +225,14 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
   const banhoSuggestions = useMemo(() => {
     if (banhoConflicts.length === 0) return [];
-    // Find up to 3 times that are available on ALL dates
     const suggestions: string[] = [];
-    const { BANHO_TIME_SLOTS } = require("@/hooks/useBanhoAvailability");
-    const preferred = timeToMin(horaBanho);
-    const sorted = [...BANHO_TIME_SLOTS].sort((a: string, b: string) =>
-      Math.abs(timeToMin(a) - preferred) - Math.abs(timeToMin(b) - preferred)
+    const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+    const preferred = toMin(horaBanho);
+    const allSlots = Object.keys(availabilityMap).length > 0
+      ? (availabilityMap[Object.keys(availabilityMap)[0]] || []).map(s => s.time)
+      : [];
+    const sorted = [...allSlots].sort((a, b) =>
+      Math.abs(toMin(a) - preferred) - Math.abs(toMin(b) - preferred)
     );
     for (const t of sorted) {
       if (t === horaBanho) continue;
