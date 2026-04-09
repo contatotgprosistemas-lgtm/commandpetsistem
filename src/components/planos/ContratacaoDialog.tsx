@@ -106,6 +106,16 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [horaBuscar, setHoraBuscar] = useState("08:00");
   const [horaLevar, setHoraLevar] = useState("17:00");
   const [horaBanhoPorPet, setHoraBanhoPorPet] = useState<Record<string, string>>({});
+  const getHoraBanho = (petId?: string) => {
+    if (selectedPetIds.length <= 1) return horaBanhoPorPet["_default"] || "09:00";
+    return petId ? (horaBanhoPorPet[petId] || "09:00") : "09:00";
+  };
+  const setHoraBanhoForPet = (petId: string, time: string) => {
+    setHoraBanhoPorPet(prev => ({ ...prev, [petId]: time }));
+  };
+  const setHoraBanhoDefault = (time: string) => {
+    setHoraBanhoPorPet(prev => ({ ...prev, _default: time }));
+  };
   const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
   const [extraSessionPolicy, setExtraSessionPolicy] = useState<"skip" | "charge">("skip");
 
