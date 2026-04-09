@@ -121,7 +121,9 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
             </div>
           ) : (
             <div className="space-y-2">
-                <ArrivalTrackingMap active={open} entries={entries} />
+                <Suspense fallback={<div className="h-[400px] flex items-center justify-center bg-muted rounded-xl"><span className="text-sm text-muted-foreground">Carregando mapa…</span></div>}>
+                  <ArrivalTrackingMap active={open} entries={entries} />
+                </Suspense>
 
               {/* List view */}
               <div className="space-y-1.5 mt-3">
