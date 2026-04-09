@@ -105,7 +105,17 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [plannedDays, setPlannedDays] = useState<number[]>([]);
   const [horaBuscar, setHoraBuscar] = useState("08:00");
   const [horaLevar, setHoraLevar] = useState("17:00");
-  const [horaBanho, setHoraBanho] = useState("09:00");
+  const [horaBanhoPorPet, setHoraBanhoPorPet] = useState<Record<string, string>>({});
+  const getHoraBanho = (petId?: string) => {
+    if (selectedPetIds.length <= 1) return horaBanhoPorPet["_default"] || "09:00";
+    return petId ? (horaBanhoPorPet[petId] || "09:00") : "09:00";
+  };
+  const setHoraBanhoForPet = (petId: string, time: string) => {
+    setHoraBanhoPorPet(prev => ({ ...prev, [petId]: time }));
+  };
+  const setHoraBanhoDefault = (time: string) => {
+    setHoraBanhoPorPet(prev => ({ ...prev, _default: time }));
+  };
   const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
   const [extraSessionPolicy, setExtraSessionPolicy] = useState<"skip" | "charge">("skip");
 
@@ -218,39 +228,56 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     }
   }, [showHorarioBanho, plannedDays, startDate, empresaId]);
 
-  const banhoConflicts = useMemo(() => {
-    if (!showHorarioBanho || relevantDates.length === 0) return [];
-    return getConflictingDates(horaBanho, relevantDates);
-  }, [horaBanho, availabilityMap, relevantDates, showHorarioBanho]);
-
-  const banhoSuggestions = useMemo(() => {
-    if (banhoConflicts.length === 0) return [];
-    const suggestions: string[] = [];
-    const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
-    const preferred = toMin(horaBanho);
-    const allSlots = Object.keys(availabilityMap).length > 0
-      ? (availabilityMap[Object.keys(availabilityMap)[0]] || []).map(s => s.time)
-      : [];
-    const sorted = [...allSlots].sort((a, b) =>
-      Math.abs(toMin(a) - preferred) - Math.abs(toMin(b) - preferred)
-    );
-    for (const t of sorted) {
-      if (t === horaBanho) continue;
-      if (isTimeAvailableOnAllDates(t, relevantDates)) {
-        suggestions.push(t);
-        if (suggestions.length >= 3) break;
-      }
+  // Per-pet conflict checking
+  const banhoConflictsPerPet = useMemo(() => {
+    if (!showHorarioBanho || relevantDates.length === 0) return {} as Record<string, string[]>;
+    const result: Record<string, string[]> = {};
+    const petIds = selectedPetIds.length > 1 ? selectedPetIds : ["_default"];
+    for (const pid of petIds) {
+      const time = getHoraBanho(pid === "_default" ? undefined : pid);
+      result[pid] = getConflictingDates(time, relevantDates);
     }
-    return suggestions;
-  }, [banhoConflicts, horaBanho, availabilityMap, relevantDates]);
+    return result;
+  }, [horaBanhoPorPet, availabilityMap, relevantDates, showHorarioBanho, selectedPetIds]);
+
+  const banhoSuggestionsPerPet = useMemo(() => {
+    const result: Record<string, string[]> = {};
+    const petIds = selectedPetIds.length > 1 ? selectedPetIds : ["_default"];
+    for (const pid of petIds) {
+      const conflicts = banhoConflictsPerPet[pid] || [];
+      if (conflicts.length === 0) { result[pid] = []; continue; }
+      const time = getHoraBanho(pid === "_default" ? undefined : pid);
+      const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+      const preferred = toMin(time);
+      const allSlots = Object.keys(availabilityMap).length > 0
+        ? (availabilityMap[Object.keys(availabilityMap)[0]] || []).map(s => s.time)
+        : [];
+      const sorted = [...allSlots].sort((a, b) =>
+        Math.abs(toMin(a) - preferred) - Math.abs(toMin(b) - preferred)
+      );
+      const suggestions: string[] = [];
+      for (const t of sorted) {
+        if (t === time) continue;
+        if (isTimeAvailableOnAllDates(t, relevantDates)) {
+          suggestions.push(t);
+          if (suggestions.length >= 3) break;
+        }
+      }
+      result[pid] = suggestions;
+    }
+    return result;
+  }, [banhoConflictsPerPet, horaBanhoPorPet, availabilityMap, relevantDates]);
 
   async function handleSave() {
     if (!clienteId || !selectedId) { toast.error("Selecione cliente e plano/pacote"); return; }
     if (selectedPetIds.length === 0) { toast.error("Selecione ao menos um pet"); return; }
     if (isQuinzenal && plannedDays.length !== 1) { toast.error("Selecione exatamente 1 dia da semana para quinzenal"); return; }
-    if (showHorarioBanho && banhoConflicts.length > 0) {
-      toast.error("O horário selecionado possui conflito. Escolha outro horário disponível.");
-      return;
+    if (showHorarioBanho) {
+      const hasAnyConflict = Object.values(banhoConflictsPerPet).some(c => c.length > 0);
+      if (hasAnyConflict) {
+        toast.error("Um ou mais horários selecionados possuem conflito. Escolha horários disponíveis.");
+        return;
+      }
     }
     setSaving(true);
 
@@ -326,7 +353,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             cliente_id: clienteId,
             pet_id: petId,
             tipo_servico: tipoServico,
-            data_hora: format(date, "yyyy-MM-dd") + "T" + horaBanho + ":00-03:00",
+            data_hora: format(date, "yyyy-MM-dd") + "T" + getHoraBanho(petId) + ":00-03:00",
             status: "agendado",
             subscription_id: subscriptionId,
             notas: "Gerado automaticamente pelo pacote (quinzenal)",
@@ -359,7 +386,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               cliente_id: clienteId,
               pet_id: petId,
               tipo_servico: tipoServico,
-              data_hora: format(current, "yyyy-MM-dd") + "T" + (showHorarioBanho ? horaBanho + ":00" : "07:00:00") + "-03:00",
+              data_hora: format(current, "yyyy-MM-dd") + "T" + (showHorarioBanho ? getHoraBanho(petId) + ":00" : "07:00:00") + "-03:00",
               status: "agendado",
               subscription_id: subscriptionId,
               notas: "Gerado automaticamente pelo plano",
@@ -399,7 +426,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setPlannedDays([]);
     setHoraBuscar("08:00");
     setHoraLevar("17:00");
-    setHoraBanho("09:00");
+    setHoraBanhoPorPet({});
     setFrequency("semanal");
     setExtraSessionPolicy("skip");
     setSaving(false); onSuccess(); onOpenChange(false);
@@ -611,18 +638,41 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </div>
           )}
 
-          {showHorarioBanho && plannedDays.length > 0 && (
+          {showHorarioBanho && plannedDays.length > 0 && selectedPetIds.length <= 1 && (
             <div className="space-y-1.5">
               <Label>Horário agendado para o banho (slots de 30 min)</Label>
               <BanhoTimeSlotPicker
-                value={horaBanho}
-                onChange={setHoraBanho}
+                value={getHoraBanho()}
+                onChange={setHoraBanhoDefault}
                 availabilityMap={availabilityMap}
                 relevantDates={relevantDates}
                 loading={availLoading}
-                conflictingDates={banhoConflicts}
-                suggestions={banhoSuggestions}
+                conflictingDates={banhoConflictsPerPet["_default"] || []}
+                suggestions={banhoSuggestionsPerPet["_default"] || []}
               />
+            </div>
+          )}
+
+          {showHorarioBanho && plannedDays.length > 0 && selectedPetIds.length > 1 && (
+            <div className="space-y-3">
+              <Label>Horário agendado para o banho por pet (slots de 30 min)</Label>
+              {selectedPetIds.map(petId => {
+                const petNome = pets.find(p => p.id === petId)?.nome || petId;
+                return (
+                  <div key={petId} className="space-y-1.5 rounded-md border border-border p-3">
+                    <p className="text-sm font-medium text-foreground">{petNome}</p>
+                    <BanhoTimeSlotPicker
+                      value={getHoraBanho(petId)}
+                      onChange={(time) => setHoraBanhoForPet(petId, time)}
+                      availabilityMap={availabilityMap}
+                      relevantDates={relevantDates}
+                      loading={availLoading}
+                      conflictingDates={banhoConflictsPerPet[petId] || []}
+                      suggestions={banhoSuggestionsPerPet[petId] || []}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
 
