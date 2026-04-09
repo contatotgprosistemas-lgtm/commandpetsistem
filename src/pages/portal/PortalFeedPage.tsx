@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Heart, MessageCircle, PawPrint, Play, Image as ImageIcon } from "lucide-react";
+import { PawPrint, Image as ImageIcon, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortalCliente } from "@/hooks/usePortalCliente";
