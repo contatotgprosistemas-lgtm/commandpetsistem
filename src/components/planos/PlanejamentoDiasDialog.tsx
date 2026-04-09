@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addDays, format, getDay, isBefore, startOfDay } from "date-fns";
+import { useBanhoAvailability } from "@/hooks/useBanhoAvailability";
+import { BanhoTimeSlotPicker } from "./BanhoTimeSlotPicker";
 
 const DIAS_SEMANA = [
   { value: 1, label: "Segunda" },
