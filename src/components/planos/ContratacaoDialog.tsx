@@ -109,6 +109,15 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
   const [extraSessionPolicy, setExtraSessionPolicy] = useState<"skip" | "charge">("skip");
 
+  const {
+    loading: availLoading,
+    availabilityMap,
+    checkPlannedDaysAvailability,
+    getConflictingDates,
+    findBestAvailableTime,
+    isTimeAvailableOnAllDates,
+  } = useBanhoAvailability(empresaId);
+
   useEffect(() => {
     if (!open) return;
     supabase.from("clientes").select("id, nome, dia_vencimento_fatura").is("deleted_at", null).order("nome").then(({ data }) => data && setClientes(data));
