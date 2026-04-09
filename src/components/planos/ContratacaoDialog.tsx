@@ -353,7 +353,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             cliente_id: clienteId,
             pet_id: petId,
             tipo_servico: tipoServico,
-            data_hora: format(date, "yyyy-MM-dd") + "T" + horaBanho + ":00-03:00",
+            data_hora: format(date, "yyyy-MM-dd") + "T" + getHoraBanho(petId) + ":00-03:00",
             status: "agendado",
             subscription_id: subscriptionId,
             notas: "Gerado automaticamente pelo pacote (quinzenal)",
@@ -386,7 +386,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               cliente_id: clienteId,
               pet_id: petId,
               tipo_servico: tipoServico,
-              data_hora: format(current, "yyyy-MM-dd") + "T" + (showHorarioBanho ? horaBanho + ":00" : "07:00:00") + "-03:00",
+              data_hora: format(current, "yyyy-MM-dd") + "T" + (showHorarioBanho ? getHoraBanho(petId) + ":00" : "07:00:00") + "-03:00",
               status: "agendado",
               subscription_id: subscriptionId,
               notas: "Gerado automaticamente pelo plano",
@@ -426,7 +426,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setPlannedDays([]);
     setHoraBuscar("08:00");
     setHoraLevar("17:00");
-    setHoraBanho("09:00");
+    setHoraBanhoPorPet({});
     setFrequency("semanal");
     setExtraSessionPolicy("skip");
     setSaving(false); onSuccess(); onOpenChange(false);
@@ -638,18 +638,41 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </div>
           )}
 
-          {showHorarioBanho && plannedDays.length > 0 && (
+          {showHorarioBanho && plannedDays.length > 0 && selectedPetIds.length <= 1 && (
             <div className="space-y-1.5">
               <Label>Horário agendado para o banho (slots de 30 min)</Label>
               <BanhoTimeSlotPicker
-                value={horaBanho}
-                onChange={setHoraBanho}
+                value={getHoraBanho()}
+                onChange={setHoraBanhoDefault}
                 availabilityMap={availabilityMap}
                 relevantDates={relevantDates}
                 loading={availLoading}
-                conflictingDates={banhoConflicts}
-                suggestions={banhoSuggestions}
+                conflictingDates={banhoConflictsPerPet["_default"] || []}
+                suggestions={banhoSuggestionsPerPet["_default"] || []}
               />
+            </div>
+          )}
+
+          {showHorarioBanho && plannedDays.length > 0 && selectedPetIds.length > 1 && (
+            <div className="space-y-3">
+              <Label>Horário agendado para o banho por pet (slots de 30 min)</Label>
+              {selectedPetIds.map(petId => {
+                const petNome = pets.find(p => p.id === petId)?.nome || petId;
+                return (
+                  <div key={petId} className="space-y-1.5 rounded-md border border-border p-3">
+                    <p className="text-sm font-medium text-foreground">{petNome}</p>
+                    <BanhoTimeSlotPicker
+                      value={getHoraBanho(petId)}
+                      onChange={(time) => setHoraBanhoForPet(petId, time)}
+                      availabilityMap={availabilityMap}
+                      relevantDates={relevantDates}
+                      loading={availLoading}
+                      conflictingDates={banhoConflictsPerPet[petId] || []}
+                      suggestions={banhoSuggestionsPerPet[petId] || []}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
 
