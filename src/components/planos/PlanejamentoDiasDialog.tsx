@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addDays, format, getDay, isBefore, startOfDay } from "date-fns";
+import { useBanhoAvailability } from "@/hooks/useBanhoAvailability";
+import { BanhoTimeSlotPicker } from "./BanhoTimeSlotPicker";
 
 const DIAS_SEMANA = [
   { value: 1, label: "Segunda" },
@@ -44,6 +46,15 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
   const [horaBanho, setHoraBanho] = useState("10:00");
   const [showHorarios, setShowHorarios] = useState(false);
   const [showHorarioBanho, setShowHorarioBanho] = useState(false);
+
+  const empresaId = subscription?.empresa_id || "";
+  const {
+    loading: availLoading,
+    availabilityMap,
+    checkPlannedDaysAvailability,
+    getConflictingDates,
+    isTimeAvailableOnAllDates,
+  } = useBanhoAvailability(empresaId);
 
   useEffect(() => {
     if (open && subscription) {
@@ -96,8 +107,63 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
     );
   }
 
+  // Availability check
+  const relevantDates = useMemo(() => {
+    if (!showHorarioBanho || selectedDays.length === 0 || !subscription?.start_date || !subscription?.end_date) return [];
+    const startDate = startOfDay(new Date(subscription.start_date + "T00:00:00"));
+    const endDate = startOfDay(new Date(subscription.end_date + "T00:00:00"));
+    const today = startOfDay(new Date());
+    const dates: string[] = [];
+    let current = isBefore(startDate, today) ? today : startDate;
+    while (!isBefore(endDate, current)) {
+      if (selectedDays.includes(getDay(current))) {
+        dates.push(format(current, "yyyy-MM-dd"));
+      }
+      current = addDays(current, 1);
+    }
+    return dates;
+  }, [showHorarioBanho, selectedDays, subscription?.start_date, subscription?.end_date]);
+
+  useEffect(() => {
+    if (showHorarioBanho && selectedDays.length > 0 && subscription?.start_date && subscription?.end_date && empresaId) {
+      const startDate = startOfDay(new Date(subscription.start_date + "T00:00:00"));
+      const endDate = startOfDay(new Date(subscription.end_date + "T00:00:00"));
+      checkPlannedDaysAvailability(startDate, endDate, selectedDays, subscription.id);
+    }
+  }, [showHorarioBanho, selectedDays, subscription?.start_date, subscription?.end_date, empresaId]);
+
+  const banhoConflicts = useMemo(() => {
+    if (!showHorarioBanho || relevantDates.length === 0) return [];
+    return getConflictingDates(horaBanho, relevantDates);
+  }, [horaBanho, availabilityMap, relevantDates, showHorarioBanho]);
+
+  const banhoSuggestions = useMemo(() => {
+    if (banhoConflicts.length === 0) return [];
+    const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+    const preferred = toMin(horaBanho);
+    const allSlots = Object.keys(availabilityMap).length > 0
+      ? (availabilityMap[Object.keys(availabilityMap)[0]] || []).map(s => s.time)
+      : [];
+    const sorted = [...allSlots].sort((a, b) =>
+      Math.abs(toMin(a) - preferred) - Math.abs(toMin(b) - preferred)
+    );
+    const suggestions: string[] = [];
+    for (const t of sorted) {
+      if (t === horaBanho) continue;
+      if (isTimeAvailableOnAllDates(t, relevantDates)) {
+        suggestions.push(t);
+        if (suggestions.length >= 3) break;
+      }
+    }
+    return suggestions;
+  }, [banhoConflicts, horaBanho, availabilityMap, relevantDates]);
+
   async function handleSave() {
     if (!subscription) return;
+    if (showHorarioBanho && banhoConflicts.length > 0) {
+      toast.error("O horário selecionado possui conflito. Escolha outro horário disponível.");
+      return;
+    }
     setSaving(true);
 
     const { error } = await supabase
@@ -220,12 +286,18 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
           </div>
         )}
 
-        {showHorarioBanho && (
-          <div className="py-2">
-            <div className="space-y-1.5">
-              <Label>Horário agendado para o banho</Label>
-              <Input type="time" value={horaBanho} onChange={e => setHoraBanho(e.target.value)} />
-            </div>
+        {showHorarioBanho && selectedDays.length > 0 && (
+          <div className="py-2 space-y-1.5">
+            <Label>Horário agendado para o banho (slots de 30 min)</Label>
+            <BanhoTimeSlotPicker
+              value={horaBanho}
+              onChange={setHoraBanho}
+              availabilityMap={availabilityMap}
+              relevantDates={relevantDates}
+              loading={availLoading}
+              conflictingDates={banhoConflicts}
+              suggestions={banhoSuggestions}
+            />
           </div>
         )}
 

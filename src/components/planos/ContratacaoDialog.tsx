@@ -13,6 +13,8 @@ import { addDays, format, getDay, isBefore, startOfDay, lastDayOfMonth, startOfM
 import { Check, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useBanhoAvailability } from "@/hooks/useBanhoAvailability";
+import { BanhoTimeSlotPicker } from "./BanhoTimeSlotPicker";
 
 interface Props {
   open: boolean;
@@ -107,6 +109,15 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
   const [extraSessionPolicy, setExtraSessionPolicy] = useState<"skip" | "charge">("skip");
 
+  const {
+    loading: availLoading,
+    availabilityMap,
+    checkPlannedDaysAvailability,
+    getConflictingDates,
+    findBestAvailableTime,
+    isTimeAvailableOnAllDates,
+  } = useBanhoAvailability(empresaId);
+
   useEffect(() => {
     if (!open) return;
     supabase.from("clientes").select("id, nome, dia_vencimento_fatura").is("deleted_at", null).order("nome").then(({ data }) => data && setClientes(data));
@@ -186,10 +197,61 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setExtraSessionPolicy("skip");
   }, [planType, selectedId]);
 
+  // Check availability when planned days, date, or banho visibility changes
+  const relevantDates = useMemo(() => {
+    if (!showHorarioBanho || plannedDays.length === 0) return [];
+    const dates: string[] = [];
+    const today = startOfDay(new Date());
+    let current = isBefore(startDateObj, today) ? today : startDateObj;
+    while (!isBefore(endOfMonth, current)) {
+      if (plannedDays.includes(getDay(current))) {
+        dates.push(format(current, "yyyy-MM-dd"));
+      }
+      current = addDays(current, 1);
+    }
+    return dates;
+  }, [showHorarioBanho, plannedDays, startDate]);
+
+  useEffect(() => {
+    if (showHorarioBanho && plannedDays.length > 0 && empresaId) {
+      checkPlannedDaysAvailability(startDateObj, endOfMonth, plannedDays);
+    }
+  }, [showHorarioBanho, plannedDays, startDate, empresaId]);
+
+  const banhoConflicts = useMemo(() => {
+    if (!showHorarioBanho || relevantDates.length === 0) return [];
+    return getConflictingDates(horaBanho, relevantDates);
+  }, [horaBanho, availabilityMap, relevantDates, showHorarioBanho]);
+
+  const banhoSuggestions = useMemo(() => {
+    if (banhoConflicts.length === 0) return [];
+    const suggestions: string[] = [];
+    const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+    const preferred = toMin(horaBanho);
+    const allSlots = Object.keys(availabilityMap).length > 0
+      ? (availabilityMap[Object.keys(availabilityMap)[0]] || []).map(s => s.time)
+      : [];
+    const sorted = [...allSlots].sort((a, b) =>
+      Math.abs(toMin(a) - preferred) - Math.abs(toMin(b) - preferred)
+    );
+    for (const t of sorted) {
+      if (t === horaBanho) continue;
+      if (isTimeAvailableOnAllDates(t, relevantDates)) {
+        suggestions.push(t);
+        if (suggestions.length >= 3) break;
+      }
+    }
+    return suggestions;
+  }, [banhoConflicts, horaBanho, availabilityMap, relevantDates]);
+
   async function handleSave() {
     if (!clienteId || !selectedId) { toast.error("Selecione cliente e plano/pacote"); return; }
     if (selectedPetIds.length === 0) { toast.error("Selecione ao menos um pet"); return; }
     if (isQuinzenal && plannedDays.length !== 1) { toast.error("Selecione exatamente 1 dia da semana para quinzenal"); return; }
+    if (showHorarioBanho && banhoConflicts.length > 0) {
+      toast.error("O horário selecionado possui conflito. Escolha outro horário disponível.");
+      return;
+    }
     setSaving(true);
 
     const nextMonthStart = format(startOfMonth(addMonths(startDateObj, 1)), "yyyy-MM-dd");
@@ -551,9 +613,16 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
           {showHorarioBanho && plannedDays.length > 0 && (
             <div className="space-y-1.5">
-              <Label>Horário agendado para o banho</Label>
-              <Input type="time" value={horaBanho} onChange={e => setHoraBanho(e.target.value)} />
-              <p className="text-xs text-muted-foreground">Horário será aplicado a todos os dias selecionados</p>
+              <Label>Horário agendado para o banho (slots de 30 min)</Label>
+              <BanhoTimeSlotPicker
+                value={horaBanho}
+                onChange={setHoraBanho}
+                availabilityMap={availabilityMap}
+                relevantDates={relevantDates}
+                loading={availLoading}
+                conflictingDates={banhoConflicts}
+                suggestions={banhoSuggestions}
+              />
             </div>
           )}
 
