@@ -150,34 +150,67 @@ export default function PortalEstouChegandoPage() {
         .update({ active: false, updated_at: new Date().toISOString() })
         .eq("id", sessionId);
 
-      // Auto check-in: find ALL pending appointments for today
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
       const todayEnd = new Date();
       todayEnd.setHours(23, 59, 59, 999);
 
-      const { data: agendamentos } = await supabase
-        .from("agendamentos")
-        .select("id")
-        .eq("cliente_id", cliente.id)
-        .gte("data_hora", todayStart.toISOString())
-        .lte("data_hora", todayEnd.toISOString())
-        .in("status", ["agendado", "confirmado", "pendente"]);
+      const isCheckOutTime = currentHour >= 16; // a partir de 16h
+      const isCheckInTime = currentHour < 9 || (currentHour === 9 && currentMinute <= 30); // até 9:30
 
-      if (agendamentos && agendamentos.length > 0) {
-        const ids = agendamentos.map((a) => a.id);
-        await supabase
+      if (isCheckOutTime) {
+        // Check-out: find appointments with status "na_empresa" for today
+        const { data: agendamentos } = await supabase
           .from("agendamentos")
-          .update({
-            status: "na_empresa",
-            data_entrada: new Date().toISOString(),
-            hora_entrada: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-          })
-          .in("id", ids);
+          .select("id")
+          .eq("cliente_id", cliente.id)
+          .gte("data_hora", todayStart.toISOString())
+          .lte("data_hora", todayEnd.toISOString())
+          .eq("status", "na_empresa");
 
-        toast.success(`Check-in realizado para ${agendamentos.length} agendamento${agendamentos.length > 1 ? "s" : ""}! 🎉`);
+        if (agendamentos && agendamentos.length > 0) {
+          const ids = agendamentos.map((a) => a.id);
+          await supabase
+            .from("agendamentos")
+            .update({
+              status: "finalizado",
+              data_saida: now.toISOString(),
+              hora_saida: now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+            })
+            .in("id", ids);
+
+          toast.success(`Check-out realizado para ${agendamentos.length} agendamento${agendamentos.length > 1 ? "s" : ""}! 🎉`);
+        } else {
+          toast.success("Chegada registrada! Nenhum agendamento pendente de saída.");
+        }
       } else {
-        toast.success("Chegada registrada!");
+        // Check-in: find pending appointments for today
+        const { data: agendamentos } = await supabase
+          .from("agendamentos")
+          .select("id")
+          .eq("cliente_id", cliente.id)
+          .gte("data_hora", todayStart.toISOString())
+          .lte("data_hora", todayEnd.toISOString())
+          .in("status", ["agendado", "confirmado", "pendente"]);
+
+        if (agendamentos && agendamentos.length > 0) {
+          const ids = agendamentos.map((a) => a.id);
+          await supabase
+            .from("agendamentos")
+            .update({
+              status: "na_empresa",
+              data_entrada: now.toISOString(),
+              hora_entrada: now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+            })
+            .in("id", ids);
+
+          toast.success(`Check-in realizado para ${agendamentos.length} agendamento${agendamentos.length > 1 ? "s" : ""}! 🎉`);
+        } else {
+          toast.success("Chegada registrada!");
+        }
       }
 
       setTracking(false);
