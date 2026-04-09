@@ -150,24 +150,22 @@ export default function PortalEstouChegandoPage() {
         .update({ active: false, updated_at: new Date().toISOString() })
         .eq("id", sessionId);
 
-      // Auto check-in: find today's first pending appointment
+      // Auto check-in: find ALL pending appointments for today
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
       const todayEnd = new Date();
       todayEnd.setHours(23, 59, 59, 999);
 
-      const { data: agendamento } = await supabase
+      const { data: agendamentos } = await supabase
         .from("agendamentos")
         .select("id")
         .eq("cliente_id", cliente.id)
         .gte("data_hora", todayStart.toISOString())
         .lte("data_hora", todayEnd.toISOString())
-        .in("status", ["agendado", "confirmado", "pendente"])
-        .order("data_hora", { ascending: true })
-        .limit(1)
-        .maybeSingle();
+        .in("status", ["agendado", "confirmado", "pendente"]);
 
-      if (agendamento) {
+      if (agendamentos && agendamentos.length > 0) {
+        const ids = agendamentos.map((a) => a.id);
         await supabase
           .from("agendamentos")
           .update({
@@ -175,9 +173,9 @@ export default function PortalEstouChegandoPage() {
             data_entrada: new Date().toISOString(),
             hora_entrada: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
           })
-          .eq("id", agendamento.id);
+          .in("id", ids);
 
-        toast.success("Check-in realizado automaticamente! 🎉");
+        toast.success(`Check-in realizado para ${agendamentos.length} agendamento${agendamentos.length > 1 ? "s" : ""}! 🎉`);
       } else {
         toast.success("Chegada registrada!");
       }
