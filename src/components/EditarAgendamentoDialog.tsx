@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -62,6 +62,12 @@ interface Props {
 export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [servicos, setServicos] = useState<{ id: string; descricao: string }[]>([]);
+
+  const tipoServico = agendamento?.tipo_servico || "";
+  const isHotel = useMemo(() => {
+    const desc = tipoServico.toLowerCase();
+    return desc.includes("hotel") || desc.includes("hospedagem");
+  }, [tipoServico]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -196,7 +202,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
               )} />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className={cn("grid gap-4", isHotel ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3")}>
               <FormField control={form.control} name="baia" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Baia</FormLabel>
@@ -208,6 +214,14 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
                   </Select>
                 </FormItem>
               )} />
+              {isHotel && (
+                <FormField control={form.control} name="desconto" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Desconto R$</FormLabel>
+                    <FormControl><Input type="number" step="0.01" min="0" placeholder="0,00" {...field} /></FormControl>
+                  </FormItem>
+                )} />
+              )}
               <FormField control={form.control} name="valor" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Valor R$</FormLabel>
