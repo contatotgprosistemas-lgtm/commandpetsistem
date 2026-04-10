@@ -16,7 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { addToEsteiraIfApplicable } from "@/lib/esteira";
+import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
 
 const schema = z.object({
   tipo_servico: z.string().min(1, "Selecione o serviço"),
