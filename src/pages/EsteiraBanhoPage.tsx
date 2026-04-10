@@ -273,7 +273,7 @@ export default function EsteiraBanhoPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {emAndamento.map(item => (
-                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} />
+                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} banhistas={banhistas} />
                 ))}
               </div>
             )}
@@ -290,7 +290,7 @@ export default function EsteiraBanhoPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {aguardando.map(item => (
-                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} />
+                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} banhistas={banhistas} />
                 ))}
               </div>
             )}
@@ -307,7 +307,7 @@ export default function EsteiraBanhoPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {finalizados.map(item => (
-                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} />
+                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} banhistas={banhistas} />
                 ))}
               </div>
             )}
