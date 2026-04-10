@@ -238,7 +238,7 @@ function EmpresaTab() {
 
 // ─── Equipe (Usuários do Sistema) ────────────────────
 function EquipeTab() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -248,6 +248,10 @@ function EquipeTab() {
   const [newPassword, setNewPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<any>(null);
+
+  const isAdmin = profile?.cargo === "admin";
 
   const fetchUsers = async () => {
     if (!profile?.empresa_id) return;
