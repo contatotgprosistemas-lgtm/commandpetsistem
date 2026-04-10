@@ -243,8 +243,7 @@ export default function ReservasPage() {
                       <div className="aspect-square bg-muted relative overflow-hidden">
                         {r.pet?.foto_url ? (
                           <SignedImage
-                            path={r.pet.foto_url}
-                            bucket="pet-photos"
+                            src={r.pet.foto_url}
                             alt={r.pet?.nome || "Pet"}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
