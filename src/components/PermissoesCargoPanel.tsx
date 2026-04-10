@@ -20,25 +20,34 @@ type Acao = "visualizar" | "editar" | "excluir";
 interface ModuleConfig {
   key: string;
   label: string;
-  icon?: string;
+  group?: string;
 }
 
 const MODULES: ModuleConfig[] = [
+  // Geral
   { key: "dashboard", label: "Dashboard" },
-  { key: "agenda", label: "Agenda" },
-  { key: "crm", label: "CRM WhatsApp" },
-  { key: "kanban", label: "Pipeline Vendas" },
-  { key: "chatbot", label: "Chatbot" },
-  { key: "taxipet", label: "TaxiPet" },
-  { key: "contratos", label: "Contratos" },
-  { key: "notas_fiscais", label: "Notas Fiscais" },
-  { key: "clientes", label: "Clientes" },
-  { key: "pets", label: "Pets" },
-  { key: "servicos", label: "Serviços" },
-  { key: "produtos", label: "Produtos" },
-  { key: "planos", label: "Planos & Pacotes" },
-  { key: "financeiro", label: "Financeiro" },
-  { key: "configuracoes", label: "Configurações" },
+  // Comercial
+  { key: "crm", label: "CRM WhatsApp", group: "Comercial" },
+  { key: "kanban", label: "Pipeline Vendas", group: "Comercial" },
+  { key: "chatbot", label: "Chatbot", group: "Comercial" },
+  // Operacional
+  { key: "agenda", label: "Agenda", group: "Operacional" },
+  { key: "reservas", label: "Reservas", group: "Operacional" },
+  { key: "banho_tosa", label: "Banho e Tosa", group: "Operacional" },
+  { key: "esteira_banho", label: "Esteira de Banho", group: "Operacional" },
+  { key: "clientes", label: "Clientes", group: "Operacional" },
+  { key: "pets", label: "Pets", group: "Operacional" },
+  { key: "servicos", label: "Serviços", group: "Operacional" },
+  { key: "produtos", label: "Produtos", group: "Operacional" },
+  { key: "planos", label: "Planos e Pacotes", group: "Operacional" },
+  { key: "taxipet", label: "TaxiPet", group: "Operacional" },
+  { key: "ponto", label: "Ponto", group: "Operacional" },
+  // Finanças
+  { key: "financeiro", label: "Financeiro", group: "Finanças" },
+  { key: "contratos", label: "Contratos", group: "Finanças" },
+  { key: "notas_fiscais", label: "Notas Fiscais", group: "Finanças" },
+  // Sistema
+  { key: "configuracoes", label: "Configurações", group: "Sistema" },
 ];
 
 const ACOES: { key: Acao; label: string; icon: React.ReactNode }[] = [
@@ -49,60 +58,46 @@ const ACOES: { key: Acao; label: string; icon: React.ReactNode }[] = [
 
 type PermissionsMap = Record<string, Record<Acao, boolean>>;
 
+const allTrue = { visualizar: true, editar: true, excluir: true };
+const allFalse = { visualizar: false, editar: false, excluir: false };
+const viewOnly = { visualizar: true, editar: false, excluir: false };
+const viewEdit = { visualizar: true, editar: true, excluir: false };
+
+function buildPerms(fn: (key: string) => Record<Acao, boolean>): PermissionsMap {
+  return Object.fromEntries(MODULES.map((m) => [m.key, fn(m.key)])) as PermissionsMap;
+}
+
 const DEFAULT_PERMISSIONS: Record<Cargo, PermissionsMap> = {
-  admin: Object.fromEntries(
-    MODULES.map((m) => [m.key, { visualizar: true, editar: true, excluir: true }])
-  ) as PermissionsMap,
-  gerente: Object.fromEntries(
-    MODULES.map((m) => [
-      m.key,
-      {
-        visualizar: true,
-        editar: true,
-        excluir: m.key !== "configuracoes",
-      },
-    ])
-  ) as PermissionsMap,
-  atendente: Object.fromEntries(
-    MODULES.map((m) => [
-      m.key,
-      {
-        visualizar: ["dashboard", "crm", "kanban", "agenda", "clientes", "pets", "chatbot"].includes(m.key),
-        editar: ["crm", "kanban", "agenda", "clientes", "pets"].includes(m.key),
-        excluir: false,
-      },
-    ])
-  ) as PermissionsMap,
-  financeiro: Object.fromEntries(
-    MODULES.map((m) => [
-      m.key,
-      {
-        visualizar: ["dashboard", "financeiro", "clientes", "planos"].includes(m.key),
-        editar: ["financeiro"].includes(m.key),
-        excluir: false,
-      },
-    ])
-  ) as PermissionsMap,
-  operacional: Object.fromEntries(
-    MODULES.map((m) => [
-      m.key,
-      {
-        visualizar: ["dashboard", "agenda", "pets", "clientes"].includes(m.key),
-        editar: ["agenda", "pets"].includes(m.key),
-        excluir: false,
-      },
-    ])
-  ) as PermissionsMap,
-  banhista: Object.fromEntries(
-    MODULES.map((m) => [
-      m.key,
-      {
-        visualizar: ["dashboard", "agenda", "pets"].includes(m.key),
-        editar: ["agenda"].includes(m.key),
-        excluir: false,
-      },
-    ])
-  ) as PermissionsMap,
+  admin: buildPerms(() => allTrue),
+  gerente: buildPerms((k) => (k === "configuracoes" ? viewEdit : allTrue)),
+  atendente: buildPerms((k) => {
+    const canView = ["dashboard", "crm", "kanban", "chatbot", "agenda", "reservas", "clientes", "pets", "banho_tosa", "esteira_banho"];
+    const canEdit = ["crm", "kanban", "agenda", "reservas", "clientes", "pets", "banho_tosa", "esteira_banho"];
+    if (canEdit.includes(k)) return viewEdit;
+    if (canView.includes(k)) return viewOnly;
+    return allFalse;
+  }),
+  financeiro: buildPerms((k) => {
+    const full = ["financeiro", "contratos", "notas_fiscais"];
+    const view = ["dashboard", "clientes", "planos"];
+    if (full.includes(k)) return viewEdit;
+    if (view.includes(k)) return viewOnly;
+    return allFalse;
+  }),
+  operacional: buildPerms((k) => {
+    const canEdit = ["agenda", "pets", "banho_tosa", "esteira_banho", "ponto"];
+    const canView = ["dashboard", "clientes", "reservas"];
+    if (canEdit.includes(k)) return viewEdit;
+    if (canView.includes(k)) return viewOnly;
+    return allFalse;
+  }),
+  banhista: buildPerms((k) => {
+    const canEdit = ["agenda", "banho_tosa", "esteira_banho"];
+    const canView = ["dashboard", "pets"];
+    if (canEdit.includes(k)) return viewEdit;
+    if (canView.includes(k)) return viewOnly;
+    return allFalse;
+  }),
 };
 
 export function PermissoesCargoPanel() {
@@ -112,19 +107,17 @@ export function PermissoesCargoPanel() {
   const current = permissions[selectedCargo];
 
   const toggle = (moduleKey: string, acao: Acao) => {
-    if (selectedCargo === "admin") return; // admin always has all permissions
+    if (selectedCargo === "admin") return;
 
     setPermissions((prev) => {
       const cargoPerms = { ...prev[selectedCargo] };
       const modulePerms = { ...cargoPerms[moduleKey] };
       modulePerms[acao] = !modulePerms[acao];
 
-      // If disabling "visualizar", disable edit and delete too
       if (acao === "visualizar" && !modulePerms[acao]) {
         modulePerms.editar = false;
         modulePerms.excluir = false;
       }
-      // If enabling "editar" or "excluir", enable visualizar
       if ((acao === "editar" || acao === "excluir") && modulePerms[acao]) {
         modulePerms.visualizar = true;
       }
@@ -134,8 +127,20 @@ export function PermissoesCargoPanel() {
     });
   };
 
-  const cargoInfo = CARGOS.find((c) => c.value === selectedCargo)!;
   const isAdmin = selectedCargo === "admin";
+
+  // Group modules
+  const groups: { label: string | null; modules: ModuleConfig[] }[] = [];
+  let currentGroup: string | null | undefined = undefined;
+  MODULES.forEach((mod) => {
+    const g = mod.group ?? null;
+    if (g !== currentGroup) {
+      groups.push({ label: g, modules: [mod] });
+      currentGroup = g;
+    } else {
+      groups[groups.length - 1].modules.push(mod);
+    }
+  });
 
   return (
     <Card>
@@ -184,27 +189,38 @@ export function PermissoesCargoPanel() {
               </tr>
             </thead>
             <tbody>
-              {MODULES.map((mod, i) => (
-                <tr
-                  key={mod.key}
-                  className={`border-b border-border last:border-0 ${i % 2 === 0 ? "" : "bg-muted/20"}`}
-                >
-                  <td className="py-2.5 px-4 font-medium text-foreground">{mod.label}</td>
-                  {ACOES.map((a) => {
-                    const checked = current[mod.key]?.[a.key] ?? false;
-                    return (
-                      <td key={a.key} className="text-center py-2.5 px-3">
-                        <div className="flex justify-center">
-                          <Checkbox
-                            checked={checked}
-                            disabled={isAdmin}
-                            onCheckedChange={() => toggle(mod.key, a.key)}
-                          />
-                        </div>
+              {groups.map((group) => (
+                <>
+                  {group.label && (
+                    <tr key={`group-${group.label}`} className="bg-muted/50">
+                      <td colSpan={4} className="py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {group.label}
                       </td>
+                    </tr>
+                  )}
+                  {group.modules.map((mod, i) => {
+                    const checked = current[mod.key] ?? allFalse;
+                    return (
+                      <tr
+                        key={mod.key}
+                        className={`border-b border-border last:border-0 ${i % 2 === 0 ? "" : "bg-muted/20"}`}
+                      >
+                        <td className="py-2.5 px-4 font-medium text-foreground pl-6">{mod.label}</td>
+                        {ACOES.map((a) => (
+                          <td key={a.key} className="text-center py-2.5 px-3">
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={checked[a.key] ?? false}
+                                disabled={isAdmin}
+                                onCheckedChange={() => toggle(mod.key, a.key)}
+                              />
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
                     );
                   })}
-                </tr>
+                </>
               ))}
             </tbody>
           </table>
