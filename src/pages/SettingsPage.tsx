@@ -236,23 +236,18 @@ function EmpresaTab() {
   );
 }
 
-// ─── Equipe (Usuários do Sistema + Operacionais) ────────────────────
+// ─── Equipe (Usuários do Sistema) ────────────────────
 function EquipeTab() {
   const { profile } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
-  const [opUsers, setOpUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [opLoading, setOpLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [opDialogOpen, setOpDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newNome, setNewNome] = useState("");
   const [newCargo, setNewCargo] = useState("atendente");
   const [newPassword, setNewPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [opForm, setOpForm] = useState({ nome: "", email: "", password: "" });
-  const [opSaving, setOpSaving] = useState(false);
 
   const fetchUsers = async () => {
     if (!profile?.empresa_id) return;
