@@ -1,23 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, startOfDay, addDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck, Search, Filter, Clock, PawPrint, User } from "lucide-react";
+import { CalendarCheck, Search, Filter, PawPrint, User, Hotel, Scissors, TreePine, HelpCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SignedImage } from "@/components/SignedImage";
 
 interface Reserva {
   id: string;
   data_hora: string;
   tipo_servico: string;
   status: string;
+  baia: string | null;
   notas: string | null;
   cliente: { nome: string } | null;
-  pet: { nome: string; raca: string | null } | null;
+  pet: { nome: string; raca: string | null; foto_url: string | null } | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -39,6 +41,52 @@ const statusLabels: Record<string, string> = {
   cancelado: "Cancelado",
   falta: "Falta",
 };
+
+interface ServiceGroup {
+  label: string;
+  icon: typeof Hotel;
+  color: string;
+  borderColor: string;
+  keywords: string[];
+}
+
+const serviceGroups: ServiceGroup[] = [
+  {
+    label: "HOTEL",
+    icon: Hotel,
+    color: "text-lime-600",
+    borderColor: "border-lime-500",
+    keywords: ["hotel", "hospedagem", "diaria", "diária", "pernoite"],
+  },
+  {
+    label: "ESCOLA / DAYCARE",
+    icon: TreePine,
+    color: "text-violet-600",
+    borderColor: "border-violet-500",
+    keywords: ["escola", "daycare", "creche", "day_care"],
+  },
+  {
+    label: "BANHO E TOSA",
+    icon: Scissors,
+    color: "text-amber-600",
+    borderColor: "border-amber-500",
+    keywords: ["banho", "tosa", "grooming", "estética", "estetica"],
+  },
+];
+
+function getGroup(tipoServico: string): ServiceGroup {
+  const t = tipoServico.toLowerCase();
+  for (const g of serviceGroups) {
+    if (g.keywords.some((k) => t.includes(k))) return g;
+  }
+  return {
+    label: "OUTROS",
+    icon: HelpCircle,
+    color: "text-muted-foreground",
+    borderColor: "border-muted",
+    keywords: [],
+  };
+}
 
 export default function ReservasPage() {
   const { profile } = useAuth();
@@ -71,7 +119,7 @@ export default function ReservasPage() {
 
     const { data, error } = await supabase
       .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, notas, cliente:clientes(nome), pet:pets(nome, raca)")
+      .select("id, data_hora, tipo_servico, status, baia, notas, cliente:clientes(nome), pet:pets(nome, raca, foto_url)")
       .eq("empresa_id", profile.empresa_id)
       .gte("data_hora", fromDate.toISOString())
       .lt("data_hora", toDate.toISOString())
@@ -94,6 +142,24 @@ export default function ReservasPage() {
     }
     return true;
   });
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, { group: ServiceGroup; items: Reserva[] }>();
+    for (const r of filtered) {
+      const g = getGroup(r.tipo_servico);
+      if (!map.has(g.label)) map.set(g.label, { group: g, items: [] });
+      map.get(g.label)!.items.push(r);
+    }
+    // sort items inside each group alphabetically by pet name
+    for (const entry of map.values()) {
+      entry.items.sort((a, b) => (a.pet?.nome || "").localeCompare(b.pet?.nome || ""));
+    }
+    // sort groups in the order defined
+    const order = serviceGroups.map((g) => g.label);
+    return Array.from(map.entries()).sort(
+      (a, b) => (order.indexOf(a[0]) === -1 ? 99 : order.indexOf(a[0])) - (order.indexOf(b[0]) === -1 ? 99 : order.indexOf(b[0]))
+    );
+  }, [filtered]);
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -146,50 +212,80 @@ export default function ReservasPage() {
 
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-20 w-full rounded-xl" />
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-40 w-full rounded-xl" />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : grouped.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <CalendarCheck className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p className="text-sm">Nenhuma reserva encontrada para este período.</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map((r) => (
-            <Card key={r.id} className="hover:shadow-sm transition-shadow">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="flex flex-col items-center min-w-[60px] text-center">
-                  <span className="text-xs text-muted-foreground">
-                    {format(parseISO(r.data_hora), "dd MMM", { locale: ptBR })}
+        <div className="space-y-6">
+          {grouped.map(([label, { group, items }]) => {
+            const Icon = group.icon;
+            return (
+              <div key={label}>
+                <div className={`flex items-center gap-2 mb-3 pb-2 border-b-2 ${group.borderColor}`}>
+                  <Icon className={`h-5 w-5 ${group.color}`} />
+                  <span className={`text-sm font-bold tracking-wide ${group.color}`}>
+                    {label}
                   </span>
-                  <span className="text-lg font-bold text-foreground">
-                    {format(parseISO(r.data_hora), "HH:mm")}
-                  </span>
+                  <Badge variant="secondary" className="ml-auto text-[10px]">
+                    {items.length}
+                  </Badge>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-sm text-foreground truncate">
-                      {r.tipo_servico}
-                    </span>
-                    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${statusColors[r.status] || ""}`}>
-                      {statusLabels[r.status] || r.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <User className="h-3 w-3" /> {r.cliente?.nome || "—"}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <PawPrint className="h-3 w-3" /> {r.pet?.nome || "—"}
-                      {r.pet?.raca && ` (${r.pet.raca})`}
-                    </span>
-                  </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                  {items.map((r) => (
+                    <Card key={r.id} className="overflow-hidden hover:shadow-md transition-shadow group">
+                      <div className="aspect-square bg-muted relative overflow-hidden">
+                        {r.pet?.foto_url ? (
+                          <SignedImage
+                            path={r.pet.foto_url}
+                            bucket="pet-photos"
+                            alt={r.pet?.nome || "Pet"}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                            <PawPrint className="h-12 w-12 text-muted-foreground/30" />
+                          </div>
+                        )}
+                        <Badge
+                          className={`absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0 ${statusColors[r.status] || ""}`}
+                        >
+                          {statusLabels[r.status] || r.status}
+                        </Badge>
+                      </div>
+                      <CardContent className="p-2.5 text-center space-y-0.5">
+                        <p className="font-semibold text-sm text-foreground truncate">
+                          {r.pet?.nome || "—"}
+                        </p>
+                        {r.pet?.raca && (
+                          <p className="text-[10px] text-muted-foreground">({r.pet.raca})</p>
+                        )}
+                        <p className="text-xs text-muted-foreground truncate flex items-center justify-center gap-1">
+                          <User className="h-3 w-3 shrink-0" />
+                          {r.cliente?.nome || "—"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          ({r.tipo_servico})
+                        </p>
+                        {r.baia && (
+                          <p className="text-[10px] text-muted-foreground">{r.baia}</p>
+                        )}
+                        <p className="text-[10px] text-muted-foreground">
+                          {format(parseISO(r.data_hora), "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
