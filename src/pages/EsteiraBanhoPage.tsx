@@ -329,11 +329,13 @@ function EsteiraCard({
   onStart,
   onFinish,
   logoUrl,
+  banhistas,
 }: {
   item: EsteiraItem;
   onStart: (item: EsteiraItem, banhista: string) => void;
   onFinish: (item: EsteiraItem) => void;
   logoUrl: string;
+  banhistas: { id: string; nome: string }[];
 }) {
   const [banhista, setBanhista] = useState(item.banhista_nome || "");
   const pet = item.agendamento?.pet;
