@@ -61,6 +61,7 @@ export default function EsteiraBanhoPage() {
   const [loading, setLoading] = useState(true);
   const [esteiraAtiva, setEsteiraAtiva] = useState<boolean | null>(null);
   const [toggling, setToggling] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const empresaId = profile?.empresa_id;
 
