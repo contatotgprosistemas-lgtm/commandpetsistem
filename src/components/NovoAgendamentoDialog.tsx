@@ -116,6 +116,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const selectedServico = form.watch("tipo_servico");
   const dataReserva = form.watch("data_reserva");
   const dataSaidaProvavel = form.watch("data_saida_provavel");
+  const descontoStr = form.watch("desconto");
   const filteredPets = pets.filter(p => p.cliente_id === selectedCliente);
 
   // Find the selected service object
@@ -141,13 +142,15 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     return diff > 0 ? diff : 0;
   }, [isHotel, dataReserva, dataSaidaProvavel]);
 
-  // Auto-calculate valor for hotel
+  // Auto-calculate valor for hotel (with discount)
   useEffect(() => {
     if (isHotel && diarias > 0 && servicoObj) {
-      const total = (diarias * servicoObj.valor).toFixed(2);
+      const bruto = diarias * servicoObj.valor;
+      const desc = descontoStr ? parseFloat(descontoStr) : 0;
+      const total = Math.max(bruto - (isNaN(desc) ? 0 : desc), 0).toFixed(2);
       form.setValue("valor", total);
     }
-  }, [isHotel, diarias, servicoObj]);
+  }, [isHotel, diarias, servicoObj, descontoStr]);
 
   useEffect(() => {
     if (open) {
