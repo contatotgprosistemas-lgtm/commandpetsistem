@@ -24,29 +24,34 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify caller is super_admin
+    // Verify caller
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const callerId = claimsData.claims.sub as string;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Check caller has super_admin role
+    // Check caller has super_admin OR admin role
     const { data: roles } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", caller.id)
-      .eq("role", "super_admin");
+      .eq("user_id", callerId);
 
-    if (!roles || roles.length === 0) {
-      return new Response(JSON.stringify({ error: "Apenas super admins podem excluir usuários" }), {
+    const roleList = roles?.map((r: any) => r.role) ?? [];
+    const isSuperAdmin = roleList.includes("super_admin");
+    const isAdmin = roleList.includes("admin");
+
+    if (!isSuperAdmin && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Apenas administradores podem excluir usuários" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -61,11 +66,33 @@ Deno.serve(async (req) => {
     }
 
     // Prevent self-deletion
-    if (user_id === caller.id) {
+    if (user_id === callerId) {
       return new Response(JSON.stringify({ error: "Não é possível excluir seu próprio acesso" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // If admin (not super_admin), ensure target user belongs to same empresa
+    if (!isSuperAdmin) {
+      const { data: callerProfile } = await adminClient
+        .from("profiles")
+        .select("empresa_id")
+        .eq("user_id", callerId)
+        .single();
+
+      const { data: targetProfile } = await adminClient
+        .from("profiles")
+        .select("empresa_id")
+        .eq("user_id", user_id)
+        .single();
+
+      if (!callerProfile || !targetProfile || callerProfile.empresa_id !== targetProfile.empresa_id) {
+        return new Response(JSON.stringify({ error: "Você só pode excluir usuários da sua empresa" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Delete profile, roles, and auth user
@@ -74,6 +101,9 @@ Deno.serve(async (req) => {
     
     // Unlink from clientes if any
     await adminClient.from("clientes").update({ user_id: null }).eq("user_id", user_id);
+
+    // Remove operational_users records
+    await adminClient.from("operational_users").delete().eq("user_id", user_id);
 
     const { error: deleteErr } = await adminClient.auth.admin.deleteUser(user_id);
     if (deleteErr) {

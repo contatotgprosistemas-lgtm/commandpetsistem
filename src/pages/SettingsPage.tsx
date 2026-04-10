@@ -238,7 +238,7 @@ function EmpresaTab() {
 
 // ─── Equipe (Usuários do Sistema) ────────────────────
 function EquipeTab() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -248,6 +248,10 @@ function EquipeTab() {
   const [newPassword, setNewPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<any>(null);
+
+  const isAdmin = profile?.cargo === "admin";
 
   const fetchUsers = async () => {
     if (!profile?.empresa_id) return;
@@ -280,6 +284,24 @@ function EquipeTab() {
     await supabase.from("profiles").update({ acesso_operacional: !current }).eq("id", id);
     toast({ title: !current ? "Acesso operacional liberado" : "Acesso operacional removido" });
     fetchUsers();
+  };
+
+  const handleDeleteUser = async () => {
+    if (!confirmDeleteUser) return;
+    setDeletingId(confirmDeleteUser.user_id);
+    try {
+      const { data, error } = await supabase.functions.invoke("excluir-usuario", {
+        body: { user_id: confirmDeleteUser.user_id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Usuário excluído com sucesso!" });
+      await fetchUsers();
+    } catch (err: any) {
+      toast({ title: "Erro ao excluir usuário", description: err.message, variant: "destructive" });
+    }
+    setDeletingId(null);
+    setConfirmDeleteUser(null);
   };
 
   const handleCreateUser = async () => {
@@ -371,64 +393,100 @@ function EquipeTab() {
                     <TableHead>Cargo</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-center">Operacional</TableHead>
-                    <TableHead>Criado em</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.nome}</TableCell>
-                      <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
-                      <TableCell>
-                        <Select defaultValue={u.cargo || "atendente"} onValueChange={(v) => updateCargo(u.id, v)}>
-                          <SelectTrigger className="h-8 w-[130px]"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="gerente">Gerente</SelectItem>
-                            <SelectItem value="atendente">Atendente</SelectItem>
-                            <SelectItem value="financeiro">Financeiro</SelectItem>
-                            <SelectItem value="operacional">Operacional</SelectItem>
-                            <SelectItem value="banhista">Banhista</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Select defaultValue={u.status} onValueChange={(v) => updateStatus(u.id, v)}>
-                          <SelectTrigger className="h-8 w-[110px]"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ativo">Ativo</SelectItem>
-                            <SelectItem value="suspenso">Suspenso</SelectItem>
-                            <SelectItem value="bloqueado">Bloqueado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Switch
-                          checked={u.acesso_operacional ?? true}
-                          onCheckedChange={() => toggleAcessoOperacional(u.id, u.acesso_operacional ?? true)}
-                        />
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {(() => { const [y,m,d] = u.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {users.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                     <TableHead>Criado em</TableHead>
+                     {isAdmin && <TableHead className="w-16">Excluir</TableHead>}
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {users.map((u) => (
+                     <TableRow key={u.id}>
+                       <TableCell className="font-medium">{u.nome}</TableCell>
+                       <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
+                       <TableCell>
+                         <Select defaultValue={u.cargo || "atendente"} onValueChange={(v) => updateCargo(u.id, v)}>
+                           <SelectTrigger className="h-8 w-[130px]"><SelectValue /></SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="admin">Admin</SelectItem>
+                             <SelectItem value="gerente">Gerente</SelectItem>
+                             <SelectItem value="atendente">Atendente</SelectItem>
+                             <SelectItem value="financeiro">Financeiro</SelectItem>
+                             <SelectItem value="operacional">Operacional</SelectItem>
+                             <SelectItem value="banhista">Banhista</SelectItem>
+                           </SelectContent>
+                         </Select>
+                       </TableCell>
+                       <TableCell>
+                         <Select defaultValue={u.status} onValueChange={(v) => updateStatus(u.id, v)}>
+                           <SelectTrigger className="h-8 w-[110px]"><SelectValue /></SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="ativo">Ativo</SelectItem>
+                             <SelectItem value="suspenso">Suspenso</SelectItem>
+                             <SelectItem value="bloqueado">Bloqueado</SelectItem>
+                           </SelectContent>
+                         </Select>
+                       </TableCell>
+                       <TableCell className="text-center">
+                         <Switch
+                           checked={u.acesso_operacional ?? true}
+                           onCheckedChange={() => toggleAcessoOperacional(u.id, u.acesso_operacional ?? true)}
+                         />
+                       </TableCell>
+                       <TableCell className="text-xs text-muted-foreground">
+                         {(() => { const [y,m,d] = u.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
+                       </TableCell>
+                       {isAdmin && (
+                         <TableCell>
+                           {u.user_id !== user?.id && (
+                             <Button
+                               variant="ghost"
+                               size="icon"
+                               className="text-destructive hover:text-destructive"
+                               onClick={() => setConfirmDeleteUser(u)}
+                               disabled={deletingId === u.user_id}
+                             >
+                               {deletingId === u.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                             </Button>
+                           )}
+                         </TableCell>
+                       )}
+                     </TableRow>
+                   ))}
+                   {users.length === 0 && (
+                     <TableRow>
+                       <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell>
+                     </TableRow>
+                   )}
+                 </TableBody>
+               </Table>
+             </div>
+           )}
+         </CardContent>
+       </Card>
 
-      <PermissoesCargoPanel />
-    </div>
-  );
-}
+       {/* Confirmação de exclusão */}
+       <Dialog open={!!confirmDeleteUser} onOpenChange={(o) => !o && setConfirmDeleteUser(null)}>
+         <DialogContent>
+           <DialogHeader>
+             <DialogTitle>Excluir Usuário</DialogTitle>
+           </DialogHeader>
+           <p className="text-sm text-muted-foreground">
+             Tem certeza que deseja excluir <strong>{confirmDeleteUser?.nome}</strong> ({confirmDeleteUser?.email})?
+             Esta ação é irreversível e removerá todo o acesso deste usuário ao sistema.
+           </p>
+           <div className="flex justify-end gap-2 pt-4">
+             <Button variant="outline" onClick={() => setConfirmDeleteUser(null)}>Cancelar</Button>
+             <Button variant="destructive" onClick={handleDeleteUser} disabled={!!deletingId}>
+               {deletingId ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+               Excluir
+             </Button>
+           </div>
+         </DialogContent>
+       </Dialog>
+
+       <PermissoesCargoPanel />
+     </div>
+   );
+ }
 
 // ─── Notificações ───────────────────────────────────────────────────
 function NotificacoesTab() {
