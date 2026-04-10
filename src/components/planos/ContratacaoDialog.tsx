@@ -360,6 +360,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             status: "agendado",
             subscription_id: subscriptionId,
             notas: "Gerado automaticamente pelo pacote (quinzenal)",
+            ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
           };
           if (showHorarios) {
             ag.hora_prevista_buscar = horaBuscar;
@@ -393,6 +394,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               status: "agendado",
               subscription_id: subscriptionId,
               notas: "Gerado automaticamente pelo plano",
+              ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
             };
             if (showHorarios) {
               ag.hora_prevista_buscar = horaBuscar;
