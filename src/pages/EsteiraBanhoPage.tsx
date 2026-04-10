@@ -381,14 +381,18 @@ function EsteiraCard({
           )}
         </div>
 
-        {/* Banhista input for aguardando */}
+        {/* Banhista select for aguardando */}
         {item.status === "aguardando" && (
-          <Input
-            value={banhista}
-            onChange={e => setBanhista(e.target.value)}
-            placeholder="Nome do banhista"
-            className="h-8 text-xs"
-          />
+          <Select value={banhista} onValueChange={setBanhista}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Selecionar banhista" />
+            </SelectTrigger>
+            <SelectContent>
+              {banhistas.map(b => (
+                <SelectItem key={b.id} value={b.nome} className="text-xs">{b.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
 
         {/* Timer / Duration */}
