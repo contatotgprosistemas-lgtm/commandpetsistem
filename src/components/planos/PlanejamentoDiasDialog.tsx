@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Check } from "lucide-react";
@@ -46,6 +47,8 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
   const [horaBanho, setHoraBanho] = useState("10:00");
   const [showHorarios, setShowHorarios] = useState(false);
   const [showHorarioBanho, setShowHorarioBanho] = useState(false);
+  const [banhistas, setBanhistas] = useState<any[]>([]);
+  const [selectedBanhistaId, setSelectedBanhistaId] = useState("");
 
   const empresaId = subscription?.empresa_id || "";
   const {
@@ -61,8 +64,29 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
       setSelectedDays(subscription.planned_days || []);
       checkServiceType();
       loadExistingTimes();
+      loadBanhistas();
+      loadExistingBanhista();
     }
   }, [open, subscription]);
+
+  async function loadBanhistas() {
+    if (!subscription?.empresa_id) return;
+    const { data } = await supabase.from("profiles").select("id, nome, cargo").eq("empresa_id", subscription.empresa_id).eq("cargo", "banhista");
+    if (data) setBanhistas(data);
+  }
+
+  async function loadExistingBanhista() {
+    if (!subscription?.id) return;
+    const { data: ag } = await supabase
+      .from("agendamentos")
+      .select("atendente_id")
+      .eq("subscription_id", subscription.id)
+      .not("atendente_id", "is", null)
+      .limit(1);
+    if (ag && ag.length > 0 && ag[0].atendente_id) {
+      setSelectedBanhistaId(ag[0].atendente_id);
+    }
+  }
 
   async function loadExistingTimes() {
     if (!subscription?.id) return;
@@ -212,6 +236,7 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
             status: "agendado",
             subscription_id: subscription.id,
             notas: "Gerado automaticamente pelo plano",
+            ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
           };
           if (showHorarios) {
             ag.hora_prevista_buscar = horaBuscar;
@@ -298,6 +323,20 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
               conflictingDates={banhoConflicts}
               suggestions={banhoSuggestions}
             />
+          </div>
+        )}
+
+        {showHorarioBanho && banhistas.length > 0 && (
+          <div className="py-2 space-y-1.5">
+            <Label>Banhista</Label>
+            <Select value={selectedBanhistaId} onValueChange={setSelectedBanhistaId}>
+              <SelectTrigger><SelectValue placeholder="Selecione o banhista" /></SelectTrigger>
+              <SelectContent>
+                {banhistas.map(b => (
+                  <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 

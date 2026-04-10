@@ -118,6 +118,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   };
   const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
   const [extraSessionPolicy, setExtraSessionPolicy] = useState<"skip" | "charge">("skip");
+  const [banhistas, setBanhistas] = useState<any[]>([]);
+  const [selectedBanhistaId, setSelectedBanhistaId] = useState("");
 
   const {
     loading: availLoading,
@@ -133,6 +135,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     supabase.from("clientes").select("id, nome, dia_vencimento_fatura").is("deleted_at", null).order("nome").then(({ data }) => data && setClientes(data));
     supabase.from("service_plans" as any).select("*").eq("status", "ativo").then(({ data }) => data && setPlans(data));
     supabase.from("service_packages" as any).select("*").eq("status", "ativo").then(({ data }) => data && setPackages(data));
+    supabase.from("profiles").select("id, nome, cargo").eq("empresa_id", empresaId).eq("cargo", "banhista").then(({ data }) => data && setBanhistas(data));
   }, [open]);
 
   useEffect(() => {
@@ -357,6 +360,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             status: "agendado",
             subscription_id: subscriptionId,
             notas: "Gerado automaticamente pelo pacote (quinzenal)",
+            ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
           };
           if (showHorarios) {
             ag.hora_prevista_buscar = horaBuscar;
@@ -390,6 +394,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               status: "agendado",
               subscription_id: subscriptionId,
               notas: "Gerado automaticamente pelo plano",
+              ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
             };
             if (showHorarios) {
               ag.hora_prevista_buscar = horaBuscar;
@@ -429,6 +434,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setHoraBanhoPorPet({});
     setFrequency("semanal");
     setExtraSessionPolicy("skip");
+    setSelectedBanhistaId("");
     setSaving(false); onSuccess(); onOpenChange(false);
   }
 
@@ -686,6 +692,20 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
                 <Label>Hora prevista levar</Label>
                 <Input type="time" value={horaLevar} onChange={e => setHoraLevar(e.target.value)} />
               </div>
+            </div>
+          )}
+
+          {showHorarioBanho && banhistas.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Banhista</Label>
+              <Select value={selectedBanhistaId} onValueChange={setSelectedBanhistaId}>
+                <SelectTrigger><SelectValue placeholder="Selecione o banhista" /></SelectTrigger>
+                <SelectContent>
+                  {banhistas.map(b => (
+                    <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
