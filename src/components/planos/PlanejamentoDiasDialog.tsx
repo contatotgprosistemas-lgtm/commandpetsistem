@@ -69,6 +69,25 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
     }
   }, [open, subscription]);
 
+  async function loadBanhistas() {
+    if (!subscription?.empresa_id) return;
+    const { data } = await supabase.from("profiles").select("id, nome, cargo").eq("empresa_id", subscription.empresa_id).eq("cargo", "banhista");
+    if (data) setBanhistas(data);
+  }
+
+  async function loadExistingBanhista() {
+    if (!subscription?.id) return;
+    const { data: ag } = await supabase
+      .from("agendamentos")
+      .select("atendente_id")
+      .eq("subscription_id", subscription.id)
+      .not("atendente_id", "is", null)
+      .limit(1);
+    if (ag && ag.length > 0 && ag[0].atendente_id) {
+      setSelectedBanhistaId(ag[0].atendente_id);
+    }
+  }
+
   async function loadExistingTimes() {
     if (!subscription?.id) return;
     // Load the first existing agendamento to get the scheduled time
