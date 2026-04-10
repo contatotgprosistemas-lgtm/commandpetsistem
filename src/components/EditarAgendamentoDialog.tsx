@@ -151,6 +151,11 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         });
       }
 
+      // Remove from esteira on check-out or cancellation
+      if ((data.status === "concluido" || data.status === "cancelado") && agendamento.status !== data.status) {
+        await removeFromEsteira(agendamento.id);
+      }
+
       toast({ title: "Agendamento atualizado!" });
       onSuccess?.();
     } catch (err: any) {
