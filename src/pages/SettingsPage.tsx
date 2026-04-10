@@ -286,6 +286,24 @@ function EquipeTab() {
     fetchUsers();
   };
 
+  const handleDeleteUser = async () => {
+    if (!confirmDeleteUser) return;
+    setDeletingId(confirmDeleteUser.user_id);
+    try {
+      const { data, error } = await supabase.functions.invoke("excluir-usuario", {
+        body: { user_id: confirmDeleteUser.user_id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Usuário excluído com sucesso!" });
+      await fetchUsers();
+    } catch (err: any) {
+      toast({ title: "Erro ao excluir usuário", description: err.message, variant: "destructive" });
+    }
+    setDeletingId(null);
+    setConfirmDeleteUser(null);
+  };
+
   const handleCreateUser = async () => {
     if (!newEmail || !newNome || !newPassword) {
       toast({ title: "Preencha todos os campos", variant: "destructive" });
