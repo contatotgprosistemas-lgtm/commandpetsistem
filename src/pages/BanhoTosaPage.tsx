@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FaltaDialog } from "@/components/FaltaDialog";
+import { addToEsteiraIfApplicable } from "@/lib/esteira";
 
 const BANHO_TOSA_KEYWORDS = ["banho", "tosa", "hidratação", "hidratacao", "estética", "estetica", "grooming", "pelo"];
 
@@ -109,6 +110,7 @@ export default function BanhoTosaPage() {
       agendamento_id: item.id,
       notas: `Check-in realizado em ${format(now, "dd/MM/yyyy")} às ${horaEntrada}`,
     } as any);
+    await addToEsteiraIfApplicable({ empresaId: item.empresa_id, agendamentoId: item.id, tipoServico: item.tipo_servico });
     toast.success("Check-in realizado!");
     fetchAgendamentos();
   }
