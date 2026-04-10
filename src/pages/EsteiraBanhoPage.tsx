@@ -226,6 +226,12 @@ export default function EsteiraBanhoPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {esteiraAtiva && (
+            <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing} className="gap-1.5">
+              <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+              Sincronizar
+            </Button>
+          )}
           <Label htmlFor="esteira-toggle" className="text-sm text-muted-foreground">
             {esteiraAtiva ? "Ativada" : "Desativada"}
           </Label>
