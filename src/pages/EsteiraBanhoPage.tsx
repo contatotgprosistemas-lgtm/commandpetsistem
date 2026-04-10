@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { SignedImage } from "@/components/SignedImage";
-import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { addToEsteiraIfApplicable } from "@/lib/esteira";
 
@@ -62,6 +62,7 @@ export default function EsteiraBanhoPage() {
   const [esteiraAtiva, setEsteiraAtiva] = useState<boolean | null>(null);
   const [toggling, setToggling] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [banhistas, setBanhistas] = useState<{ id: string; nome: string }[]>([]);
 
   const empresaId = profile?.empresa_id;
 
@@ -93,7 +94,19 @@ export default function EsteiraBanhoPage() {
     if (data) setEsteiraAtiva(data.esteira_banho_ativa);
   }, [empresaId]);
 
-  useEffect(() => { fetchEsteira(); fetchToggle(); }, [fetchEsteira, fetchToggle]);
+  const fetchBanhistas = useCallback(async () => {
+    if (!empresaId) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, nome")
+      .eq("empresa_id", empresaId)
+      .eq("cargo", "banhista")
+      .eq("status", "ativo")
+      .order("nome");
+    if (data) setBanhistas(data);
+  }, [empresaId]);
+
+  useEffect(() => { fetchEsteira(); fetchToggle(); fetchBanhistas(); }, [fetchEsteira, fetchToggle, fetchBanhistas]);
 
   // Realtime
   useEffect(() => {
@@ -260,7 +273,7 @@ export default function EsteiraBanhoPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {emAndamento.map(item => (
-                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} />
+                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} banhistas={banhistas} />
                 ))}
               </div>
             )}
@@ -277,7 +290,7 @@ export default function EsteiraBanhoPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {aguardando.map(item => (
-                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} />
+                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} banhistas={banhistas} />
                 ))}
               </div>
             )}
@@ -294,7 +307,7 @@ export default function EsteiraBanhoPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {finalizados.map(item => (
-                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} />
+                  <EsteiraCard key={item.id} item={item} onStart={handleStart} onFinish={handleFinish} logoUrl={logoUrl} banhistas={banhistas} />
                 ))}
               </div>
             )}
@@ -316,11 +329,13 @@ function EsteiraCard({
   onStart,
   onFinish,
   logoUrl,
+  banhistas,
 }: {
   item: EsteiraItem;
   onStart: (item: EsteiraItem, banhista: string) => void;
   onFinish: (item: EsteiraItem) => void;
   logoUrl: string;
+  banhistas: { id: string; nome: string }[];
 }) {
   const [banhista, setBanhista] = useState(item.banhista_nome || "");
   const pet = item.agendamento?.pet;
@@ -366,14 +381,18 @@ function EsteiraCard({
           )}
         </div>
 
-        {/* Banhista input for aguardando */}
+        {/* Banhista select for aguardando */}
         {item.status === "aguardando" && (
-          <Input
-            value={banhista}
-            onChange={e => setBanhista(e.target.value)}
-            placeholder="Nome do banhista"
-            className="h-8 text-xs"
-          />
+          <Select value={banhista} onValueChange={setBanhista}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Selecionar banhista" />
+            </SelectTrigger>
+            <SelectContent>
+              {banhistas.map(b => (
+                <SelectItem key={b.id} value={b.nome} className="text-xs">{b.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
 
         {/* Timer / Duration */}
