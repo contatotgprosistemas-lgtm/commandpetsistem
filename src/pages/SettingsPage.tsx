@@ -256,6 +256,7 @@ function EquipeTab() {
       .from("profiles")
       .select("*")
       .eq("empresa_id", profile.empresa_id)
+      .neq("cargo", "cliente")
       .order("created_at", { ascending: false });
     setUsers(data || []);
     setLoading(false);
