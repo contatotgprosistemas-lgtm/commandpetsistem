@@ -30,51 +30,64 @@ import {
   Scissors,
   ListOrdered,
   CalendarCheck,
+  Briefcase,
+  Wallet,
+  Wrench,
 } from "lucide-react";
+
+type MenuItem = { icon: any; label: string; path: string };
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  
+
   const { isSuperAdmin, signOut, profile } = useAuth();
   const { logoUrl: empresaLogo } = useEmpresaLogo(logoTg);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isCadastrosActive = ["/clientes", "/pets", "/servicos", "/produtos", "/planos-pacotes"].includes(location.pathname);
-  const [cadastrosOpen, setCadastrosOpen] = useState(isCadastrosActive);
-  const cadastrosExpanded = cadastrosOpen;
+  // --- Módulo Comercial ---
+  const comercialPaths = ["/crm", "/kanban", "/chatbot"];
+  const isComercialActive = comercialPaths.includes(location.pathname);
+  const [comercialOpen, setComercialOpen] = useState(isComercialActive);
 
-  const isAgendaActive = ["/agenda", "/reservas", "/banho-tosa", "/esteira-banho"].includes(location.pathname);
-  const [agendaOpen, setAgendaOpen] = useState(isAgendaActive);
-  const agendaExpanded = agendaOpen;
-
-  const mainItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  const comercialItems: MenuItem[] = [
     { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
     { icon: Kanban, label: "Pipeline Vendas", path: "/kanban" },
     { icon: Bot, label: "Chatbot", path: "/chatbot" },
   ];
 
-  const agendaItems = [
+  // --- Módulo Operacional ---
+  const operacionalPaths = [
+    "/agenda", "/reservas", "/banho-tosa", "/esteira-banho",
+    "/clientes", "/pets", "/servicos", "/produtos", "/planos-pacotes",
+    "/taxipet", "/ponto",
+  ];
+  const isOperacionalActive = operacionalPaths.includes(location.pathname);
+  const [operacionalOpen, setOperacionalOpen] = useState(isOperacionalActive);
+
+  const operacionalItems: MenuItem[] = [
     { icon: CalendarDays, label: "Agenda", path: "/agenda" },
     { icon: CalendarCheck, label: "Reservas", path: "/reservas" },
     { icon: Scissors, label: "Banho e Tosa", path: "/banho-tosa" },
     { icon: ListOrdered, label: "Esteira de Banho", path: "/esteira-banho" },
-  ];
-  const cadastrosItems = [
     { icon: Users, label: "Clientes", path: "/clientes" },
     { icon: PawPrint, label: "Pets", path: "/pets" },
     { icon: Package, label: "Serviços", path: "/servicos" },
     { icon: ShoppingBag, label: "Produtos", path: "/produtos" },
     { icon: Gift, label: "Planos e Pacotes", path: "/planos-pacotes" },
+    { icon: Car, label: "TaxiPet", path: "/taxipet" },
+    { icon: Clock, label: "Ponto", path: "/ponto" },
   ];
 
-  const afterCadastrosItems = [
+  // --- Módulo Finanças ---
+  const financasPaths = ["/financeiro", "/contratos", "/notas-fiscais"];
+  const isFinancasActive = financasPaths.includes(location.pathname);
+  const [financasOpen, setFinancasOpen] = useState(isFinancasActive);
+
+  const financasItems: MenuItem[] = [
     { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
-    { icon: Car, label: "TaxiPet", path: "/taxipet" },
     { icon: FileSignature, label: "Contratos", path: "/contratos" },
     { icon: Receipt, label: "Notas Fiscais", path: "/notas-fiscais" },
-    { icon: Clock, label: "Ponto", path: "/ponto" },
   ];
 
   const bottomItems = [
@@ -89,7 +102,7 @@ export function AppSidebar() {
     navigate("/login");
   };
 
-  const renderNavItem = (item: { icon: any; label: string; path: string }) => (
+  const renderNavItem = (item: MenuItem) => (
     <NavLink
       key={item.path}
       to={item.path}
@@ -118,6 +131,66 @@ export function AppSidebar() {
     </NavLink>
   );
 
+  const renderSubmenu = (
+    label: string,
+    icon: any,
+    items: MenuItem[],
+    isActive: boolean,
+    isOpen: boolean,
+    setOpen: (v: boolean) => void,
+  ) => {
+    const Icon = icon;
+    return (
+      <>
+        <button
+          onClick={() => setOpen(!isOpen)}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+            isActive
+              ? "text-sidebar-foreground"
+              : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/70"
+          }`}
+        >
+          <Icon className="h-[17px] w-[17px] shrink-0" strokeWidth={1.6} />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="whitespace-nowrap overflow-hidden flex-1 text-left"
+              >
+                {label}
+              </motion.span>
+            )}
+          </AnimatePresence>
+          {!collapsed && (
+            <ChevronDown
+              className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+                isOpen ? "rotate-0" : "-rotate-90"
+              }`}
+            />
+          )}
+        </button>
+
+        <AnimatePresence>
+          {isOpen && !collapsed && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="overflow-hidden pl-4 space-y-0.5"
+            >
+              {items.map(renderNavItem)}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {collapsed && items.map(renderNavItem)}
+      </>
+    );
+  };
+
   return (
     <motion.aside
       animate={{ width: collapsed ? 60 : 232 }}
@@ -143,103 +216,11 @@ export function AppSidebar() {
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
-        {mainItems.map(renderNavItem)}
+        {renderNavItem({ icon: LayoutDashboard, label: "Dashboard", path: "/" })}
 
-        {/* Agenda submenu */}
-        <button
-          onClick={() => setAgendaOpen(!agendaExpanded)}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
-            isAgendaActive
-              ? "text-sidebar-foreground"
-              : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/70"
-          }`}
-        >
-          <CalendarDays className="h-[17px] w-[17px] shrink-0" strokeWidth={1.6} />
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="whitespace-nowrap overflow-hidden flex-1 text-left"
-              >
-                Operações
-              </motion.span>
-            )}
-          </AnimatePresence>
-          {!collapsed && (
-            <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
-                agendaExpanded ? "rotate-0" : "-rotate-90"
-              }`}
-            />
-          )}
-        </button>
-
-        <AnimatePresence>
-          {agendaExpanded && !collapsed && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="overflow-hidden pl-4 space-y-0.5"
-            >
-              {agendaItems.map(renderNavItem)}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {collapsed && agendaItems.map(renderNavItem)}
-
-        {/* Cadastros submenu */}
-        <button
-          onClick={() => setCadastrosOpen(!cadastrosExpanded)}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
-            isCadastrosActive
-              ? "text-sidebar-foreground"
-              : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/70"
-          }`}
-        >
-          <ClipboardList className="h-[17px] w-[17px] shrink-0" strokeWidth={1.6} />
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="whitespace-nowrap overflow-hidden flex-1 text-left"
-              >
-                Cadastros
-              </motion.span>
-            )}
-          </AnimatePresence>
-          {!collapsed && (
-            <ChevronDown
-              className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
-                cadastrosExpanded ? "rotate-0" : "-rotate-90"
-              }`}
-            />
-          )}
-        </button>
-
-        <AnimatePresence>
-          {cadastrosExpanded && !collapsed && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="overflow-hidden pl-4 space-y-0.5"
-            >
-              {cadastrosItems.map(renderNavItem)}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {collapsed && cadastrosItems.map(renderNavItem)}
-
-        {afterCadastrosItems.map(renderNavItem)}
+        {renderSubmenu("Comercial", Briefcase, comercialItems, isComercialActive, comercialOpen, setComercialOpen)}
+        {renderSubmenu("Operacional", Wrench, operacionalItems, isOperacionalActive, operacionalOpen, setOperacionalOpen)}
+        {renderSubmenu("Finanças", Wallet, financasItems, isFinancasActive, financasOpen, setFinancasOpen)}
 
         <div className="pt-2 mt-2 border-t border-sidebar-border/40 space-y-0.5">
           {bottomItems.map(renderNavItem)}
