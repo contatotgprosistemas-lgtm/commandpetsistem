@@ -3648,6 +3648,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          acesso_operacional: boolean
           aprovado: boolean
           cargo: string | null
           created_at: string
@@ -3660,6 +3661,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          acesso_operacional?: boolean
           aprovado?: boolean
           cargo?: string | null
           created_at?: string
@@ -3672,6 +3674,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          acesso_operacional?: boolean
           aprovado?: boolean
           cargo?: string | null
           created_at?: string
