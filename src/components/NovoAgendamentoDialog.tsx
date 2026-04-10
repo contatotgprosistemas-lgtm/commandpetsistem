@@ -95,6 +95,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [clientes, setClientes] = useState<{ id: string; nome: string }[]>([]);
   const [pets, setPets] = useState<{ id: string; nome: string; cliente_id: string }[]>([]);
   const [servicos, setServicos] = useState<ServicoItem[]>([]);
+  const [formasPagamento, setFormasPagamento] = useState<{ id: string; nome: string }[]>([]);
   const [availableReplacements, setAvailableReplacements] = useState<any[]>([]);
   const [useReplacement, setUseReplacement] = useState(false);
   const [empresaId, setEmpresaId] = useState<string | null>(null);
@@ -163,6 +164,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       supabase.from("clientes").select("id, nome").order("nome").then(({ data }) => { if (data) setClientes(data); });
       supabase.from("pets").select("id, nome, cliente_id").order("nome").then(({ data }) => { if (data) setPets(data); });
       supabase.from("servicos").select("id, descricao, valor, tipo").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data as ServicoItem[]); });
+      supabase.from("formas_pagamento").select("id, nome").eq("ativo", true).order("nome").then(({ data }) => { if (data) setFormasPagamento(data); });
     }
   }, [open]);
 
@@ -550,13 +552,9 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                      <SelectItem value="PIX">PIX</SelectItem>
-                      <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
-                      <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
-                      <SelectItem value="Boleto">Boleto</SelectItem>
-                      <SelectItem value="Transferência">Transferência</SelectItem>
-                      <SelectItem value="A definir">A definir</SelectItem>
+                      {formasPagamento.map(fp => (
+                        <SelectItem key={fp.id} value={fp.nome}>{fp.nome}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
