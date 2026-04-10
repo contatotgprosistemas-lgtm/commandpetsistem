@@ -434,6 +434,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setHoraBanhoPorPet({});
     setFrequency("semanal");
     setExtraSessionPolicy("skip");
+    setSelectedBanhistaId("");
     setSaving(false); onSuccess(); onOpenChange(false);
   }
 
