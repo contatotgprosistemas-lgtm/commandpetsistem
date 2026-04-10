@@ -64,6 +64,8 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
       setSelectedDays(subscription.planned_days || []);
       checkServiceType();
       loadExistingTimes();
+      loadBanhistas();
+      loadExistingBanhista();
     }
   }, [open, subscription]);
 
