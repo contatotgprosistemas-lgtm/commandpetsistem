@@ -16,7 +16,7 @@ import { FaltaDialog } from "@/components/FaltaDialog";
 import { ManejoDialog } from "@/components/ManejoDialog";
 import { OperacionalGaleriaDialog } from "@/components/operacional/OperacionalGaleriaDialog";
 import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
-import { addToEsteiraIfApplicable } from "@/lib/esteira";
+import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
@@ -134,6 +134,7 @@ export default function OperacionalDashboard() {
       hora_saida: format(now, "HH:mm"),
     }).eq("id", item.id);
     if (error) { toast.error("Erro: " + error.message); return; }
+    await removeFromEsteira(item.id);
     toast.success("Check-out realizado!");
     window.location.reload();
   };
@@ -162,6 +163,7 @@ export default function OperacionalDashboard() {
       await supabase.from("agendamentos").update({
         status: "concluido", data_saida: now.toISOString(), hora_saida: format(now, "HH:mm"),
       }).eq("id", item.id);
+      await removeFromEsteira(item.id);
     }
     setMassLoading(false);
     toast.success(`Check-out em massa: ${targets.length} pet(s).`);

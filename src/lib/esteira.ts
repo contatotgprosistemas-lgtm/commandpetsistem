@@ -42,3 +42,15 @@ export async function addToEsteiraIfApplicable(params: {
     status: "aguardando",
   } as any);
 }
+
+/**
+ * Remove an agendamento from esteira_banho when it's checked out or cancelled.
+ * Only removes entries that are not yet "finalizado".
+ */
+export async function removeFromEsteira(agendamentoId: string) {
+  await supabase
+    .from("esteira_banho")
+    .delete()
+    .eq("agendamento_id", agendamentoId)
+    .neq("status", "finalizado");
+}
