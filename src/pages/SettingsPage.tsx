@@ -290,15 +290,10 @@ function EquipeTab() {
     setCreating(true);
     try {
       const { data, error } = await supabase.functions.invoke("criar-acesso-operacional", {
-        body: { nome: newNome, email: newEmail, senha: newPassword, empresa_id: profile?.empresa_id },
+        body: { nome: newNome, email: newEmail, senha: newPassword, empresa_id: profile?.empresa_id, cargo: newCargo },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-
-      const userId = data?.user_id;
-      if (userId) {
-        await supabase.from("profiles").update({ cargo: newCargo }).eq("user_id", userId);
-      }
 
       await fetchUsers();
       toast({ title: "Usuário criado com sucesso!" });

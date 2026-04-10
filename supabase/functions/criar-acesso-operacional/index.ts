@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { nome, email, senha, empresa_id } = await req.json();
+    const { nome, email, senha, empresa_id, cargo } = await req.json();
     if (!nome || !email || !senha || !empresa_id) {
       return new Response(
         JSON.stringify({ error: "nome, email, senha e empresa_id são obrigatórios" }),
@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
       );
     }
 
+    const finalCargo = cargo || "operacional";
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // Create auth user with email pre-confirmed
@@ -63,30 +64,25 @@ Deno.serve(async (req) => {
 
     const userId = newUser.user.id;
 
-    // Upsert profile with aprovado=true (trigger may have created one already)
+    // Upsert profile with aprovado=true and the correct cargo
     await adminClient.from("profiles").upsert({
       user_id: userId,
       nome,
       email,
       empresa_id,
-      cargo: "operacional",
+      cargo: finalCargo,
       aprovado: true,
     }, { onConflict: "user_id" });
 
-    // Create operational user record
-    const { error: opError } = await adminClient.from("operational_users").insert({
-      nome,
-      email,
-      empresa_id,
-      user_id: userId,
-      ativo: true,
-    });
-
-    if (opError) {
-      return new Response(
-        JSON.stringify({ error: opError.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Only create operational_users record if acesso_operacional is relevant
+    if (finalCargo === "operacional" || finalCargo === "banhista") {
+      await adminClient.from("operational_users").insert({
+        nome,
+        email,
+        empresa_id,
+        user_id: userId,
+        ativo: true,
+      });
     }
 
     return new Response(
