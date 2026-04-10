@@ -16,6 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { addToEsteiraIfApplicable } from "@/lib/esteira";
 
 const schema = z.object({
   tipo_servico: z.string().min(1, "Selecione o serviço"),
@@ -140,6 +141,16 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
       const { error } = await supabase.from("agendamentos").update(updatePayload as any).eq("id", agendamento.id);
 
       if (error) throw error;
+
+      // Add to esteira if check-in just happened
+      if (data.status === "na_empresa" && agendamento.status !== "na_empresa") {
+        await addToEsteiraIfApplicable({
+          empresaId: agendamento.empresa_id,
+          agendamentoId: agendamento.id,
+          tipoServico: data.tipo_servico || agendamento.tipo_servico,
+        });
+      }
+
       toast({ title: "Agendamento atualizado!" });
       onSuccess?.();
     } catch (err: any) {
