@@ -29,6 +29,7 @@ import {
   Clock,
   Scissors,
   ListOrdered,
+  CalendarCheck,
 } from "lucide-react";
 
 export function AppSidebar() {
@@ -43,7 +44,7 @@ export function AppSidebar() {
   const [cadastrosOpen, setCadastrosOpen] = useState(isCadastrosActive);
   const cadastrosExpanded = cadastrosOpen;
 
-  const isAgendaActive = ["/agenda", "/banho-tosa", "/esteira-banho"].includes(location.pathname);
+  const isAgendaActive = ["/agenda", "/reservas", "/banho-tosa", "/esteira-banho"].includes(location.pathname);
   const [agendaOpen, setAgendaOpen] = useState(isAgendaActive);
   const agendaExpanded = agendaOpen;
 
@@ -56,6 +57,7 @@ export function AppSidebar() {
 
   const agendaItems = [
     { icon: CalendarDays, label: "Agenda", path: "/agenda" },
+    { icon: CalendarCheck, label: "Reservas", path: "/reservas" },
     { icon: Scissors, label: "Banho e Tosa", path: "/banho-tosa" },
     { icon: ListOrdered, label: "Esteira de Banho", path: "/esteira-banho" },
   ];
