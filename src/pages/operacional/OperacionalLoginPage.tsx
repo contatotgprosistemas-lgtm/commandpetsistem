@@ -35,26 +35,38 @@ export default function OperacionalLoginPage() {
       return;
     }
 
-    const { data: opUser, error: opUserError } = await supabase
+    // Check operational_users first
+    const { data: opUser } = await supabase
       .from("operational_users")
       .select("id")
       .eq("user_id", data.user.id)
       .eq("ativo", true)
       .maybeSingle();
 
-    if (opUserError) {
-      await supabase.auth.signOut();
-      toast.error("Não foi possível validar o acesso ao portal operacional.");
+    if (opUser) {
+      toast.success("Login realizado!");
       setLoading(false);
+      navigate("/operacional", { replace: true });
       return;
     }
 
-    if (!opUser) {
-      await supabase.auth.signOut();
-      toast.error("Acesso não autorizado ao portal operacional.");
+    // Fallback: allow admin/gerente with acesso_operacional
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("cargo, acesso_operacional")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+
+    const adminCargos = ["admin", "gerente"];
+    if (profile && adminCargos.includes(profile.cargo ?? "") && profile.acesso_operacional !== false) {
+      toast.success("Login realizado!");
       setLoading(false);
+      navigate("/operacional", { replace: true });
       return;
     }
+
+    await supabase.auth.signOut();
+    toast.error("Acesso não autorizado ao portal operacional.");
 
     toast.success("Login realizado!");
     setLoading(false);

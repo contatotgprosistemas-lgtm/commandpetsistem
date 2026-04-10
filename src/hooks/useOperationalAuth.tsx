@@ -30,6 +30,9 @@ const OperationalAuthContext =
   globalWithOperationalAuthContext[OPERATIONAL_AUTH_CONTEXT_KEY] ??
   (globalWithOperationalAuthContext[OPERATIONAL_AUTH_CONTEXT_KEY] = createContext<OperationalAuthContextType | undefined>(undefined));
 
+// Cargos that can access operational portal without an operational_users record
+const ADMIN_CARGOS = ["admin", "gerente"];
+
 export function OperationalAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<OperationalUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -42,7 +45,6 @@ export function OperationalAuthProvider({ children }: { children: ReactNode }) {
 
     if (!s?.user) {
       if (requestId !== latestRequestId.current) return;
-
       setSession(null);
       setUser(null);
       setLoading(false);
@@ -54,7 +56,8 @@ export function OperationalAuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
     }
 
-    const { data, error } = await supabase
+    // First try operational_users
+    const { data: opData, error: opError } = await supabase
       .from("operational_users")
       .select("*")
       .eq("user_id", s.user.id)
@@ -63,8 +66,43 @@ export function OperationalAuthProvider({ children }: { children: ReactNode }) {
 
     if (requestId !== latestRequestId.current) return;
 
-    setSession(s);
-    setUser(error ? null : (data as OperationalUser) ?? null);
+    if (!opError && opData) {
+      setSession(s);
+      setUser(opData as OperationalUser);
+      setLoading(false);
+      hasInitialized.current = true;
+      return;
+    }
+
+    // Fallback: check if user is admin/gerente with acesso_operacional
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("id, nome, email, empresa_id, cargo, acesso_operacional")
+      .eq("user_id", s.user.id)
+      .maybeSingle();
+
+    if (requestId !== latestRequestId.current) return;
+
+    if (
+      profileData &&
+      ADMIN_CARGOS.includes(profileData.cargo ?? "") &&
+      profileData.acesso_operacional !== false
+    ) {
+      // Build a virtual OperationalUser from the profile
+      setSession(s);
+      setUser({
+        id: profileData.id,
+        nome: profileData.nome ?? "",
+        email: profileData.email ?? "",
+        empresa_id: profileData.empresa_id ?? "",
+        ativo: true,
+        user_id: s.user.id,
+      });
+    } else {
+      setSession(s);
+      setUser(null);
+    }
+
     setLoading(false);
     hasInitialized.current = true;
   }, []);
