@@ -47,6 +47,8 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
   const [horaBanho, setHoraBanho] = useState("10:00");
   const [showHorarios, setShowHorarios] = useState(false);
   const [showHorarioBanho, setShowHorarioBanho] = useState(false);
+  const [banhistas, setBanhistas] = useState<any[]>([]);
+  const [selectedBanhistaId, setSelectedBanhistaId] = useState("");
 
   const empresaId = subscription?.empresa_id || "";
   const {
