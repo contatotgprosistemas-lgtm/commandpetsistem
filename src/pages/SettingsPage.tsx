@@ -288,24 +288,24 @@ function EquipeTab() {
       return;
     }
     setCreating(true);
-    const { error } = await supabase.auth.signUp({
-      email: newEmail,
-      password: newPassword,
-      options: { data: { nome: newNome } },
-    });
-    if (error) {
-      toast({ title: "Erro ao criar usuário", description: error.message, variant: "destructive" });
-    } else {
-      setTimeout(async () => {
-        await supabase
-          .from("profiles")
-          .update({ empresa_id: profile?.empresa_id, cargo: newCargo })
-          .eq("email", newEmail);
-        await fetchUsers();
-        toast({ title: "Usuário criado com sucesso!" });
-        setDialogOpen(false);
-        setNewEmail(""); setNewNome(""); setNewPassword(""); setNewCargo("atendente");
-      }, 1000);
+    try {
+      const { data, error } = await supabase.functions.invoke("criar-acesso-operacional", {
+        body: { nome: newNome, email: newEmail, senha: newPassword, empresa_id: profile?.empresa_id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const userId = data?.user_id;
+      if (userId) {
+        await supabase.from("profiles").update({ cargo: newCargo }).eq("user_id", userId);
+      }
+
+      await fetchUsers();
+      toast({ title: "Usuário criado com sucesso!" });
+      setDialogOpen(false);
+      setNewEmail(""); setNewNome(""); setNewPassword(""); setNewCargo("atendente");
+    } catch (err: any) {
+      toast({ title: "Erro ao criar usuário", description: err.message, variant: "destructive" });
     }
     setCreating(false);
   };
