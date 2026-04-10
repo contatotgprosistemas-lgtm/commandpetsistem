@@ -236,18 +236,23 @@ function EmpresaTab() {
   );
 }
 
-// ─── Usuários e Permissões ──────────────────────────────────────────
-function UsuariosTab() {
+// ─── Equipe (Usuários do Sistema + Operacionais) ────────────────────
+function EquipeTab() {
   const { profile } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
+  const [opUsers, setOpUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [opLoading, setOpLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [opDialogOpen, setOpDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newNome, setNewNome] = useState("");
   const [newCargo, setNewCargo] = useState("atendente");
   const [newPassword, setNewPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [opForm, setOpForm] = useState({ nome: "", email: "", password: "" });
+  const [opSaving, setOpSaving] = useState(false);
 
   const fetchUsers = async () => {
     if (!profile?.empresa_id) return;
@@ -261,7 +266,15 @@ function UsuariosTab() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchUsers(); }, [profile?.empresa_id]);
+  const fetchOpUsers = async () => {
+    if (!profile?.empresa_id) return;
+    setOpLoading(true);
+    const { data } = await supabase.from("operational_users").select("*").eq("empresa_id", profile.empresa_id).order("nome");
+    setOpUsers(data ?? []);
+    setOpLoading(false);
+  };
+
+  useEffect(() => { fetchUsers(); fetchOpUsers(); }, [profile?.empresa_id]);
 
   const updateCargo = async (id: string, cargo: string) => {
     await supabase.from("profiles").update({ cargo }).eq("id", id);
@@ -289,8 +302,6 @@ function UsuariosTab() {
     if (error) {
       toast({ title: "Erro ao criar usuário", description: error.message, variant: "destructive" });
     } else {
-      // Update the new user's profile to link to this empresa
-      // Note: the trigger creates the profile, we need to update it
       setTimeout(async () => {
         await supabase
           .from("profiles")
@@ -305,117 +316,230 @@ function UsuariosTab() {
     setCreating(false);
   };
 
+  const handleCreateOpUser = async () => {
+    if (!profile?.empresa_id || !opForm.nome || !opForm.email || !opForm.password) {
+      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+    setOpSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("criar-acesso-operacional", {
+        body: {
+          nome: opForm.nome,
+          email: opForm.email,
+          senha: opForm.password,
+          empresa_id: profile.empresa_id,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Usuário operacional criado!" });
+      setOpForm({ nome: "", email: "", password: "" });
+      setOpDialogOpen(false);
+      fetchOpUsers();
+    } catch (err: any) {
+      toast({ title: "Erro ao criar usuário", description: err.message, variant: "destructive" });
+    }
+    setOpSaving(false);
+  };
+
+  const handleOpToggle = async (id: string, ativo: boolean) => {
+    await supabase.from("operational_users").update({ ativo: !ativo }).eq("id", id);
+    fetchOpUsers();
+  };
+
+  const handleOpDelete = async (id: string) => {
+    if (!confirm("Excluir este usuário operacional?")) return;
+    await supabase.from("operational_users").delete().eq("id", id);
+    fetchOpUsers();
+    toast({ title: "Usuário removido." });
+  };
+
   return (
     <div className="space-y-6">
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="text-base">Usuários e Permissões</CardTitle>
-          <CardDescription>Gerencie sua equipe</CardDescription>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm"><UserPlus className="h-4 w-4 mr-2" /> Novo Usuário</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Cadastrar Usuário</DialogTitle></DialogHeader>
-            <div className="space-y-4 pt-2">
-              <div className="space-y-2">
-                <Label>Nome</Label>
-                <Input value={newNome} onChange={(e) => setNewNome(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Senha</Label>
-                <div className="relative">
-                  <Input type={showPw ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                  <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+      {/* Usuários do Sistema */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base">Usuários do Sistema</CardTitle>
+            <CardDescription>Equipe com acesso ao painel administrativo e ao app operacional</CardDescription>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><UserPlus className="h-4 w-4 mr-2" /> Novo Usuário</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Cadastrar Usuário</DialogTitle></DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>Nome</Label>
+                  <Input value={newNome} onChange={(e) => setNewNome(e.target.value)} />
                 </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Senha</Label>
+                  <div className="relative">
+                    <Input type={showPw ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Select value={newCargo} onValueChange={setNewCargo}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="gerente">Gerente</SelectItem>
+                      <SelectItem value="atendente">Atendente</SelectItem>
+                      <SelectItem value="financeiro">Financeiro</SelectItem>
+                      <SelectItem value="operacional">Operacional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleCreateUser} disabled={creating} className="w-full">
+                  {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} Criar Usuário
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Cargo</Label>
-                <Select value={newCargo} onValueChange={setNewCargo}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="gerente">Gerente</SelectItem>
-                    <SelectItem value="atendente">Atendente</SelectItem>
-                    <SelectItem value="financeiro">Financeiro</SelectItem>
-                    <SelectItem value="operacional">Operacional</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={handleCreateUser} disabled={creating} className="w-full">
-                {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} Criar Usuário
-              </Button>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Cargo</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.nome}</TableCell>
+                      <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
+                      <TableCell>
+                        <Select defaultValue={u.cargo || "atendente"} onValueChange={(v) => updateCargo(u.id, v)}>
+                          <SelectTrigger className="h-8 w-[130px]"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="gerente">Gerente</SelectItem>
+                            <SelectItem value="atendente">Atendente</SelectItem>
+                            <SelectItem value="financeiro">Financeiro</SelectItem>
+                            <SelectItem value="operacional">Operacional</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select defaultValue={u.status} onValueChange={(v) => updateStatus(u.id, v)}>
+                          <SelectTrigger className="h-8 w-[110px]"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ativo">Ativo</SelectItem>
+                            <SelectItem value="suspenso">Suspenso</SelectItem>
+                            <SelectItem value="bloqueado">Bloqueado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {(() => { const [y,m,d] = u.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {users.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
-          </DialogContent>
-        </Dialog>
-      </CardHeader>
-      <CardContent className="p-0">
-        {loading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-        ) : (
-          <div className="overflow-x-auto">
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Usuários Operacionais (acesso simplificado via PIN) */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base">Acessos Operacionais (PIN)</CardTitle>
+            <CardDescription>Usuários extras com acesso simplificado via PIN ao portal operacional</CardDescription>
+          </div>
+          <Dialog open={opDialogOpen} onOpenChange={setOpDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" className="gap-1.5"><UserPlus className="h-4 w-4" /> Novo PIN</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Novo Acesso Operacional (PIN)</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nome</Label>
+                  <Input value={opForm.nome} onChange={(e) => setOpForm({ ...opForm, nome: e.target.value })} placeholder="Nome completo" />
+                </div>
+                <div className="space-y-2">
+                  <Label>E-mail</Label>
+                  <Input type="email" value={opForm.email} onChange={(e) => setOpForm({ ...opForm, email: e.target.value })} placeholder="email@exemplo.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Senha/PIN</Label>
+                  <Input type="password" value={opForm.password} onChange={(e) => setOpForm({ ...opForm, password: e.target.value })} placeholder="Mínimo 6 caracteres" />
+                </div>
+                <Button onClick={handleCreateOpUser} disabled={opSaving} className="w-full">
+                  {opSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Criar Acesso
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent>
+          {opLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : opUsers.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8 text-sm">Nenhum acesso operacional extra cadastrado. Usuários do sistema já possuem acesso ao app operacional.</p>
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Cargo</TableHead>
+                  <TableHead>E-mail</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Ações</TableHead>
+                  <TableHead className="w-24">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((u) => (
+                {opUsers.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.nome}</TableCell>
-                    <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{u.email}</TableCell>
                     <TableCell>
-                      <Select defaultValue={u.cargo || "atendente"} onValueChange={(v) => updateCargo(u.id, v)}>
-                        <SelectTrigger className="h-8 w-[130px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="gerente">Gerente</SelectItem>
-                          <SelectItem value="atendente">Atendente</SelectItem>
-                          <SelectItem value="financeiro">Financeiro</SelectItem>
-                          <SelectItem value="operacional">Operacional</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Badge variant={u.ativo ? "default" : "secondary"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Select defaultValue={u.status} onValueChange={(v) => updateStatus(u.id, v)}>
-                        <SelectTrigger className="h-8 w-[110px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ativo">Ativo</SelectItem>
-                          <SelectItem value="suspenso">Suspenso</SelectItem>
-                          <SelectItem value="bloqueado">Bloqueado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {(() => { const [y,m,d] = u.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
+                      <div className="flex items-center gap-1">
+                        <Switch checked={u.ativo} onCheckedChange={() => handleOpToggle(u.id, u.ativo)} />
+                        <Button variant="ghost" size="icon" onClick={() => handleOpDelete(u.id)} className="h-8 w-8 text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
-                {users.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-    <PermissoesCargoPanel />
+          )}
+        </CardContent>
+      </Card>
+
+      <PermissoesCargoPanel />
     </div>
   );
 }
