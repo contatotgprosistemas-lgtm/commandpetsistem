@@ -352,6 +352,7 @@ function EquipeTab() {
                       <SelectItem value="atendente">Atendente</SelectItem>
                       <SelectItem value="financeiro">Financeiro</SelectItem>
                       <SelectItem value="operacional">Operacional</SelectItem>
+                      <SelectItem value="banhista">Banhista</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -392,6 +393,7 @@ function EquipeTab() {
                             <SelectItem value="atendente">Atendente</SelectItem>
                             <SelectItem value="financeiro">Financeiro</SelectItem>
                             <SelectItem value="operacional">Operacional</SelectItem>
+                            <SelectItem value="banhista">Banhista</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>

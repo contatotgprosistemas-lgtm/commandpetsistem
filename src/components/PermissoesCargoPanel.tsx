@@ -11,6 +11,7 @@ const CARGOS = [
   { value: "atendente", label: "Atendente" },
   { value: "financeiro", label: "Financeiro" },
   { value: "operacional", label: "Operacional" },
+  { value: "banhista", label: "Banhista" },
 ] as const;
 
 type Cargo = (typeof CARGOS)[number]["value"];
@@ -88,6 +89,16 @@ const DEFAULT_PERMISSIONS: Record<Cargo, PermissionsMap> = {
       {
         visualizar: ["dashboard", "agenda", "pets", "clientes"].includes(m.key),
         editar: ["agenda", "pets"].includes(m.key),
+        excluir: false,
+      },
+    ])
+  ) as PermissionsMap,
+  banhista: Object.fromEntries(
+    MODULES.map((m) => [
+      m.key,
+      {
+        visualizar: ["dashboard", "agenda", "pets"].includes(m.key),
+        editar: ["agenda"].includes(m.key),
         excluir: false,
       },
     ])
