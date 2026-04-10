@@ -254,6 +254,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         hora_saida: data.hora_saida || null,
         baia: data.baia || null,
         valor: finalValor,
+        desconto: data.desconto ? parseFloat(data.desconto) : 0,
         forma_pagamento: data.forma_pagamento || null,
         notas: useRepl
           ? `${data.notas || ""} [Reposição de falta justificada]`.trim()
@@ -527,6 +528,19 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 </FormItem>
               )} />
             </div>
+
+            {/* Desconto (hotel only) */}
+            {isHotel && (
+              <FormField control={form.control} name="desconto" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Desconto (R$)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" min="0" placeholder="0,00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
 
             {/* Forma de Pagamento + Data de Pagamento */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
