@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,6 +24,7 @@ const schema = z.object({
   data_saida_provavel: z.string().optional().or(z.literal("")),
   hora_saida_provavel: z.string().optional().or(z.literal("")),
   baia: z.string().optional().or(z.literal("")),
+  desconto: z.string().optional().or(z.literal("")),
   valor: z.string().optional().or(z.literal("")),
   forma_pagamento: z.string().optional().or(z.literal("")),
   status: z.string().min(1),
@@ -62,9 +63,15 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
   const [loading, setLoading] = useState(false);
   const [servicos, setServicos] = useState<{ id: string; descricao: string }[]>([]);
 
+  const tipoServico = agendamento?.tipo_servico || "";
+  const isHotel = useMemo(() => {
+    const desc = tipoServico.toLowerCase();
+    return desc.includes("hotel") || desc.includes("hospedagem");
+  }, [tipoServico]);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { tipo_servico: "", data_reserva: "", hora_reserva: "09:00", data_saida_provavel: "", hora_saida_provavel: "", baia: "", valor: "", forma_pagamento: "", status: "agendado", notas: "" },
+    defaultValues: { tipo_servico: "", data_reserva: "", hora_reserva: "09:00", data_saida_provavel: "", hora_saida_provavel: "", baia: "", desconto: "", valor: "", forma_pagamento: "", status: "agendado", notas: "" },
   });
 
   useEffect(() => {
@@ -84,6 +91,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         data_saida_provavel: dsp ? format(dsp, "yyyy-MM-dd") : "",
         hora_saida_provavel: agendamento.hora_saida_provavel || "",
         baia: agendamento.baia || "",
+        desconto: agendamento.desconto != null ? String(agendamento.desconto) : "",
         valor: agendamento.valor != null ? String(agendamento.valor) : "",
         forma_pagamento: agendamento.forma_pagamento || "",
         status: agendamento.status || "agendado",
@@ -107,6 +115,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         hora_saida_provavel: data.hora_saida_provavel || null,
         baia: data.baia || null,
         valor: data.valor ? parseFloat(data.valor) : null,
+        desconto: data.desconto ? parseFloat(data.desconto) : 0,
         forma_pagamento: data.forma_pagamento || null,
         status: data.status,
         notas: data.notas || null,
@@ -193,7 +202,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
               )} />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className={cn("grid gap-4", isHotel ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3")}>
               <FormField control={form.control} name="baia" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Baia</FormLabel>
@@ -205,6 +214,14 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
                   </Select>
                 </FormItem>
               )} />
+              {isHotel && (
+                <FormField control={form.control} name="desconto" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Desconto R$</FormLabel>
+                    <FormControl><Input type="number" step="0.01" min="0" placeholder="0,00" {...field} /></FormControl>
+                  </FormItem>
+                )} />
+              )}
               <FormField control={form.control} name="valor" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Valor R$</FormLabel>

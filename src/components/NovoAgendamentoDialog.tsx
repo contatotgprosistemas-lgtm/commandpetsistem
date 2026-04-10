@@ -32,6 +32,7 @@ const schema = z.object({
   data_saida: z.string().optional().or(z.literal("")),
   hora_saida: z.string().optional().or(z.literal("")),
   baia: z.string().optional().or(z.literal("")),
+  desconto: z.string().optional().or(z.literal("")),
   valor: z.string().optional().or(z.literal("")),
   forma_pagamento: z.string().optional().or(z.literal("")),
   data_pagamento: z.string().optional().or(z.literal("")),
@@ -106,7 +107,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       data_entrada: "", hora_entrada: "",
       data_saida_provavel: "", hora_saida_provavel: "18:00",
       data_saida: "", hora_saida: "",
-      baia: "", valor: "", forma_pagamento: "", data_pagamento: "", notas: "",
+      baia: "", desconto: "", valor: "", forma_pagamento: "", data_pagamento: "", notas: "",
     },
   });
 
@@ -115,6 +116,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const selectedServico = form.watch("tipo_servico");
   const dataReserva = form.watch("data_reserva");
   const dataSaidaProvavel = form.watch("data_saida_provavel");
+  const descontoStr = form.watch("desconto");
   const filteredPets = pets.filter(p => p.cliente_id === selectedCliente);
 
   // Find the selected service object
@@ -140,13 +142,15 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     return diff > 0 ? diff : 0;
   }, [isHotel, dataReserva, dataSaidaProvavel]);
 
-  // Auto-calculate valor for hotel
+  // Auto-calculate valor for hotel (with discount)
   useEffect(() => {
     if (isHotel && diarias > 0 && servicoObj) {
-      const total = (diarias * servicoObj.valor).toFixed(2);
+      const bruto = diarias * servicoObj.valor;
+      const desc = descontoStr ? parseFloat(descontoStr) : 0;
+      const total = Math.max(bruto - (isNaN(desc) ? 0 : desc), 0).toFixed(2);
       form.setValue("valor", total);
     }
-  }, [isHotel, diarias, servicoObj]);
+  }, [isHotel, diarias, servicoObj, descontoStr]);
 
   useEffect(() => {
     if (open) {
@@ -250,6 +254,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         hora_saida: data.hora_saida || null,
         baia: data.baia || null,
         valor: finalValor,
+        desconto: data.desconto ? parseFloat(data.desconto) : 0,
         forma_pagamento: data.forma_pagamento || null,
         notas: useRepl
           ? `${data.notas || ""} [Reposição de falta justificada]`.trim()
@@ -523,6 +528,19 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 </FormItem>
               )} />
             </div>
+
+            {/* Desconto (hotel only) */}
+            {isHotel && (
+              <FormField control={form.control} name="desconto" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Desconto (R$)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" min="0" placeholder="0,00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
 
             {/* Forma de Pagamento + Data de Pagamento */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
