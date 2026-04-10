@@ -695,6 +695,20 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </div>
           )}
 
+          {showHorarioBanho && banhistas.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Banhista</Label>
+              <Select value={selectedBanhistaId} onValueChange={setSelectedBanhistaId}>
+                <SelectTrigger><SelectValue placeholder="Selecione o banhista" /></SelectTrigger>
+                <SelectContent>
+                  {banhistas.map(b => (
+                    <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {proportionalInfo && (
             <div className="rounded-md bg-muted p-3">
               <p className="text-xs font-medium text-muted-foreground">{proportionalInfo}</p>
