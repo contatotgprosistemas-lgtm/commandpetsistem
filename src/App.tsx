@@ -155,7 +155,8 @@ const App = () => (
               }
             />
 
-
+            <Route
+              path="/banho-tosa"
               element={
                 <ProtectedRoute>
                   <AppLayout>
