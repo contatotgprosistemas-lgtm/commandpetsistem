@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
+import { addToEsteiraIfApplicable } from "@/lib/esteira";
 import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
 
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
@@ -216,6 +217,7 @@ export default function Dashboard() {
       tipo_servico: item.tipo_servico, valor: item.valor, data_servico: item.data_hora,
       agendamento_id: item.id, notas: `Check-in realizado em ${format(now, "dd/MM/yyyy")} às ${horaEntrada}`,
     } as any);
+    await addToEsteiraIfApplicable({ empresaId: item.empresa_id, agendamentoId: item.id, tipoServico: item.tipo_servico });
     toast.success("Check-in realizado!");
     fetchAgendamentos();
   }

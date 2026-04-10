@@ -11,6 +11,7 @@ import { format, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { FaltaDialog } from "@/components/FaltaDialog";
+import { addToEsteiraIfApplicable } from "@/lib/esteira";
 
 export default function OperacionalAgendaPage() {
   const { user } = useOperationalAuth();
@@ -50,6 +51,7 @@ export default function OperacionalAgendaPage() {
       hora_entrada: format(now, "HH:mm"),
     }).eq("id", item.id);
     if (error) { toast.error("Erro: " + error.message); return; }
+    await addToEsteiraIfApplicable({ empresaId: item.empresa_id, agendamentoId: item.id, tipoServico: item.tipo_servico });
     toast.success("Check-in realizado!");
     fetchAgendamentos();
   };

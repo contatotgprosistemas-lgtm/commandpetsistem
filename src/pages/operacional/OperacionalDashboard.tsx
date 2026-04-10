@@ -16,6 +16,7 @@ import { FaltaDialog } from "@/components/FaltaDialog";
 import { ManejoDialog } from "@/components/ManejoDialog";
 import { OperacionalGaleriaDialog } from "@/components/operacional/OperacionalGaleriaDialog";
 import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
+import { addToEsteiraIfApplicable } from "@/lib/esteira";
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
@@ -120,6 +121,7 @@ export default function OperacionalDashboard() {
       hora_entrada: format(now, "HH:mm"),
     }).eq("id", item.id);
     if (error) { toast.error("Erro: " + error.message); return; }
+    await addToEsteiraIfApplicable({ empresaId: item.empresa_id, agendamentoId: item.id, tipoServico: item.tipo_servico });
     toast.success("Check-in realizado!");
     window.location.reload();
   };

@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FaltaDialog } from "@/components/FaltaDialog";
+import { addToEsteiraIfApplicable } from "@/lib/esteira";
 
 interface Agendamento {
   id: string;
@@ -139,6 +140,7 @@ export default function AgendaPage() {
       agendamento_id: item.id,
       notas: `Check-in realizado em ${format(now, "dd/MM/yyyy")} às ${horaEntrada}`,
     } as any);
+    await addToEsteiraIfApplicable({ empresaId: item.empresa_id, agendamentoId: item.id, tipoServico: item.tipo_servico });
     toast.success("Check-in realizado! Pet aparecerá no Dashboard.");
     fetchAgendamentos();
   }
