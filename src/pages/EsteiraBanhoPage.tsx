@@ -115,13 +115,10 @@ export default function EsteiraBanhoPage() {
     setToggling(false);
   }
 
-  async function handleStart(item: EsteiraItem) {
-    const banhista = prompt("Nome do banhista:");
-    if (!banhista) return;
-
+  async function handleStart(item: EsteiraItem, banhista: string) {
     const { error } = await supabase
       .from("esteira_banho")
-      .update({ status: "em_andamento", inicio_at: new Date().toISOString(), banhista_nome: banhista } as any)
+      .update({ status: "em_andamento", inicio_at: new Date().toISOString(), banhista_nome: banhista || null } as any)
       .eq("id", item.id);
     if (error) { toast.error("Erro ao iniciar"); return; }
     toast.success("Serviço iniciado!");
@@ -321,10 +318,11 @@ function EsteiraCard({
   logoUrl,
 }: {
   item: EsteiraItem;
-  onStart: (item: EsteiraItem) => void;
+  onStart: (item: EsteiraItem, banhista: string) => void;
   onFinish: (item: EsteiraItem) => void;
   logoUrl: string;
 }) {
+  const [banhista, setBanhista] = useState(item.banhista_nome || "");
   const pet = item.agendamento?.pet;
   const cliente = item.agendamento?.cliente;
   const servico = item.agendamento?.tipo_servico || "Serviço";
@@ -363,8 +361,20 @@ function EsteiraCard({
 
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{servico}</span>
-          {item.banhista_nome && <span className="font-medium text-foreground">🧑‍🔧 {item.banhista_nome}</span>}
+          {item.status !== "aguardando" && item.banhista_nome && (
+            <span className="font-medium text-foreground">🧑‍🔧 {item.banhista_nome}</span>
+          )}
         </div>
+
+        {/* Banhista input for aguardando */}
+        {item.status === "aguardando" && (
+          <Input
+            value={banhista}
+            onChange={e => setBanhista(e.target.value)}
+            placeholder="Nome do banhista"
+            className="h-8 text-xs"
+          />
+        )}
 
         {/* Timer / Duration */}
         <div className="flex items-center justify-center py-2">
@@ -382,7 +392,7 @@ function EsteiraCard({
         {/* Actions */}
         <div className="flex gap-2">
           {item.status === "aguardando" && (
-            <Button onClick={() => onStart(item)} className="flex-1 gap-1.5" size="sm">
+            <Button onClick={() => onStart(item, banhista)} className="flex-1 gap-1.5" size="sm">
               <Play className="h-3.5 w-3.5" /> Iniciar
             </Button>
           )}
