@@ -295,7 +295,7 @@ function EsteiraCard({
         <div className="flex items-start gap-3">
           <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-muted">
             {pet?.foto_url ? (
-              <SignedImage path={pet.foto_url} alt={pet.nome} className="w-full h-full object-cover" bucket="pet-media" />
+              <SignedImage src={pet.foto_url} alt={pet.nome} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <img src={logoUrl} alt="Logo" className="w-3/5 h-3/5 object-contain opacity-40" />
