@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { format, startOfDay, addDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarCheck, Search, Filter, PawPrint, User, Hotel, Scissors, TreePine, HelpCircle } from "lucide-react";
@@ -90,6 +91,7 @@ function getGroup(tipoServico: string): ServiceGroup {
 
 export default function ReservasPage() {
   const { profile } = useAuth();
+  const { logoUrl } = useEmpresaLogo();
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -249,8 +251,8 @@ export default function ReservasPage() {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-muted">
-                            <PawPrint className="h-12 w-12 text-muted-foreground/30" />
-                          </div>
+                             <img src={logoUrl} alt="Logo" className="w-3/5 h-3/5 object-contain opacity-40" />
+                           </div>
                         )}
                         <Badge
                           className={`absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0 ${statusColors[r.status] || ""}`}
