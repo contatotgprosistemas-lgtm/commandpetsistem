@@ -291,12 +291,16 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           const pet = pets.find(p => p.id === pid);
           return pet?.nome || "Pet";
         });
+        const isPagamentoPosterior = data.forma_pagamento === "Pagamento Posterior";
+        const vencimentoFatura = isPagamentoPosterior && data.data_pagamento
+          ? data.data_pagamento
+          : data.data_reserva;
         const faturas = data.pet_ids.map((_, idx) => ({
           empresa_id: empresaId,
           cliente_id: data.cliente_id,
           descricao: `${data.tipo_servico} — ${petNames[idx]}`,
           valor: valorNum / data.pet_ids.length,
-          vencimento: data.data_reserva,
+          vencimento: vencimentoFatura,
           categoria: data.forma_pagamento || "A definir",
           status: "pendente",
         }));
