@@ -388,76 +388,76 @@ function EquipeTab() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Cargo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-center">Operacional</TableHead>
-                     <TableHead>Criado em</TableHead>
-                     {isAdmin && <TableHead className="w-16">Excluir</TableHead>}
-                   </TableRow>
-                 </TableHeader>
-                 <TableBody>
-                   {users.map((u) => (
-                     <TableRow key={u.id}>
-                       <TableCell className="font-medium">{u.nome}</TableCell>
-                       <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
-                       <TableCell>
-                         <Select defaultValue={u.cargo || "atendente"} onValueChange={(v) => updateCargo(u.id, v)}>
-                           <SelectTrigger className="h-8 w-[130px]"><SelectValue /></SelectTrigger>
-                           <SelectContent>
-                             <SelectItem value="admin">Admin</SelectItem>
-                             <SelectItem value="gerente">Gerente</SelectItem>
-                             <SelectItem value="atendente">Atendente</SelectItem>
-                             <SelectItem value="financeiro">Financeiro</SelectItem>
-                             <SelectItem value="operacional">Operacional</SelectItem>
-                             <SelectItem value="banhista">Banhista</SelectItem>
-                           </SelectContent>
-                         </Select>
-                       </TableCell>
-                       <TableCell>
-                         <Select defaultValue={u.status} onValueChange={(v) => updateStatus(u.id, v)}>
-                           <SelectTrigger className="h-8 w-[110px]"><SelectValue /></SelectTrigger>
-                           <SelectContent>
-                             <SelectItem value="ativo">Ativo</SelectItem>
-                             <SelectItem value="suspenso">Suspenso</SelectItem>
-                             <SelectItem value="bloqueado">Bloqueado</SelectItem>
-                           </SelectContent>
-                         </Select>
-                       </TableCell>
-                       <TableCell className="text-center">
-                         <Switch
-                           checked={u.acesso_operacional ?? true}
-                           onCheckedChange={() => toggleAcessoOperacional(u.id, u.acesso_operacional ?? true)}
-                         />
-                       </TableCell>
-                       <TableCell className="text-xs text-muted-foreground">
-                         {(() => { const [y,m,d] = u.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
-                       </TableCell>
-                       {isAdmin && (
-                         <TableCell>
-                           {u.user_id !== user?.id && (
-                             <Button
-                               variant="ghost"
-                               size="icon"
-                               className="text-destructive hover:text-destructive"
-                               onClick={() => setConfirmDeleteUser(u)}
-                               disabled={deletingId === u.user_id}
-                             >
-                               {deletingId === u.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                             </Button>
-                           )}
-                         </TableCell>
-                       )}
-                     </TableRow>
-                   ))}
-                   {users.length === 0 && (
-                     <TableRow>
-                       <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell>
-                     </TableRow>
-                   )}
-                 </TableBody>
-               </Table>
+                    <TableHead className="min-w-[120px]">Nome</TableHead>
+                    <TableHead className="min-w-[160px]">Email</TableHead>
+                    <TableHead className="w-[120px]">Cargo</TableHead>
+                    <TableHead className="w-[100px]">Status</TableHead>
+                    <TableHead className="w-[70px] text-center">Oper.</TableHead>
+                    <TableHead className="w-[85px]">Criado em</TableHead>
+                    {isAdmin && <TableHead className="w-[50px]"></TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium text-sm">{u.nome}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm truncate max-w-[200px]">{u.email || "—"}</TableCell>
+                      <TableCell>
+                        <Select defaultValue={u.cargo || "atendente"} onValueChange={(v) => updateCargo(u.id, v)}>
+                          <SelectTrigger className="h-7 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="gerente">Gerente</SelectItem>
+                            <SelectItem value="atendente">Atendente</SelectItem>
+                            <SelectItem value="financeiro">Financeiro</SelectItem>
+                            <SelectItem value="operacional">Operacional</SelectItem>
+                            <SelectItem value="banhista">Banhista</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select defaultValue={u.status} onValueChange={(v) => updateStatus(u.id, v)}>
+                          <SelectTrigger className="h-7 w-[95px] text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ativo">Ativo</SelectItem>
+                            <SelectItem value="suspenso">Suspenso</SelectItem>
+                            <SelectItem value="bloqueado">Bloqueado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={u.acesso_operacional ?? true}
+                          onCheckedChange={() => toggleAcessoOperacional(u.id, u.acesso_operacional ?? true)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {(() => { const [y,m,d] = u.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell className="p-1">
+                          {u.user_id !== user?.id && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => setConfirmDeleteUser(u)}
+                              disabled={deletingId === u.user_id}
+                            >
+                              {deletingId === u.user_id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                  {users.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
              </div>
            )}
          </CardContent>
