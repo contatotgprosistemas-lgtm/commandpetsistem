@@ -70,11 +70,15 @@ function getPlanColor(tipo: string): string {
   return "bg-fuchsia-500/80 text-white";
 }
 
-function getServiceColor(tipo: string, isFromPlan = false) {
+function getServiceColor(tipo: string, isFromPlan = false, status?: string) {
+  // Check-in (na_empresa) or check-out (concluido) → light green
+  if (status === "na_empresa") return "bg-emerald-400/80 text-white";
+  if (status === "concluido") return "bg-green-500/80 text-white";
+
   if (isFromPlan) {
     return getPlanColor(tipo);
   }
-  return SERVICE_COLORS[tipo] || "bg-primary/70 text-primary-foreground";
+  return SERVICE_COLORS[tipo] || "bg-violet-500/80 text-white";
 }
 
 function statusLabel(status: string) {
@@ -306,7 +310,7 @@ function DayListItem({ item, onEdit }: { item: Agendamento; onEdit?: (a: Agendam
   const clientWhatsapp = item.cliente?.whatsapp;
   const initials = petName.slice(0, 2).toUpperCase();
   const isFromPlan = !!item.subscription_id;
-  const colorClass = getServiceColor(item.tipo_servico, isFromPlan);
+  const colorClass = getServiceColor(item.tipo_servico, isFromPlan, item.status);
 
   return (
     <div
@@ -365,7 +369,7 @@ function CalendarEvent({ item }: { item: Agendamento }) {
   const hora = format(new Date(item.data_hora), "HH:mm");
   const petName = item.pet?.nome ?? "Pet";
   const isFromPlan = !!item.subscription_id;
-  const colorClass = getServiceColor(item.tipo_servico, isFromPlan);
+  const colorClass = getServiceColor(item.tipo_servico, isFromPlan, item.status);
 
   return (
     <div
