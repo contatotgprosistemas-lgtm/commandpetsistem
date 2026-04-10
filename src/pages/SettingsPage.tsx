@@ -236,23 +236,18 @@ function EmpresaTab() {
   );
 }
 
-// ─── Equipe (Usuários do Sistema + Operacionais) ────────────────────
+// ─── Equipe (Usuários do Sistema) ────────────────────
 function EquipeTab() {
   const { profile } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
-  const [opUsers, setOpUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [opLoading, setOpLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [opDialogOpen, setOpDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newNome, setNewNome] = useState("");
   const [newCargo, setNewCargo] = useState("atendente");
   const [newPassword, setNewPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [opForm, setOpForm] = useState({ nome: "", email: "", password: "" });
-  const [opSaving, setOpSaving] = useState(false);
 
   const fetchUsers = async () => {
     if (!profile?.empresa_id) return;
@@ -266,15 +261,7 @@ function EquipeTab() {
     setLoading(false);
   };
 
-  const fetchOpUsers = async () => {
-    if (!profile?.empresa_id) return;
-    setOpLoading(true);
-    const { data } = await supabase.from("operational_users").select("*").eq("empresa_id", profile.empresa_id).order("nome");
-    setOpUsers(data ?? []);
-    setOpLoading(false);
-  };
-
-  useEffect(() => { fetchUsers(); fetchOpUsers(); }, [profile?.empresa_id]);
+  useEffect(() => { fetchUsers(); }, [profile?.empresa_id]);
 
   const updateCargo = async (id: string, cargo: string) => {
     await supabase.from("profiles").update({ cargo }).eq("id", id);
@@ -285,6 +272,12 @@ function EquipeTab() {
   const updateStatus = async (id: string, status: string) => {
     await supabase.from("profiles").update({ status }).eq("id", id);
     toast({ title: `Status alterado para ${status}` });
+    fetchUsers();
+  };
+
+  const toggleAcessoOperacional = async (id: string, current: boolean) => {
+    await supabase.from("profiles").update({ acesso_operacional: !current }).eq("id", id);
+    toast({ title: !current ? "Acesso operacional liberado" : "Acesso operacional removido" });
     fetchUsers();
   };
 
@@ -316,53 +309,13 @@ function EquipeTab() {
     setCreating(false);
   };
 
-  const handleCreateOpUser = async () => {
-    if (!profile?.empresa_id || !opForm.nome || !opForm.email || !opForm.password) {
-      toast({ title: "Preencha todos os campos", variant: "destructive" });
-      return;
-    }
-    setOpSaving(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("criar-acesso-operacional", {
-        body: {
-          nome: opForm.nome,
-          email: opForm.email,
-          senha: opForm.password,
-          empresa_id: profile.empresa_id,
-        },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      toast({ title: "Usuário operacional criado!" });
-      setOpForm({ nome: "", email: "", password: "" });
-      setOpDialogOpen(false);
-      fetchOpUsers();
-    } catch (err: any) {
-      toast({ title: "Erro ao criar usuário", description: err.message, variant: "destructive" });
-    }
-    setOpSaving(false);
-  };
-
-  const handleOpToggle = async (id: string, ativo: boolean) => {
-    await supabase.from("operational_users").update({ ativo: !ativo }).eq("id", id);
-    fetchOpUsers();
-  };
-
-  const handleOpDelete = async (id: string) => {
-    if (!confirm("Excluir este usuário operacional?")) return;
-    await supabase.from("operational_users").delete().eq("id", id);
-    fetchOpUsers();
-    toast({ title: "Usuário removido." });
-  };
-
   return (
     <div className="space-y-6">
-      {/* Usuários do Sistema */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-base">Usuários do Sistema</CardTitle>
-            <CardDescription>Equipe com acesso ao painel administrativo e ao app operacional</CardDescription>
+            <CardDescription>Equipe com acesso ao painel administrativo</CardDescription>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -420,7 +373,8 @@ function EquipeTab() {
                     <TableHead>Email</TableHead>
                     <TableHead>Cargo</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
+                    <TableHead className="text-center">Operacional</TableHead>
+                    <TableHead>Criado em</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -450,6 +404,12 @@ function EquipeTab() {
                           </SelectContent>
                         </Select>
                       </TableCell>
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={u.acesso_operacional ?? true}
+                          onCheckedChange={() => toggleAcessoOperacional(u.id, u.acesso_operacional ?? true)}
+                        />
+                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {(() => { const [y,m,d] = u.created_at.split("T")[0].split("-").map(Number); return new Date(y, m-1, d).toLocaleDateString("pt-BR"); })()}
                       </TableCell>
@@ -457,84 +417,12 @@ function EquipeTab() {
                   ))}
                   {users.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Usuários Operacionais (acesso simplificado via PIN) */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-base">Acessos Operacionais (PIN)</CardTitle>
-            <CardDescription>Usuários extras com acesso simplificado via PIN ao portal operacional</CardDescription>
-          </div>
-          <Dialog open={opDialogOpen} onOpenChange={setOpDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="gap-1.5"><UserPlus className="h-4 w-4" /> Novo PIN</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Novo Acesso Operacional (PIN)</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Nome</Label>
-                  <Input value={opForm.nome} onChange={(e) => setOpForm({ ...opForm, nome: e.target.value })} placeholder="Nome completo" />
-                </div>
-                <div className="space-y-2">
-                  <Label>E-mail</Label>
-                  <Input type="email" value={opForm.email} onChange={(e) => setOpForm({ ...opForm, email: e.target.value })} placeholder="email@exemplo.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Senha/PIN</Label>
-                  <Input type="password" value={opForm.password} onChange={(e) => setOpForm({ ...opForm, password: e.target.value })} placeholder="Mínimo 6 caracteres" />
-                </div>
-                <Button onClick={handleCreateOpUser} disabled={opSaving} className="w-full">
-                  {opSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Criar Acesso
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        <CardContent>
-          {opLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-          ) : opUsers.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8 text-sm">Nenhum acesso operacional extra cadastrado. Usuários do sistema já possuem acesso ao app operacional.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>E-mail</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-24">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {opUsers.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.nome}</TableCell>
-                    <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={u.ativo ? "default" : "secondary"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Switch checked={u.ativo} onCheckedChange={() => handleOpToggle(u.id, u.ativo)} />
-                        <Button variant="ghost" size="icon" onClick={() => handleOpDelete(u.id)} className="h-8 w-8 text-destructive">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
           )}
         </CardContent>
       </Card>
