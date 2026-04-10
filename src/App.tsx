@@ -26,6 +26,7 @@ import ContratosPage from "@/pages/ContratosPage";
 import NotasFiscaisPage from "@/pages/NotasFiscaisPage";
 import BanhoTosaPage from "@/pages/BanhoTosaPage";
 import EsteiraBanhoPage from "@/pages/EsteiraBanhoPage";
+import ReservasPage from "@/pages/ReservasPage";
 
 import ContractSignPage from "@/pages/ContractSignPage";
 import PontoPage from "@/pages/PontoPage";
@@ -144,7 +145,17 @@ const App = () => (
             />
 
             <Route
-              path="/banho-tosa"
+              path="/reservas"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ReservasPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+
               element={
                 <ProtectedRoute>
                   <AppLayout>
