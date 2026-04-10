@@ -24,6 +24,7 @@ const schema = z.object({
   data_saida_provavel: z.string().optional().or(z.literal("")),
   hora_saida_provavel: z.string().optional().or(z.literal("")),
   baia: z.string().optional().or(z.literal("")),
+  desconto: z.string().optional().or(z.literal("")),
   valor: z.string().optional().or(z.literal("")),
   forma_pagamento: z.string().optional().or(z.literal("")),
   status: z.string().min(1),
