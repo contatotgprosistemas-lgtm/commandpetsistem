@@ -1847,6 +1847,7 @@ export type Database = {
           email: string | null
           endereco: string | null
           endereco_numero: string | null
+          esteira_banho_ativa: boolean
           horario_domingo_fim: string | null
           horario_domingo_inicio: string | null
           horario_sabado_fim: string | null
@@ -1870,6 +1871,7 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           endereco_numero?: string | null
+          esteira_banho_ativa?: boolean
           horario_domingo_fim?: string | null
           horario_domingo_inicio?: string | null
           horario_sabado_fim?: string | null
@@ -1893,6 +1895,7 @@ export type Database = {
           email?: string | null
           endereco?: string | null
           endereco_numero?: string | null
+          esteira_banho_ativa?: boolean
           horario_domingo_fim?: string | null
           horario_domingo_inicio?: string | null
           horario_sabado_fim?: string | null
@@ -1910,6 +1913,57 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      esteira_banho: {
+        Row: {
+          agendamento_id: string
+          banhista_nome: string | null
+          created_at: string
+          duracao_segundos: number | null
+          empresa_id: string
+          fim_at: string | null
+          id: string
+          inicio_at: string | null
+          status: string
+        }
+        Insert: {
+          agendamento_id: string
+          banhista_nome?: string | null
+          created_at?: string
+          duracao_segundos?: number | null
+          empresa_id: string
+          fim_at?: string | null
+          id?: string
+          inicio_at?: string | null
+          status?: string
+        }
+        Update: {
+          agendamento_id?: string
+          banhista_nome?: string | null
+          created_at?: string
+          duracao_segundos?: number | null
+          empresa_id?: string
+          fim_at?: string | null
+          id?: string
+          inicio_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esteira_banho_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esteira_banho_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       estou_chegando: {
         Row: {
