@@ -65,7 +65,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { tipo_servico: "", data_reserva: "", hora_reserva: "09:00", data_saida_provavel: "", hora_saida_provavel: "", baia: "", valor: "", forma_pagamento: "", status: "agendado", notas: "" },
+    defaultValues: { tipo_servico: "", data_reserva: "", hora_reserva: "09:00", data_saida_provavel: "", hora_saida_provavel: "", baia: "", desconto: "", valor: "", forma_pagamento: "", status: "agendado", notas: "" },
   });
 
   useEffect(() => {
