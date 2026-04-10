@@ -94,7 +94,19 @@ export default function EsteiraBanhoPage() {
     if (data) setEsteiraAtiva(data.esteira_banho_ativa);
   }, [empresaId]);
 
-  useEffect(() => { fetchEsteira(); fetchToggle(); }, [fetchEsteira, fetchToggle]);
+  const fetchBanhistas = useCallback(async () => {
+    if (!empresaId) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, nome")
+      .eq("empresa_id", empresaId)
+      .eq("cargo", "banhista")
+      .eq("status", "ativo")
+      .order("nome");
+    if (data) setBanhistas(data);
+  }, [empresaId]);
+
+  useEffect(() => { fetchEsteira(); fetchToggle(); fetchBanhistas(); }, [fetchEsteira, fetchToggle, fetchBanhistas]);
 
   // Realtime
   useEffect(() => {
