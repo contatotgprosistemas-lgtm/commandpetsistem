@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { ListOrdered, Play, Square, Clock, PawPrint, User, Timer, CheckCircle2, Loader2 } from "lucide-react";
+import { ListOrdered, Play, Square, Clock, PawPrint, User, Timer, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { SignedImage } from "@/components/SignedImage";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { addToEsteiraIfApplicable } from "@/lib/esteira";
 
 interface EsteiraItem {
   id: string;
@@ -158,6 +159,47 @@ export default function EsteiraBanhoPage() {
 
     toast.success(`Serviço finalizado! Duração: ${formatDuration(duracao)}`);
     fetchEsteira();
+  }
+
+  const [syncing, setSyncing] = useState(false);
+
+  async function handleSync() {
+    if (!empresaId) return;
+    setSyncing(true);
+    try {
+      // Fetch all agendamentos with status "na_empresa" for today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { data: agendamentos } = await supabase
+        .from("agendamentos")
+        .select("id, tipo_servico, empresa_id")
+        .eq("empresa_id", empresaId)
+        .eq("status", "na_empresa")
+        .gte("data_hora", today.toISOString());
+
+      if (agendamentos) {
+        let added = 0;
+        for (const ag of agendamentos) {
+          const before = items.find(i => i.agendamento_id === ag.id);
+          if (!before) {
+            await addToEsteiraIfApplicable({
+              empresaId: ag.empresa_id,
+              agendamentoId: ag.id,
+              tipoServico: ag.tipo_servico,
+            });
+            added++;
+          }
+        }
+        if (added > 0) {
+          toast.success(`${added} pet(s) adicionado(s) à esteira`);
+        } else {
+          toast.info("Nenhum novo pet de banho/tosa para adicionar");
+        }
+      }
+      await fetchEsteira();
+    } finally {
+      setSyncing(false);
+    }
   }
 
   const aguardando = items.filter(i => i.status === "aguardando");
