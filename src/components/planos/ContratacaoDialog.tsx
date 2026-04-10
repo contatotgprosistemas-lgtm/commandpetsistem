@@ -118,6 +118,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   };
   const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
   const [extraSessionPolicy, setExtraSessionPolicy] = useState<"skip" | "charge">("skip");
+  const [banhistas, setBanhistas] = useState<any[]>([]);
+  const [selectedBanhistaId, setSelectedBanhistaId] = useState("");
 
   const {
     loading: availLoading,
@@ -133,6 +135,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     supabase.from("clientes").select("id, nome, dia_vencimento_fatura").is("deleted_at", null).order("nome").then(({ data }) => data && setClientes(data));
     supabase.from("service_plans" as any).select("*").eq("status", "ativo").then(({ data }) => data && setPlans(data));
     supabase.from("service_packages" as any).select("*").eq("status", "ativo").then(({ data }) => data && setPackages(data));
+    supabase.from("profiles").select("id, nome, cargo").eq("empresa_id", empresaId).eq("cargo", "banhista").then(({ data }) => data && setBanhistas(data));
   }, [open]);
 
   useEffect(() => {
