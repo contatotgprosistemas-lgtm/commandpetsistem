@@ -1,0 +1,1 @@
+ALTER TABLE public.agendamentos ADD COLUMN desconto numeric DEFAULT 0;

@@ -88,6 +88,7 @@ export type Database = {
           data_hora: string
           data_saida: string | null
           data_saida_provavel: string | null
+          desconto: number | null
           duracao_min: number | null
           empresa_id: string
           forma_pagamento: string | null
@@ -114,6 +115,7 @@ export type Database = {
           data_hora: string
           data_saida?: string | null
           data_saida_provavel?: string | null
+          desconto?: number | null
           duracao_min?: number | null
           empresa_id: string
           forma_pagamento?: string | null
@@ -140,6 +142,7 @@ export type Database = {
           data_hora?: string
           data_saida?: string | null
           data_saida_provavel?: string | null
+          desconto?: number | null
           duracao_min?: number | null
           empresa_id?: string
           forma_pagamento?: string | null
