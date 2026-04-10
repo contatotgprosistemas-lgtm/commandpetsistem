@@ -162,7 +162,6 @@ export default function EsteiraBanhoPage() {
     fetchEsteira();
   }
 
-  const [syncing, setSyncing] = useState(false);
 
   async function handleSync() {
     if (!empresaId) return;
