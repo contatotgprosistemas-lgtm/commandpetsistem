@@ -236,6 +236,7 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
             status: "agendado",
             subscription_id: subscription.id,
             notas: "Gerado automaticamente pelo plano",
+            ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
           };
           if (showHorarios) {
             ag.hora_prevista_buscar = horaBuscar;
@@ -322,6 +323,20 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
               conflictingDates={banhoConflicts}
               suggestions={banhoSuggestions}
             />
+          </div>
+        )}
+
+        {showHorarioBanho && banhistas.length > 0 && (
+          <div className="py-2 space-y-1.5">
+            <Label>Banhista</Label>
+            <Select value={selectedBanhistaId} onValueChange={setSelectedBanhistaId}>
+              <SelectTrigger><SelectValue placeholder="Selecione o banhista" /></SelectTrigger>
+              <SelectContent>
+                {banhistas.map(b => (
+                  <SelectItem key={b.id} value={b.id}>{b.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
