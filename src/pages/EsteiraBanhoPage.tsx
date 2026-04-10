@@ -62,6 +62,7 @@ export default function EsteiraBanhoPage() {
   const [esteiraAtiva, setEsteiraAtiva] = useState<boolean | null>(null);
   const [toggling, setToggling] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [banhistas, setBanhistas] = useState<{ id: string; nome: string }[]>([]);
 
   const empresaId = profile?.empresa_id;
 
