@@ -310,7 +310,7 @@ function DayListItem({ item, onEdit }: { item: Agendamento; onEdit?: (a: Agendam
   const clientWhatsapp = item.cliente?.whatsapp;
   const initials = petName.slice(0, 2).toUpperCase();
   const isFromPlan = !!item.subscription_id;
-  const colorClass = getServiceColor(item.tipo_servico, isFromPlan);
+  const colorClass = getServiceColor(item.tipo_servico, isFromPlan, item.status);
 
   return (
     <div
@@ -369,7 +369,7 @@ function CalendarEvent({ item }: { item: Agendamento }) {
   const hora = format(new Date(item.data_hora), "HH:mm");
   const petName = item.pet?.nome ?? "Pet";
   const isFromPlan = !!item.subscription_id;
-  const colorClass = getServiceColor(item.tipo_servico, isFromPlan);
+  const colorClass = getServiceColor(item.tipo_servico, isFromPlan, item.status);
 
   return (
     <div
