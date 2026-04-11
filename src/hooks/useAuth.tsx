@@ -44,9 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Only show loading on first initialization to avoid
-    // unmounting dialogs/modals on token refresh (e.g. alt+tab)
-    if (!hasInitialized.current) {
+    // Show loading on first init OR when switching from no-user to having a user
+    // to avoid ProtectedRoute redirecting to /login during data fetch
+    if (!hasInitialized.current || !user) {
       setLoading(true);
     }
 
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsApproved(superAdmin || (profileData?.aprovado === true));
     setLoading(false);
     hasInitialized.current = true;
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const {
