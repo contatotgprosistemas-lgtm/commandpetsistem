@@ -59,6 +59,8 @@ const modules = [
       { icon: PawPrint, title: "Cadastro de Pets", desc: "Ficha completa com histórico, vacinas, manejo diário, galeria de fotos e checklist veterinário." },
       { icon: Clock, title: "Ponto Digital", desc: "Controle de jornada com banco de horas, hora extra, relatórios e geolocalização dos colaboradores." },
       { icon: Truck, title: "Taxi Pet", desc: "Gestão de transporte com motoristas, veículos, rotas e acompanhamento em tempo real." },
+      { icon: Smartphone, title: "App do Tutor", desc: "Aplicativo exclusivo para o cliente acompanhar seu pet: fotos, manejo, agendamentos, pagamentos e notificações em tempo real." },
+      { icon: Users, title: "App Operacional", desc: "Painel dedicado para colaboradores: agenda do dia, check-in/out, galeria de fotos, ponto digital e manejo — tudo na palma da mão." },
     ],
   },
   {

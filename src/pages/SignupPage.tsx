@@ -16,6 +16,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [empresa, setEmpresa] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [whatsapp, setWhatsapp] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -39,7 +40,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        data: { nome, empresa },
+        data: { nome, empresa, whatsapp },
         emailRedirectTo: window.location.origin,
       },
     });
@@ -82,6 +83,10 @@ export default function SignupPage() {
             <div className="space-y-2">
               <Label htmlFor="empresa">Nome da Empresa</Label>
               <Input id="empresa" placeholder="Minha Pet Shop" value={empresa} onChange={(e) => setEmpresa(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp">WhatsApp</Label>
+              <Input id="whatsapp" placeholder="(11) 99999-9999" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
