@@ -18,6 +18,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
 import ServicosPage from "@/pages/ServicosPage";
 import ProdutosPage from "@/pages/ProdutosPage";
+import AuditLogPage from "@/pages/AuditLogPage";
 import PlanosPacotesPage from "@/pages/PlanosPacotesPage";
 import KanbanPage from "@/pages/KanbanPage";
 import ChatbotPage from "@/pages/ChatbotPage";
