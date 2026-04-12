@@ -166,8 +166,8 @@ const AuditLogPage = () => {
                   <TableCell className="text-sm whitespace-nowrap">{formatDate(log.created_at)}</TableCell>
                   <TableCell>
                     <div>
-                      <p className="text-sm font-medium">{log.profiles?.nome || "Sistema"}</p>
-                      <p className="text-xs text-muted-foreground">{log.profiles?.email || "—"}</p>
+                      <p className="text-sm font-medium">{log._user?.nome || "Sistema"}</p>
+                      <p className="text-xs text-muted-foreground">{log._user?.email || "—"}</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -211,7 +211,7 @@ const AuditLogPage = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div><span className="font-medium">Data:</span> {formatDate(selectedLog.created_at)}</div>
-                <div><span className="font-medium">Usuário:</span> {selectedLog.profiles?.nome || "Sistema"}</div>
+                <div><span className="font-medium">Usuário:</span> {selectedLog._user?.nome || "Sistema"}</div>
                 <div><span className="font-medium">Ação:</span> <Badge variant={ACAO_COLORS[selectedLog.acao] || "secondary"} className="capitalize">{selectedLog.acao}</Badge></div>
                 <div><span className="font-medium">Módulo:</span> {TABELA_LABELS[selectedLog.tabela] || selectedLog.tabela}</div>
                 <div className="col-span-2"><span className="font-medium">ID do Registro:</span> <span className="text-xs text-muted-foreground">{selectedLog.registro_id}</span></div>
