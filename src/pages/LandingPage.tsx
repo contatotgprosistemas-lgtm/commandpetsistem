@@ -35,6 +35,8 @@ import {
   Bot,
   CreditCard,
   ChevronRight,
+  Package,
+  ShoppingBag,
 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
