@@ -31,11 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isApproved, setIsApproved] = useState(false);
   const [loading, setLoading] = useState(true);
   const hasInitialized = useRef(false);
+  const userRef = useRef<AuthUser>(null);
 
   const loadAuthData = useCallback(async (currentSession: Session | null) => {
     if (!currentSession?.user) {
       setSession(null);
       setUser(null);
+      userRef.current = null;
       setProfile(null);
       setIsSuperAdmin(false);
       setIsApproved(false);
@@ -45,8 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Show loading on first init OR when switching from no-user to having a user
-    // to avoid ProtectedRoute redirecting to /login during data fetch
-    if (!hasInitialized.current || !user) {
+    if (!hasInitialized.current || !userRef.current) {
       setLoading(true);
     }
 
@@ -70,13 +71,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const primaryRole = roles[0] ?? null;
     const superAdmin = roles.includes("super_admin");
 
-    setUser({ ...currentSession.user, role: primaryRole });
+    const newUser = { ...currentSession.user, role: primaryRole };
+    userRef.current = newUser;
+    setUser(newUser);
     setProfile(profileData ?? null);
     setIsSuperAdmin(superAdmin);
     setIsApproved(superAdmin || (profileData?.aprovado === true));
     setLoading(false);
     hasInitialized.current = true;
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     const {
