@@ -79,8 +79,8 @@ const AuditLogPage = () => {
   const filtered = logs?.filter((l: any) => {
     if (!search) return true;
     const s = search.toLowerCase();
-    const userName = l.profiles?.nome?.toLowerCase() || "";
-    const userEmail = l.profiles?.email?.toLowerCase() || "";
+    const userName = l._user?.nome?.toLowerCase() || "";
+    const userEmail = l._user?.email?.toLowerCase() || "";
     const tabela = l.tabela?.toLowerCase() || "";
     return userName.includes(s) || userEmail.includes(s) || tabela.includes(s);
   });
