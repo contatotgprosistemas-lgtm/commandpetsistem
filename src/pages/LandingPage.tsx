@@ -10,7 +10,7 @@ import logo from "@/assets/logo.png";
 import landingDashboard from "@/assets/dashboard-preview.png";
 import landingCrm from "@/assets/landing-crm.png";
 import landingAgenda from "@/assets/landing-agenda.png";
-import landingFinanceiro from "@/assets/landing-financeiro.jpg";
+import landingFinanceiro from "@/assets/landing-financeiro.png";
 import {
   CalendarDays,
   MessageSquare,
