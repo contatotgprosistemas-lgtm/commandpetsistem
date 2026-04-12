@@ -135,7 +135,7 @@ export default function LeadsPage() {
                             href={`https://wa.me/55${lead.telefone.replace(/\D/g, "")}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-emerald-600 hover:underline flex items-center gap-1"
+                            className="text-primary hover:underline flex items-center gap-1"
                           >
                             <Phone className="h-3.5 w-3.5" /> {lead.telefone}
                           </a>
@@ -152,7 +152,7 @@ export default function LeadsPage() {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{formatDate(lead.created_at)}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{fmt(lead.created_at)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedLead(lead)}>
@@ -220,7 +220,7 @@ export default function LeadsPage() {
                   <div className="bg-muted/50 rounded-lg p-3 text-sm whitespace-pre-wrap">{selectedLead.mensagem}</div>
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">Recebido em {formatDate(selectedLead.created_at)}</p>
+              <p className="text-xs text-muted-foreground">Recebido em {fmt(selectedLead.created_at)}</p>
               {selectedLead.telefone && (
                 <Button asChild variant="outline" className="w-full gap-2">
                   <a
@@ -238,10 +238,4 @@ export default function LeadsPage() {
       </Dialog>
     </div>
   );
-
-  function formatDate(d: string) {
-    return new Date(d).toLocaleDateString("pt-BR", {
-      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
-    });
-  }
 }
