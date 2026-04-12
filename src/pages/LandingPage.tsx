@@ -434,30 +434,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF / TESTIMONIAL PLACEHOLDER ── */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <FadeInSection>
-            <div className="relative rounded-3xl bg-gradient-to-br from-blue-600/10 via-zinc-900 to-zinc-900 border border-zinc-800 p-8 sm:p-12 text-center overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl" />
-              <div className="relative">
-                <div className="flex justify-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                  ))}
-                </div>
-                <blockquote className="text-xl sm:text-2xl font-medium text-zinc-200 leading-relaxed max-w-2xl mx-auto">
-                  "O PetControl simplificou toda a nossa operação. Agenda, financeiro e comunicação com clientes — tudo num só lugar. Não consigo imaginar voltar ao papel."
-                </blockquote>
-                <div className="mt-6">
-                  <p className="font-semibold text-zinc-200">Gestora de Hotel Pet</p>
-                  <p className="text-sm text-zinc-500">Usuária do PetControl</p>
-                </div>
-              </div>
-            </div>
-          </FadeInSection>
-        </div>
-      </section>
+
 
       {/* ── LEAD FORM ────────────────────────────── */}
       <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 bg-zinc-900/40">
