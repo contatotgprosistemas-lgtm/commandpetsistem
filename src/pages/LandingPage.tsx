@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
-import landingDashboard from "@/assets/landing-dashboard.jpg";
+import landingDashboard from "@/assets/dashboard-preview.png";
 import landingCrm from "@/assets/landing-crm.jpg";
 import landingAgenda from "@/assets/landing-agenda.jpg";
 import landingFinanceiro from "@/assets/landing-financeiro.jpg";
