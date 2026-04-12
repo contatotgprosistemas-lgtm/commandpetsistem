@@ -321,6 +321,17 @@ const App = () => (
             />
 
             <Route
+              path="/audit-log"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <AuditLogPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/configuracoes"
               element={
                 <ProtectedRoute>
