@@ -346,15 +346,17 @@ export default function LandingPage() {
                 initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4 }}
-                className="relative rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl shadow-black/40"
+                className="relative rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl shadow-black/40 flex items-center justify-center bg-zinc-950"
               >
                 <img
                   src={screenshots[activeScreenshot].src}
                   alt={screenshots[activeScreenshot].label}
-                  className="w-full"
+                  className={
+                    screenshots[activeScreenshot].label === "App Tutor" || screenshots[activeScreenshot].label === "App Operação"
+                      ? "max-h-[500px] w-auto mx-auto"
+                      : "w-full"
+                  }
                   loading="lazy"
-                  width={1440}
-                  height={900}
                 />
               </motion.div>
               <motion.p
