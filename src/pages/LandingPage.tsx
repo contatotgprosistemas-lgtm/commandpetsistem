@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
+import petControlLogo from "@/assets/pet-control-logo.png";
 import landingDashboard from "@/assets/dashboard-preview.png";
 import landingCrm from "@/assets/landing-crm.png";
 import landingAgenda from "@/assets/landing-agenda.png";
@@ -233,6 +234,7 @@ export default function LandingPage() {
 
         <div className="relative max-w-5xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+            <img src={petControlLogo} alt="Pet Control System" className="h-20 sm:h-28 mx-auto mb-8" />
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-8">
               <PawPrint className="h-4 w-4" />
               Sistema completo para Pet Shops, Hotéis Pet & Creches
