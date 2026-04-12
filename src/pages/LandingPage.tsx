@@ -234,7 +234,7 @@ export default function LandingPage() {
 
         <div className="relative max-w-5xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-            <img src={petControlLogo} alt="Pet Control System" className="h-20 sm:h-28 mx-auto mb-8" />
+            <img src={petControlLogo} alt="Pet Control System" className="h-28 sm:h-40 mx-auto mb-8" />
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-8">
               <PawPrint className="h-4 w-4" />
               Sistema completo para Pet Shops, Hotéis Pet & Creches
