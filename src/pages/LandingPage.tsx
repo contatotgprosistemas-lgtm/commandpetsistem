@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import landingDashboard from "@/assets/dashboard-preview.png";
 import landingCrm from "@/assets/landing-crm.jpg";
-import landingAgenda from "@/assets/landing-agenda.jpg";
+import landingAgenda from "@/assets/landing-agenda.png";
 import landingFinanceiro from "@/assets/landing-financeiro.jpg";
 import {
   CalendarDays,
