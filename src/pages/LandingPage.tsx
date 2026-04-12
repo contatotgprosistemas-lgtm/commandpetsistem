@@ -11,6 +11,7 @@ import landingDashboard from "@/assets/dashboard-preview.png";
 import landingCrm from "@/assets/landing-crm.png";
 import landingAgenda from "@/assets/landing-agenda.png";
 import landingFinanceiro from "@/assets/landing-financeiro.png";
+import landingPortal from "@/assets/landing-portal.png";
 import {
   CalendarDays,
   MessageSquare,
@@ -90,6 +91,7 @@ const screenshots = [
   { src: landingAgenda, label: "Agenda", desc: "Calendário visual com controle completo de atendimentos" },
   { src: landingCrm, label: "PDV Vendas", desc: "Ponto de venda com controle de produtos e estoque" },
   { src: landingFinanceiro, label: "Financeiro", desc: "Controle total de receitas, despesas e fluxo de caixa" },
+  { src: landingPortal, label: "App Tutor", desc: "Aplicativo exclusivo para o tutor acompanhar seus pets" },
 ];
 
 const stats = [
