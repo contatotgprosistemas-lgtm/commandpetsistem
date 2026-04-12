@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import landingDashboard from "@/assets/dashboard-preview.png";
-import landingCrm from "@/assets/landing-crm.jpg";
+import landingCrm from "@/assets/landing-crm.png";
 import landingAgenda from "@/assets/landing-agenda.png";
 import landingFinanceiro from "@/assets/landing-financeiro.jpg";
 import {
@@ -88,7 +88,7 @@ const highlights = [
 const screenshots = [
   { src: landingDashboard, label: "Dashboard", desc: "Visão geral do negócio com métricas em tempo real" },
   { src: landingAgenda, label: "Agenda", desc: "Calendário visual com controle completo de atendimentos" },
-  { src: landingCrm, label: "CRM WhatsApp", desc: "Inbox integrado para atender seus clientes" },
+  { src: landingCrm, label: "PDV Vendas", desc: "Ponto de venda com controle de produtos e estoque" },
   { src: landingFinanceiro, label: "Financeiro", desc: "Controle total de receitas, despesas e fluxo de caixa" },
 ];
 
