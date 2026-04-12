@@ -226,7 +226,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ─────────────────────────────────── */}
-      <section className="relative pt-28 pb-12 sm:pt-36 sm:pb-20 px-4 sm:px-6 lg:px-8">
+      <section className="relative pt-20 pb-12 sm:pt-24 sm:pb-20 px-4 sm:px-6 lg:px-8">
         {/* Background glow */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-blue-600/15 via-cyan-500/5 to-transparent rounded-full blur-3xl" />
