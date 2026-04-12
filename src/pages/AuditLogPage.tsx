@@ -50,7 +50,7 @@ const AuditLogPage = () => {
     queryFn: async () => {
       let query = supabase
         .from("audit_log")
-        .select("*, profiles!audit_log_user_id_fkey(nome, email)")
+        .select("*")
         .order("created_at", { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -59,7 +59,19 @@ const AuditLogPage = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+
+      // Fetch user names for the logs
+      const userIds = [...new Set((data || []).map((l: any) => l.user_id).filter(Boolean))];
+      let usersMap: Record<string, { nome: string; email: string }> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, nome, email")
+          .in("user_id", userIds);
+        profiles?.forEach((p: any) => { usersMap[p.user_id] = { nome: p.nome, email: p.email }; });
+      }
+
+      return (data || []).map((l: any) => ({ ...l, _user: usersMap[l.user_id] || null }));
     },
     enabled: !!empresaId,
   });
