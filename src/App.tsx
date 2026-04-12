@@ -16,6 +16,7 @@ import FinancePage from "@/pages/FinancePage";
 import ClientsPage from "@/pages/ClientsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
+import LeadsPage from "@/pages/LeadsPage";
 import ServicosPage from "@/pages/ServicosPage";
 import ProdutosPage from "@/pages/ProdutosPage";
 import AuditLogPage from "@/pages/AuditLogPage";
@@ -348,6 +349,16 @@ const App = () => (
                 <ProtectedRoute requireAdmin>
                   <AppLayout>
                     <SuperAdminPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leads"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AppLayout>
+                    <LeadsPage />
                   </AppLayout>
                 </ProtectedRoute>
               }

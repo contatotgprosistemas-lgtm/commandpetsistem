@@ -93,7 +93,10 @@ export function AppSidebar() {
   const bottomItems = [
     { icon: ClipboardList, label: "Logs de Auditoria", path: "/audit-log" },
     ...(isSuperAdmin
-      ? [{ icon: Shield, label: "Super Admin", path: "/admin" }]
+      ? [
+          { icon: Users, label: "Leads do Site", path: "/leads" },
+          { icon: Shield, label: "Super Admin", path: "/admin" },
+        ]
       : []),
     { icon: Settings, label: "Configurações", path: "/configuracoes" },
   ];
