@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, CalendarIcon, BedDouble, RotateCcw, Gift, DollarSign, Trash2 } from "lucide-react";
+import { Plus, CalendarIcon, BedDouble, RotateCcw, Gift, DollarSign, Trash2, FileSignature, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { format, differenceInCalendarDays } from "date-fns";
 
 import { ptBR } from "date-fns/locale";
