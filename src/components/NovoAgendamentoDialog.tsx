@@ -112,6 +112,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [servicosExtras, setServicosExtras] = useState<ServicoExtra[]>([]);
   const [baias, setBaias] = useState<{ id: string; nome: string; capacidade_pets: number }[]>([]);
+  const [clientePopoverOpen, setClientePopoverOpen] = useState(false);
   const [gerarContrato, setGerarContrato] = useState(false);
   const [contratoDialog, setContratoDialog] = useState<{
     open: boolean;
