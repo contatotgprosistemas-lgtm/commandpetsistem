@@ -42,6 +42,14 @@ const ServicosPage = () => {
   const [tipoEditId, setTipoEditId] = useState<string | null>(null);
   const [tipoNome, setTipoNome] = useState("");
 
+  // Baias state
+  const [baiaOpen, setBaiaOpen] = useState(false);
+  const [baiaEditOpen, setBaiaEditOpen] = useState(false);
+  const [baiaEditId, setBaiaEditId] = useState<string | null>(null);
+  const [baiaNome, setBaiaNome] = useState("");
+  const [baiaTamanho, setBaiaTamanho] = useState("");
+  const [baiaCapacidade, setBaiaCapacidade] = useState("1");
+
   // Queries
   const { data: servicos, isLoading } = useQuery({
     queryKey: ["servicos", empresaId],
