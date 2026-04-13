@@ -149,12 +149,7 @@ export default function EsteiraBanhoPage() {
       .eq("id", item.id);
     if (error) { toast.error("Erro ao finalizar"); return; }
 
-    // Update agendamento status to concluido
-    await supabase.from("agendamentos").update({
-      status: "concluido",
-      data_saida: now.toISOString(),
-      hora_saida: format(now, "HH:mm"),
-    }).eq("id", item.agendamento_id);
+    // Do NOT check-out the pet automatically — only mark esteira as done
 
     // Send notification to client
     if (item.agendamento?.cliente?.id) {
