@@ -262,6 +262,15 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       .reduce((sum, e) => sum + e.valor, 0);
   }, [servicosExtras]);
 
+  // Valor contrato = (valor unitário + extras) * qtd pets - desconto
+  const valorContrato = useMemo(() => {
+    const valorUnit = form.getValues("valor") ? parseFloat(form.getValues("valor")) : 0;
+    const qtdPets = selectedPetIds.length || 1;
+    const bruto = (valorUnit + totalExtras) * qtdPets;
+    const desc = descontoStr ? parseFloat(descontoStr) : 0;
+    return Math.max(bruto - (isNaN(desc) ? 0 : desc), 0);
+  }, [form.watch("valor"), totalExtras, selectedPetIds.length, descontoStr]);
+
   async function onSubmit(data: FormValues) {
     await executeSubmit(data, useReplacement);
   }
