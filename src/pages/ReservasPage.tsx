@@ -24,6 +24,7 @@ interface Reserva {
   baia: string | null;
   notas: string | null;
   valor: number | null;
+  desconto: number | null;
   duracao_min: number | null;
   data_saida_provavel: string | null;
   hora_saida_provavel: string | null;
