@@ -511,6 +511,56 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     }
   }
 
+  async function handleCreateContract() {
+    if (!contratoDialog || !contratoDialog.title.trim() || !contratoDialog.content.trim()) {
+      toast({ title: "Preencha o título e conteúdo", variant: "destructive" });
+      return;
+    }
+
+    setContratoDialog(prev => prev ? { ...prev, loading: true } : null);
+
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(contratoDialog.content));
+    const contentHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+    const { data: profile } = await supabase.from("profiles").select("empresa_id, id").single();
+    if (!profile?.empresa_id) {
+      toast({ title: "Erro ao identificar empresa", variant: "destructive" });
+      setContratoDialog(prev => prev ? { ...prev, loading: false } : null);
+      return;
+    }
+
+    const { data: contract, error } = await supabase.from("contracts").insert({
+      empresa_id: profile.empresa_id,
+      template_id: contratoDialog.selectedTemplate || null,
+      cliente_id: contratoDialog.agendamento.cliente_id,
+      title: contratoDialog.title.trim(),
+      content: contratoDialog.content,
+      content_hash: contentHash,
+      status: "enviado",
+      sent_at: new Date().toISOString(),
+      created_by: profile.id,
+      token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    }).select("id, signing_token").single();
+
+    if (error || !contract) {
+      toast({ title: "Erro ao gerar contrato", variant: "destructive" });
+      setContratoDialog(prev => prev ? { ...prev, loading: false } : null);
+      return;
+    }
+
+    await supabase.from("contract_events").insert({
+      contract_id: contract.id,
+      empresa_id: profile.empresa_id,
+      event_type: "criado",
+      description: `Contrato gerado a partir do agendamento (${contratoDialog.agendamento.tipo_servico})`,
+    });
+
+    const link = `${window.location.origin}/assinar/${(contract as any).signing_token}`;
+    setContratoDialog(prev => prev ? { ...prev, loading: false, createdLink: link } : null);
+    toast({ title: "Contrato gerado com sucesso!" });
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
