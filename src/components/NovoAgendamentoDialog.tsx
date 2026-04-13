@@ -493,10 +493,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         const dataAtual = format(new Date(), "dd/MM/yyyy");
 
         const fillTpl = (c: string) => {
-          const valorNum = data.valor ? parseFloat(data.valor) : 0;
-          const descontoNum = data.desconto ? parseFloat(data.desconto) : 0;
-          const valorFinal = valorNum - descontoNum;
-          const valor = valorFinal > 0 ? `R$ ${valorFinal.toFixed(2)}` : (valorNum > 0 ? `R$ ${valorNum.toFixed(2)}` : "___");
+          const valor = valorContrato > 0 ? `R$ ${valorContrato.toFixed(2)}` : "___";
           const dataReserva = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
           return c
             .replace(/\{\{cliente_nome\}\}/g, fullCliente?.nome || clienteObj?.nome || "___")
