@@ -562,6 +562,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-2">
