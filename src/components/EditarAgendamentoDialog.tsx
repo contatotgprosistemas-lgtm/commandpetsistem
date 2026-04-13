@@ -34,7 +34,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const baiaOptions = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+// baiaOptions removed – baias are fetched from DB
 
 function DatePickerField({ value, onChange, placeholder = "Selecione" }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   const dateValue = value ? new Date(value + "T00:00:00") : undefined;
