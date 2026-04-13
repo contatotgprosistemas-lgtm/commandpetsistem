@@ -65,7 +65,7 @@ const SERVICE_COLORS: Record<string, string> = {
 // Cores diferenciadas para agendamentos vindos de planos/pacotes (match por palavra-chave)
 const PLAN_COLOR_RULES: { keywords: string[]; color: string }[] = [
   { keywords: ["escola", "creche", "daycare"], color: "bg-blue-500/80 text-white" },
-  { keywords: ["hotel", "hospedagem"], color: "bg-lime-500/80 text-white" },
+  { keywords: ["hotel", "hospedagem"], color: "bg-orange-600/80 text-white" },
   { keywords: ["banho", "tosa"], color: "bg-fuchsia-500/80 text-white" },
 ];
 
@@ -78,9 +78,11 @@ function getPlanColor(tipo: string): string {
 }
 
 function getServiceColor(tipo: string, isFromPlan = false, status?: string) {
-  // Check-in (na_empresa) or check-out (concluido) → light green
   if (status === "na_empresa") return "bg-emerald-400/80 text-white";
   if (status === "concluido") return "bg-green-500/80 text-white";
+
+  // Hospedagem always gets orange to stand out
+  if (!isFromPlan && isHospedagem(tipo)) return "bg-orange-500/80 text-white";
 
   if (isFromPlan) {
     return getPlanColor(tipo);
