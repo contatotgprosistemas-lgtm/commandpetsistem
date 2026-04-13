@@ -137,7 +137,7 @@ export default function ReservasPage() {
 
     const { data, error } = await supabase
       .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, baia, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, cliente:clientes(id, nome, whatsapp, foto_url), pet:pets(id, nome, raca, especie, foto_url)")
+      .select("id, data_hora, tipo_servico, status, baia, notas, valor, desconto, duracao_min, data_saida_provavel, hora_saida_provavel, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, cliente:clientes(id, nome, whatsapp, foto_url), pet:pets(id, nome, raca, especie, foto_url)")
       .eq("empresa_id", profile.empresa_id)
       .gte("data_hora", fromDate.toISOString())
       .lt("data_hora", toDate.toISOString())
