@@ -656,7 +656,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                               <CommandItem
                                 key={c.id}
                                 value={keywords}
-                                onSelect={() => { field.onChange(c.id); }}
+                                onSelect={() => { field.onChange(c.id); setClientePopoverOpen(false); }}
                               >
                                 <div className="flex flex-col">
                                   <span className={cn("text-sm", field.value === c.id && "font-semibold")}>{c.nome}</span>
