@@ -191,9 +191,24 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
           .maybeSingle();
         const { data: fullPet } = await supabase
           .from("pets")
-          .select("id, nome, raca, especie, peso, porte, data_nascimento")
+          .select("id, nome, raca, especie, peso, porte, sexo, cor, castrado, cliente_id")
           .eq("id", agendamento.pet_id)
           .maybeSingle();
+
+        // Fetch other pets from the same owner
+        let petsMesmoTutor = "___";
+        if (fullPet?.cliente_id) {
+          const { data: siblingPets } = await supabase
+            .from("pets")
+            .select("nome")
+            .eq("cliente_id", fullPet.cliente_id)
+            .neq("id", agendamento.pet_id);
+          if (siblingPets && siblingPets.length > 0) {
+            petsMesmoTutor = siblingPets.map(p => p.nome).join(", ");
+          } else {
+            petsMesmoTutor = "Nenhum";
+          }
+        }
 
         const svcLower = (data.tipo_servico || agendamento.tipo_servico).toLowerCase();
         let matched = allTemplates.find(t => {
@@ -209,6 +224,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         const clienteName = fullCliente?.nome || agendamento.cliente?.nome || "";
         const valor = data.valor ? `R$ ${parseFloat(data.valor).toFixed(2)}` : "___";
         const dataReserva = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
+        const dataAtual = format(new Date(), "dd/MM/yyyy");
 
         const fillTpl = (c: string) => c
           .replace(/\{\{cliente_nome\}\}/g, clienteName)
@@ -221,9 +237,19 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
           .replace(/\{\{pet_especie\}\}/g, fullPet?.especie || "___")
           .replace(/\{\{pet_peso\}\}/g, fullPet?.peso ? `${fullPet.peso}kg` : "___")
           .replace(/\{\{pet_porte\}\}/g, fullPet?.porte || "___")
+          .replace(/\{\{pet_sexo\}\}/g, fullPet?.sexo || "___")
+          .replace(/\{\{pet_cor\}\}/g, fullPet?.cor || "___")
+          .replace(/\{\{pet_castrado\}\}/g, fullPet?.castrado != null ? (String(fullPet.castrado) === "true" ? "Sim" : "Não") : "___")
+          .replace(/\{\{pets_mesmo_tutor\}\}/g, petsMesmoTutor)
           .replace(/\{\{tipo_servico\}\}/g, data.tipo_servico)
+          .replace(/\{\{servicos\}\}/g, data.tipo_servico)
+          .replace(/\{\{plano\}\}/g, data.tipo_servico)
           .replace(/\{\{valor\}\}/g, valor)
+          .replace(/\{\{valor_servico\}\}/g, valor)
+          .replace(/\{\{valor_plano\}\}/g, valor)
           .replace(/\{\{data\}\}/g, dataReserva)
+          .replace(/\{\{data_reserva\}\}/g, dataReserva)
+          .replace(/\{\{data_atual\}\}/g, dataAtual)
           .replace(/\{\{baia\}\}/g, data.baia || "___");
 
         const filledContent = matched ? fillTpl(matched.content) : "";
