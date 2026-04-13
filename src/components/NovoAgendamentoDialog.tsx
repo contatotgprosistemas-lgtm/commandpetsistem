@@ -843,17 +843,19 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             </div>
 
             {/* Row 3: Quarto + Diárias + Valor */}
-            <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2")}>
-              <FormField control={form.control} name="baia" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quarto</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent>{baias.map(b => <SelectItem key={b.id} value={b.nome}>{b.nome} ({b.capacidade_pets} pets)</SelectItem>)}</SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+            <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-3" : isBanho ? "grid-cols-1 sm:grid-cols-1" : "grid-cols-2")}>
+              {!isBanho && (
+                <FormField control={form.control} name="baia" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quarto</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                      <SelectContent>{baias.map(b => <SelectItem key={b.id} value={b.nome}>{b.nome} ({b.capacidade_pets} pets)</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
 
               {isHotel && (
                 <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 h-10">
@@ -873,15 +875,15 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
               <FormField control={form.control} name="valor" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor p/ Pet (R$)</FormLabel>
+                  <FormLabel>{isBanho ? "Valor (R$)" : "Valor p/ Pet (R$)"}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       step="0.01"
                       placeholder="0,00"
                       {...field}
-                      readOnly={isHotel && diarias > 0}
-                      className={cn(isHotel && diarias > 0 && "bg-muted")}
+                      readOnly={(isHotel && diarias > 0) || isBanho}
+                      className={cn(((isHotel && diarias > 0) || isBanho) && "bg-muted")}
                     />
                   </FormControl>
                   <FormMessage />
