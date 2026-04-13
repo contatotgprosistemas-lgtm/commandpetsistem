@@ -458,21 +458,20 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         });
         if (!matched && allTemplates.length > 0) matched = allTemplates[0];
 
+        // Fetch full client and pet data for placeholders
+        const { data: fullCliente } = await supabase
+          .from("clientes")
+          .select("id, nome, cpf, endereco, email, whatsapp, telefone")
+          .eq("id", data.cliente_id)
+          .maybeSingle();
+        const { data: fullPet } = await supabase
+          .from("pets")
+          .select("id, nome, raca, especie, peso, porte")
+          .eq("id", firstRow.pet_id)
+          .maybeSingle();
+
         const fillTpl = (c: string) => {
           const valor = data.valor ? `R$ ${parseFloat(data.valor).toFixed(2)}` : "___";
-
-          // Fetch full client and pet data for placeholders
-          const { data: fullCliente } = await supabase
-            .from("clientes")
-            .select("id, nome, cpf, endereco, email, whatsapp, telefone")
-            .eq("id", data.cliente_id)
-            .maybeSingle();
-          const { data: fullPet } = await supabase
-            .from("pets")
-            .select("id, nome, raca, especie, peso, porte")
-            .eq("id", firstRow.pet_id)
-            .maybeSingle();
-
           return c
             .replace(/\{\{cliente_nome\}\}/g, fullCliente?.nome || clienteObj?.nome || "___")
             .replace(/\{\{cliente_cpf\}\}/g, fullCliente?.cpf || "___")
@@ -491,7 +490,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         };
 
         const filledContent = matched ? fillTpl(matched.content) : "";
-        const tplTitle = matched ? `${matched.name} — ${petObj?.nome || "Pet"}` : "";
+        const tplTitle = matched ? `${matched.name} — ${fullPet?.nome || petObj?.nome || "Pet"}` : "";
 
         setContratoDialog({
           open: true,
