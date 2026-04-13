@@ -213,33 +213,47 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
             const names = sameDateBookings.map((b: any) => b.pet?.nome).filter(Boolean);
             petsMesmoTutor = names.length > 0 ? names.join(", ") : fullPet?.nome || "___";
 
-            // Compute valor total across all pets + extras - discount
-            let valorBrutoTotal = 0;
-            let descontoTotal = 0;
-            for (const bk of sameDateBookings) {
-              valorBrutoTotal += (bk as any).valor ? Number((bk as any).valor) : 0;
-              descontoTotal += (bk as any).desconto ? Number((bk as any).desconto) : 0;
-            }
-            // Fetch extras (contas_receber_itens) for these agendamentos
-            const agIds = sameDateBookings.map((b: any) => b.id);
-            const { data: faturas } = await supabase
-              .from("contas_receber")
-              .select("id")
-              .in("descricao", sameDateBookings.map((b: any) => `${tipoSvc} — ${(b as any).pet?.nome || ""}`))
-              .eq("cliente_id", fullPet.cliente_id);
-            if (faturas && faturas.length > 0) {
-              const faturaIds = faturas.map((f: any) => f.id);
-              const { data: itens } = await supabase
-                .from("contas_receber_itens" as any)
-                .select("valor, tipo")
-                .in("conta_receber_id", faturaIds);
-              if (itens) {
-                for (const it of itens as any[]) {
-                  if (it.tipo === "extra") valorBrutoTotal += Number(it.valor) || 0;
+            // Compute valor total from contas_receber (faturas) which already include extras and discounts
+            const petNames = sameDateBookings.map((b: any) => (b as any).pet?.nome).filter(Boolean);
+            
+            // Try to get the real total from faturas (contas_receber) which have the final values
+            let valorContratoFromFaturas = 0;
+            let foundFaturas = false;
+            
+            if (petNames.length > 0) {
+              // Build OR filter for faturas matching any pet name
+              const { data: faturas } = await supabase
+                .from("contas_receber")
+                .select("id, valor, descricao")
+                .eq("cliente_id", fullPet.cliente_id)
+                .in("status", ["pendente", "pago"]);
+              
+              if (faturas && faturas.length > 0) {
+                // Filter faturas that match both the service type and a pet name
+                const matchingFaturas = faturas.filter((f: any) => {
+                  const desc = (f as any).descricao || "";
+                  return petNames.some((name: string) => desc.includes(name)) && desc.includes(tipoSvc.substring(0, 20));
+                });
+                
+                if (matchingFaturas.length > 0) {
+                  foundFaturas = true;
+                  valorContratoFromFaturas = matchingFaturas.reduce((sum: number, f: any) => sum + (Number(f.valor) || 0), 0);
                 }
               }
             }
-            var valorContrato = Math.max(valorBrutoTotal - descontoTotal, 0);
+            
+            if (foundFaturas) {
+              var valorContrato = valorContratoFromFaturas;
+            } else {
+              // Fallback: sum agendamento values + extras - discounts
+              let valorBrutoTotal = 0;
+              let descontoTotal = 0;
+              for (const bk of sameDateBookings) {
+                valorBrutoTotal += (bk as any).valor ? Number((bk as any).valor) : 0;
+                descontoTotal += (bk as any).desconto ? Number((bk as any).desconto) : 0;
+              }
+              var valorContrato = Math.max(valorBrutoTotal - descontoTotal, 0);
+            }
           } else {
             petsMesmoTutor = fullPet?.nome || "___";
             var valorContrato = Math.max((data.valor ? parseFloat(data.valor) : 0) - (data.desconto ? parseFloat(data.desconto) : 0), 0);
