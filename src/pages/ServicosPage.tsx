@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Package, Plus, Loader2, Pencil, Trash2, BedDouble } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 const ServicosPage = () => {
