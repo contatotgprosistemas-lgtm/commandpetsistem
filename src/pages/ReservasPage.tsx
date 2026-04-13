@@ -108,7 +108,7 @@ export default function ReservasPage() {
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todas");
+  const [servicoFilter, setServicoFilter] = useState("todos");
   const [periodoFilter, setPeriodoFilter] = useState("hoje");
   const [editingReserva, setEditingReserva] = useState<Reserva | null>(null);
   const [deletingReserva, setDeletingReserva] = useState<Reserva | null>(null);
