@@ -153,15 +153,13 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     return diff > 0 ? diff : 0;
   }, [isHotel, dataReserva, dataSaidaProvavel]);
 
-  // Auto-calculate valor for hotel (with discount)
+  // Auto-calculate valor for hotel (without discount - discount applies to contract total)
   useEffect(() => {
     if (isHotel && diarias > 0 && servicoObj) {
       const bruto = diarias * servicoObj.valor;
-      const desc = descontoStr ? parseFloat(descontoStr) : 0;
-      const total = Math.max(bruto - (isNaN(desc) ? 0 : desc), 0).toFixed(2);
-      form.setValue("valor", total);
+      form.setValue("valor", bruto.toFixed(2));
     }
-  }, [isHotel, diarias, servicoObj, descontoStr]);
+  }, [isHotel, diarias, servicoObj]);
 
   useEffect(() => {
     if (open) {
