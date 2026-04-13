@@ -229,7 +229,6 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
                     <SelectContent>
                       {baias.map(b => <SelectItem key={b.id} value={b.nome}>{b.nome}</SelectItem>)}
                     </SelectContent>
-                    </SelectContent>
                   </Select>
                 </FormItem>
               )} />
