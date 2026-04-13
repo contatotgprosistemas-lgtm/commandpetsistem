@@ -905,6 +905,28 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )} />
             </div>
 
+            {/* Deseja gerar contrato? */}
+            <div className="rounded-lg border border-border p-3 space-y-2">
+              <FormLabel className="text-sm font-medium flex items-center gap-2">
+                <FileSignature className="h-4 w-4 text-primary" />
+                Deseja gerar contrato?
+              </FormLabel>
+              <RadioGroup
+                value={gerarContrato ? "sim" : "nao"}
+                onValueChange={(v) => setGerarContrato(v === "sim")}
+                className="flex gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="sim" id="contrato-sim" />
+                  <Label htmlFor="contrato-sim" className="text-sm cursor-pointer">Sim</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="nao" id="contrato-nao" />
+                  <Label htmlFor="contrato-nao" className="text-sm cursor-pointer">Não</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
             {/* Observações */}
             <FormField control={form.control} name="notas" render={({ field }) => (
               <FormItem>
@@ -922,5 +944,96 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         </Form>
       </DialogContent>
     </Dialog>
+
+    {/* Contract generation dialog */}
+    {contratoDialog && (
+      <Dialog open={contratoDialog.open} onOpenChange={(v) => { if (!v) setContratoDialog(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerar Contrato</DialogTitle>
+          </DialogHeader>
+
+          {contratoDialog.createdLink ? (
+            <div className="space-y-4 py-4">
+              <div className="text-center space-y-3">
+                <div className="h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
+                  <FileSignature className="h-7 w-7 text-emerald-600" />
+                </div>
+                <h3 className="font-semibold text-lg">Contrato gerado com sucesso!</h3>
+                <p className="text-sm text-muted-foreground">Envie o link abaixo para o cliente assinar</p>
+              </div>
+              <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-3 border">
+                <Input value={contratoDialog.createdLink} readOnly className="text-xs" />
+                <Button variant="outline" size="icon" onClick={() => {
+                  navigator.clipboard.writeText(contratoDialog.createdLink!);
+                  toast({ title: "Link copiado!" });
+                }}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => window.open(contratoDialog.createdLink!, "_blank")} className="gap-2">
+                  <ExternalLink className="h-4 w-4" /> Visualizar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label>Template</Label>
+                <Select
+                  value={contratoDialog.selectedTemplate}
+                  onValueChange={(val) => {
+                    const tpl = contratoDialog.templates.find((t: any) => t.id === val);
+                    if (tpl) {
+                      setContratoDialog(prev => prev ? {
+                        ...prev,
+                        selectedTemplate: val,
+                        content: tpl.content,
+                        title: `${tpl.name} — ${prev.agendamento.pet?.nome || "Pet"}`,
+                      } : null);
+                    }
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione um template" /></SelectTrigger>
+                  <SelectContent>
+                    {contratoDialog.templates.map((t: any) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {contratoDialog.templates.length === 0 && (
+                  <p className="text-xs text-destructive mt-1">Nenhum template encontrado. Crie um template em Contratos → Templates primeiro.</p>
+                )}
+              </div>
+              <div>
+                <Label>Título do contrato</Label>
+                <Input
+                  value={contratoDialog.title}
+                  onChange={e => setContratoDialog(prev => prev ? { ...prev, title: e.target.value } : null)}
+                />
+              </div>
+              <div>
+                <Label>Conteúdo (preenchido automaticamente)</Label>
+                <Textarea
+                  value={contratoDialog.content}
+                  onChange={e => setContratoDialog(prev => prev ? { ...prev, content: e.target.value } : null)}
+                  rows={12}
+                  className="font-mono text-sm"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setContratoDialog(null)}>Cancelar</Button>
+                <Button onClick={handleCreateContract} disabled={contratoDialog.loading || !contratoDialog.content.trim()}>
+                  {contratoDialog.loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileSignature className="h-4 w-4 mr-2" />}
+                  Gerar e Enviar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    )}
+    </>
   );
 }
