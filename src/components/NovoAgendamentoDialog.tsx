@@ -160,6 +160,35 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     return desc.includes("hotel") || desc.includes("hospedagem") || tipo.includes("hotel") || tipo.includes("hospedagem");
   }, [servicoObj]);
 
+  // Check if service is banho/tosa type
+  const isBanho = useMemo(() => {
+    if (!servicoObj) return false;
+    const desc = servicoObj.descricao.toLowerCase();
+    const tipo = servicoObj.tipo.toLowerCase();
+    return desc.includes("banho") || desc.includes("tosa") || tipo.includes("banho") || tipo.includes("tosa");
+  }, [servicoObj]);
+
+  // Auto-fill for banho: same date + 30min for saída prevista
+  useEffect(() => {
+    if (!isBanho) return;
+    if (dataReserva) {
+      form.setValue("data_saida_provavel", dataReserva);
+    }
+    if (horaReserva && /^\d{2}:\d{2}$/.test(horaReserva)) {
+      const [h, m] = horaReserva.split(":").map(Number);
+      const totalMin = h * 60 + m + 30;
+      const nh = Math.floor(totalMin / 60) % 24;
+      const nm = totalMin % 60;
+      form.setValue("hora_saida_provavel", `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`);
+    }
+  }, [isBanho, dataReserva, horaReserva]);
+
+  // Auto-fill valor for banho from service price
+  useEffect(() => {
+    if (isBanho && servicoObj) {
+      form.setValue("valor", servicoObj.valor.toFixed(2));
+    }
+  }, [isBanho, servicoObj]);
   // Calculate diárias
   const diarias = useMemo(() => {
     if (!isHotel || !dataReserva || !dataSaidaProvavel) return 0;
