@@ -172,7 +172,10 @@ export default function ReservasPage() {
   }
 
   const filtered = reservas.filter((r) => {
-    if (statusFilter !== "todas" && r.status !== statusFilter) return false;
+    if (servicoFilter !== "todos") {
+      const g = getGroup(r.tipo_servico);
+      if (g.label !== servicoFilter) return false;
+    }
     if (search) {
       const s = search.toLowerCase();
       const clienteNome = r.cliente?.nome?.toLowerCase() || "";
