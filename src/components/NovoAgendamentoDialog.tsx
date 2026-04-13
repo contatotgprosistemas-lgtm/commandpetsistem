@@ -111,6 +111,17 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [servicosExtras, setServicosExtras] = useState<ServicoExtra[]>([]);
   const [baias, setBaias] = useState<{ id: string; nome: string; capacidade_pets: number }[]>([]);
+  const [gerarContrato, setGerarContrato] = useState(false);
+  const [contratoDialog, setContratoDialog] = useState<{
+    open: boolean;
+    agendamento: any;
+    templates: any[];
+    selectedTemplate: string;
+    content: string;
+    title: string;
+    loading: boolean;
+    createdLink: string | null;
+  } | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
