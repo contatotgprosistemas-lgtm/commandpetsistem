@@ -233,20 +233,17 @@ export default function ReservasPage() {
             <SelectItem value="mes">Próx. 30 dias</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[140px]">
+        <Select value={servicoFilter} onValueChange={setServicoFilter}>
+          <SelectTrigger className="w-[160px]">
             <Filter className="h-3.5 w-3.5 mr-1.5" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todas">Todos status</SelectItem>
-            <SelectItem value="agendado">Agendado</SelectItem>
-            <SelectItem value="confirmado">Confirmado</SelectItem>
-            <SelectItem value="pendente">Pendente</SelectItem>
-            <SelectItem value="na_empresa">Na Empresa</SelectItem>
-            <SelectItem value="concluido">Concluído</SelectItem>
-            <SelectItem value="cancelado">Cancelado</SelectItem>
-            <SelectItem value="falta">Falta</SelectItem>
+            <SelectItem value="todos">Todos serviços</SelectItem>
+            <SelectItem value="HOTEL">Hotel</SelectItem>
+            <SelectItem value="ESCOLA / DAYCARE">Escola / Daycare</SelectItem>
+            <SelectItem value="BANHO E TOSA">Banho e Tosa</SelectItem>
+            <SelectItem value="OUTROS">Outros</SelectItem>
           </SelectContent>
         </Select>
       </div>
