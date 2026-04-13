@@ -239,7 +239,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
           .replace(/\{\{pet_porte\}\}/g, fullPet?.porte || "___")
           .replace(/\{\{pet_sexo\}\}/g, fullPet?.sexo || "___")
           .replace(/\{\{pet_cor\}\}/g, fullPet?.cor || "___")
-          .replace(/\{\{pet_castrado\}\}/g, fullPet?.castrado === true ? "Sim" : fullPet?.castrado === false ? "Não" : "___")
+          .replace(/\{\{pet_castrado\}\}/g, fullPet?.castrado != null ? (String(fullPet.castrado) === "true" ? "Sim" : "Não") : "___")
           .replace(/\{\{pets_mesmo_tutor\}\}/g, petsMesmoTutor)
           .replace(/\{\{tipo_servico\}\}/g, data.tipo_servico)
           .replace(/\{\{servicos\}\}/g, data.tipo_servico)
