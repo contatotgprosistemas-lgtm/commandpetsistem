@@ -264,6 +264,20 @@ export default function FinancePage() {
 function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  const [itemsCache, setItemsCache] = useState<Record<string, { descricao: string; valor: number; tipo: string }[]>>({});
+
+  const toggleExpand = async (id: string) => {
+    if (expandedRows.includes(id)) {
+      setExpandedRows(prev => prev.filter(r => r !== id));
+      return;
+    }
+    setExpandedRows(prev => [...prev, id]);
+    if (!itemsCache[id]) {
+      const { data } = await supabase.from("contas_receber_itens" as any).select("descricao, valor, tipo").eq("conta_receber_id", id);
+      setItemsCache(prev => ({ ...prev, [id]: (data as any) || [] }));
+    }
+  };
   const filtered = contas.filter(c => {
     if (!search) return true;
     const q = search.toLowerCase();
