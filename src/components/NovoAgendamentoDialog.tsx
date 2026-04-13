@@ -957,8 +957,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           {contratoDialog.createdLink ? (
             <div className="space-y-4 py-4">
               <div className="text-center space-y-3">
-                <div className="h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
-                  <FileSignature className="h-7 w-7 text-emerald-600" />
+                <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <FileSignature className="h-7 w-7 text-primary" />
                 </div>
                 <h3 className="font-semibold text-lg">Contrato gerado com sucesso!</h3>
                 <p className="text-sm text-muted-foreground">Envie o link abaixo para o cliente assinar</p>
