@@ -34,7 +34,7 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
-  const [diaVencimento, setDiaVencimento] = useState(10);
+  const [diaVencimento, setDiaVencimento] = useState<number | "">("");
   const [diasGerarFatura, setDiasGerarFatura] = useState(5);
 
   const form = useForm<FormValues>({
