@@ -141,6 +141,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const selectedPetIds = form.watch("pet_ids");
   const selectedServico = form.watch("tipo_servico");
   const dataReserva = form.watch("data_reserva");
+  const horaReserva = form.watch("hora_reserva");
   const dataSaidaProvavel = form.watch("data_saida_provavel");
   const descontoStr = form.watch("desconto");
   const filteredPets = pets.filter(p => p.cliente_id === selectedCliente);
