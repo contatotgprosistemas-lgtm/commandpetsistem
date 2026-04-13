@@ -145,7 +145,7 @@ export default function AgendaPage() {
     fetchAgendamentos();
   }
 
-  const AGENDA_KEYWORDS = ["escola", "creche", "daycare", "hotel", "hospedagem", "diaria", "pernoite"];
+  const AGENDA_KEYWORDS = ["escola", "creche", "daycare", "hotel", "hospedagem", "diaria", "diária", "pernoite"];
 
   const agendaFiltered = useMemo(() => {
     return agendamentos.filter(a => {
