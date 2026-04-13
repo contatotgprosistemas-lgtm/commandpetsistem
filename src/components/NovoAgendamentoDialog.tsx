@@ -141,6 +141,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const selectedPetIds = form.watch("pet_ids");
   const selectedServico = form.watch("tipo_servico");
   const dataReserva = form.watch("data_reserva");
+  const horaReserva = form.watch("hora_reserva");
   const dataSaidaProvavel = form.watch("data_saida_provavel");
   const descontoStr = form.watch("desconto");
   const filteredPets = pets.filter(p => p.cliente_id === selectedCliente);
@@ -159,6 +160,35 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     return desc.includes("hotel") || desc.includes("hospedagem") || tipo.includes("hotel") || tipo.includes("hospedagem");
   }, [servicoObj]);
 
+  // Check if service is banho/tosa type
+  const isBanho = useMemo(() => {
+    if (!servicoObj) return false;
+    const desc = servicoObj.descricao.toLowerCase();
+    const tipo = servicoObj.tipo.toLowerCase();
+    return desc.includes("banho") || desc.includes("tosa") || tipo.includes("banho") || tipo.includes("tosa");
+  }, [servicoObj]);
+
+  // Auto-fill for banho: same date + 30min for saída prevista
+  useEffect(() => {
+    if (!isBanho) return;
+    if (dataReserva) {
+      form.setValue("data_saida_provavel", dataReserva);
+    }
+    if (horaReserva && /^\d{2}:\d{2}$/.test(horaReserva)) {
+      const [h, m] = horaReserva.split(":").map(Number);
+      const totalMin = h * 60 + m + 30;
+      const nh = Math.floor(totalMin / 60) % 24;
+      const nm = totalMin % 60;
+      form.setValue("hora_saida_provavel", `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`);
+    }
+  }, [isBanho, dataReserva, horaReserva]);
+
+  // Auto-fill valor for banho from service price
+  useEffect(() => {
+    if (isBanho && servicoObj) {
+      form.setValue("valor", servicoObj.valor.toFixed(2));
+    }
+  }, [isBanho, servicoObj]);
   // Calculate diárias
   const diarias = useMemo(() => {
     if (!isHotel || !dataReserva || !dataSaidaProvavel) return 0;
@@ -813,17 +843,19 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             </div>
 
             {/* Row 3: Quarto + Diárias + Valor */}
-            <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2")}>
-              <FormField control={form.control} name="baia" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quarto</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent>{baias.map(b => <SelectItem key={b.id} value={b.nome}>{b.nome} ({b.capacidade_pets} pets)</SelectItem>)}</SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+            <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-3" : isBanho ? "grid-cols-1 sm:grid-cols-1" : "grid-cols-2")}>
+              {!isBanho && (
+                <FormField control={form.control} name="baia" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quarto</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                      <SelectContent>{baias.map(b => <SelectItem key={b.id} value={b.nome}>{b.nome} ({b.capacidade_pets} pets)</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
 
               {isHotel && (
                 <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 h-10">
@@ -843,15 +875,15 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
               <FormField control={form.control} name="valor" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor p/ Pet (R$)</FormLabel>
+                  <FormLabel>{isBanho ? "Valor (R$)" : "Valor p/ Pet (R$)"}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       step="0.01"
                       placeholder="0,00"
                       {...field}
-                      readOnly={isHotel && diarias > 0}
-                      className={cn(isHotel && diarias > 0 && "bg-muted")}
+                      readOnly={(isHotel && diarias > 0) || isBanho}
+                      className={cn(((isHotel && diarias > 0) || isBanho) && "bg-muted")}
                     />
                   </FormControl>
                   <FormMessage />
