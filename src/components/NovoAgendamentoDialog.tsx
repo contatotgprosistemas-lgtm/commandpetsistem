@@ -325,49 +325,61 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         }
       }
 
-      // Generate invoice for main service (only if NOT using replacement and valor > 0)
+      // Generate GROUPED invoice: one fatura per pet with line items
       const valorNum = useRepl ? 0 : (data.valor ? parseFloat(data.valor) : 0);
       const isPagamentoPosterior = data.forma_pagamento === "Pagamento Posterior";
       const vencimentoFatura = isPagamentoPosterior && data.data_pagamento
         ? data.data_pagamento
         : data.data_reserva;
 
-      if (valorNum > 0) {
-        const petNames = data.pet_ids.map(pid => {
-          const pet = pets.find(p => p.id === pid);
-          return pet?.nome || "Pet";
-        });
-        const faturas = data.pet_ids.map((_, idx) => ({
+      const extrasACobrar = servicosExtras.filter(e => !e.cortesia && e.valor > 0 && e.descricao);
+
+      for (let idx = 0; idx < data.pet_ids.length; idx++) {
+        const petName = pets.find(p => p.id === data.pet_ids[idx])?.nome || "Pet";
+
+        // Build line items for this pet
+        const lineItems: { descricao: string; valor: number; tipo: string }[] = [];
+        if (valorNum > 0) {
+          lineItems.push({ descricao: `${data.tipo_servico} — ${petName}`, valor: valorNum, tipo: "principal" });
+        }
+        for (const extra of extrasACobrar) {
+          lineItems.push({ descricao: `${extra.descricao} (extra) — ${petName}`, valor: extra.valor, tipo: "extra" });
+        }
+        // Add cortesia items with valor 0
+        for (const extra of servicosExtras.filter(e => e.cortesia && e.descricao)) {
+          lineItems.push({ descricao: `${extra.descricao} (cortesia) — ${petName}`, valor: 0, tipo: "cortesia" });
+        }
+
+        if (lineItems.length === 0) continue;
+
+        const totalFatura = lineItems.reduce((sum, li) => sum + li.valor, 0);
+        if (totalFatura <= 0 && lineItems.every(li => li.tipo === "cortesia")) continue;
+
+        const descParts = [data.tipo_servico];
+        if (extrasACobrar.length > 0) descParts.push(`+${extrasACobrar.length} extra(s)`);
+        const descricaoFatura = `${descParts.join(" ")} — ${petName}`;
+
+        const { data: insertedFatura } = await supabase.from("contas_receber").insert({
           empresa_id: empresaId,
           cliente_id: data.cliente_id,
-          descricao: `${data.tipo_servico} — ${petNames[idx]}`,
-          valor: valorNum,
+          descricao: descricaoFatura,
+          valor: totalFatura,
           vencimento: vencimentoFatura,
           categoria: data.forma_pagamento || "A definir",
           status: "pendente",
-        }));
-        await supabase.from("contas_receber").insert(faturas as any);
-      }
+        } as any).select("id").single();
 
-      // Generate invoices for charged extras
-      const extrasACobrar = servicosExtras.filter(e => !e.cortesia && e.valor > 0 && e.descricao);
-      if (extrasACobrar.length > 0) {
-        const petNames = data.pet_ids.map(pid => {
-          const pet = pets.find(p => p.id === pid);
-          return pet?.nome || "Pet";
-        });
-        const faturasExtras = extrasACobrar.flatMap(extra =>
-          data.pet_ids.map((_, idx) => ({
-            empresa_id: empresaId,
-            cliente_id: data.cliente_id,
-            descricao: `${extra.descricao} (extra) — ${petNames[idx]}`,
-            valor: extra.valor,
-            vencimento: vencimentoFatura,
-            categoria: data.forma_pagamento || "A definir",
-            status: "pendente",
-          }))
-        );
-        await supabase.from("contas_receber").insert(faturasExtras as any);
+        if (insertedFatura?.id && lineItems.length > 0) {
+          await supabase.from("contas_receber_itens" as any).insert(
+            lineItems.map(li => ({
+              conta_receber_id: insertedFatura.id,
+              empresa_id: empresaId,
+              descricao: li.descricao,
+              valor: li.valor,
+              tipo: li.tipo,
+            }))
+          );
+        }
       }
 
       // Build extras summary for notes
