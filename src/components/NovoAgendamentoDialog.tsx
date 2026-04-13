@@ -466,12 +466,30 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           .maybeSingle();
         const { data: fullPet } = await supabase
           .from("pets")
-          .select("id, nome, raca, especie, peso, porte")
+          .select("id, nome, raca, especie, peso, porte, sexo, cor, castrado, cliente_id")
           .eq("id", firstRow.pet_id)
           .maybeSingle();
 
+        // Fetch other pets from the same owner
+        let petsMesmoTutor = "___";
+        if (fullPet?.cliente_id) {
+          const { data: siblingPets } = await supabase
+            .from("pets")
+            .select("nome")
+            .eq("cliente_id", fullPet.cliente_id)
+            .neq("id", firstRow.pet_id);
+          if (siblingPets && siblingPets.length > 0) {
+            petsMesmoTutor = siblingPets.map(p => p.nome).join(", ");
+          } else {
+            petsMesmoTutor = "Nenhum";
+          }
+        }
+
+        const dataAtual = format(new Date(), "dd/MM/yyyy");
+
         const fillTpl = (c: string) => {
           const valor = data.valor ? `R$ ${parseFloat(data.valor).toFixed(2)}` : "___";
+          const dataReserva = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
           return c
             .replace(/\{\{cliente_nome\}\}/g, fullCliente?.nome || clienteObj?.nome || "___")
             .replace(/\{\{cliente_cpf\}\}/g, fullCliente?.cpf || "___")
@@ -483,9 +501,19 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             .replace(/\{\{pet_especie\}\}/g, fullPet?.especie || "___")
             .replace(/\{\{pet_peso\}\}/g, fullPet?.peso ? `${fullPet.peso}kg` : "___")
             .replace(/\{\{pet_porte\}\}/g, fullPet?.porte || "___")
+            .replace(/\{\{pet_sexo\}\}/g, fullPet?.sexo || "___")
+            .replace(/\{\{pet_cor\}\}/g, fullPet?.cor || "___")
+            .replace(/\{\{pet_castrado\}\}/g, fullPet?.castrado === true ? "Sim" : fullPet?.castrado === false ? "Não" : "___")
+            .replace(/\{\{pets_mesmo_tutor\}\}/g, petsMesmoTutor)
             .replace(/\{\{tipo_servico\}\}/g, data.tipo_servico)
+            .replace(/\{\{servicos\}\}/g, data.tipo_servico)
+            .replace(/\{\{plano\}\}/g, data.tipo_servico)
             .replace(/\{\{valor\}\}/g, valor)
-            .replace(/\{\{data\}\}/g, format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy"))
+            .replace(/\{\{valor_servico\}\}/g, valor)
+            .replace(/\{\{valor_plano\}\}/g, valor)
+            .replace(/\{\{data\}\}/g, dataReserva)
+            .replace(/\{\{data_reserva\}\}/g, dataReserva)
+            .replace(/\{\{data_atual\}\}/g, dataAtual)
             .replace(/\{\{baia\}\}/g, data.baia || "___");
         };
 
