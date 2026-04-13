@@ -153,15 +153,13 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     return diff > 0 ? diff : 0;
   }, [isHotel, dataReserva, dataSaidaProvavel]);
 
-  // Auto-calculate valor for hotel (with discount)
+  // Auto-calculate valor for hotel (without discount - discount applies to contract total)
   useEffect(() => {
     if (isHotel && diarias > 0 && servicoObj) {
       const bruto = diarias * servicoObj.valor;
-      const desc = descontoStr ? parseFloat(descontoStr) : 0;
-      const total = Math.max(bruto - (isNaN(desc) ? 0 : desc), 0).toFixed(2);
-      form.setValue("valor", total);
+      form.setValue("valor", bruto.toFixed(2));
     }
-  }, [isHotel, diarias, servicoObj, descontoStr]);
+  }, [isHotel, diarias, servicoObj]);
 
   useEffect(() => {
     if (open) {
@@ -262,6 +260,15 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       .reduce((sum, e) => sum + e.valor, 0);
   }, [servicosExtras]);
 
+  // Valor contrato = (valor unitário + extras) * qtd pets - desconto
+  const valorContrato = useMemo(() => {
+    const valorUnit = form.getValues("valor") ? parseFloat(form.getValues("valor")) : 0;
+    const qtdPets = selectedPetIds.length || 1;
+    const bruto = (valorUnit + totalExtras) * qtdPets;
+    const desc = descontoStr ? parseFloat(descontoStr) : 0;
+    return Math.max(bruto - (isNaN(desc) ? 0 : desc), 0);
+  }, [form.watch("valor"), totalExtras, selectedPetIds.length, descontoStr]);
+
   async function onSubmit(data: FormValues) {
     await executeSubmit(data, useReplacement);
   }
@@ -333,6 +340,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         : data.data_reserva;
 
       const extrasACobrar = servicosExtras.filter(e => !e.cortesia && e.valor > 0 && e.descricao);
+      const descontoTotal = data.desconto ? parseFloat(data.desconto) : 0;
+      const descontoPorPet = data.pet_ids.length > 0 ? descontoTotal / data.pet_ids.length : 0;
 
       for (let idx = 0; idx < data.pet_ids.length; idx++) {
         const petName = pets.find(p => p.id === data.pet_ids[idx])?.nome || "Pet";
@@ -352,11 +361,18 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
         if (lineItems.length === 0) continue;
 
-        const totalFatura = lineItems.reduce((sum, li) => sum + li.valor, 0);
+        const totalBruto = lineItems.reduce((sum, li) => sum + li.valor, 0);
+        const totalFatura = Math.max(totalBruto - descontoPorPet, 0);
         if (totalFatura <= 0 && lineItems.every(li => li.tipo === "cortesia")) continue;
+
+        // Add discount line item if applicable
+        if (descontoPorPet > 0) {
+          lineItems.push({ descricao: `Desconto — ${petName}`, valor: -descontoPorPet, tipo: "desconto" });
+        }
 
         const descParts = [data.tipo_servico];
         if (extrasACobrar.length > 0) descParts.push(`+${extrasACobrar.length} extra(s)`);
+        if (descontoPorPet > 0) descParts.push(`-R$${descontoPorPet.toFixed(2)} desc.`);
         const descricaoFatura = `${descParts.join(" ")} — ${petName}`;
 
         const { data: insertedFatura } = await supabase.from("contas_receber").insert({
@@ -581,8 +597,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )} />
             </div>
 
-            {/* Row 3: Quarto + Diárias + Valor */}
-            <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3")}>
+            {/* Row 3: Quarto + Diárias + Valor + Valor Contrato */}
+            <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-4" : selectedPetIds.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-3")}>
               <FormField control={form.control} name="baia" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Quarto</FormLabel>
@@ -611,8 +627,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )}
 
               <FormField control={form.control} name="valor" render={({ field }) => (
-                <FormItem className={cn(!isHotel && "sm:col-span-2")}>
-                  <FormLabel>Valor (R$)</FormLabel>
+                <FormItem>
+                  <FormLabel>Valor p/ Pet (R$)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -626,20 +642,24 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                   <FormMessage />
                 </FormItem>
               )} />
-            </div>
 
-            {/* Desconto (hotel only) */}
-            {isHotel && (
-              <FormField control={form.control} name="desconto" render={({ field }) => (
+              {selectedPetIds.length > 1 && (
                 <FormItem>
-                  <FormLabel>Desconto (R$)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" min="0" placeholder="0,00" {...field} />
-                  </FormControl>
-                  <FormMessage />
+                  <FormLabel>Valor Contrato (R$)</FormLabel>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={valorContrato.toFixed(2)}
+                    readOnly
+                    className="bg-muted font-semibold"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {selectedPetIds.length} pets × R$ {((form.watch("valor") ? parseFloat(form.watch("valor")) : 0) + totalExtras).toFixed(2)}
+                    {descontoStr && parseFloat(descontoStr) > 0 ? ` - R$ ${parseFloat(descontoStr).toFixed(2)} desc.` : ""}
+                  </p>
                 </FormItem>
-              )} />
-            )}
+              )}
+            </div>
 
             {/* Serviços Extras */}
             <div className="space-y-3">
@@ -718,6 +738,22 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 </div>
               )}
             </div>
+
+            {/* Desconto - abaixo dos extras */}
+            <FormField control={form.control} name="desconto" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Desconto (R$)</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" min="0" placeholder="0,00" {...field} />
+                </FormControl>
+                {selectedPetIds.length > 1 && (
+                  <p className="text-xs text-muted-foreground">
+                    O desconto será abatido do valor total do contrato
+                  </p>
+                )}
+                <FormMessage />
+              </FormItem>
+            )} />
 
             {/* Forma de Pagamento + Data de Pagamento */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
