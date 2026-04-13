@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, CalendarIcon, BedDouble, RotateCcw } from "lucide-react";
+import { Plus, CalendarIcon, BedDouble, RotateCcw, Gift, DollarSign, Trash2 } from "lucide-react";
 import { format, differenceInCalendarDays } from "date-fns";
 
 import { ptBR } from "date-fns/locale";
@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -48,7 +49,14 @@ interface ServicoItem {
   tipo: string;
 }
 
-const baiaOptions = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+interface ServicoExtra {
+  servico_id: string;
+  descricao: string;
+  valor: number;
+  cortesia: boolean;
+}
+
+const quartoOptions = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 
 function DatePickerField({
   value,
@@ -99,6 +107,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [availableReplacements, setAvailableReplacements] = useState<any[]>([]);
   const [useReplacement, setUseReplacement] = useState(false);
   const [empresaId, setEmpresaId] = useState<string | null>(null);
+  const [servicosExtras, setServicosExtras] = useState<ServicoExtra[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -165,6 +174,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       supabase.from("pets").select("id, nome, cliente_id").order("nome").then(({ data }) => { if (data) setPets(data); });
       supabase.from("servicos").select("id, descricao, valor, tipo").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data as ServicoItem[]); });
       supabase.from("formas_pagamento").select("id, nome").eq("ativo", true).order("nome").then(({ data }) => { if (data) setFormasPagamento(data); });
+    } else {
+      setServicosExtras([]);
     }
   }, [open]);
 
@@ -195,9 +206,6 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
       if (!agendamentos) return;
 
-      // Match by pet_id only — the tipo_servico on plan agendamentos is the plan name
-      // (e.g. "Plano Escola Premium 1x Semana"), not the service name (e.g. "Escola").
-      // So we match by pet and show the user which plan the credit comes from.
       const matching = absences.filter((abs: any) => {
         const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
         if (!ag) return false;
@@ -220,6 +228,37 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     const updated = current.includes(petId) ? current.filter(id => id !== petId) : [...current, petId];
     form.setValue("pet_ids", updated, { shouldValidate: true });
   }
+
+  // Serviços extras helpers
+  function addServicoExtra() {
+    setServicosExtras(prev => [...prev, { servico_id: "", descricao: "", valor: 0, cortesia: false }]);
+  }
+
+  function updateServicoExtra(index: number, field: keyof ServicoExtra, value: any) {
+    setServicosExtras(prev => {
+      const updated = [...prev];
+      if (field === "servico_id") {
+        const svc = servicos.find(s => s.id === value);
+        if (svc) {
+          updated[index] = { ...updated[index], servico_id: value, descricao: svc.descricao, valor: svc.valor };
+        }
+      } else {
+        updated[index] = { ...updated[index], [field]: value };
+      }
+      return updated;
+    });
+  }
+
+  function removeServicoExtra(index: number) {
+    setServicosExtras(prev => prev.filter((_, i) => i !== index));
+  }
+
+  // Total dos extras cobrados
+  const totalExtras = useMemo(() => {
+    return servicosExtras
+      .filter(e => !e.cortesia && e.valor > 0)
+      .reduce((sum, e) => sum + e.valor, 0);
+  }, [servicosExtras]);
 
   async function onSubmit(data: FormValues) {
     await executeSubmit(data, useReplacement);
@@ -284,17 +323,18 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         }
       }
 
-      // Generate invoice only if NOT using replacement and valor > 0
+      // Generate invoice for main service (only if NOT using replacement and valor > 0)
       const valorNum = useRepl ? 0 : (data.valor ? parseFloat(data.valor) : 0);
+      const isPagamentoPosterior = data.forma_pagamento === "Pagamento Posterior";
+      const vencimentoFatura = isPagamentoPosterior && data.data_pagamento
+        ? data.data_pagamento
+        : data.data_reserva;
+
       if (valorNum > 0) {
         const petNames = data.pet_ids.map(pid => {
           const pet = pets.find(p => p.id === pid);
           return pet?.nome || "Pet";
         });
-        const isPagamentoPosterior = data.forma_pagamento === "Pagamento Posterior";
-        const vencimentoFatura = isPagamentoPosterior && data.data_pagamento
-          ? data.data_pagamento
-          : data.data_reserva;
         const faturas = data.pet_ids.map((_, idx) => ({
           empresa_id: empresaId,
           cliente_id: data.cliente_id,
@@ -307,6 +347,44 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         await supabase.from("contas_receber").insert(faturas as any);
       }
 
+      // Generate invoices for charged extras
+      const extrasACobrar = servicosExtras.filter(e => !e.cortesia && e.valor > 0 && e.descricao);
+      if (extrasACobrar.length > 0) {
+        const petNames = data.pet_ids.map(pid => {
+          const pet = pets.find(p => p.id === pid);
+          return pet?.nome || "Pet";
+        });
+        const faturasExtras = extrasACobrar.flatMap(extra =>
+          data.pet_ids.map((_, idx) => ({
+            empresa_id: empresaId,
+            cliente_id: data.cliente_id,
+            descricao: `${extra.descricao} (extra) — ${petNames[idx]}`,
+            valor: extra.valor / data.pet_ids.length,
+            vencimento: vencimentoFatura,
+            categoria: data.forma_pagamento || "A definir",
+            status: "pendente",
+          }))
+        );
+        await supabase.from("contas_receber").insert(faturasExtras as any);
+      }
+
+      // Build extras summary for notes
+      const extrasNotes = servicosExtras
+        .filter(e => e.descricao)
+        .map(e => `${e.descricao}${e.cortesia ? " (cortesia)" : ` R$${e.valor.toFixed(2)}`}`)
+        .join("; ");
+
+      // Append extras info to agendamento notes if any
+      if (extrasNotes && insertedRows) {
+        for (const row of insertedRows) {
+          const currentNotes = rows.find(r => r.pet_id === row.pet_id)?.notas || "";
+          const updatedNotes = currentNotes
+            ? `${currentNotes} | Extras: ${extrasNotes}`
+            : `Extras: ${extrasNotes}`;
+          await supabase.from("agendamentos").update({ notas: updatedNotes } as any).eq("id", row.id);
+        }
+      }
+
       toast({
         title: useRepl
           ? `Reposição utilizada! ${data.pet_ids.length} agendamento(s) criado(s) sem cobrança.`
@@ -315,6 +393,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       form.reset();
       setAvailableReplacements([]);
       setUseReplacement(false);
+      setServicosExtras([]);
       setOpen(false);
       onSuccess?.();
     } catch (err: any) {
@@ -488,14 +567,14 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )} />
             </div>
 
-            {/* Row 3: Baia + Diárias + Valor */}
+            {/* Row 3: Quarto + Diárias + Valor */}
             <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3")}>
               <FormField control={form.control} name="baia" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Baia</FormLabel>
+                  <FormLabel>Quarto</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent>{baiaOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                    <SelectContent>{quartoOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
@@ -547,6 +626,84 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 </FormItem>
               )} />
             )}
+
+            {/* Serviços Extras */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <FormLabel className="text-sm font-medium">Serviços Extras</FormLabel>
+                <Button type="button" variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={addServicoExtra}>
+                  <Plus className="h-3.5 w-3.5" />
+                  Adicionar Extra
+                </Button>
+              </div>
+
+              {servicosExtras.length > 0 && (
+                <div className="space-y-2 rounded-md border border-border p-3">
+                  {servicosExtras.map((extra, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center">
+                      <Select
+                        value={extra.servico_id}
+                        onValueChange={(val) => updateServicoExtra(idx, "servico_id", val)}
+                      >
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue placeholder="Selecione o serviço" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {servicos.map(s => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.descricao} — R$ {s.valor.toFixed(2)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={extra.valor || ""}
+                        onChange={(e) => updateServicoExtra(idx, "valor", parseFloat(e.target.value) || 0)}
+                        placeholder="Valor"
+                        className="w-24 h-9 text-sm"
+                        disabled={extra.cortesia}
+                      />
+
+                      <Button
+                        type="button"
+                        variant={extra.cortesia ? "default" : "outline"}
+                        size="sm"
+                        className="h-9 gap-1 text-xs whitespace-nowrap"
+                        onClick={() => updateServicoExtra(idx, "cortesia", !extra.cortesia)}
+                        title={extra.cortesia ? "Cortesia ativa" : "Marcar como cortesia"}
+                      >
+                        {extra.cortesia ? (
+                          <><Gift className="h-3.5 w-3.5" /> Cortesia</>
+                        ) : (
+                          <><DollarSign className="h-3.5 w-3.5" /> Cobrar</>
+                        )}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-destructive hover:text-destructive"
+                        onClick={() => removeServicoExtra(idx)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+
+                  {totalExtras > 0 && (
+                    <div className="flex items-center justify-end pt-1 border-t border-border mt-2">
+                      <Badge variant="secondary" className="text-xs">
+                        Total extras: R$ {totalExtras.toFixed(2)}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Forma de Pagamento + Data de Pagamento */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
