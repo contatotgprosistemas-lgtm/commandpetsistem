@@ -906,6 +906,51 @@ export type Database = {
           },
         ]
       }
+      contas_receber_itens: {
+        Row: {
+          conta_receber_id: string
+          created_at: string
+          descricao: string
+          empresa_id: string
+          id: string
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          conta_receber_id: string
+          created_at?: string
+          descricao: string
+          empresa_id: string
+          id?: string
+          tipo?: string
+          valor?: number
+        }
+        Update: {
+          conta_receber_id?: string
+          created_at?: string
+          descricao?: string
+          empresa_id?: string
+          id?: string
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_receber_itens_conta_receber_id_fkey"
+            columns: ["conta_receber_id"]
+            isOneToOne: false
+            referencedRelation: "contas_receber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_receber_itens_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_events: {
         Row: {
           contract_id: string
