@@ -574,6 +574,36 @@ const ServicosPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Baia Dialog */}
+      <Dialog open={baiaEditOpen} onOpenChange={(o) => { setBaiaEditOpen(o); if (!o) resetBaiaForm(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Baia</DialogTitle>
+            <DialogDescription>Atualize as informações da baia</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Nome *</Label>
+              <Input value={baiaNome} onChange={(e) => setBaiaNome(e.target.value)} />
+            </div>
+            <div>
+              <Label>Tamanho</Label>
+              <Input value={baiaTamanho} onChange={(e) => setBaiaTamanho(e.target.value)} />
+            </div>
+            <div>
+              <Label>Capacidade de Pets</Label>
+              <Input type="number" min="1" value={baiaCapacidade} onChange={(e) => setBaiaCapacidade(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setBaiaEditOpen(false); resetBaiaForm(); }}>Cancelar</Button>
+            <Button onClick={() => editBaiaMutation.mutate()} disabled={!baiaNome || editBaiaMutation.isPending}>
+              {editBaiaMutation.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
