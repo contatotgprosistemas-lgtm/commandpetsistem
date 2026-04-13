@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, CalendarIcon, BedDouble, RotateCcw, Gift, DollarSign, Trash2, FileSignature, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { format, differenceInCalendarDays } from "date-fns";
 
 import { ptBR } from "date-fns/locale";
@@ -627,12 +628,47 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* Cliente */}
             <FormField control={form.control} name="cliente_id" render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>Cliente *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione o cliente" /></SelectTrigger></FormControl>
-                  <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal", !field.value && "text-muted-foreground")}>
+                        {field.value ? clientes.find(c => c.id === field.value)?.nome ?? "Selecione o cliente" : "Selecione o cliente"}
+                        <CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar por cliente ou pet..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {clientes.filter(c => {
+                            return true; // cmdk handles filtering via its own search
+                          }).map(c => {
+                            const clientPets = pets.filter(p => p.cliente_id === c.id);
+                            const petNames = clientPets.map(p => p.nome).join(", ");
+                            const keywords = petNames ? [c.nome, petNames].join(" ") : c.nome;
+                            return (
+                              <CommandItem
+                                key={c.id}
+                                value={keywords}
+                                onSelect={() => { field.onChange(c.id); }}
+                              >
+                                <div className="flex flex-col">
+                                  <span className={cn("text-sm", field.value === c.id && "font-semibold")}>{c.nome}</span>
+                                  {petNames && <span className="text-xs text-muted-foreground">Pets: {petNames}</span>}
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )} />
