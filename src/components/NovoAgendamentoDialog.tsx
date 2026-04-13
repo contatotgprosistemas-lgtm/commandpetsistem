@@ -470,25 +470,33 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           .eq("id", firstRow.pet_id)
           .maybeSingle();
 
-        // Fetch other pets from the same owner
+        // Fetch pets from same owner that have reservations for same service on same date
         let petsMesmoTutor = "___";
         if (fullPet?.cliente_id) {
-          const { data: siblingPets } = await supabase
-            .from("pets")
-            .select("nome")
+          const dayStart = new Date(data.data_reserva + "T00:00:00").toISOString();
+          const dayEnd = new Date(data.data_reserva + "T23:59:59").toISOString();
+          const { data: sameDateBookings } = await supabase
+            .from("agendamentos")
+            .select("pet:pets(nome)")
             .eq("cliente_id", fullPet.cliente_id)
-            .neq("id", firstRow.pet_id);
-          if (siblingPets && siblingPets.length > 0) {
-            petsMesmoTutor = siblingPets.map(p => p.nome).join(", ");
+            .eq("tipo_servico", data.tipo_servico)
+            .gte("data_hora", dayStart)
+            .lte("data_hora", dayEnd);
+          if (sameDateBookings && sameDateBookings.length > 0) {
+            const names = sameDateBookings.map((b: any) => b.pet?.nome).filter(Boolean);
+            petsMesmoTutor = names.length > 0 ? names.join(", ") : fullPet?.nome || "___";
           } else {
-            petsMesmoTutor = "Nenhum";
+            petsMesmoTutor = fullPet?.nome || "___";
           }
         }
 
         const dataAtual = format(new Date(), "dd/MM/yyyy");
 
         const fillTpl = (c: string) => {
-          const valor = data.valor ? `R$ ${parseFloat(data.valor).toFixed(2)}` : "___";
+          const valorNum = data.valor ? parseFloat(data.valor) : 0;
+          const descontoNum = data.desconto ? parseFloat(data.desconto) : 0;
+          const valorFinal = valorNum - descontoNum;
+          const valor = valorFinal > 0 ? `R$ ${valorFinal.toFixed(2)}` : (valorNum > 0 ? `R$ ${valorNum.toFixed(2)}` : "___");
           const dataReserva = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
           return c
             .replace(/\{\{cliente_nome\}\}/g, fullCliente?.nome || clienteObj?.nome || "___")
