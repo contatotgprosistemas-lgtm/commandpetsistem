@@ -283,6 +283,47 @@ export type Database = {
           },
         ]
       }
+      baias: {
+        Row: {
+          ativa: boolean
+          capacidade_pets: number
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+          tamanho: string
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          capacidade_pets?: number
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          tamanho?: string
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          capacidade_pets?: number
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          tamanho?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "baias_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chatbot_flow_steps: {
         Row: {
           condition_config: Json | null
