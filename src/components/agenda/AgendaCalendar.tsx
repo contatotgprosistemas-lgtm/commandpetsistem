@@ -65,7 +65,7 @@ const SERVICE_COLORS: Record<string, string> = {
 // Cores diferenciadas para agendamentos vindos de planos/pacotes (match por palavra-chave)
 const PLAN_COLOR_RULES: { keywords: string[]; color: string }[] = [
   { keywords: ["escola", "creche", "daycare"], color: "bg-blue-500/80 text-white" },
-  { keywords: ["hotel", "hospedagem"], color: "bg-orange-600/80 text-white" },
+  { keywords: ["hotel", "hospedagem", "diária", "diaria", "pernoite"], color: "bg-orange-600/80 text-white" },
   { keywords: ["banho", "tosa"], color: "bg-fuchsia-500/80 text-white" },
 ];
 
