@@ -82,7 +82,12 @@ export function NovoPetDialog({ onSuccess }: { onSuccess?: () => void }) {
   async function onSubmit(data: FormValues) {
     setLoading(true);
     try {
-      const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Erro", description: "Usuário não autenticado.", variant: "destructive" });
+        return;
+      }
+      const { data: profile } = await supabase.from("profiles").select("empresa_id").eq("user_id", user.id).single();
       if (!profile?.empresa_id) {
         toast({ title: "Erro", description: "Empresa não encontrada.", variant: "destructive" });
         return;
