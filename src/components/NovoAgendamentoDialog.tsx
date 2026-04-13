@@ -451,7 +451,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         const svcLower = data.tipo_servico.toLowerCase();
         let matched = allTemplates.find(t => {
           const n = t.name.toLowerCase();
-          if (svcLower.includes("hotel") || svcLower.includes("hospedagem")) return n.includes("hotel") || n.includes("hospedagem");
+          if (svcLower.includes("hotel") || svcLower.includes("hospedagem") || svcLower.includes("diária") || svcLower.includes("diaria")) return n.includes("hotel") || n.includes("hospedagem");
           if (svcLower.includes("escola") || svcLower.includes("daycare") || svcLower.includes("creche")) return n.includes("escola") || n.includes("daycare") || n.includes("creche");
           if (svcLower.includes("banho") || svcLower.includes("tosa")) return n.includes("banho") || n.includes("tosa");
           return false;
