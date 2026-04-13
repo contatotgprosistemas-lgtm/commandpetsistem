@@ -340,6 +340,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         : data.data_reserva;
 
       const extrasACobrar = servicosExtras.filter(e => !e.cortesia && e.valor > 0 && e.descricao);
+      const descontoTotal = data.desconto ? parseFloat(data.desconto) : 0;
+      const descontoPorPet = data.pet_ids.length > 0 ? descontoTotal / data.pet_ids.length : 0;
 
       for (let idx = 0; idx < data.pet_ids.length; idx++) {
         const petName = pets.find(p => p.id === data.pet_ids[idx])?.nome || "Pet";
@@ -359,11 +361,18 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
         if (lineItems.length === 0) continue;
 
-        const totalFatura = lineItems.reduce((sum, li) => sum + li.valor, 0);
+        const totalBruto = lineItems.reduce((sum, li) => sum + li.valor, 0);
+        const totalFatura = Math.max(totalBruto - descontoPorPet, 0);
         if (totalFatura <= 0 && lineItems.every(li => li.tipo === "cortesia")) continue;
+
+        // Add discount line item if applicable
+        if (descontoPorPet > 0) {
+          lineItems.push({ descricao: `Desconto — ${petName}`, valor: -descontoPorPet, tipo: "desconto" });
+        }
 
         const descParts = [data.tipo_servico];
         if (extrasACobrar.length > 0) descParts.push(`+${extrasACobrar.length} extra(s)`);
+        if (descontoPorPet > 0) descParts.push(`-R$${descontoPorPet.toFixed(2)} desc.`);
         const descricaoFatura = `${descParts.join(" ")} — ${petName}`;
 
         const { data: insertedFatura } = await supabase.from("contas_receber").insert({
