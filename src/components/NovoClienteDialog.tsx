@@ -85,7 +85,7 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
         como_conheceu: data.como_conheceu || null,
         notas: data.notas || null,
         foto_url: fotoUrl,
-        dia_vencimento_fatura: diaVencimento,
+        dia_vencimento_fatura: diaVencimento === "" ? null : diaVencimento,
         dias_gerar_fatura: diasGerarFatura,
       } as any);
 
@@ -93,7 +93,7 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
       toast({ title: "Cliente cadastrado com sucesso!" });
       form.reset();
       setFotoUrl(null);
-      setDiaVencimento(10);
+      setDiaVencimento("");
       setDiasGerarFatura(5);
       setOpen(false);
       onSuccess?.();
@@ -230,7 +230,7 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
                   min={1}
                   max={28}
                   value={diaVencimento}
-                  onChange={e => setDiaVencimento(Number(e.target.value))}
+                  onChange={e => setDiaVencimento(e.target.value === "" ? "" : Number(e.target.value))}
                   placeholder="10"
                 />
               </div>
