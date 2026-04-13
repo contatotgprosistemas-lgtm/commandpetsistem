@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, FileSignature, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
@@ -33,8 +35,6 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
-// baiaOptions removed – baias are fetched from DB
 
 function DatePickerField({ value, onChange, placeholder = "Selecione" }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   const dateValue = value ? new Date(value + "T00:00:00") : undefined;
@@ -64,6 +64,18 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
   const [loading, setLoading] = useState(false);
   const [servicos, setServicos] = useState<{ id: string; descricao: string }[]>([]);
   const [baias, setBaias] = useState<{ id: string; nome: string }[]>([]);
+  const [baiasLoaded, setBaiasLoaded] = useState(false);
+  const [gerarContrato, setGerarContrato] = useState(false);
+  const [contratoDialog, setContratoDialog] = useState<{
+    open: boolean;
+    agendamento: any;
+    templates: any[];
+    selectedTemplate: string;
+    content: string;
+    title: string;
+    loading: boolean;
+    createdLink: string | null;
+  } | null>(null);
 
   const tipoServico = agendamento?.tipo_servico || "";
   const isHotel = useMemo(() => {
@@ -76,15 +88,23 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
     defaultValues: { tipo_servico: "", data_reserva: "", hora_reserva: "09:00", data_saida_provavel: "", hora_saida_provavel: "", baia: "", desconto: "", valor: "", forma_pagamento: "", status: "agendado", notas: "" },
   });
 
+  // Load baias and servicos when dialog opens
   useEffect(() => {
     if (open) {
+      setBaiasLoaded(false);
       supabase.from("servicos").select("id, descricao").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data); });
-      supabase.from("baias").select("id, nome").eq("ativa", true).order("nome").then(({ data }) => { if (data) setBaias(data); });
+      supabase.from("baias").select("id, nome").eq("ativa", true).order("nome").then(({ data }) => {
+        if (data) setBaias(data);
+        setBaiasLoaded(true);
+      });
+    } else {
+      setGerarContrato(false);
     }
   }, [open]);
 
+  // Reset form when agendamento changes AND baias are loaded
   useEffect(() => {
-    if (agendamento) {
+    if (agendamento && baiasLoaded) {
       const dh = new Date(agendamento.data_hora);
       const dsp = agendamento.data_saida_provavel ? new Date(agendamento.data_saida_provavel) : null;
       form.reset({
@@ -101,7 +121,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         notas: agendamento.notas || "",
       });
     }
-  }, [agendamento, form]);
+  }, [agendamento, baiasLoaded, form]);
 
   async function onSubmit(data: FormValues) {
     if (!agendamento?.id) return;
@@ -124,7 +144,6 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         notas: data.notas || null,
       };
 
-      // Auto-register check-in timestamp when status changes to "na_empresa"
       if (data.status === "na_empresa" && agendamento.status !== "na_empresa") {
         if (!agendamento.data_entrada) {
           updatePayload.data_entrada = now.toISOString();
@@ -132,7 +151,6 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         }
       }
 
-      // Auto-register check-out timestamp when status changes to "concluido"
       if (data.status === "concluido" && agendamento.status !== "concluido") {
         if (!agendamento.data_saida) {
           updatePayload.data_saida = now.toISOString();
@@ -141,10 +159,8 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
       }
 
       const { error } = await supabase.from("agendamentos").update(updatePayload as any).eq("id", agendamento.id);
-
       if (error) throw error;
 
-      // Add to esteira if check-in just happened
       if (data.status === "na_empresa" && agendamento.status !== "na_empresa") {
         await addToEsteiraIfApplicable({
           empresaId: agendamento.empresa_id,
@@ -153,12 +169,68 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         });
       }
 
-      // Remove from esteira on check-out or cancellation
       if ((data.status === "concluido" || data.status === "cancelado") && agendamento.status !== data.status) {
         await removeFromEsteira(agendamento.id);
       }
 
       toast({ title: "Agendamento atualizado!" });
+
+      // If user wants contract, open contract dialog
+      if (gerarContrato) {
+        const { data: tpls } = await supabase
+          .from("contract_templates")
+          .select("id, name, content")
+          .eq("active", true);
+        const allTemplates = (tpls || []) as { id: string; name: string; content: string }[];
+
+        const svcLower = (data.tipo_servico || agendamento.tipo_servico).toLowerCase();
+        let matched = allTemplates.find(t => {
+          const n = t.name.toLowerCase();
+          if (svcLower.includes("hotel") || svcLower.includes("hospedagem")) return n.includes("hotel") || n.includes("hospedagem");
+          if (svcLower.includes("escola") || svcLower.includes("daycare") || svcLower.includes("creche")) return n.includes("escola") || n.includes("daycare") || n.includes("creche");
+          if (svcLower.includes("banho") || svcLower.includes("tosa")) return n.includes("banho") || n.includes("tosa");
+          return false;
+        });
+        if (!matched && allTemplates.length > 0) matched = allTemplates[0];
+
+        const petName = agendamento.pet?.nome || "";
+        const clienteName = agendamento.cliente?.nome || "";
+        const valor = data.valor ? `R$ ${parseFloat(data.valor).toFixed(2)}` : "___";
+        const dataReserva = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
+
+        const fillTpl = (c: string) => c
+          .replace(/\{\{cliente_nome\}\}/g, clienteName)
+          .replace(/\{\{cliente_cpf\}\}/g, agendamento.cliente?.cpf || "___")
+          .replace(/\{\{cliente_endereco\}\}/g, agendamento.cliente?.endereco || "___")
+          .replace(/\{\{pet_nome\}\}/g, petName)
+          .replace(/\{\{pet_raca\}\}/g, agendamento.pet?.raca || "___")
+          .replace(/\{\{pet_especie\}\}/g, agendamento.pet?.especie || "___")
+          .replace(/\{\{tipo_servico\}\}/g, data.tipo_servico)
+          .replace(/\{\{valor\}\}/g, valor)
+          .replace(/\{\{data\}\}/g, dataReserva)
+          .replace(/\{\{baia\}\}/g, data.baia || "___");
+
+        const filledContent = matched ? fillTpl(matched.content) : "";
+        const tplTitle = matched ? `${matched.name} — ${petName}` : "";
+
+        setContratoDialog({
+          open: true,
+          agendamento: {
+            ...agendamento,
+            tipo_servico: data.tipo_servico,
+            valor: data.valor ? parseFloat(data.valor) : null,
+            baia: data.baia || null,
+          },
+          templates: allTemplates,
+          selectedTemplate: matched?.id || "",
+          content: filledContent,
+          title: tplTitle,
+          loading: false,
+          createdLink: null,
+        });
+      }
+
+      onOpenChange(false);
       onSuccess?.();
     } catch (err: any) {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
@@ -167,7 +239,58 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
     }
   }
 
+  async function handleCreateContract() {
+    if (!contratoDialog || !contratoDialog.title.trim() || !contratoDialog.content.trim()) {
+      toast({ title: "Preencha o título e conteúdo", variant: "destructive" });
+      return;
+    }
+
+    setContratoDialog(prev => prev ? { ...prev, loading: true } : null);
+
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(contratoDialog.content));
+    const contentHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+    const { data: profile } = await supabase.from("profiles").select("empresa_id, id").single();
+    if (!profile?.empresa_id) {
+      toast({ title: "Erro ao identificar empresa", variant: "destructive" });
+      setContratoDialog(prev => prev ? { ...prev, loading: false } : null);
+      return;
+    }
+
+    const { data: contract, error } = await supabase.from("contracts").insert({
+      empresa_id: profile.empresa_id,
+      template_id: contratoDialog.selectedTemplate || null,
+      cliente_id: contratoDialog.agendamento.cliente_id,
+      title: contratoDialog.title.trim(),
+      content: contratoDialog.content,
+      content_hash: contentHash,
+      status: "enviado",
+      sent_at: new Date().toISOString(),
+      created_by: profile.id,
+      token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    }).select("id, signing_token").single();
+
+    if (error || !contract) {
+      toast({ title: "Erro ao gerar contrato", variant: "destructive" });
+      setContratoDialog(prev => prev ? { ...prev, loading: false } : null);
+      return;
+    }
+
+    await supabase.from("contract_events").insert({
+      contract_id: contract.id,
+      empresa_id: profile.empresa_id,
+      event_type: "criado",
+      description: `Contrato gerado a partir do agendamento (${contratoDialog.agendamento.tipo_servico})`,
+    });
+
+    const link = `${window.location.origin}/assinar/${(contract as any).signing_token}`;
+    setContratoDialog(prev => prev ? { ...prev, loading: false, createdLink: link } : null);
+    toast({ title: "Contrato gerado com sucesso!" });
+  }
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -278,6 +401,28 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
               </FormItem>
             )} />
 
+            {/* Deseja gerar contrato? */}
+            <div className="rounded-lg border border-border p-3 space-y-2">
+              <FormLabel className="text-sm font-medium flex items-center gap-2">
+                <FileSignature className="h-4 w-4 text-primary" />
+                Deseja gerar contrato?
+              </FormLabel>
+              <RadioGroup
+                value={gerarContrato ? "sim" : "nao"}
+                onValueChange={(v) => setGerarContrato(v === "sim")}
+                className="flex gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="sim" id="edit-contrato-sim" />
+                  <Label htmlFor="edit-contrato-sim" className="text-sm cursor-pointer">Sim</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="nao" id="edit-contrato-nao" />
+                  <Label htmlFor="edit-contrato-nao" className="text-sm cursor-pointer">Não</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
             <FormField control={form.control} name="notas" render={({ field }) => (
               <FormItem>
                 <FormLabel>Observações</FormLabel>
@@ -293,5 +438,96 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         </Form>
       </DialogContent>
     </Dialog>
+
+    {/* Contract generation dialog */}
+    {contratoDialog && (
+      <Dialog open={contratoDialog.open} onOpenChange={(v) => { if (!v) setContratoDialog(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerar Contrato</DialogTitle>
+          </DialogHeader>
+
+          {contratoDialog.createdLink ? (
+            <div className="space-y-4 py-4">
+              <div className="text-center space-y-3">
+                <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <FileSignature className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg">Contrato gerado com sucesso!</h3>
+                <p className="text-sm text-muted-foreground">Envie o link abaixo para o cliente assinar</p>
+              </div>
+              <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-3 border">
+                <Input value={contratoDialog.createdLink} readOnly className="text-xs" />
+                <Button variant="outline" size="icon" onClick={() => {
+                  navigator.clipboard.writeText(contratoDialog.createdLink!);
+                  toast({ title: "Link copiado!" });
+                }}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => window.open(contratoDialog.createdLink!, "_blank")} className="gap-2">
+                  <ExternalLink className="h-4 w-4" /> Visualizar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label>Template</Label>
+                <Select
+                  value={contratoDialog.selectedTemplate}
+                  onValueChange={(val) => {
+                    const tpl = contratoDialog.templates.find((t: any) => t.id === val);
+                    if (tpl) {
+                      setContratoDialog(prev => prev ? {
+                        ...prev,
+                        selectedTemplate: val,
+                        content: tpl.content,
+                        title: `${tpl.name} — ${prev.agendamento.pet?.nome || "Pet"}`,
+                      } : null);
+                    }
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione um template" /></SelectTrigger>
+                  <SelectContent>
+                    {contratoDialog.templates.map((t: any) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {contratoDialog.templates.length === 0 && (
+                  <p className="text-xs text-destructive mt-1">Nenhum template encontrado. Crie um template em Contratos → Templates primeiro.</p>
+                )}
+              </div>
+              <div>
+                <Label>Título do contrato</Label>
+                <Input
+                  value={contratoDialog.title}
+                  onChange={e => setContratoDialog(prev => prev ? { ...prev, title: e.target.value } : null)}
+                />
+              </div>
+              <div>
+                <Label>Conteúdo (preenchido automaticamente)</Label>
+                <Textarea
+                  value={contratoDialog.content}
+                  onChange={e => setContratoDialog(prev => prev ? { ...prev, content: e.target.value } : null)}
+                  rows={12}
+                  className="font-mono text-sm"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setContratoDialog(null)}>Cancelar</Button>
+                <Button onClick={handleCreateContract} disabled={contratoDialog.loading || !contratoDialog.content.trim()}>
+                  {contratoDialog.loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileSignature className="h-4 w-4 mr-2" />}
+                  Gerar e Enviar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    )}
+    </>
   );
 }
