@@ -75,6 +75,21 @@ Deno.serve(async (req) => {
       aprovado: true,
     }, { onConflict: "user_id" });
 
+    // Insert user role
+    const roleMap: Record<string, string> = {
+      admin: "admin",
+      gerente: "gerente",
+      atendente: "atendente",
+      financeiro: "financeiro",
+      operacional: "operacional",
+      banhista: "operacional",
+    };
+    const dbRole = roleMap[finalCargo] || "operacional";
+    await adminClient.from("user_roles").insert({
+      user_id: userId,
+      role: dbRole,
+    });
+
     // Only create operational_users record if acesso_operacional is relevant
     if (finalCargo === "operacional" || finalCargo === "banhista") {
       await adminClient.from("operational_users").insert({
