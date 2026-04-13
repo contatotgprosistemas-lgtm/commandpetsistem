@@ -224,7 +224,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
               // Build OR filter for faturas matching any pet name
               const { data: faturas } = await supabase
                 .from("contas_receber")
-                .select("id, valor")
+                .select("id, valor, descricao")
                 .eq("cliente_id", fullPet.cliente_id)
                 .in("status", ["pendente", "pago"]);
               
