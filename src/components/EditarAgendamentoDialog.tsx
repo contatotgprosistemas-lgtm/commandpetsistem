@@ -183,28 +183,44 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
           .eq("active", true);
         const allTemplates = (tpls || []) as { id: string; name: string; content: string }[];
 
+        // Fetch full client and pet data for placeholders
+        const { data: fullCliente } = await supabase
+          .from("clientes")
+          .select("id, nome, cpf, endereco, email, whatsapp, telefone")
+          .eq("id", agendamento.cliente_id)
+          .maybeSingle();
+        const { data: fullPet } = await supabase
+          .from("pets")
+          .select("id, nome, raca, especie, peso, porte, data_nascimento")
+          .eq("id", agendamento.pet_id)
+          .maybeSingle();
+
         const svcLower = (data.tipo_servico || agendamento.tipo_servico).toLowerCase();
         let matched = allTemplates.find(t => {
           const n = t.name.toLowerCase();
-          if (svcLower.includes("hotel") || svcLower.includes("hospedagem")) return n.includes("hotel") || n.includes("hospedagem");
+          if (svcLower.includes("hotel") || svcLower.includes("hospedagem") || svcLower.includes("diária") || svcLower.includes("diaria")) return n.includes("hotel") || n.includes("hospedagem");
           if (svcLower.includes("escola") || svcLower.includes("daycare") || svcLower.includes("creche")) return n.includes("escola") || n.includes("daycare") || n.includes("creche");
           if (svcLower.includes("banho") || svcLower.includes("tosa")) return n.includes("banho") || n.includes("tosa");
           return false;
         });
         if (!matched && allTemplates.length > 0) matched = allTemplates[0];
 
-        const petName = agendamento.pet?.nome || "";
-        const clienteName = agendamento.cliente?.nome || "";
+        const petName = fullPet?.nome || agendamento.pet?.nome || "";
+        const clienteName = fullCliente?.nome || agendamento.cliente?.nome || "";
         const valor = data.valor ? `R$ ${parseFloat(data.valor).toFixed(2)}` : "___";
         const dataReserva = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
 
         const fillTpl = (c: string) => c
           .replace(/\{\{cliente_nome\}\}/g, clienteName)
-          .replace(/\{\{cliente_cpf\}\}/g, agendamento.cliente?.cpf || "___")
-          .replace(/\{\{cliente_endereco\}\}/g, agendamento.cliente?.endereco || "___")
+          .replace(/\{\{cliente_cpf\}\}/g, fullCliente?.cpf || "___")
+          .replace(/\{\{cliente_endereco\}\}/g, fullCliente?.endereco || "___")
+          .replace(/\{\{cliente_email\}\}/g, fullCliente?.email || "___")
+          .replace(/\{\{cliente_whatsapp\}\}/g, fullCliente?.whatsapp || fullCliente?.telefone || "___")
           .replace(/\{\{pet_nome\}\}/g, petName)
-          .replace(/\{\{pet_raca\}\}/g, agendamento.pet?.raca || "___")
-          .replace(/\{\{pet_especie\}\}/g, agendamento.pet?.especie || "___")
+          .replace(/\{\{pet_raca\}\}/g, fullPet?.raca || "___")
+          .replace(/\{\{pet_especie\}\}/g, fullPet?.especie || "___")
+          .replace(/\{\{pet_peso\}\}/g, fullPet?.peso ? `${fullPet.peso}kg` : "___")
+          .replace(/\{\{pet_porte\}\}/g, fullPet?.porte || "___")
           .replace(/\{\{tipo_servico\}\}/g, data.tipo_servico)
           .replace(/\{\{valor\}\}/g, valor)
           .replace(/\{\{data\}\}/g, dataReserva)
