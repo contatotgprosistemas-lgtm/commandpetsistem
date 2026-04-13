@@ -354,64 +354,98 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map(c => (
-              <TableRow key={c.id} className={selected.includes(c.id) ? "bg-primary/5" : ""}>
-                <TableCell>
-                  <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
-                </TableCell>
-                <TableCell>
-                  <p className="text-sm font-medium">Fatura</p>
-                </TableCell>
-                <TableCell className="text-sm">
-                  {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}
-                </TableCell>
-                <TableCell className="text-sm">{c.categoria || "—"}</TableCell>
-                <TableCell>
-                  <p className="text-sm">{c.cliente?.nome || "—"}</p>
-                  <p className="text-xs text-muted-foreground">{c.descricao}</p>
-                </TableCell>
-                <TableCell className="text-sm">
-                  {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}
-                </TableCell>
-                <TableCell className="text-sm text-right tabular-nums font-medium">
-                  {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </TableCell>
-                <TableCell className="text-sm text-right tabular-nums">0,00</TableCell>
-                <TableCell>
-                  {statusBadge(c.status, c.vencimento)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-7 w-7">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(c)}>
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onBaixar(c)}>
-                        <ArrowDownCircle className="h-4 w-4 mr-2" />
-                        Baixar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDividir(c)}>
-                        <SplitSquareVertical className="h-4 w-4 mr-2" />
-                        Dividir
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => onDelete(c.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
+            {filtered.map(c => {
+              const isExpanded = expandedRows.includes(c.id);
+              const items = itemsCache[c.id] || [];
+              return (
+                <>
+                  <TableRow key={c.id} className={selected.includes(c.id) ? "bg-primary/5" : ""}>
+                    <TableCell>
+                      <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
+                    </TableCell>
+                    <TableCell>
+                      <button onClick={() => toggleExpand(c.id)} className="flex items-center gap-1 text-sm font-medium hover:text-primary transition-colors">
+                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                        Fatura
+                      </button>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}
+                    </TableCell>
+                    <TableCell className="text-sm">{c.categoria || "—"}</TableCell>
+                    <TableCell>
+                      <p className="text-sm">{c.cliente?.nome || "—"}</p>
+                      <p className="text-xs text-muted-foreground">{c.descricao}</p>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}
+                    </TableCell>
+                    <TableCell className="text-sm text-right tabular-nums font-medium">
+                      {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </TableCell>
+                    <TableCell className="text-sm text-right tabular-nums">0,00</TableCell>
+                    <TableCell>
+                      {statusBadge(c.status, c.vencimento)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-7 w-7">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => onEdit(c)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onBaixar(c)}>
+                            <ArrowDownCircle className="h-4 w-4 mr-2" />
+                            Baixar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onDividir(c)}>
+                            <SplitSquareVertical className="h-4 w-4 mr-2" />
+                            Dividir
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => onDelete(c.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                  {isExpanded && (
+                    items.length > 0 ? items.map((item, i) => (
+                      <TableRow key={`${c.id}-item-${i}`} className="bg-muted/20">
+                        <TableCell />
+                        <TableCell colSpan={4} className="text-xs text-muted-foreground pl-10">
+                          <Badge variant="outline" className="text-[9px] mr-2">
+                            {item.tipo === "principal" ? "Principal" : item.tipo === "extra" ? "Extra" : "Cortesia"}
+                          </Badge>
+                          {item.descricao}
+                        </TableCell>
+                        <TableCell />
+                        <TableCell className="text-xs text-right tabular-nums text-muted-foreground">
+                          {Number(item.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell colSpan={3} />
+                      </TableRow>
+                    )) : (
+                      <TableRow key={`${c.id}-empty`} className="bg-muted/20">
+                        <TableCell />
+                        <TableCell colSpan={9} className="text-xs text-muted-foreground text-center py-2">
+                          Sem detalhamento de itens
+                        </TableCell>
+                      </TableRow>
+                    )
+                  )}
+                </>
+              );
+            })}
           </TableBody>
         </Table>
       )}
