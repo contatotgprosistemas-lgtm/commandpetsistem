@@ -747,8 +747,6 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 <FormMessage />
               </FormItem>
             )} />
-              )}
-            </div>
 
             {/* Forma de Pagamento + Data de Pagamento */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
