@@ -197,25 +197,60 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
 
         // Fetch pets from same owner that have reservations for same service on same date
         let petsMesmoTutor = "___";
+        const dayStart = new Date(data.data_reserva + "T00:00:00").toISOString();
+        const dayEnd = new Date(data.data_reserva + "T23:59:59").toISOString();
+        const tipoSvc = data.tipo_servico || agendamento.tipo_servico;
+
         if (fullPet?.cliente_id) {
-          const dayStart = new Date(data.data_reserva + "T00:00:00").toISOString();
-          const dayEnd = new Date(data.data_reserva + "T23:59:59").toISOString();
           const { data: sameDateBookings } = await supabase
             .from("agendamentos")
-            .select("pet:pets(nome)")
+            .select("id, valor, desconto, pet:pets(nome)")
             .eq("cliente_id", fullPet.cliente_id)
-            .eq("tipo_servico", data.tipo_servico || agendamento.tipo_servico)
+            .eq("tipo_servico", tipoSvc)
             .gte("data_hora", dayStart)
             .lte("data_hora", dayEnd);
           if (sameDateBookings && sameDateBookings.length > 0) {
             const names = sameDateBookings.map((b: any) => b.pet?.nome).filter(Boolean);
             petsMesmoTutor = names.length > 0 ? names.join(", ") : fullPet?.nome || "___";
+
+            // Compute valor total across all pets + extras - discount
+            let valorBrutoTotal = 0;
+            let descontoTotal = 0;
+            for (const bk of sameDateBookings) {
+              valorBrutoTotal += (bk as any).valor ? Number((bk as any).valor) : 0;
+              descontoTotal += (bk as any).desconto ? Number((bk as any).desconto) : 0;
+            }
+            // Fetch extras (contas_receber_itens) for these agendamentos
+            const agIds = sameDateBookings.map((b: any) => b.id);
+            const { data: faturas } = await supabase
+              .from("contas_receber")
+              .select("id")
+              .in("descricao", sameDateBookings.map((b: any) => `${tipoSvc} — ${(b as any).pet?.nome || ""}`))
+              .eq("cliente_id", fullPet.cliente_id);
+            if (faturas && faturas.length > 0) {
+              const faturaIds = faturas.map((f: any) => f.id);
+              const { data: itens } = await supabase
+                .from("contas_receber_itens" as any)
+                .select("valor, tipo")
+                .in("conta_receber_id", faturaIds);
+              if (itens) {
+                for (const it of itens as any[]) {
+                  if (it.tipo === "extra") valorBrutoTotal += Number(it.valor) || 0;
+                }
+              }
+            }
+            var valorContrato = Math.max(valorBrutoTotal - descontoTotal, 0);
           } else {
             petsMesmoTutor = fullPet?.nome || "___";
+            var valorContrato = Math.max((data.valor ? parseFloat(data.valor) : 0) - (data.desconto ? parseFloat(data.desconto) : 0), 0);
           }
+        } else {
+          var valorContrato = Math.max((data.valor ? parseFloat(data.valor) : 0) - (data.desconto ? parseFloat(data.desconto) : 0), 0);
         }
 
-        const svcLower = (data.tipo_servico || agendamento.tipo_servico).toLowerCase();
+        const valor = valorContrato > 0 ? `R$ ${valorContrato.toFixed(2)}` : "___";
+
+        const svcLower = tipoSvc.toLowerCase();
         let matched = allTemplates.find(t => {
           const n = t.name.toLowerCase();
           if (svcLower.includes("hotel") || svcLower.includes("hospedagem") || svcLower.includes("diária") || svcLower.includes("diaria")) return n.includes("hotel") || n.includes("hospedagem");
@@ -227,10 +262,6 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
 
         const petName = fullPet?.nome || agendamento.pet?.nome || "";
         const clienteName = fullCliente?.nome || agendamento.cliente?.nome || "";
-        const valorNum = data.valor ? parseFloat(data.valor) : 0;
-        const descontoNum = data.desconto ? parseFloat(data.desconto) : 0;
-        const valorFinal = valorNum - descontoNum;
-        const valor = valorFinal > 0 ? `R$ ${valorFinal.toFixed(2)}` : (valorNum > 0 ? `R$ ${valorNum.toFixed(2)}` : "___");
         const dataReserva = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
         const dataAtual = format(new Date(), "dd/MM/yyyy");
 
