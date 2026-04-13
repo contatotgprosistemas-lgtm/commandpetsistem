@@ -4,13 +4,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { format, startOfDay, addDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck, Search, Filter, PawPrint, User, Hotel, Scissors, TreePine, HelpCircle } from "lucide-react";
+import { CalendarCheck, Search, Filter, PawPrint, User, Hotel, Scissors, TreePine, HelpCircle, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SignedImage } from "@/components/SignedImage";
+import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface Reserva {
   id: string;
@@ -19,8 +23,17 @@ interface Reserva {
   status: string;
   baia: string | null;
   notas: string | null;
-  cliente: { nome: string } | null;
-  pet: { nome: string; raca: string | null; foto_url: string | null } | null;
+  valor: number | null;
+  duracao_min: number | null;
+  data_saida_provavel: string | null;
+  hora_saida_provavel: string | null;
+  forma_pagamento: string | null;
+  empresa_id: string;
+  cliente_id: string;
+  pet_id: string;
+  subscription_id: string | null;
+  cliente: { id: string; nome: string; whatsapp: string | null; foto_url: string | null } | null;
+  pet: { id: string; nome: string; raca: string | null; especie: string; foto_url: string | null } | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -97,6 +110,8 @@ export default function ReservasPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todas");
   const [periodoFilter, setPeriodoFilter] = useState("hoje");
+  const [editingReserva, setEditingReserva] = useState<Reserva | null>(null);
+  const [deletingReserva, setDeletingReserva] = useState<Reserva | null>(null);
 
   useEffect(() => {
     if (profile?.empresa_id) fetchReservas();
@@ -121,7 +136,7 @@ export default function ReservasPage() {
 
     const { data, error } = await supabase
       .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, baia, notas, cliente:clientes(nome), pet:pets(nome, raca, foto_url)")
+      .select("id, data_hora, tipo_servico, status, baia, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, cliente:clientes(id, nome, whatsapp, foto_url), pet:pets(id, nome, raca, especie, foto_url)")
       .eq("empresa_id", profile.empresa_id)
       .gte("data_hora", fromDate.toISOString())
       .lt("data_hora", toDate.toISOString())
@@ -131,6 +146,29 @@ export default function ReservasPage() {
       setReservas(data as unknown as Reserva[]);
     }
     setLoading(false);
+  }
+
+  async function handleDelete(reserva: Reserva) {
+    await supabase.from("historico_servicos").delete().eq("agendamento_id", reserva.id);
+    await supabase.from("checklist_registros").delete().eq("agendamento_id", reserva.id);
+    await supabase.from("manejo_registros").delete().eq("agendamento_id", reserva.id);
+
+    const petName = reserva.pet?.nome || "";
+    const searchDesc = `${reserva.tipo_servico} — ${petName}`;
+    await supabase
+      .from("contas_receber")
+      .delete()
+      .eq("cliente_id", reserva.cliente_id)
+      .eq("descricao", searchDesc);
+
+    const { error } = await supabase.from("agendamentos").delete().eq("id", reserva.id);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+      return;
+    }
+    toast.success("Reserva e faturas relacionadas excluídas com sucesso.");
+    setDeletingReserva(null);
+    fetchReservas();
   }
 
   const filtered = reservas.filter((r) => {
@@ -152,11 +190,9 @@ export default function ReservasPage() {
       if (!map.has(g.label)) map.set(g.label, { group: g, items: [] });
       map.get(g.label)!.items.push(r);
     }
-    // sort items inside each group alphabetically by pet name
     for (const entry of map.values()) {
       entry.items.sort((a, b) => (a.pet?.nome || "").localeCompare(b.pet?.nome || ""));
     }
-    // sort groups in the order defined
     const order = serviceGroups.map((g) => g.label);
     return Array.from(map.entries()).sort(
       (a, b) => (order.indexOf(a[0]) === -1 ? 99 : order.indexOf(a[0])) - (order.indexOf(b[0]) === -1 ? 99 : order.indexOf(b[0]))
@@ -241,8 +277,30 @@ export default function ReservasPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                   {items.map((r) => (
-                    <Card key={r.id} className="overflow-hidden hover:shadow-md transition-shadow group">
-                      <div className="aspect-square bg-muted relative overflow-hidden">
+                    <Card key={r.id} className="overflow-hidden hover:shadow-md transition-shadow group relative">
+                      {/* Action buttons overlay */}
+                      <div className="absolute top-1.5 left-1.5 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-7 w-7 bg-card/90 hover:bg-card shadow-sm"
+                          title="Editar"
+                          onClick={(e) => { e.stopPropagation(); setEditingReserva(r); }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-7 w-7 bg-card/90 hover:bg-destructive hover:text-destructive-foreground shadow-sm"
+                          title="Excluir"
+                          onClick={(e) => { e.stopPropagation(); setDeletingReserva(r); }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+
+                      <div className="aspect-square bg-muted relative overflow-hidden cursor-pointer" onClick={() => setEditingReserva(r)}>
                         {r.pet?.foto_url ? (
                           <SignedImage
                             src={r.pet.foto_url}
@@ -289,6 +347,32 @@ export default function ReservasPage() {
           })}
         </div>
       )}
+
+      {/* Edit dialog */}
+      <EditarAgendamentoDialog
+        agendamento={editingReserva as any}
+        open={!!editingReserva}
+        onOpenChange={(o) => { if (!o) setEditingReserva(null); }}
+        onSuccess={() => { setEditingReserva(null); fetchReservas(); }}
+      />
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deletingReserva} onOpenChange={(o) => { if (!o) setDeletingReserva(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir reserva?</DialogTitle>
+            <DialogDescription>
+              Esta ação não poderá ser desfeita. A exclusão também irá apagar faturas e registros de serviço relacionados a este agendamento de <strong>{deletingReserva?.pet?.nome}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingReserva(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => deletingReserva && handleDelete(deletingReserva)}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

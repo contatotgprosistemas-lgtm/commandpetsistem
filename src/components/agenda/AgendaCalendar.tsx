@@ -41,12 +41,19 @@ interface AgendaCalendarProps {
 
 const WEEKDAYS = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
 
+const HOSPEDAGEM_KEYWORDS = ["hotel", "hospedagem", "diaria", "diária", "pernoite"];
+
+function isHospedagem(tipo: string) {
+  const lower = tipo.toLowerCase();
+  return HOSPEDAGEM_KEYWORDS.some(k => lower.includes(k));
+}
+
 const SERVICE_COLORS: Record<string, string> = {
   "Banho": "bg-sky-500/80 text-white",
   "Tosa": "bg-violet-500/80 text-white",
   "Banho e Tosa": "bg-indigo-500/80 text-white",
-  "Hotel": "bg-amber-500/80 text-white",
-  "Hospedagem": "bg-amber-500/80 text-white",
+  "Hotel": "bg-orange-500/80 text-white",
+  "Hospedagem": "bg-orange-500/80 text-white",
   "Creche": "bg-emerald-500/80 text-white",
   "Daycare": "bg-emerald-500/80 text-white",
   "Escola": "bg-emerald-500/80 text-white",
