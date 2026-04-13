@@ -41,12 +41,19 @@ interface AgendaCalendarProps {
 
 const WEEKDAYS = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
 
+const HOSPEDAGEM_KEYWORDS = ["hotel", "hospedagem", "diaria", "diária", "pernoite"];
+
+function isHospedagem(tipo: string) {
+  const lower = tipo.toLowerCase();
+  return HOSPEDAGEM_KEYWORDS.some(k => lower.includes(k));
+}
+
 const SERVICE_COLORS: Record<string, string> = {
   "Banho": "bg-sky-500/80 text-white",
   "Tosa": "bg-violet-500/80 text-white",
   "Banho e Tosa": "bg-indigo-500/80 text-white",
-  "Hotel": "bg-amber-500/80 text-white",
-  "Hospedagem": "bg-amber-500/80 text-white",
+  "Hotel": "bg-orange-500/80 text-white",
+  "Hospedagem": "bg-orange-500/80 text-white",
   "Creche": "bg-emerald-500/80 text-white",
   "Daycare": "bg-emerald-500/80 text-white",
   "Escola": "bg-emerald-500/80 text-white",
@@ -58,7 +65,7 @@ const SERVICE_COLORS: Record<string, string> = {
 // Cores diferenciadas para agendamentos vindos de planos/pacotes (match por palavra-chave)
 const PLAN_COLOR_RULES: { keywords: string[]; color: string }[] = [
   { keywords: ["escola", "creche", "daycare"], color: "bg-blue-500/80 text-white" },
-  { keywords: ["hotel", "hospedagem"], color: "bg-lime-500/80 text-white" },
+  { keywords: ["hotel", "hospedagem"], color: "bg-orange-600/80 text-white" },
   { keywords: ["banho", "tosa"], color: "bg-fuchsia-500/80 text-white" },
 ];
 
@@ -71,9 +78,11 @@ function getPlanColor(tipo: string): string {
 }
 
 function getServiceColor(tipo: string, isFromPlan = false, status?: string) {
-  // Check-in (na_empresa) or check-out (concluido) → light green
   if (status === "na_empresa") return "bg-emerald-400/80 text-white";
   if (status === "concluido") return "bg-green-500/80 text-white";
+
+  // Hospedagem always gets orange to stand out
+  if (!isFromPlan && isHospedagem(tipo)) return "bg-orange-500/80 text-white";
 
   if (isFromPlan) {
     return getPlanColor(tipo);
