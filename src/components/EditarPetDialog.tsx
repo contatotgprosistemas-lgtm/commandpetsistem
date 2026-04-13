@@ -299,23 +299,37 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
                   ]).map((vacina) => (
                     <div key={vacina.dataName} className="grid grid-cols-2 gap-3 items-center">
                       <span className="text-sm font-medium text-foreground">{vacina.label}</span>
-                      <FormField control={form.control} name={vacina.dataName} render={({ field }) => (
-                        <FormItem>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                  {field.value ? format(field.value, "dd/MM/yyyy") : <span>Data aplicação</span>}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} />
-                            </PopoverContent>
-                          </Popover>
-                        </FormItem>
-                      )} />
+                      <FormField control={form.control} name={vacina.dataName} render={({ field }) => {
+                        const [vText, setVText] = useState(field.value ? format(field.value, "dd/MM/yyyy") : "");
+                        useEffect(() => { setVText(field.value ? format(field.value, "dd/MM/yyyy") : ""); }, [field.value]);
+                        const onInput = (e: { target: { value: string } }) => {
+                          let v = e.target.value.replace(/\D/g, "").slice(0, 8);
+                          if (v.length >= 5) v = v.slice(0, 2) + "/" + v.slice(2, 4) + "/" + v.slice(4);
+                          else if (v.length >= 3) v = v.slice(0, 2) + "/" + v.slice(2);
+                          setVText(v);
+                          const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                          if (m) { const d = new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1])); if (!isNaN(d.getTime()) && d <= new Date()) field.onChange(d); }
+                        };
+                        return (
+                          <FormItem>
+                            <Popover>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input value={vText} onChange={onInput} placeholder="DD/MM/AAAA" className="pr-10" />
+                                </FormControl>
+                                <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-2 hover:bg-transparent">
+                                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                </PopoverTrigger>
+                              </div>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar mode="single" selected={field.value} onSelect={(d) => { field.onChange(d); if (d) setVText(format(d, "dd/MM/yyyy")); }} disabled={(date) => date > new Date()} initialFocus className={cn("p-3 pointer-events-auto")} />
+                              </PopoverContent>
+                            </Popover>
+                          </FormItem>
+                        );
+                      }} />
                     </div>
                   ))}
                 </div>
