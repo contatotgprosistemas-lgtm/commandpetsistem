@@ -295,6 +295,10 @@ const ServicosPage = () => {
         <TabsList>
           <TabsTrigger value="servicos">Serviços</TabsTrigger>
           <TabsTrigger value="tipos">Tipos de Serviço</TabsTrigger>
+          <TabsTrigger value="baias" className="gap-1.5">
+            <BedDouble className="h-3.5 w-3.5" />
+            Baias
+          </TabsTrigger>
         </TabsList>
 
         {/* ─── Serviços Tab ─── */}
