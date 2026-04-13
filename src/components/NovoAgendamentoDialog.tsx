@@ -597,8 +597,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )} />
             </div>
 
-            {/* Row 3: Quarto + Diárias + Valor + Valor Contrato */}
-            <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-4" : selectedPetIds.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-3")}>
+            {/* Row 3: Quarto + Diárias + Valor */}
+            <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2")}>
               <FormField control={form.control} name="baia" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Quarto</FormLabel>
@@ -642,23 +642,6 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                   <FormMessage />
                 </FormItem>
               )} />
-
-              {selectedPetIds.length > 1 && (
-                <FormItem>
-                  <FormLabel>Valor Contrato (R$)</FormLabel>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={valorContrato.toFixed(2)}
-                    readOnly
-                    className="bg-muted font-semibold"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {selectedPetIds.length} pets × R$ {((form.watch("valor") ? parseFloat(form.watch("valor")) : 0) + totalExtras).toFixed(2)}
-                    {descontoStr && parseFloat(descontoStr) > 0 ? ` - R$ ${parseFloat(descontoStr).toFixed(2)} desc.` : ""}
-                  </p>
-                </FormItem>
-              )}
             </div>
 
             {/* Serviços Extras */}
@@ -739,21 +722,33 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )}
             </div>
 
-            {/* Desconto - abaixo dos extras */}
-            <FormField control={form.control} name="desconto" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Desconto (R$)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" min="0" placeholder="0,00" {...field} />
-                </FormControl>
-                {selectedPetIds.length > 1 && (
+            {/* Desconto + Valor Contrato lado a lado */}
+            <div className={cn("grid gap-3", selectedPetIds.length > 1 ? "grid-cols-2" : "grid-cols-1 max-w-[200px]")}>
+              <FormField control={form.control} name="desconto" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Desconto (R$)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" min="0" placeholder="0,00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              {selectedPetIds.length > 1 && (
+                <FormItem>
+                  <FormLabel>Valor Contrato (R$)</FormLabel>
+                  <Input
+                    type="number"
+                    value={valorContrato.toFixed(2)}
+                    readOnly
+                    className="bg-muted font-semibold"
+                  />
                   <p className="text-xs text-muted-foreground">
-                    O desconto será abatido do valor total do contrato
+                    {selectedPetIds.length} pets × R$ {((form.watch("valor") ? parseFloat(form.watch("valor")) : 0) + totalExtras).toFixed(2)}
+                    {descontoStr && parseFloat(descontoStr) > 0 ? ` - R$ ${parseFloat(descontoStr).toFixed(2)} desc.` : ""}
                   </p>
-                )}
-                <FormMessage />
-              </FormItem>
-            )} />
+                </FormItem>
+              )}
+            </div>
 
             {/* Forma de Pagamento + Data de Pagamento */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
