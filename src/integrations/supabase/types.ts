@@ -545,7 +545,7 @@ export type Database = {
           created_at: string
           data_nascimento: string | null
           deleted_at: string | null
-          dia_vencimento_fatura: number
+          dia_vencimento_fatura: number | null
           dias_gerar_fatura: number
           email: string | null
           empresa_id: string
@@ -568,7 +568,7 @@ export type Database = {
           created_at?: string
           data_nascimento?: string | null
           deleted_at?: string | null
-          dia_vencimento_fatura?: number
+          dia_vencimento_fatura?: number | null
           dias_gerar_fatura?: number
           email?: string | null
           empresa_id: string
@@ -591,7 +591,7 @@ export type Database = {
           created_at?: string
           data_nascimento?: string | null
           deleted_at?: string | null
-          dia_vencimento_fatura?: number
+          dia_vencimento_fatura?: number | null
           dias_gerar_fatura?: number
           email?: string | null
           empresa_id?: string
