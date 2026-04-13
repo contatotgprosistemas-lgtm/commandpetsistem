@@ -11,6 +11,7 @@ import { format, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { FaltaDialog } from "@/components/FaltaDialog";
+import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { addToEsteiraIfApplicable } from "@/lib/esteira";
 
 export default function OperacionalAgendaPage() {
@@ -87,11 +88,14 @@ export default function OperacionalAgendaPage() {
 
   return (
     <div className="space-y-6 pb-24 md:pb-0">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Agenda do Dia</h1>
-        <p className="text-sm text-muted-foreground capitalize">
-          {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Agenda do Dia</h1>
+          <p className="text-sm text-muted-foreground capitalize">
+            {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+          </p>
+        </div>
+        <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
       </div>
 
       {agendamentos.length === 0 ? (

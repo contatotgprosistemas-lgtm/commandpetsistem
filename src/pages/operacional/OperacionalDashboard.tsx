@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera, CheckSquare } from "lucide-react";
+import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera, CheckSquare, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,7 @@ import { FaltaDialog } from "@/components/FaltaDialog";
 import { ManejoDialog } from "@/components/ManejoDialog";
 import { OperacionalGaleriaDialog } from "@/components/operacional/OperacionalGaleriaDialog";
 import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
+import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
 
 export default function OperacionalDashboard() {
@@ -199,7 +200,10 @@ export default function OperacionalDashboard() {
             {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
-        <EstouChegandoMapDialog empresaId={user?.empresa_id} />
+        <div className="flex items-center gap-2">
+          <EstouChegandoMapDialog empresaId={user?.empresa_id} />
+          <NovoAgendamentoDialog onSuccess={() => window.location.reload()} />
+        </div>
       </div>
 
       {/* Stats cards - large and touch-friendly */}
