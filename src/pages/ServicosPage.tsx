@@ -194,6 +194,54 @@ const ServicosPage = () => {
     onError: () => toast.error("Erro ao excluir tipo."),
   });
 
+  // Baia mutations
+  const addBaiaMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("baias").insert({
+        empresa_id: empresaId!,
+        nome: baiaNome,
+        tamanho: baiaTamanho,
+        capacidade_pets: parseInt(baiaCapacidade) || 1,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["baias"] });
+      toast.success("Baia criada!");
+      resetBaiaForm();
+    },
+    onError: () => toast.error("Erro ao criar baia."),
+  });
+
+  const editBaiaMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("baias")
+        .update({ nome: baiaNome, tamanho: baiaTamanho, capacidade_pets: parseInt(baiaCapacidade) || 1 } as any)
+        .eq("id", baiaEditId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["baias"] });
+      toast.success("Baia atualizada!");
+      resetBaiaForm();
+      setBaiaEditOpen(false);
+    },
+    onError: () => toast.error("Erro ao atualizar baia."),
+  });
+
+  const deleteBaiaMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("baias").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["baias"] });
+      toast.success("Baia excluída!");
+    },
+    onError: () => toast.error("Erro ao excluir baia."),
+  });
+
   const resetForm = () => {
     setDescricao("");
     setValor("");
@@ -202,6 +250,22 @@ const ServicosPage = () => {
     setDiaria24h(false);
     setOpen(false);
     setEditId(null);
+  };
+
+  const resetBaiaForm = () => {
+    setBaiaNome("");
+    setBaiaTamanho("");
+    setBaiaCapacidade("1");
+    setBaiaOpen(false);
+    setBaiaEditId(null);
+  };
+
+  const openEditBaia = (b: any) => {
+    setBaiaEditId(b.id);
+    setBaiaNome(b.nome);
+    setBaiaTamanho(b.tamanho || "");
+    setBaiaCapacidade(String(b.capacidade_pets || 1));
+    setBaiaEditOpen(true);
   };
 
   const openEdit = (s: any) => {
