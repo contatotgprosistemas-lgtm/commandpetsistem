@@ -508,12 +508,10 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
                 />
               </div>
               <div>
-                <Label>Conteúdo (preenchido automaticamente)</Label>
-                <Textarea
-                  value={contratoDialog.content}
-                  onChange={e => setContratoDialog(prev => prev ? { ...prev, content: e.target.value } : null)}
-                  rows={12}
-                  className="font-mono text-sm"
+                <Label>Pré-visualização do contrato</Label>
+                <div
+                  className="border rounded-md p-4 mt-1 max-h-[400px] overflow-y-auto bg-white text-foreground prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: contratoDialog.content }}
                 />
               </div>
               <div className="flex justify-end gap-2">
