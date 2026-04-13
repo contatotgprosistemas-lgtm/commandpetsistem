@@ -79,6 +79,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
   useEffect(() => {
     if (open) {
       supabase.from("servicos").select("id, descricao").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data); });
+      supabase.from("baias").select("id, nome").eq("ativa", true).order("nome").then(({ data }) => { if (data) setBaias(data); });
     }
   }, [open]);
 
@@ -226,7 +227,8 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {baiaOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                      {baias.map(b => <SelectItem key={b.id} value={b.nome}>{b.nome}</SelectItem>)}
+                    </SelectContent>
                     </SelectContent>
                   </Select>
                 </FormItem>
