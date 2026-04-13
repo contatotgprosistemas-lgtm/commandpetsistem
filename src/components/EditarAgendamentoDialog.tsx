@@ -34,7 +34,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const baiaOptions = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+// baiaOptions removed – baias are fetched from DB
 
 function DatePickerField({ value, onChange, placeholder = "Selecione" }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   const dateValue = value ? new Date(value + "T00:00:00") : undefined;
@@ -63,6 +63,7 @@ interface Props {
 export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [servicos, setServicos] = useState<{ id: string; descricao: string }[]>([]);
+  const [baias, setBaias] = useState<{ id: string; nome: string }[]>([]);
 
   const tipoServico = agendamento?.tipo_servico || "";
   const isHotel = useMemo(() => {
@@ -78,6 +79,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
   useEffect(() => {
     if (open) {
       supabase.from("servicos").select("id, descricao").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data); });
+      supabase.from("baias").select("id, nome").eq("ativa", true).order("nome").then(({ data }) => { if (data) setBaias(data); });
     }
   }, [open]);
 
@@ -225,7 +227,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {baiaOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                      {baias.map(b => <SelectItem key={b.id} value={b.nome}>{b.nome}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </FormItem>

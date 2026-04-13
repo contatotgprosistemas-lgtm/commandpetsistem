@@ -56,7 +56,7 @@ interface ServicoExtra {
   cortesia: boolean;
 }
 
-const quartoOptions = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+// quartoOptions removed – baias are fetched from DB
 
 function DatePickerField({
   value,
@@ -108,6 +108,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [useReplacement, setUseReplacement] = useState(false);
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [servicosExtras, setServicosExtras] = useState<ServicoExtra[]>([]);
+  const [baias, setBaias] = useState<{ id: string; nome: string; capacidade_pets: number }[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -174,6 +175,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       supabase.from("pets").select("id, nome, cliente_id").order("nome").then(({ data }) => { if (data) setPets(data); });
       supabase.from("servicos").select("id, descricao, valor, tipo").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data as ServicoItem[]); });
       supabase.from("formas_pagamento").select("id, nome").eq("ativo", true).order("nome").then(({ data }) => { if (data) setFormasPagamento(data); });
+      supabase.from("baias").select("id, nome, capacidade_pets").eq("ativa", true).order("nome").then(({ data }) => { if (data) setBaias(data); });
     } else {
       setServicosExtras([]);
     }
@@ -574,7 +576,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                   <FormLabel>Quarto</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent>{quartoOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                    <SelectContent>{baias.map(b => <SelectItem key={b.id} value={b.nome}>{b.nome} ({b.capacidade_pets} pets)</SelectItem>)}</SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
