@@ -631,7 +631,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             <FormField control={form.control} name="cliente_id" render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Cliente *</FormLabel>
-                <Popover>
+                <Popover open={clientePopoverOpen} onOpenChange={setClientePopoverOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal", !field.value && "text-muted-foreground")}>
