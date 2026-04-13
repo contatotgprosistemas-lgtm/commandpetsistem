@@ -63,6 +63,7 @@ interface Props {
 export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [servicos, setServicos] = useState<{ id: string; descricao: string }[]>([]);
+  const [baias, setBaias] = useState<{ id: string; nome: string }[]>([]);
 
   const tipoServico = agendamento?.tipo_servico || "";
   const isHotel = useMemo(() => {
