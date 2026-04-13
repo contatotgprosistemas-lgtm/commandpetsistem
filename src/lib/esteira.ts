@@ -36,11 +36,15 @@ export async function addToEsteiraIfApplicable(params: {
 
   if (existing) return;
 
-  await supabase.from("esteira_banho").insert({
+  const { error } = await supabase.from("esteira_banho").insert({
     empresa_id: params.empresaId,
     agendamento_id: params.agendamentoId,
     status: "aguardando",
   } as any);
+
+  if (error) {
+    console.error("[esteira] Erro ao inserir na esteira:", error.message);
+  }
 }
 
 /**
