@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useInactivityTimeout } from "@/hooks/useInactivityTimeout";
 import { AppSidebar } from "./AppSidebar";
 import { Loader2 } from "lucide-react";
 
@@ -13,6 +14,7 @@ const authRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", 
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const { user } = useAuth();
+  useInactivityTimeout();
   const isAuthRoute = authRoutes.some(route =>
     location.pathname.startsWith(route)
   );
