@@ -12,24 +12,43 @@ Deno.serve(async (req) => {
   }
 
   const url = new URL(req.url);
-  const type = url.searchParams.get("type"); // "cadastro" or "contrato"
-  const id = url.searchParams.get("id"); // empresa_id or signing_token
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  let type = url.searchParams.get("type");
+  let id = url.searchParams.get("id");
+  let origin = url.searchParams.get("origin");
+
+  // Short link resolution
+  const shortCode = url.searchParams.get("s");
+  if (shortCode) {
+    const { data: sl } = await supabase
+      .from("short_links")
+      .select("type, target_id, origin")
+      .eq("id", shortCode)
+      .maybeSingle();
+
+    if (!sl) {
+      return new Response("Link não encontrado", { status: 404 });
+    }
+    type = sl.type;
+    id = sl.target_id;
+    origin = sl.origin;
+  }
 
   if (!type || !id) {
     return new Response("Missing params", { status: 400 });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  if (!origin) {
+    origin = "https://petcontrol.tgprosistemas.com.br";
+  }
 
   let logoUrl = "";
   let title = "PetControl";
   let description = "Sistema de gestão para pet shops";
   let redirectUrl = "";
-
-  // Detect the origin from the custom domain or fallback
-  const origin = url.searchParams.get("origin") || "https://petcontrol.tgprosistemas.com.br";
 
   if (type === "cadastro") {
     const { data } = await supabase
@@ -63,7 +82,6 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Fallback logo
   if (!logoUrl) {
     logoUrl = `${supabaseUrl}/storage/v1/object/public/profile-photos/og-logo.png`;
   }
