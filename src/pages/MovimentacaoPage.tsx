@@ -4,7 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Search, Pencil } from "lucide-react";
+import { MoreVertical, Trash2, Search, Pencil, Plus } from "lucide-react";
+import { NovaMovimentacaoDialog } from "@/components/NovaMovimentacaoDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
