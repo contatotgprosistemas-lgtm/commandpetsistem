@@ -5,6 +5,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { differenceInYears, differenceInMonths } from "date-fns";
 import { PawPrint, Plus, Trash2, CheckCircle2, Building2, Loader2, Camera, X } from "lucide-react";
+import { useEmpresaLogoById } from "@/hooks/useEmpresaLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -132,6 +133,7 @@ const defaultPet = {
 
 export default function CadastroPublicoPage() {
   const { empresaId } = useParams<{ empresaId: string }>();
+  const empresaLogo = useEmpresaLogoById(empresaId);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
@@ -235,9 +237,13 @@ export default function CadastroPublicoPage() {
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="text-center space-y-2">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-            <Building2 className="h-6 w-6 text-primary" />
-          </div>
+          {empresaLogo && empresaLogo !== "/placeholder.svg" ? (
+            <img src={empresaLogo} alt="Logo da empresa" className="h-16 w-16 rounded-full object-contain mx-auto" />
+          ) : (
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <Building2 className="h-6 w-6 text-primary" />
+            </div>
+          )}
           <h1 className="text-xl font-semibold text-foreground">Cadastro de Cliente e Pet</h1>
           <p className="text-sm text-muted-foreground">Preencha seus dados e dos seus pets abaixo</p>
         </div>
