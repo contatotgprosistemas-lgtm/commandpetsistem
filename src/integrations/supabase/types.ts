@@ -5053,6 +5053,7 @@ export type Database = {
         Args: { p_movimentacao_id: string }
         Returns: Json
       }
+      get_empresa_logo: { Args: { p_empresa_id: string }; Returns: string }
       get_operational_empresa_id: { Args: never; Returns: string }
       get_operational_user_id: { Args: never; Returns: string }
       get_own_cargo: { Args: never; Returns: string }
