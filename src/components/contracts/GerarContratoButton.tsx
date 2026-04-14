@@ -176,7 +176,8 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
       description: "Contrato enviado para assinatura",
     });
 
-    const link = `${window.location.origin}/assinar/${(contract as any).signing_token}`;
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const link = `https://${projectId}.supabase.co/functions/v1/og-preview?type=contrato&id=${(contract as any).signing_token}&origin=${encodeURIComponent(window.location.origin)}`;
     setCreatedLink(link);
     setLoading(false);
     toast.success("Contrato gerado e pronto para assinatura!");
