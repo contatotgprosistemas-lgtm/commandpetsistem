@@ -23,6 +23,7 @@ interface Movimentacao {
 export default function MovimentacaoPage() {
   const [movs, setMovs] = useState<Movimentacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [novaMovOpen, setNovaMovOpen] = useState(false);
 
   async function fetchMovs() {
     setLoading(true);
