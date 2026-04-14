@@ -50,6 +50,10 @@ export default function MovimentacaoPage() {
     <div className="bg-card rounded-lg shadow-card mt-4 overflow-hidden">
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{movs.length} movimentação(ões)</span>
+        <Button size="sm" className="gap-1" onClick={() => setNovaMovOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Nova Movimentação
+        </Button>
       </div>
 
       {loading ? (
