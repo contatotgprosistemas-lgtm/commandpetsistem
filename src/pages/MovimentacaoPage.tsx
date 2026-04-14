@@ -125,6 +125,12 @@ export default function MovimentacaoPage() {
           </TableBody>
         </Table>
       )}
+
+      <NovaMovimentacaoDialog
+        open={novaMovOpen}
+        onOpenChange={setNovaMovOpen}
+        onSuccess={fetchMovs}
+      />
     </div>
   );
 }
