@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useInactivityTimeout } from "@/hooks/useInactivityTimeout";
 import { AppSidebar } from "./AppSidebar";
 import { Loader2 } from "lucide-react";
 
