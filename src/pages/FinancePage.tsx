@@ -261,11 +261,59 @@ export default function FinancePage() {
   );
 }
 
+type SortDir = "asc" | "desc" | null;
+type SortKey = string;
+
+function SortableHead({ label, sortKey, currentSort, currentDir, onSort, className }: { label: string; sortKey: SortKey; currentSort: SortKey | null; currentDir: SortDir; onSort: (key: SortKey) => void; className?: string }) {
+  const active = currentSort === sortKey;
+  return (
+    <TableHead className={className}>
+      <button onClick={() => onSort(sortKey)} className="flex items-center gap-1 hover:text-foreground transition-colors w-full">
+        {label}
+        {active && currentDir === "asc" ? <ArrowUp className="h-3 w-3" /> : active && currentDir === "desc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+      </button>
+    </TableHead>
+  );
+}
+
+function useSortable<T>(data: T[], defaultKey?: SortKey) {
+  const [sortKey, setSortKey] = useState<SortKey | null>(defaultKey ?? null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
+
+  const onSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(prev => prev === "asc" ? "desc" : prev === "desc" ? null : "asc");
+      if (sortDir === "desc") setSortKey(null);
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  return { sortKey, sortDir, onSort };
+}
+
+function sortData<T>(data: T[], sortKey: SortKey | null, sortDir: SortDir, accessor: (item: T, key: string) => any): T[] {
+  if (!sortKey || !sortDir) return data;
+  return [...data].sort((a, b) => {
+    const va = accessor(a, sortKey);
+    const vb = accessor(b, sortKey);
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (typeof va === "string" && typeof vb === "string") {
+      return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+    }
+    return sortDir === "asc" ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+}
+
 function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [itemsCache, setItemsCache] = useState<Record<string, { descricao: string; valor: number; tipo: string }[]>>({});
+  const { sortKey, sortDir, onSort } = useSortable<ContaReceber>();
 
   const toggleExpand = async (id: string) => {
     if (expandedRows.includes(id)) {
@@ -278,11 +326,27 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
       setItemsCache(prev => ({ ...prev, [id]: (data as any) || [] }));
     }
   };
-  const filtered = contas.filter(c => {
+
+  const preFiltered = contas.filter(c => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (c.descricao?.toLowerCase().includes(q)) || (c.cliente?.nome?.toLowerCase().includes(q)) || (c.categoria?.toLowerCase().includes(q));
   });
+
+  const filtered = useMemo(() => {
+    return sortData(preFiltered, sortKey, sortDir, (item, key) => {
+      switch (key) {
+        case "pessoa": return item.cliente?.nome ?? "";
+        case "categoria": return item.categoria ?? "";
+        case "vencimento": return item.vencimento;
+        case "valor": return item.valor;
+        case "status": return item.status;
+        case "descricao": return item.descricao;
+        default: return null;
+      }
+    });
+  }, [preFiltered, sortKey, sortDir]);
+
   const allSelected = filtered.length > 0 && selected.length === filtered.length;
 
   const toggleAll = () => {
@@ -344,12 +408,12 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
               </TableHead>
               <TableHead>Documento</TableHead>
               <TableHead>Emissão</TableHead>
-              <TableHead>Plano de Contas</TableHead>
-              <TableHead>Pessoa</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
+              <SortableHead label="Plano de Contas" sortKey="categoria" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Pessoa" sortKey="pessoa" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Vencimento" sortKey="vencimento" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Valor" sortKey="valor" currentSort={sortKey} currentDir={sortDir} onSort={onSort} className="text-right" />
               <TableHead className="text-right">Valor Pago</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableHead label="Status" sortKey="status" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
