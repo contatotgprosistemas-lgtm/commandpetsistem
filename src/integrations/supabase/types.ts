@@ -4160,6 +4160,41 @@ export type Database = {
           },
         ]
       }
+      short_links: {
+        Row: {
+          created_at: string | null
+          empresa_id: string
+          id: string
+          origin: string
+          target_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          empresa_id: string
+          id?: string
+          origin: string
+          target_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          empresa_id?: string
+          id?: string
+          origin?: string
+          target_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "short_links_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_events: {
         Row: {
           created_at: string
