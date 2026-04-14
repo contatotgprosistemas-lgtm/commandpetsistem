@@ -124,7 +124,13 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const contentHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 
-    const { data: profile } = await supabase.from("profiles").select("empresa_id, id").single();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Usuário não autenticado");
+      setLoading(false);
+      return;
+    }
+    const { data: profile } = await supabase.from("profiles").select("empresa_id, id").eq("user_id", user.id).single();
     if (!profile?.empresa_id) {
       toast.error("Erro ao identificar empresa");
       setLoading(false);
