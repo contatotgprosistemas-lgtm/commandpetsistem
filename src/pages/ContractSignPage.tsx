@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmpresaLogoById } from "@/hooks/useEmpresaLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +26,8 @@ interface ContractData {
 export default function ContractSignPage() {
   const { token } = useParams<{ token: string }>();
   const [contract, setContract] = useState<ContractData | null>(null);
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
+  const empresaLogo = useEmpresaLogoById(empresaId);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [signed, setSigned] = useState(false);
@@ -77,8 +80,7 @@ export default function ContractSignPage() {
     const c = data.contract as ContractData;
     const sigs = data.signatures || { cliente: null, empresa: null };
     setSignatures(sigs);
-
-    // Contract is fully signed (both parties)
+    setEmpresaId(c.empresa_id);
     if (c.status === "assinado") {
       setSigned(true);
     }
@@ -272,7 +274,11 @@ export default function ContractSignPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <FileText className="h-6 w-6 text-primary" />
+              {empresaLogo && empresaLogo !== "/placeholder.svg" ? (
+                <img src={empresaLogo} alt="Logo" className="h-10 w-10 rounded-lg object-contain" />
+              ) : (
+                <FileText className="h-6 w-6 text-primary" />
+              )}
               <div>
                 <CardTitle className="text-lg">{contract?.title}</CardTitle>
                 <p className="text-sm text-muted-foreground">Documento para assinatura eletrônica</p>

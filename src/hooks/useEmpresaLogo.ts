@@ -66,14 +66,23 @@ export function useEmpresaLogoById(empresaId: string | null | undefined, default
     if (!empresaId) return;
     let cancelled = false;
 
+    // Try direct query first (works for authenticated users)
+    // Fall back to RPC function (works for public/anonymous access)
     supabase
       .from("empresas")
       .select("logo_url")
       .eq("id", empresaId)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (!cancelled && data?.logo_url) {
           setLogoUrl(data.logo_url);
+        } else if (!cancelled && (error || !data)) {
+          // Fallback: use public RPC function
+          supabase.rpc("get_empresa_logo", { p_empresa_id: empresaId }).then(({ data: logo }) => {
+            if (!cancelled && logo) {
+              setLogoUrl(logo);
+            }
+          });
         }
       });
 
