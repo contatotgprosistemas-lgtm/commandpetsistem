@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2, MoreVertical, Pencil, Search, Ban, CheckSquare, XCircle, Upload, ChevronDown, ChevronRight } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2, MoreVertical, Pencil, Search, Ban, CheckSquare, XCircle, Upload, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -261,11 +261,60 @@ export default function FinancePage() {
   );
 }
 
+type SortDir = "asc" | "desc" | null;
+type SortKey = string;
+
+function SortableHead({ label, sortKey, currentSort, currentDir, onSort, className }: { label: string; sortKey: SortKey; currentSort: SortKey | null; currentDir: SortDir; onSort: (key: SortKey) => void; className?: string }) {
+  const active = currentSort === sortKey;
+  return (
+    <TableHead className={className}>
+      <button onClick={() => onSort(sortKey)} className="flex items-center gap-1 hover:text-foreground transition-colors w-full">
+        {label}
+        {active && currentDir === "asc" ? <ArrowUp className="h-3 w-3" /> : active && currentDir === "desc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+      </button>
+    </TableHead>
+  );
+}
+
+function useSortable() {
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
+
+  const onSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDir === "asc") { setSortDir("desc"); }
+      else if (sortDir === "desc") { setSortDir(null); setSortKey(null); }
+      else { setSortDir("asc"); }
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  return { sortKey, sortDir, onSort };
+}
+
+function sortData<T>(data: T[], sortKey: SortKey | null, sortDir: SortDir, accessor: (item: T, key: string) => any): T[] {
+  if (!sortKey || !sortDir) return data;
+  return [...data].sort((a, b) => {
+    const va = accessor(a, sortKey);
+    const vb = accessor(b, sortKey);
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (typeof va === "string" && typeof vb === "string") {
+      return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+    }
+    return sortDir === "asc" ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+}
+
 function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [itemsCache, setItemsCache] = useState<Record<string, { descricao: string; valor: number; tipo: string }[]>>({});
+  const { sortKey, sortDir, onSort } = useSortable();
 
   const toggleExpand = async (id: string) => {
     if (expandedRows.includes(id)) {
@@ -278,11 +327,27 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
       setItemsCache(prev => ({ ...prev, [id]: (data as any) || [] }));
     }
   };
-  const filtered = contas.filter(c => {
+
+  const preFiltered = contas.filter(c => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (c.descricao?.toLowerCase().includes(q)) || (c.cliente?.nome?.toLowerCase().includes(q)) || (c.categoria?.toLowerCase().includes(q));
   });
+
+  const filtered = useMemo(() => {
+    return sortData(preFiltered, sortKey, sortDir, (item, key) => {
+      switch (key) {
+        case "pessoa": return item.cliente?.nome ?? "";
+        case "categoria": return item.categoria ?? "";
+        case "vencimento": return item.vencimento;
+        case "valor": return item.valor;
+        case "status": return item.status;
+        case "descricao": return item.descricao;
+        default: return null;
+      }
+    });
+  }, [preFiltered, sortKey, sortDir]);
+
   const allSelected = filtered.length > 0 && selected.length === filtered.length;
 
   const toggleAll = () => {
@@ -344,12 +409,12 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
               </TableHead>
               <TableHead>Documento</TableHead>
               <TableHead>Emissão</TableHead>
-              <TableHead>Plano de Contas</TableHead>
-              <TableHead>Pessoa</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
+              <SortableHead label="Plano de Contas" sortKey="categoria" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Pessoa" sortKey="pessoa" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Vencimento" sortKey="vencimento" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Valor" sortKey="valor" currentSort={sortKey} currentDir={sortDir} onSort={onSort} className="text-right" />
               <TableHead className="text-right">Valor Pago</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableHead label="Status" sortKey="status" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -486,9 +551,24 @@ function ContasPagarContent() {
   const [contas, setContas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string[]>([]);
+  const { sortKey, sortDir, onSort } = useSortable();
 
-  const allSelected = contas.length > 0 && selected.length === contas.length;
-  const toggleAll = () => setSelected(allSelected ? [] : contas.map((c: any) => c.id));
+  const sorted = useMemo(() => {
+    return sortData(contas, sortKey, sortDir, (item: any, key: string) => {
+      switch (key) {
+        case "descricao": return item.descricao ?? "";
+        case "fornecedor": return item.fornecedor ?? "";
+        case "categoria": return item.categoria ?? "";
+        case "vencimento": return item.vencimento;
+        case "valor": return item.valor;
+        case "status": return item.status;
+        default: return null;
+      }
+    });
+  }, [contas, sortKey, sortDir]);
+
+  const allSelected = sorted.length > 0 && selected.length === sorted.length;
+  const toggleAll = () => setSelected(allSelected ? [] : sorted.map((c: any) => c.id));
   const toggle = (id: string) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   async function fetchData() {
@@ -523,13 +603,13 @@ function ContasPagarContent() {
       )}
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <h2 className="text-sm font-medium text-foreground">Contas a Pagar</h2>
-        <span className="text-xs text-muted-foreground">{contas.length} conta(s)</span>
+        <span className="text-xs text-muted-foreground">{sorted.length} conta(s)</span>
       </div>
       {loading ? (
         <div className="p-5 space-y-3">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
         </div>
-      ) : contas.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
           Nenhuma conta a pagar encontrada
         </div>
@@ -540,16 +620,16 @@ function ContasPagarContent() {
               <TableHead className="w-10">
                 <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
               </TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Fornecedor</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableHead label="Descrição" sortKey="descricao" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Fornecedor" sortKey="fornecedor" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Categoria" sortKey="categoria" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Vencimento" sortKey="vencimento" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Valor" sortKey="valor" currentSort={sortKey} currentDir={sortDir} onSort={onSort} className="text-right" />
+              <SortableHead label="Status" sortKey="status" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {contas.map((c: any) => (
+            {sorted.map((c: any) => (
               <TableRow key={c.id} className={selected.includes(c.id) ? "bg-primary/5" : ""}>
                 <TableCell>
                   <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
