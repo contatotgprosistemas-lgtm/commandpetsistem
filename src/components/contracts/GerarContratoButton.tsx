@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { FileSignature, Loader2, Copy, ExternalLink } from "lucide-react";
 import { formatDateBR } from "@/lib/utils";
+import { createContractShareLink } from "@/lib/contract-links";
 
 interface Props {
   agendamento: {
@@ -176,20 +177,15 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
       description: "Contrato enviado para assinatura",
     });
 
-    // Create short link
-    const { data: shortLink, error: slError } = await supabase
-      .from("short_links")
-      .insert({ type: "contrato", target_id: (contract as any).signing_token, origin: window.location.origin, empresa_id: profile.empresa_id })
-      .select("id")
-      .single();
-    if (slError) {
-      console.error("Short link error:", slError);
+    try {
+      const link = await createContractShareLink((contract as any).signing_token, profile.empresa_id, window.location.origin);
+      setCreatedLink(link);
+    } catch (linkError) {
+      console.error("Short link error:", linkError);
+      toast.error("Erro ao gerar link do contrato");
+      setLoading(false);
+      return;
     }
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    const link = shortLink
-      ? `https://${projectId}.supabase.co/functions/v1/og-preview?s=${shortLink.id}`
-      : `https://${projectId}.supabase.co/functions/v1/og-preview?type=contrato&id=${(contract as any).signing_token}&origin=${encodeURIComponent(window.location.origin)}`;
-    setCreatedLink(link);
     setLoading(false);
     toast.success("Contrato gerado e pronto para assinatura!");
   }

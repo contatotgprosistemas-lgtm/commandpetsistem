@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
+import { createContractShareLink } from "@/lib/contract-links";
 
 const schema = z.object({
   tipo_servico: z.string().min(1, "Selecione o serviço"),
@@ -392,7 +393,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
       description: `Contrato gerado a partir do agendamento (${contratoDialog.agendamento.tipo_servico})`,
     });
 
-    const link = `${window.location.origin}/assinar/${(contract as any).signing_token}`;
+    const link = await createContractShareLink((contract as any).signing_token, profile.empresa_id, window.location.origin);
     setContratoDialog(prev => prev ? { ...prev, loading: false, createdLink: link } : null);
     toast({ title: "Contrato gerado com sucesso!" });
   }

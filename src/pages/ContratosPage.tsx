@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContractTimelineDialog } from "@/components/contracts/ContractTimelineDialog";
 import { RichTextEditor } from "@/components/contracts/RichTextEditor";
+import { createContractShareLink } from "@/lib/contract-links";
 
 interface Template {
   id: string;
@@ -371,7 +372,7 @@ export default function ContratosPage() {
 
   async function handleSendWhatsApp(contract: Contract) {
     await markAsSent(contract);
-    const link = getSigningUrl(contract);
+    const link = await getSigningUrl(contract);
     const clienteName = (contract as any).cliente?.nome || "Cliente";
     const phone = await getClienteWhatsApp(contract.cliente_id);
     if (!phone) {
@@ -389,7 +390,7 @@ export default function ContratosPage() {
 
   async function handleSendEmail(contract: Contract) {
     await markAsSent(contract);
-    const link = getSigningUrl(contract);
+    const link = await getSigningUrl(contract);
     const clienteName = (contract as any).cliente?.nome || "Cliente";
     const clienteEmail = (contract as any).cliente?.email;
     if (!clienteEmail) {
@@ -431,14 +432,28 @@ export default function ContratosPage() {
     return data?.whatsapp || null;
   }
 
-  function getSigningUrl(contract: Contract) {
-    const base = window.location.origin;
-    return `${base}/assinar/${contract.signing_token}`;
+  async function getSigningUrl(contract: Contract) {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("empresa_id")
+      .single();
+
+    if (error || !profile?.empresa_id) {
+      throw error || new Error("Empresa não encontrada");
+    }
+
+    return createContractShareLink(contract.signing_token, profile.empresa_id, window.location.origin);
   }
 
-  function copyLink(contract: Contract) {
-    navigator.clipboard.writeText(getSigningUrl(contract));
-    toast.success("Link copiado!");
+  async function copyLink(contract: Contract) {
+    try {
+      const link = await getSigningUrl(contract);
+      navigator.clipboard.writeText(link);
+      toast.success("Link copiado!");
+    } catch (error) {
+      console.error("Erro ao copiar link do contrato:", error);
+      toast.error("Erro ao gerar link do contrato");
+    }
   }
 
   async function handleDeleteContract() {
