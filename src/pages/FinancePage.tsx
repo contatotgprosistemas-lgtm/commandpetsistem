@@ -276,14 +276,15 @@ function SortableHead({ label, sortKey, currentSort, currentDir, onSort, classNa
   );
 }
 
-function useSortable<T>(data: T[], defaultKey?: SortKey) {
-  const [sortKey, setSortKey] = useState<SortKey | null>(defaultKey ?? null);
+function useSortable() {
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
 
   const onSort = (key: SortKey) => {
     if (sortKey === key) {
-      setSortDir(prev => prev === "asc" ? "desc" : prev === "desc" ? null : "asc");
-      if (sortDir === "desc") setSortKey(null);
+      if (sortDir === "asc") { setSortDir("desc"); }
+      else if (sortDir === "desc") { setSortDir(null); setSortKey(null); }
+      else { setSortDir("asc"); }
     } else {
       setSortKey(key);
       setSortDir("asc");
