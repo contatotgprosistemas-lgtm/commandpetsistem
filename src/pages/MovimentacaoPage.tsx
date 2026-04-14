@@ -4,7 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Search, Pencil } from "lucide-react";
+import { MoreVertical, Trash2, Search, Pencil, Plus } from "lucide-react";
+import { NovaMovimentacaoDialog } from "@/components/NovaMovimentacaoDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -22,6 +23,7 @@ interface Movimentacao {
 export default function MovimentacaoPage() {
   const [movs, setMovs] = useState<Movimentacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [novaMovOpen, setNovaMovOpen] = useState(false);
 
   async function fetchMovs() {
     setLoading(true);
@@ -48,6 +50,10 @@ export default function MovimentacaoPage() {
     <div className="bg-card rounded-lg shadow-card mt-4 overflow-hidden">
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{movs.length} movimentação(ões)</span>
+        <Button size="sm" className="gap-1" onClick={() => setNovaMovOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Nova Movimentação
+        </Button>
       </div>
 
       {loading ? (
@@ -119,6 +125,12 @@ export default function MovimentacaoPage() {
           </TableBody>
         </Table>
       )}
+
+      <NovaMovimentacaoDialog
+        open={novaMovOpen}
+        onOpenChange={setNovaMovOpen}
+        onSuccess={fetchMovs}
+      />
     </div>
   );
 }
