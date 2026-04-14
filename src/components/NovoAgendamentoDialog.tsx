@@ -604,8 +604,21 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(contratoDialog.content));
     const contentHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
 
-    const { data: profile } = await supabase.from("profiles").select("empresa_id, id").single();
-    if (!profile?.empresa_id) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast({ title: "Usuário não autenticado", variant: "destructive" });
+      setContratoDialog(prev => prev ? { ...prev, loading: false } : null);
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("empresa_id, id")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    if (profileError || !profile?.empresa_id) {
+      console.error("Erro ao buscar perfil para contrato:", profileError, profile);
       toast({ title: "Erro ao identificar empresa", variant: "destructive" });
       setContratoDialog(prev => prev ? { ...prev, loading: false } : null);
       return;
