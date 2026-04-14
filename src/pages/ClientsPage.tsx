@@ -150,16 +150,26 @@ export default function ClientsPage() {
             size="sm"
             variant="outline"
             className="gap-2"
-            onClick={() => {
+            onClick={async () => {
               if (!empresaId) {
                 toast.error("Empresa não encontrada");
                 return;
               }
-              const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-              const ogUrl = `https://${projectId}.supabase.co/functions/v1/og-preview?type=cadastro&id=${empresaId}&origin=${encodeURIComponent(window.location.origin)}&v=${encodeURIComponent(empresaId)}`;
-              const url = ogUrl;
-              navigator.clipboard.writeText(url);
-              toast.success("Link de cadastro copiado!");
+              try {
+                const { data: shortLink, error } = await supabase
+                  .from("short_links")
+                  .insert({ type: "cadastro", target_id: empresaId, origin: window.location.origin, empresa_id: empresaId })
+                  .select("id")
+                  .single();
+                if (error) throw error;
+                const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+                const url = `https://${projectId}.supabase.co/functions/v1/og-preview?s=${shortLink.id}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Link de cadastro copiado!");
+              } catch (e) {
+                console.error(e);
+                toast.error("Erro ao gerar link");
+              }
             }}
           >
             <Link2 className="h-4 w-4" strokeWidth={1.5} />

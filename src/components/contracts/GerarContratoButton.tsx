@@ -176,8 +176,19 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
       description: "Contrato enviado para assinatura",
     });
 
+    // Create short link
+    const { data: shortLink, error: slError } = await supabase
+      .from("short_links")
+      .insert({ type: "contrato", target_id: (contract as any).signing_token, origin: window.location.origin, empresa_id: profile.empresa_id })
+      .select("id")
+      .single();
+    if (slError) {
+      console.error("Short link error:", slError);
+    }
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    const link = `https://${projectId}.supabase.co/functions/v1/og-preview?type=contrato&id=${(contract as any).signing_token}&origin=${encodeURIComponent(window.location.origin)}`;
+    const link = shortLink
+      ? `https://${projectId}.supabase.co/functions/v1/og-preview?s=${shortLink.id}`
+      : `https://${projectId}.supabase.co/functions/v1/og-preview?type=contrato&id=${(contract as any).signing_token}&origin=${encodeURIComponent(window.location.origin)}`;
     setCreatedLink(link);
     setLoading(false);
     toast.success("Contrato gerado e pronto para assinatura!");
