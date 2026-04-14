@@ -551,9 +551,24 @@ function ContasPagarContent() {
   const [contas, setContas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string[]>([]);
+  const { sortKey, sortDir, onSort } = useSortable();
 
-  const allSelected = contas.length > 0 && selected.length === contas.length;
-  const toggleAll = () => setSelected(allSelected ? [] : contas.map((c: any) => c.id));
+  const sorted = useMemo(() => {
+    return sortData(contas, sortKey, sortDir, (item: any, key: string) => {
+      switch (key) {
+        case "descricao": return item.descricao ?? "";
+        case "fornecedor": return item.fornecedor ?? "";
+        case "categoria": return item.categoria ?? "";
+        case "vencimento": return item.vencimento;
+        case "valor": return item.valor;
+        case "status": return item.status;
+        default: return null;
+      }
+    });
+  }, [contas, sortKey, sortDir]);
+
+  const allSelected = sorted.length > 0 && selected.length === sorted.length;
+  const toggleAll = () => setSelected(allSelected ? [] : sorted.map((c: any) => c.id));
   const toggle = (id: string) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   async function fetchData() {
@@ -588,13 +603,13 @@ function ContasPagarContent() {
       )}
       <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <h2 className="text-sm font-medium text-foreground">Contas a Pagar</h2>
-        <span className="text-xs text-muted-foreground">{contas.length} conta(s)</span>
+        <span className="text-xs text-muted-foreground">{sorted.length} conta(s)</span>
       </div>
       {loading ? (
         <div className="p-5 space-y-3">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
         </div>
-      ) : contas.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
           Nenhuma conta a pagar encontrada
         </div>
@@ -605,16 +620,16 @@ function ContasPagarContent() {
               <TableHead className="w-10">
                 <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
               </TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Fornecedor</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableHead label="Descrição" sortKey="descricao" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Fornecedor" sortKey="fornecedor" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Categoria" sortKey="categoria" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Vencimento" sortKey="vencimento" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <SortableHead label="Valor" sortKey="valor" currentSort={sortKey} currentDir={sortDir} onSort={onSort} className="text-right" />
+              <SortableHead label="Status" sortKey="status" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {contas.map((c: any) => (
+            {sorted.map((c: any) => (
               <TableRow key={c.id} className={selected.includes(c.id) ? "bg-primary/5" : ""}>
                 <TableCell>
                   <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
