@@ -156,7 +156,7 @@ export default function ClientsPage() {
                 return;
               }
               const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-              const ogUrl = `https://${projectId}.supabase.co/functions/v1/og-preview?type=cadastro&id=${empresaId}&origin=${encodeURIComponent(window.location.origin)}`;
+              const ogUrl = `https://${projectId}.supabase.co/functions/v1/og-preview?type=cadastro&id=${empresaId}&origin=${encodeURIComponent(window.location.origin)}&v=${encodeURIComponent(empresaId)}`;
               const url = ogUrl;
               navigator.clipboard.writeText(url);
               toast.success("Link de cadastro copiado!");

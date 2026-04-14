@@ -68,6 +68,8 @@ Deno.serve(async (req) => {
     logoUrl = `${supabaseUrl}/storage/v1/object/public/profile-photos/og-logo.png`;
   }
 
+  logoUrl = appendCacheParam(logoUrl, id);
+
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -75,18 +77,24 @@ Deno.serve(async (req) => {
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:image" content="${escapeHtml(logoUrl)}">
+  <meta property="og:image:secure_url" content="${escapeHtml(logoUrl)}">
   <meta property="og:type" content="website">
+  <meta property="og:site_name" content="${escapeHtml(title)}">
   <meta property="og:url" content="${escapeHtml(redirectUrl)}">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
   <meta name="twitter:image" content="${escapeHtml(logoUrl)}">
   <title>${escapeHtml(title)}</title>
-  <meta http-equiv="refresh" content="0;url=${escapeHtml(redirectUrl)}">
 </head>
 <body>
   <p>Redirecionando...</p>
-  <script>window.location.href="${escapeJs(redirectUrl)}";</script>
+  <p><a href="${escapeHtml(redirectUrl)}">Clique aqui se o redirecionamento não acontecer.</a></p>
+  <script>
+    setTimeout(function () {
+      window.location.replace("${escapeJs(redirectUrl)}");
+    }, 50);
+  </script>
 </body>
 </html>`;
 
@@ -94,10 +102,15 @@ Deno.serve(async (req) => {
     headers: {
       ...corsHeaders,
       "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": "no-store, max-age=0",
     },
   });
 });
+
+function appendCacheParam(url: string, cacheKey: string): string {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${encodeURIComponent(cacheKey)}`;
+}
 
 function escapeHtml(str: string): string {
   return str
