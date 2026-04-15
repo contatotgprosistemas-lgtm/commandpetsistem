@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff } from "lucide-react";
-import logoTgPro from "@/assets/logo-tgpro.jpeg";
+import logo from "@/assets/logo.png";
 import { toast } from "sonner";
 
 export default function PortalLoginPage() {
@@ -57,7 +57,7 @@ export default function PortalLoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
-            <img src={logoTgPro} alt="TG-PRO" className="h-20 w-20 rounded-2xl object-cover" />
+            <img src={logo} alt="PetControl System" className="h-20 w-20 object-contain" />
           </div>
           <CardTitle className="text-xl">Portal do Cliente</CardTitle>
           <CardDescription>Acesse sua conta para ver seus pets, pagamentos e mais.</CardDescription>
