@@ -57,7 +57,7 @@ export default function PortalLoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center">
-            <img src={logo} alt="PetControl System" className="h-20 w-20 object-contain" />
+            <img src={logo} alt="PetControl System" className="h-32 w-auto object-contain" />
           </div>
           <CardTitle className="text-xl">Portal do Cliente</CardTitle>
           <CardDescription>Acesse sua conta para ver seus pets, pagamentos e mais.</CardDescription>
