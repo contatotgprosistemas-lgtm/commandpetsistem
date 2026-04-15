@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, Wrench, Eye, EyeOff } from "lucide-react";
-import logoTgPro from "@/assets/logo-tgpro.jpeg";
+import logo from "@/assets/logo.png";
 import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 
 export default function OperacionalLoginPage() {
@@ -79,7 +79,7 @@ export default function OperacionalLoginPage() {
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader className="text-center space-y-3 pb-2">
           <div className="flex justify-center">
-            <img src={logoTgPro} alt="TG-PRO" className="h-16 w-16 rounded-xl object-cover" />
+            <img src={logo} alt="PetControl System" className="h-20 w-20 object-contain" />
           </div>
           <div className="flex items-center justify-center gap-2">
             <Wrench className="h-5 w-5 text-primary" />
