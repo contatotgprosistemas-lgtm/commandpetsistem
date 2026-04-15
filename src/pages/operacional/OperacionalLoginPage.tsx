@@ -79,7 +79,7 @@ export default function OperacionalLoginPage() {
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader className="text-center space-y-3 pb-2">
           <div className="flex justify-center">
-            <img src={logo} alt="PetControl System" className="h-20 w-20 object-contain" />
+            <img src={logo} alt="PetControl System" className="h-32 w-auto object-contain" />
           </div>
           <div className="flex items-center justify-center gap-2">
             <Wrench className="h-5 w-5 text-primary" />

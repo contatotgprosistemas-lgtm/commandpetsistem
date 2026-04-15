@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Building2, Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { toast } from "@/hooks/use-toast";
 
 export default function ForgotPasswordPage() {
@@ -35,9 +36,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-card">
         <CardHeader className="text-center space-y-4 pb-2">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary">
-            <Building2 className="h-7 w-7 text-primary-foreground" />
-          </div>
+          <img src={logo} alt="PetControl System" className="mx-auto h-32 w-auto object-contain" />
           <h1 className="text-2xl font-bold text-foreground">Recuperar Senha</h1>
         </CardHeader>
         <CardContent>
