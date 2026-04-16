@@ -307,10 +307,11 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       .reduce((sum, e) => sum + e.valor * (e.quantidade || 1), 0);
   }, [servicosExtras]);
 
-  // Valor contrato = valor unitário + extras (por quantidade) - desconto
+  // Valor contrato = (valor unitário × qtd pets) + extras (por quantidade) - desconto
   const valorContrato = useMemo(() => {
     const valorUnit = form.getValues("valor") ? parseFloat(form.getValues("valor")) : 0;
-    const bruto = valorUnit + totalExtras;
+    const qtdPets = selectedPetIds.length || 1;
+    const bruto = (valorUnit * qtdPets) + totalExtras;
     const desc = descontoStr ? parseFloat(descontoStr) : 0;
     return Math.max(bruto - (isNaN(desc) ? 0 : desc), 0);
   }, [form.watch("valor"), totalExtras, selectedPetIds.length, descontoStr]);
