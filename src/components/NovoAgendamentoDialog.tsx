@@ -57,6 +57,7 @@ interface ServicoExtra {
   servico_id: string;
   descricao: string;
   valor: number;
+  quantidade: number;
   cortesia: boolean;
 }
 
