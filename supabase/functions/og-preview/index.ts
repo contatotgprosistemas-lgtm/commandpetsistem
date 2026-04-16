@@ -92,10 +92,15 @@ Deno.serve(async (req) => {
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:image" content="${escapeHtml(logoUrl)}">
   <meta property="og:image:secure_url" content="${escapeHtml(logoUrl)}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta property="og:image:alt" content="${escapeHtml(title)}">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="${escapeHtml(title)}">
   <meta property="og:url" content="${escapeHtml(redirectUrl)}">
