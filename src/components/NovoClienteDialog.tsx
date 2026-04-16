@@ -13,6 +13,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
+import { resolveEmpresaId } from "@/lib/empresa";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
@@ -65,11 +66,8 @@ export function NovoClienteDialog({ onSuccess, empresaId: empresaIdProp }: { onS
   async function onSubmit(data: FormValues) {
     setLoading(true);
     try {
-      let empresaId = empresaIdProp;
-      if (!empresaId) {
-        const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
-        empresaId = profile?.empresa_id;
-      }
+      const empresaId = await resolveEmpresaId(empresaIdProp);
+
       if (!empresaId) {
         toast({ title: "Erro", description: "Empresa não encontrada. Faça login novamente.", variant: "destructive" });
         return;

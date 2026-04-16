@@ -180,7 +180,7 @@ export default function ClientsPage() {
             Exportar
           </Button>
           <ImportContatosDialog onSuccess={handleRefresh} />
-          <NovoClienteDialog onSuccess={handleRefresh} />
+          <NovoClienteDialog onSuccess={handleRefresh} empresaId={empresaId ?? undefined} />
         </div>
       </div>
 
