@@ -57,6 +57,7 @@ interface ServicoExtra {
   servico_id: string;
   descricao: string;
   valor: number;
+  quantidade: number;
   cortesia: boolean;
 }
 
@@ -277,7 +278,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
   // Serviços extras helpers
   function addServicoExtra() {
-    setServicosExtras(prev => [...prev, { servico_id: "", descricao: "", valor: 0, cortesia: false }]);
+    setServicosExtras(prev => [...prev, { servico_id: "", descricao: "", valor: 0, quantidade: 1, cortesia: false }]);
   }
 
   function updateServicoExtra(index: number, field: keyof ServicoExtra, value: any) {
@@ -286,7 +287,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       if (field === "servico_id") {
         const svc = servicos.find(s => s.id === value);
         if (svc) {
-          updated[index] = { ...updated[index], servico_id: value, descricao: svc.descricao, valor: svc.valor };
+          updated[index] = { ...updated[index], servico_id: value, descricao: svc.descricao, valor: svc.valor, quantidade: updated[index].quantidade || 1 };
         }
       } else {
         updated[index] = { ...updated[index], [field]: value };
@@ -303,14 +304,13 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const totalExtras = useMemo(() => {
     return servicosExtras
       .filter(e => !e.cortesia && e.valor > 0)
-      .reduce((sum, e) => sum + e.valor, 0);
+      .reduce((sum, e) => sum + e.valor * (e.quantidade || 1), 0);
   }, [servicosExtras]);
 
-  // Valor contrato = (valor unitário + extras) * qtd pets - desconto
+  // Valor contrato = valor unitário + extras (por quantidade) - desconto
   const valorContrato = useMemo(() => {
     const valorUnit = form.getValues("valor") ? parseFloat(form.getValues("valor")) : 0;
-    const qtdPets = selectedPetIds.length || 1;
-    const bruto = (valorUnit + totalExtras) * qtdPets;
+    const bruto = valorUnit + totalExtras;
     const desc = descontoStr ? parseFloat(descontoStr) : 0;
     return Math.max(bruto - (isNaN(desc) ? 0 : desc), 0);
   }, [form.watch("valor"), totalExtras, selectedPetIds.length, descontoStr]);
@@ -398,7 +398,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           lineItems.push({ descricao: `${data.tipo_servico} — ${petName}`, valor: valorNum, tipo: "principal" });
         }
         for (const extra of extrasACobrar) {
-          lineItems.push({ descricao: `${extra.descricao} (extra) — ${petName}`, valor: extra.valor, tipo: "extra" });
+          const qtd = extra.quantidade || 1;
+          lineItems.push({ descricao: `${extra.descricao} x${qtd} (extra) — ${petName}`, valor: extra.valor * qtd, tipo: "extra" });
         }
         // Add cortesia items with valor 0
         for (const extra of servicosExtras.filter(e => e.cortesia && e.descricao)) {
@@ -918,7 +919,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               {servicosExtras.length > 0 && (
                 <div className="space-y-2 rounded-md border border-border p-3">
                   {servicosExtras.map((extra, idx) => (
-                    <div key={idx} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center">
+                    <div key={idx} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center">
                       <Select
                         value={extra.servico_id}
                         onValueChange={(val) => updateServicoExtra(idx, "servico_id", val)}
@@ -943,6 +944,17 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                         placeholder="Valor"
                         className="w-24 h-9 text-sm"
                         disabled={extra.cortesia}
+                      />
+
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={extra.quantidade || 1}
+                        onChange={(e) => updateServicoExtra(idx, "quantidade", Math.max(1, parseInt(e.target.value) || 1))}
+                        placeholder="Qtd"
+                        className="w-16 h-9 text-sm text-center"
+                        title="Quantidade"
                       />
 
                       <Button
