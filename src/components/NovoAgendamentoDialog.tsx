@@ -398,7 +398,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           lineItems.push({ descricao: `${data.tipo_servico} — ${petName}`, valor: valorNum, tipo: "principal" });
         }
         for (const extra of extrasACobrar) {
-          lineItems.push({ descricao: `${extra.descricao} (extra) — ${petName}`, valor: extra.valor, tipo: "extra" });
+          const qtd = extra.quantidade || 1;
+          lineItems.push({ descricao: `${extra.descricao} x${qtd} (extra) — ${petName}`, valor: extra.valor * qtd, tipo: "extra" });
         }
         // Add cortesia items with valor 0
         for (const extra of servicosExtras.filter(e => e.cortesia && e.descricao)) {
