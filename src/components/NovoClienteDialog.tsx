@@ -29,7 +29,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
+export function NovoClienteDialog({ onSuccess, empresaId: empresaIdProp }: { onSuccess?: () => void; empresaId?: string }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
@@ -65,8 +65,12 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
   async function onSubmit(data: FormValues) {
     setLoading(true);
     try {
-      const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
-      if (!profile?.empresa_id) {
+      let empresaId = empresaIdProp;
+      if (!empresaId) {
+        const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
+        empresaId = profile?.empresa_id;
+      }
+      if (!empresaId) {
         toast({ title: "Erro", description: "Empresa não encontrada. Faça login novamente.", variant: "destructive" });
         return;
       }
@@ -74,7 +78,7 @@ export function NovoClienteDialog({ onSuccess }: { onSuccess?: () => void }) {
       const enderecoCompleto = data.numero ? `${data.endereco}, ${data.numero}` : data.endereco;
 
       const { error } = await supabase.from("clientes").insert({
-        empresa_id: profile.empresa_id,
+        empresa_id: empresaId,
         nome: data.nome,
         cpf: data.cpf || null,
         data_nascimento: data.data_nascimento || null,

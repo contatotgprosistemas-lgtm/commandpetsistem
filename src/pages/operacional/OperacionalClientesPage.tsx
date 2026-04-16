@@ -39,7 +39,7 @@ export default function OperacionalClientesPage() {
     <div className="space-y-6 pb-24 md:pb-0">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
-        <NovoClienteDialog onSuccess={fetchClientes} />
+        <NovoClienteDialog onSuccess={fetchClientes} empresaId={user?.empresa_id} />
       </div>
 
       <div className="relative">
