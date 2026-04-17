@@ -49,14 +49,40 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     setLoading(true);
     setOpen(true);
 
-    // Fetch templates and the agendamento's planned exit date in parallel
-    const [{ data: tpls }, { data: ag }] = await Promise.all([
+    const entradaDateOnly = agendamento.data_hora.split("T")[0];
+
+    // Fetch templates, agendamento exit date, full client data, full pet data, and same-tutor pets in parallel
+    const [{ data: tpls }, { data: ag }, { data: cli }, { data: petFull }, { data: peersAg }] = await Promise.all([
       supabase.from("contract_templates").select("id, name, content").eq("active", true),
       supabase.from("agendamentos").select("data_saida_provavel, hora_saida_provavel").eq("id", agendamento.id).maybeSingle(),
+      supabase.from("clientes").select("cpf, email, endereco").eq("id", agendamento.cliente_id).maybeSingle(),
+      supabase.from("pets").select("sexo, cor, castrado").eq("id", agendamento.pet_id).maybeSingle(),
+      supabase.from("agendamentos")
+        .select("pet:pets(nome, raca)")
+        .eq("cliente_id", agendamento.cliente_id)
+        .eq("tipo_servico", agendamento.tipo_servico)
+        .gte("data_hora", `${entradaDateOnly}T00:00:00`)
+        .lte("data_hora", `${entradaDateOnly}T23:59:59`)
+        .neq("id", agendamento.id),
     ]);
 
     const dataSaidaProv = (ag as any)?.data_saida_provavel ?? null;
     const horaSaidaProv = (ag as any)?.hora_saida_provavel ?? null;
+
+    const petsMesmoTutor = (peersAg as any[] | null || [])
+      .map(a => a?.pet ? `${a.pet.nome}${a.pet.raca ? ` (${a.pet.raca})` : ""}` : "")
+      .filter(Boolean)
+      .join(", ");
+
+    const extras: Record<string, string> = {
+      cliente_cpf: (cli as any)?.cpf || "___",
+      cliente_email: (cli as any)?.email || "___",
+      cliente_endereco: (cli as any)?.endereco || "___",
+      pet_sexo: (petFull as any)?.sexo || "___",
+      pet_cor: (petFull as any)?.cor || "___",
+      pet_castrado: (petFull as any)?.castrado === true ? "Sim" : (petFull as any)?.castrado === false ? "Não" : "___",
+      pets_mesmo_tutor: petsMesmoTutor,
+    };
 
     const allTemplates = (tpls as Template[]) || [];
     setTemplates(allTemplates);
@@ -67,7 +93,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
 
     const apply = (tpl: Template) => {
       setSelectedTemplate(tpl.id);
-      setContent(fillTemplate(tpl.content, dataSaidaProv, horaSaidaProv));
+      setContent(fillTemplate(tpl.content, dataSaidaProv, horaSaidaProv, extras));
       setTitle(`${tpl.name} — ${agendamento.pet?.nome || "Pet"}`);
     };
 
@@ -81,7 +107,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     }
 
     // Stash for handleTemplateChange
-    (window as any).__contractFillCtx = { dataSaidaProv, horaSaidaProv };
+    (window as any).__contractFillCtx = { dataSaidaProv, horaSaidaProv, extras };
 
     setLoading(false);
   }
