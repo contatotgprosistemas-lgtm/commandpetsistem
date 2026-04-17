@@ -135,8 +135,73 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         status: agendamento.status || "agendado",
         notas: agendamento.notas || "",
       });
+
+      // Load existing extras from the linked invoice (contas_receber + itens)
+      (async () => {
+        setServicosExtras([]);
+        setFaturaId(null);
+        const petName = agendamento.pet?.nome || "";
+        if (!petName || !agendamento.cliente_id) return;
+        const { data: faturas } = await supabase
+          .from("contas_receber")
+          .select("id, descricao")
+          .eq("cliente_id", agendamento.cliente_id)
+          .eq("empresa_id", agendamento.empresa_id)
+          .in("status", ["pendente", "pago"])
+          .order("created_at", { ascending: false });
+        const fatura = (faturas || []).find((f: any) =>
+          (f.descricao || "").includes(petName) &&
+          (f.descricao || "").toLowerCase().includes((agendamento.tipo_servico || "").toLowerCase().substring(0, 10))
+        );
+        if (!fatura) return;
+        setFaturaId(fatura.id);
+        const { data: itens } = await supabase
+          .from("contas_receber_itens" as any)
+          .select("id, descricao, valor, tipo")
+          .eq("conta_receber_id", fatura.id);
+        const extras = (itens || [])
+          .filter((it: any) => it.tipo === "extra" || it.tipo === "cortesia")
+          .map((it: any) => {
+            // parse "Descricao xN (extra) — PetName"
+            const desc = (it.descricao || "").replace(` — ${petName}`, "");
+            const cortesia = it.tipo === "cortesia";
+            const m = desc.match(/^(.*?)\s*x(\d+)\s*\((extra|cortesia)\)$/i);
+            let descricao = cortesia ? desc.replace(" (cortesia)", "") : desc;
+            let quantidade = 1;
+            if (m) {
+              descricao = m[1].trim();
+              quantidade = parseInt(m[2]) || 1;
+            }
+            const valorUnit = quantidade > 0 ? Number(it.valor) / quantidade : Number(it.valor);
+            return { id: it.id, descricao, valor: cortesia ? 0 : valorUnit, quantidade, cortesia };
+          });
+        setServicosExtras(extras);
+      })();
     }
   }, [agendamento, baiasLoaded, form]);
+
+  // Extras helpers
+  function addServicoExtra() {
+    setServicosExtras(prev => [...prev, { descricao: "", valor: 0, quantidade: 1, cortesia: false }]);
+  }
+  function updateServicoExtra(index: number, field: keyof ServicoExtra, value: any) {
+    setServicosExtras(prev => {
+      const updated = [...prev];
+      if (field === "servico_id") {
+        const svc = servicos.find(s => s.id === value);
+        if (svc) updated[index] = { ...updated[index], servico_id: value, descricao: svc.descricao, valor: svc.valor };
+      } else {
+        updated[index] = { ...updated[index], [field]: value } as ServicoExtra;
+      }
+      return updated;
+    });
+  }
+  function removeServicoExtra(index: number) {
+    setServicosExtras(prev => prev.filter((_, i) => i !== index));
+  }
+  const totalExtras = useMemo(() => servicosExtras
+    .filter(e => !e.cortesia && e.valor > 0)
+    .reduce((sum, e) => sum + e.valor * (e.quantidade || 1), 0), [servicosExtras]);
 
   async function onSubmit(data: FormValues) {
     if (!agendamento?.id) return;
