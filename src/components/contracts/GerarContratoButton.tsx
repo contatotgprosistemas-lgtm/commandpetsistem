@@ -54,7 +54,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     // Fetch templates, agendamento exit date, full client data, full pet data, and same-tutor pets in parallel
     const [{ data: tpls }, { data: ag }, { data: cli }, { data: petFull }, { data: peersAg }] = await Promise.all([
       supabase.from("contract_templates").select("id, name, content").eq("active", true),
-      supabase.from("agendamentos").select("data_saida_provavel, hora_saida_provavel").eq("id", agendamento.id).maybeSingle(),
+      supabase.from("agendamentos").select("data_saida, hora_saida, data_saida_provavel, hora_saida_provavel").eq("id", agendamento.id).maybeSingle(),
       supabase.from("clientes").select("cpf, email, endereco").eq("id", agendamento.cliente_id).maybeSingle(),
       supabase.from("pets").select("sexo, cor, castrado").eq("id", agendamento.pet_id).maybeSingle(),
       supabase.from("agendamentos")
@@ -66,8 +66,8 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
         .neq("id", agendamento.id),
     ]);
 
-    const dataSaidaProv = (ag as any)?.data_saida_provavel ?? null;
-    const horaSaidaProv = (ag as any)?.hora_saida_provavel ?? null;
+    const dataSaidaContrato = (ag as any)?.data_saida ?? (ag as any)?.data_saida_provavel ?? null;
+    const horaSaidaContrato = (ag as any)?.hora_saida ?? (ag as any)?.hora_saida_provavel ?? null;
 
     const petsMesmoTutor = (peersAg as any[] | null || [])
       .map(a => a?.pet ? `${a.pet.nome}${a.pet.raca ? ` (${a.pet.raca})` : ""}` : "")
@@ -93,7 +93,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
 
     const apply = (tpl: Template) => {
       setSelectedTemplate(tpl.id);
-      setContent(fillTemplate(tpl.content, dataSaidaProv, horaSaidaProv, extras));
+      setContent(fillTemplate(tpl.content, dataSaidaContrato, horaSaidaContrato, extras));
       setTitle(`${tpl.name} — ${agendamento.pet?.nome || "Pet"}`);
     };
 
@@ -107,7 +107,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     }
 
     // Stash for handleTemplateChange
-    (window as any).__contractFillCtx = { dataSaidaProv, horaSaidaProv, extras };
+    (window as any).__contractFillCtx = { dataSaidaContrato, horaSaidaContrato, extras };
 
     setLoading(false);
   }
@@ -128,6 +128,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
       tipoServico: agendamento.tipo_servico,
       valor: agendamento.valor,
       dataEntrada: agendamento.data_hora,
+      horaEntrada: agendamento.data_hora.match(/T(\d{2}:\d{2})/)?.[1] || "___",
       dataSaida: dataSaidaProvavel,
       horaSaida: horaSaidaProvavel,
       baia: agendamento.baia,
@@ -142,7 +143,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     const tpl = templates.find(t => t.id === templateId);
     if (tpl) {
       const ctx = (window as any).__contractFillCtx || {};
-      setContent(fillTemplate(tpl.content, ctx.dataSaidaProv, ctx.horaSaidaProv, ctx.extras));
+      setContent(fillTemplate(tpl.content, ctx.dataSaidaContrato, ctx.horaSaidaContrato, ctx.extras));
       setTitle(`${tpl.name} — ${agendamento.pet?.nome || "Pet"}`);
     }
   }

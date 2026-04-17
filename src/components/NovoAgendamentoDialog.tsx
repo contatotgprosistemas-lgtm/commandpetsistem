@@ -530,6 +530,13 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         const dataAtual = format(new Date(), "dd/MM/yyyy");
 
         const fillTpl = (c: string) => {
+          const horaEntradaContrato = data.hora_reserva || data.hora_entrada || "___";
+          const horaSaidaContrato = data.hora_saida || data.hora_saida_provavel || "___";
+          const dataEntradaContrato = data.data_reserva
+            ? `${data.data_reserva}T${data.hora_reserva || data.hora_entrada || "00:00"}`
+            : data.data_entrada || null;
+          const dataSaidaContrato = data.data_saida || data.data_saida_provavel || null;
+
           const values = buildHospedagemContractValues({
             clienteNome: fullCliente?.nome || clienteObj?.nome,
             clienteCpf: fullCliente?.cpf,
@@ -541,13 +548,20 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             petEspecie: fullPet?.especie,
             petSexo: fullPet?.sexo,
             petCor: fullPet?.cor,
-            petCastrado: fullPet?.castrado,
+            petCastrado:
+              typeof fullPet?.castrado === "boolean"
+                ? fullPet.castrado
+                : fullPet?.castrado === "true"
+                  ? true
+                  : fullPet?.castrado === "false"
+                    ? false
+                    : null,
             tipoServico: data.tipo_servico,
             valor: valorContrato > 0 ? valorContrato : null,
-            dataEntrada: data.data_entrada || `${data.data_reserva}T${data.hora_entrada || data.hora_reserva || "00:00"}`,
-            horaEntrada: data.hora_entrada || data.hora_reserva || "___",
-            dataSaida: data.data_saida_provavel || null,
-            horaSaida: data.hora_saida_provavel || "___",
+            dataEntrada: dataEntradaContrato,
+            horaEntrada: horaEntradaContrato,
+            dataSaida: dataSaidaContrato,
+            horaSaida: horaSaidaContrato,
             baia: data.baia,
             petsMesmoTutor,
           });
