@@ -253,6 +253,37 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         await removeFromEsteira(agendamento.id);
       }
 
+      // Sync extras to invoice (contas_receber + itens)
+      const petName = agendamento.pet?.nome || "";
+      if (faturaId) {
+        // Delete previous extra/cortesia items
+        await supabase
+          .from("contas_receber_itens" as any)
+          .delete()
+          .eq("conta_receber_id", faturaId)
+          .in("tipo", ["extra", "cortesia"]);
+
+        const novosExtras = servicosExtras.filter(e => e.descricao);
+        const newItems = novosExtras.map(e => {
+          const qtd = e.quantidade || 1;
+          if (e.cortesia) {
+            return { conta_receber_id: faturaId, empresa_id: agendamento.empresa_id, descricao: `${e.descricao} (cortesia) — ${petName}`, valor: 0, tipo: "cortesia" };
+          }
+          return { conta_receber_id: faturaId, empresa_id: agendamento.empresa_id, descricao: `${e.descricao} x${qtd} (extra) — ${petName}`, valor: e.valor * qtd, tipo: "extra" };
+        });
+        if (newItems.length > 0) {
+          await supabase.from("contas_receber_itens" as any).insert(newItems);
+        }
+
+        // Recompute fatura total from remaining items (principal/desconto kept, extras replaced)
+        const { data: allItems } = await supabase
+          .from("contas_receber_itens" as any)
+          .select("valor")
+          .eq("conta_receber_id", faturaId);
+        const novoTotal = (allItems || []).reduce((s: number, it: any) => s + Number(it.valor || 0), 0);
+        await supabase.from("contas_receber").update({ valor: Math.max(novoTotal, 0) }).eq("id", faturaId);
+      }
+
       toast({ title: "Agendamento atualizado!" });
 
       // If user wants contract, open contract dialog
