@@ -156,14 +156,10 @@ export default function ClientsPage() {
                 return;
               }
               try {
-                const { data: shortLink, error } = await supabase
+                await supabase
                   .from("short_links")
-                  .insert({ type: "cadastro", target_id: empresaId, origin: window.location.origin, empresa_id: empresaId })
-                  .select("id")
-                  .single();
-                if (error) throw error;
-                const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-                const url = `https://${projectId}.supabase.co/functions/v1/og-preview?s=${shortLink.id}`;
+                  .insert({ type: "cadastro", target_id: empresaId, origin: window.location.origin, empresa_id: empresaId });
+                const url = `${window.location.origin}/cadastro/${empresaId}`;
                 navigator.clipboard.writeText(url);
                 toast.success("Link de cadastro copiado!");
               } catch (e) {
