@@ -41,7 +41,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   const { isSuperAdmin, signOut, profile } = useAuth();
-  const { logoUrl: empresaLogo } = useEmpresaLogo(logoTg);
+  const { logoUrl: empresaLogo } = useEmpresaLogo(logoDefault);
   const navigate = useNavigate();
   const location = useLocation();
 
