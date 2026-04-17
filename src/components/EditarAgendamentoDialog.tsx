@@ -634,7 +634,94 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
               </FormItem>
             )} />
 
-            {/* Deseja gerar contrato? */}
+            {/* Serviços Extras */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <FormLabel className="text-sm font-medium">Serviços Extras</FormLabel>
+                <Button type="button" variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={addServicoExtra}>
+                  <Plus className="h-3.5 w-3.5" />
+                  Adicionar Extra
+                </Button>
+              </div>
+
+              {servicosExtras.length > 0 && (
+                <div className="space-y-2 rounded-md border border-border p-3">
+                  {servicosExtras.map((extra, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center">
+                      <Select
+                        value={extra.servico_id || ""}
+                        onValueChange={(val) => updateServicoExtra(idx, "servico_id", val)}
+                      >
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue placeholder={extra.descricao || "Selecione o serviço"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {servicos.map(s => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.descricao} — R$ {s.valor.toFixed(2)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={extra.valor || ""}
+                        onChange={(e) => updateServicoExtra(idx, "valor", parseFloat(e.target.value) || 0)}
+                        placeholder="Valor"
+                        className="w-24 h-9 text-sm"
+                        disabled={extra.cortesia}
+                      />
+
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={extra.quantidade || 1}
+                        onChange={(e) => updateServicoExtra(idx, "quantidade", Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-16 h-9 text-sm text-center"
+                        title="Quantidade"
+                      />
+
+                      <Button
+                        type="button"
+                        variant={extra.cortesia ? "default" : "outline"}
+                        size="sm"
+                        className="h-9 gap-1 text-xs whitespace-nowrap"
+                        onClick={() => updateServicoExtra(idx, "cortesia", !extra.cortesia)}
+                      >
+                        {extra.cortesia ? (<><Gift className="h-3.5 w-3.5" /> Cortesia</>) : (<><DollarSign className="h-3.5 w-3.5" /> Cobrar</>)}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-destructive hover:text-destructive"
+                        onClick={() => removeServicoExtra(idx)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+
+                  {totalExtras > 0 && (
+                    <div className="flex items-center justify-end pt-1 border-t border-border mt-2">
+                      <Badge variant="secondary" className="text-xs">
+                        Total extras: R$ {totalExtras.toFixed(2)}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              )}
+              {!faturaId && (
+                <p className="text-[11px] text-muted-foreground">
+                  Fatura vinculada não encontrada. Os extras só serão salvos na fatura se ela existir para este pet/serviço.
+                </p>
+              )}
+            </div>
+
             <div className="rounded-lg border border-border p-3 space-y-2">
               <FormLabel className="text-sm font-medium flex items-center gap-2">
                 <FileSignature className="h-4 w-4 text-primary" />
