@@ -277,7 +277,13 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
 
         const petName = fullPet?.nome || agendamento.pet?.nome || "";
         const clienteName = fullCliente?.nome || agendamento.cliente?.nome || "";
-        const dataReserva = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
+        const dataEntrada = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
+        const dataSaida = data.data_saida_provavel
+          ? format(new Date(data.data_saida_provavel + "T00:00:00"), "dd/MM/yyyy")
+          : "___";
+        const dataReserva = data.data_saida_provavel && data.data_saida_provavel !== data.data_reserva
+          ? `${dataEntrada} a ${dataSaida}`
+          : dataEntrada;
         const dataAtual = format(new Date(), "dd/MM/yyyy");
 
         const fillTpl = (c: string) => c
@@ -303,6 +309,8 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
           .replace(/\{\{valor_plano\}\}/g, valor)
           .replace(/\{\{data\}\}/g, dataReserva)
           .replace(/\{\{data_reserva\}\}/g, dataReserva)
+          .replace(/\{\{data_entrada\}\}/g, dataEntrada)
+          .replace(/\{\{data_saida\}\}/g, dataSaida)
           .replace(/\{\{data_atual\}\}/g, dataAtual)
           .replace(/\{\{baia\}\}/g, data.baia || "___");
 
