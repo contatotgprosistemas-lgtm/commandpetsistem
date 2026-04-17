@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
-import logoTg from "@/assets/logo-tg.png";
+import logoDefault from "@/assets/logo.png";
 import {
   LayoutDashboard,
   MessageSquare,
