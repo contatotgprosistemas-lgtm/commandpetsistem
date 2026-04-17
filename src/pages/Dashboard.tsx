@@ -737,6 +737,7 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
+                <ServicoIcon tipo={item.tipo_servico} />
                 <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
                 {item.pet?.raca && <span className="text-xs text-muted-foreground">({item.pet.raca})</span>}
                 {item.subscription_id && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">Plano</Badge>}
