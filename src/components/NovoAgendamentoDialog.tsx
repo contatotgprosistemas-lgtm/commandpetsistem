@@ -548,7 +548,14 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             petEspecie: fullPet?.especie,
             petSexo: fullPet?.sexo,
             petCor: fullPet?.cor,
-            petCastrado: fullPet?.castrado === true ? true : fullPet?.castrado === false ? false : null,
+            petCastrado:
+              typeof fullPet?.castrado === "boolean"
+                ? fullPet.castrado
+                : fullPet?.castrado === "true"
+                  ? true
+                  : fullPet?.castrado === "false"
+                    ? false
+                    : null,
             tipoServico: data.tipo_servico,
             valor: valorContrato > 0 ? valorContrato : null,
             dataEntrada: dataEntradaContrato,

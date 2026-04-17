@@ -292,7 +292,14 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
             petEspecie: fullPet?.especie,
             petSexo: fullPet?.sexo,
             petCor: fullPet?.cor,
-            petCastrado: fullPet?.castrado === true ? true : fullPet?.castrado === false ? false : null,
+            petCastrado:
+              typeof fullPet?.castrado === "boolean"
+                ? fullPet.castrado
+                : fullPet?.castrado === "true"
+                  ? true
+                  : fullPet?.castrado === "false"
+                    ? false
+                    : null,
             tipoServico: data.tipo_servico,
             valor: valorContrato > 0 ? valorContrato : null,
             dataEntrada: `${data.data_reserva}T${data.hora_reserva || "00:00"}`,
