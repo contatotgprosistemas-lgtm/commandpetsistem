@@ -123,6 +123,14 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     const dataSaida = dataSaidaProvavel
       ? formatDateBR(`${dataSaidaProvavel}T${horaSaidaProvavel || "00:00"}`)
       : "___";
+    // Extract time HH:mm
+    const horaEntrada = (() => {
+      try {
+        const d = new Date(agendamento.data_hora);
+        return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      } catch { return "___"; }
+    })();
+    const horaSaida = horaSaidaProvavel ? horaSaidaProvavel.slice(0, 5) : "___";
     const entradaDateOnly = agendamento.data_hora.split("T")[0];
     const dataReserva = dataSaidaProvavel && dataSaidaProvavel !== entradaDateOnly
       ? `${dataEntrada} a ${dataSaida}`
