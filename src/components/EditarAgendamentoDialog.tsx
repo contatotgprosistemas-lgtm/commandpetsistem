@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
 import { createContractShareLink } from "@/lib/contract-links";
+import { buildHospedagemContractValues, replaceContractPlaceholders } from "@/lib/contract-placeholders";
 
 const schema = z.object({
   tipo_servico: z.string().min(1, "Selecione o serviço"),
@@ -72,6 +73,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
     agendamento: any;
     templates: any[];
     selectedTemplate: string;
+    fillTemplate?: (template: string) => string;
     content: string;
     title: string;
     loading: boolean;
@@ -275,44 +277,42 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         });
         if (!matched && allTemplates.length > 0) matched = allTemplates[0];
 
-        const petName = fullPet?.nome || agendamento.pet?.nome || "";
-        const clienteName = fullCliente?.nome || agendamento.cliente?.nome || "";
-        const dataEntrada = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
-        const dataSaida = data.data_saida_provavel
-          ? format(new Date(data.data_saida_provavel + "T00:00:00"), "dd/MM/yyyy")
-          : "___";
-        const dataReserva = data.data_saida_provavel && data.data_saida_provavel !== data.data_reserva
-          ? `${dataEntrada} a ${dataSaida}`
-          : dataEntrada;
         const dataAtual = format(new Date(), "dd/MM/yyyy");
 
-        const fillTpl = (c: string) => c
-          .replace(/\{\{cliente_nome\}\}/g, clienteName)
-          .replace(/\{\{cliente_cpf\}\}/g, fullCliente?.cpf || "___")
-          .replace(/\{\{cliente_endereco\}\}/g, fullCliente?.endereco || "___")
-          .replace(/\{\{cliente_email\}\}/g, fullCliente?.email || "___")
-          .replace(/\{\{cliente_whatsapp\}\}/g, fullCliente?.whatsapp || fullCliente?.telefone || "___")
-          .replace(/\{\{pet_nome\}\}/g, petName)
-          .replace(/\{\{pet_raca\}\}/g, fullPet?.raca || "___")
-          .replace(/\{\{pet_especie\}\}/g, fullPet?.especie || "___")
-          .replace(/\{\{pet_peso\}\}/g, fullPet?.peso ? `${fullPet.peso}kg` : "___")
-          .replace(/\{\{pet_porte\}\}/g, fullPet?.porte || "___")
-          .replace(/\{\{pet_sexo\}\}/g, fullPet?.sexo || "___")
-          .replace(/\{\{pet_cor\}\}/g, fullPet?.cor || "___")
-          .replace(/\{\{pet_castrado\}\}/g, fullPet?.castrado != null ? (String(fullPet.castrado) === "true" ? "Sim" : "Não") : "___")
-          .replace(/\{\{pets_mesmo_tutor\}\}/g, petsMesmoTutor)
-          .replace(/\{\{tipo_servico\}\}/g, data.tipo_servico)
-          .replace(/\{\{servicos\}\}/g, data.tipo_servico)
-          .replace(/\{\{plano\}\}/g, data.tipo_servico)
-          .replace(/\{\{valor\}\}/g, valor)
-          .replace(/\{\{valor_servico\}\}/g, valor)
-          .replace(/\{\{valor_plano\}\}/g, valor)
-          .replace(/\{\{data\}\}/g, dataReserva)
-          .replace(/\{\{data_reserva\}\}/g, dataReserva)
-          .replace(/\{\{data_entrada\}\}/g, dataEntrada)
-          .replace(/\{\{data_saida\}\}/g, dataSaida)
-          .replace(/\{\{data_atual\}\}/g, dataAtual)
-          .replace(/\{\{baia\}\}/g, data.baia || "___");
+        const petName = fullPet?.nome || agendamento.pet?.nome || "";
+        const fillTpl = (c: string) => {
+          const values = buildHospedagemContractValues({
+            clienteNome: fullCliente?.nome || agendamento.cliente?.nome,
+            clienteCpf: fullCliente?.cpf,
+            clienteEmail: fullCliente?.email,
+            clienteEndereco: fullCliente?.endereco,
+            clienteWhatsapp: fullCliente?.whatsapp || fullCliente?.telefone,
+            petNome: petName,
+            petRaca: fullPet?.raca,
+            petEspecie: fullPet?.especie,
+            petSexo: fullPet?.sexo,
+            petCor: fullPet?.cor,
+            petCastrado: fullPet?.castrado === true ? true : fullPet?.castrado === false ? false : null,
+            tipoServico: data.tipo_servico,
+            valor: valorContrato > 0 ? valorContrato : null,
+            dataEntrada: `${data.data_reserva}T${data.hora_reserva || "00:00"}`,
+            horaEntrada: data.hora_reserva || "___",
+            dataSaida: data.data_saida_provavel || agendamento.data_saida || agendamento.data_saida_provavel || null,
+            horaSaida: data.hora_saida_provavel || agendamento.hora_saida || "___",
+            baia: data.baia,
+            petsMesmoTutor,
+          });
+
+          return replaceContractPlaceholders(c, {
+            ...values,
+            pet_peso: fullPet?.peso ? `${fullPet.peso}kg` : "___",
+            pet_porte: fullPet?.porte || "___",
+            plano: data.tipo_servico || "___",
+            valor_servico: values.valor,
+            valor_plano: values.valor,
+            data_atual: dataAtual,
+          });
+        };
 
         const filledContent = matched ? fillTpl(matched.content) : "";
         const tplTitle = matched ? `${matched.name} — ${petName}` : "";
@@ -327,6 +327,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
           },
           templates: allTemplates,
           selectedTemplate: matched?.id || "",
+          fillTemplate: fillTpl,
           content: filledContent,
           title: tplTitle,
           loading: false,
@@ -600,7 +601,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
                       setContratoDialog(prev => prev ? {
                         ...prev,
                         selectedTemplate: val,
-                        content: tpl.content,
+                        content: prev.fillTemplate ? prev.fillTemplate(tpl.content) : tpl.content,
                         title: `${tpl.name} — ${prev.agendamento.pet?.nome || "Pet"}`,
                       } : null);
                     }
