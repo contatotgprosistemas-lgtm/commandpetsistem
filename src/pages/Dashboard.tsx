@@ -744,8 +744,12 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-sm font-medium text-foreground tabular-nums">{format(new Date(item.data_hora), "dd/MM/yyyy HH:mm")}</p>
-              
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Saída prevista</p>
+              <p className="text-sm font-medium text-foreground tabular-nums">
+                {item.data_saida_provavel
+                  ? `${format(new Date(item.data_saida_provavel + "T00:00:00"), "dd/MM/yyyy")}${item.hora_saida_provavel ? ` ${item.hora_saida_provavel.slice(0, 5)}` : ""}`
+                  : "—"}
+              </p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {clientWhatsapp && (
