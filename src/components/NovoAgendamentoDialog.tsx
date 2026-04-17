@@ -122,6 +122,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     agendamento: any;
     templates: any[];
     selectedTemplate: string;
+    fillTemplate?: (template: string) => string;
     content: string;
     title: string;
     loading: boolean;
