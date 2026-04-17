@@ -1117,13 +1117,13 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     {/* Contract generation dialog */}
     {contratoDialog && (
       <Dialog open={contratoDialog.open} onOpenChange={(v) => { if (!v) setContratoDialog(null); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-6xl w-[95vw] h-[95vh] flex flex-col overflow-hidden p-0">
+          <DialogHeader className="px-6 pt-6 shrink-0">
             <DialogTitle>Gerar Contrato</DialogTitle>
           </DialogHeader>
 
           {contratoDialog.createdLink ? (
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 px-6 overflow-y-auto">
               <div className="text-center space-y-3">
                 <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                   <FileSignature className="h-7 w-7 text-primary" />
@@ -1147,49 +1147,51 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div>
-                <Label>Template</Label>
-                <Select
-                  value={contratoDialog.selectedTemplate}
-                  onValueChange={(val) => {
-                    const tpl = contratoDialog.templates.find((t: any) => t.id === val);
-                    if (tpl) {
-                      setContratoDialog(prev => prev ? {
-                        ...prev,
-                        selectedTemplate: val,
-                        content: typeof prev.fillTemplate === "function" ? prev.fillTemplate(tpl.content) : tpl.content,
-                        title: `${tpl.name} — ${prev.agendamento.pet?.nome || "Pet"}`,
-                      } : null);
-                    }
-                  }}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione um template" /></SelectTrigger>
-                  <SelectContent>
-                    {contratoDialog.templates.map((t: any) => (
-                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {contratoDialog.templates.length === 0 && (
-                  <p className="text-xs text-destructive mt-1">Nenhum template encontrado. Crie um template em Contratos → Templates primeiro.</p>
-                )}
+            <div className="flex flex-col flex-1 min-h-0 px-6 pb-6 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 shrink-0">
+                <div>
+                  <Label>Template</Label>
+                  <Select
+                    value={contratoDialog.selectedTemplate}
+                    onValueChange={(val) => {
+                      const tpl = contratoDialog.templates.find((t: any) => t.id === val);
+                      if (tpl) {
+                        setContratoDialog(prev => prev ? {
+                          ...prev,
+                          selectedTemplate: val,
+                          content: typeof prev.fillTemplate === "function" ? prev.fillTemplate(tpl.content) : tpl.content,
+                          title: `${tpl.name} — ${prev.agendamento.pet?.nome || "Pet"}`,
+                        } : null);
+                      }
+                    }}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione um template" /></SelectTrigger>
+                    <SelectContent>
+                      {contratoDialog.templates.map((t: any) => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {contratoDialog.templates.length === 0 && (
+                    <p className="text-xs text-destructive mt-1">Nenhum template encontrado. Crie um template em Contratos → Templates primeiro.</p>
+                  )}
+                </div>
+                <div>
+                  <Label>Título do contrato</Label>
+                  <Input
+                    value={contratoDialog.title}
+                    onChange={e => setContratoDialog(prev => prev ? { ...prev, title: e.target.value } : null)}
+                  />
+                </div>
               </div>
-              <div>
-                <Label>Título do contrato</Label>
-                <Input
-                  value={contratoDialog.title}
-                  onChange={e => setContratoDialog(prev => prev ? { ...prev, title: e.target.value } : null)}
-                />
-              </div>
-              <div>
-                <Label>Pré-visualização do contrato</Label>
+              <div className="flex flex-col flex-1 min-h-0">
+                <Label className="shrink-0">Pré-visualização do contrato</Label>
                 <div
-                  className="border rounded-md p-4 mt-1 max-h-[400px] overflow-y-auto bg-white text-foreground prose prose-sm max-w-none"
+                  className="border rounded-md p-4 mt-1 flex-1 min-h-0 overflow-y-auto bg-white text-foreground prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: contratoDialog.content }}
                 />
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2 shrink-0">
                 <Button variant="outline" onClick={() => setContratoDialog(null)}>Cancelar</Button>
                 <Button onClick={handleCreateContract} disabled={contratoDialog.loading || !contratoDialog.content.trim()}>
                   {contratoDialog.loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileSignature className="h-4 w-4 mr-2" />}
