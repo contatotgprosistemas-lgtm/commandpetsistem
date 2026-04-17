@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
-import logoTg from "@/assets/logo-tg.png";
+import logoDefault from "@/assets/logo.png";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -41,7 +41,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   const { isSuperAdmin, signOut, profile } = useAuth();
-  const { logoUrl: empresaLogo } = useEmpresaLogo(logoTg);
+  const { logoUrl: empresaLogo } = useEmpresaLogo(logoDefault);
   const navigate = useNavigate();
   const location = useLocation();
 
