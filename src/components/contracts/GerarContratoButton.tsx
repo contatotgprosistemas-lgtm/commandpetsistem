@@ -80,13 +80,21 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     setLoading(false);
   }
 
-  function fillTemplate(templateContent: string): string {
+  function fillTemplate(templateContent: string, dataSaidaProvavel?: string | null, horaSaidaProvavel?: string | null): string {
     const petName = agendamento.pet?.nome || "";
     const petRaca = agendamento.pet?.raca || "";
     const petEspecie = agendamento.pet?.especie || "";
     const clientName = agendamento.cliente?.nome || "";
     const valor = agendamento.valor != null ? `R$ ${Number(agendamento.valor).toFixed(2)}` : "___";
     const dataHora = formatDateBR(agendamento.data_hora);
+    const dataEntrada = formatDateBR(agendamento.data_hora);
+    const dataSaida = dataSaidaProvavel
+      ? formatDateBR(`${dataSaidaProvavel}T${horaSaidaProvavel || "00:00"}`)
+      : "___";
+    const entradaDateOnly = agendamento.data_hora.split("T")[0];
+    const dataReserva = dataSaidaProvavel && dataSaidaProvavel !== entradaDateOnly
+      ? `${dataEntrada} a ${dataSaida}`
+      : dataEntrada;
 
     return templateContent
       .replace(/\{\{cliente_nome\}\}/g, clientName)
@@ -98,6 +106,9 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
       .replace(/\{\{tipo_servico\}\}/g, agendamento.tipo_servico)
       .replace(/\{\{valor\}\}/g, valor)
       .replace(/\{\{data\}\}/g, dataHora)
+      .replace(/\{\{data_entrada\}\}/g, dataEntrada)
+      .replace(/\{\{data_saida\}\}/g, dataSaida)
+      .replace(/\{\{data_reserva\}\}/g, dataReserva)
       .replace(/\{\{baia\}\}/g, agendamento.baia || "___");
   }
 
