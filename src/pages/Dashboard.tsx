@@ -739,6 +739,17 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
               <div className="flex items-center gap-2">
                 <ServicoIcon tipo={item.tipo_servico} />
                 <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
+                {(() => {
+                  const tipo = (item.tipo_servico || "").toLowerCase();
+                  const jaBanho = /banho|tosa|estét|estetic/.test(tipo);
+                  const temBanhoExtra = !jaBanho && /banho|tosa/i.test(item.notas || "");
+                  return temBanhoExtra ? (
+                    <span title="Inclui banho como serviço adicional" className="inline-flex items-center gap-0.5 rounded-full bg-sky-100 dark:bg-sky-900/40 px-1.5 py-0.5">
+                      <ShowerHead className="h-3 w-3 text-sky-600 dark:text-sky-300" />
+                      <span className="text-[9px] font-semibold text-sky-700 dark:text-sky-200">+Banho</span>
+                    </span>
+                  ) : null;
+                })()}
                 {item.pet?.raca && <span className="text-xs text-muted-foreground">({item.pet.raca})</span>}
                 {item.subscription_id && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">Plano</Badge>}
                 <button onClick={() => onEdit(item)} className="h-5 w-5 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground/50 hover:text-primary transition-colors" title="Editar">
