@@ -249,23 +249,46 @@ export default function ContratosPage() {
       toast.error("Preencha nome e conteúdo do template");
       return;
     }
-    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
-    if (!profile?.empresa_id) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("empresa_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (profileError || !profile?.empresa_id) {
+      console.error("Erro ao buscar perfil:", profileError, profile);
+      toast.error("Erro ao identificar empresa");
+      return;
+    }
 
     if (editingTemplate) {
-      await supabase.from("contract_templates").update({
+      const { error } = await supabase.from("contract_templates").update({
         name: templateForm.name,
         description: templateForm.description,
         content: templateForm.content,
       }).eq("id", editingTemplate);
+      if (error) {
+        console.error("Erro ao atualizar template:", error);
+        toast.error(`Erro ao atualizar: ${error.message}`);
+        return;
+      }
       toast.success("Template atualizado!");
     } else {
-      await supabase.from("contract_templates").insert({
+      const { error } = await supabase.from("contract_templates").insert({
         empresa_id: profile.empresa_id,
         name: templateForm.name,
         description: templateForm.description,
         content: templateForm.content,
       });
+      if (error) {
+        console.error("Erro ao criar template:", error);
+        toast.error(`Erro ao criar: ${error.message}`);
+        return;
+      }
       toast.success("Template criado!");
     }
     setShowTemplateDialog(false);
