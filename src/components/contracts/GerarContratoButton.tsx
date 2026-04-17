@@ -122,7 +122,8 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     setSelectedTemplate(templateId);
     const tpl = templates.find(t => t.id === templateId);
     if (tpl) {
-      setContent(fillTemplate(tpl.content));
+      const ctx = (window as any).__contractFillCtx || {};
+      setContent(fillTemplate(tpl.content, ctx.dataSaidaProv, ctx.horaSaidaProv));
       setTitle(`${tpl.name} — ${agendamento.pet?.nome || "Pet"}`);
     }
   }
