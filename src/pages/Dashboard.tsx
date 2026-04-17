@@ -1,6 +1,14 @@
 import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, TreePine, ShowerHead, CheckSquare, TrendingUp } from "lucide-react";
+import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, TreePine, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap } from "lucide-react";
+
+function ServicoIcon({ tipo }: { tipo?: string | null }) {
+  const t = (tipo || "").toLowerCase();
+  if (/hotel|hosped|pernoit|diár|diari/.test(t)) return <Hotel className="h-3.5 w-3.5 text-amber-600 shrink-0" aria-label="Hotel" />;
+  if (/escola|daycare|creche|adestr/.test(t)) return <GraduationCap className="h-3.5 w-3.5 text-emerald-600 shrink-0" aria-label="Escola/Daycare" />;
+  if (/banho|tosa|estét|estetic/.test(t)) return <ShowerHead className="h-3.5 w-3.5 text-sky-600 shrink-0" aria-label="Banho/Tosa" />;
+  return null;
+}
 import { supabase } from "@/integrations/supabase/client";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -729,6 +737,7 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
+                <ServicoIcon tipo={item.tipo_servico} />
                 <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
                 {item.pet?.raca && <span className="text-xs text-muted-foreground">({item.pet.raca})</span>}
                 {item.subscription_id && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">Plano</Badge>}
