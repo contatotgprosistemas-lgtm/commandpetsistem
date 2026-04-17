@@ -49,11 +49,14 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     setLoading(true);
     setOpen(true);
 
-    // Fetch templates
-    const { data: tpls } = await supabase
-      .from("contract_templates")
-      .select("id, name, content")
-      .eq("active", true);
+    // Fetch templates and the agendamento's planned exit date in parallel
+    const [{ data: tpls }, { data: ag }] = await Promise.all([
+      supabase.from("contract_templates").select("id, name, content").eq("active", true),
+      supabase.from("agendamentos").select("data_saida_provavel, hora_saida_provavel").eq("id", agendamento.id).maybeSingle(),
+    ]);
+
+    const dataSaidaProv = (ag as any)?.data_saida_provavel ?? null;
+    const horaSaidaProv = (ag as any)?.hora_saida_provavel ?? null;
 
     const allTemplates = (tpls as Template[]) || [];
     setTemplates(allTemplates);
@@ -62,31 +65,42 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     const serviceType = agendamento.tipo_servico.toLowerCase();
     const matched = allTemplates.find(t => t.name.toLowerCase().includes(serviceType));
 
+    const apply = (tpl: Template) => {
+      setSelectedTemplate(tpl.id);
+      setContent(fillTemplate(tpl.content, dataSaidaProv, horaSaidaProv));
+      setTitle(`${tpl.name} — ${agendamento.pet?.nome || "Pet"}`);
+    };
+
     if (matched) {
-      setSelectedTemplate(matched.id);
-      const filled = fillTemplate(matched.content);
-      setContent(filled);
-      setTitle(`${matched.name} — ${agendamento.pet?.nome || "Pet"}`);
+      apply(matched);
     } else if (allTemplates.length > 0) {
-      setSelectedTemplate(allTemplates[0].id);
-      const filled = fillTemplate(allTemplates[0].content);
-      setContent(filled);
-      setTitle(`${allTemplates[0].name} — ${agendamento.pet?.nome || "Pet"}`);
+      apply(allTemplates[0]);
     } else {
       setContent("");
       setTitle("");
     }
 
+    // Stash for handleTemplateChange
+    (window as any).__contractFillCtx = { dataSaidaProv, horaSaidaProv };
+
     setLoading(false);
   }
 
-  function fillTemplate(templateContent: string): string {
+  function fillTemplate(templateContent: string, dataSaidaProvavel?: string | null, horaSaidaProvavel?: string | null): string {
     const petName = agendamento.pet?.nome || "";
     const petRaca = agendamento.pet?.raca || "";
     const petEspecie = agendamento.pet?.especie || "";
     const clientName = agendamento.cliente?.nome || "";
     const valor = agendamento.valor != null ? `R$ ${Number(agendamento.valor).toFixed(2)}` : "___";
     const dataHora = formatDateBR(agendamento.data_hora);
+    const dataEntrada = formatDateBR(agendamento.data_hora);
+    const dataSaida = dataSaidaProvavel
+      ? formatDateBR(`${dataSaidaProvavel}T${horaSaidaProvavel || "00:00"}`)
+      : "___";
+    const entradaDateOnly = agendamento.data_hora.split("T")[0];
+    const dataReserva = dataSaidaProvavel && dataSaidaProvavel !== entradaDateOnly
+      ? `${dataEntrada} a ${dataSaida}`
+      : dataEntrada;
 
     return templateContent
       .replace(/\{\{cliente_nome\}\}/g, clientName)
@@ -98,6 +112,9 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
       .replace(/\{\{tipo_servico\}\}/g, agendamento.tipo_servico)
       .replace(/\{\{valor\}\}/g, valor)
       .replace(/\{\{data\}\}/g, dataHora)
+      .replace(/\{\{data_entrada\}\}/g, dataEntrada)
+      .replace(/\{\{data_saida\}\}/g, dataSaida)
+      .replace(/\{\{data_reserva\}\}/g, dataReserva)
       .replace(/\{\{baia\}\}/g, agendamento.baia || "___");
   }
 
@@ -105,7 +122,8 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     setSelectedTemplate(templateId);
     const tpl = templates.find(t => t.id === templateId);
     if (tpl) {
-      setContent(fillTemplate(tpl.content));
+      const ctx = (window as any).__contractFillCtx || {};
+      setContent(fillTemplate(tpl.content, ctx.dataSaidaProv, ctx.horaSaidaProv));
       setTitle(`${tpl.name} — ${agendamento.pet?.nome || "Pet"}`);
     }
   }
