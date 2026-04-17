@@ -211,7 +211,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Gerar Contrato</DialogTitle>
             <DialogDescription>
