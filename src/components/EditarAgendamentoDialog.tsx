@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, FileSignature, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { CalendarIcon, FileSignature, Copy, ExternalLink, Loader2, Plus, Trash2, Gift, DollarSign } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -62,12 +63,23 @@ interface Props {
   onSuccess?: () => void;
 }
 
+interface ServicoExtra {
+  id?: string; // existing item id
+  servico_id?: string;
+  descricao: string;
+  valor: number;
+  quantidade: number;
+  cortesia: boolean;
+}
+
 export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
-  const [servicos, setServicos] = useState<{ id: string; descricao: string }[]>([]);
+  const [servicos, setServicos] = useState<{ id: string; descricao: string; valor: number }[]>([]);
   const [baias, setBaias] = useState<{ id: string; nome: string }[]>([]);
   const [baiasLoaded, setBaiasLoaded] = useState(false);
   const [gerarContrato, setGerarContrato] = useState(false);
+  const [servicosExtras, setServicosExtras] = useState<ServicoExtra[]>([]);
+  const [faturaId, setFaturaId] = useState<string | null>(null);
   const [contratoDialog, setContratoDialog] = useState<{
     open: boolean;
     agendamento: any;
@@ -95,7 +107,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
   useEffect(() => {
     if (open) {
       setBaiasLoaded(false);
-      supabase.from("servicos").select("id, descricao").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data); });
+      supabase.from("servicos").select("id, descricao, valor").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data as any); });
       supabase.from("baias").select("id, nome").eq("ativa", true).order("nome").then(({ data }) => {
         if (data) setBaias(data);
         setBaiasLoaded(true);
@@ -123,8 +135,73 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
         status: agendamento.status || "agendado",
         notas: agendamento.notas || "",
       });
+
+      // Load existing extras from the linked invoice (contas_receber + itens)
+      (async () => {
+        setServicosExtras([]);
+        setFaturaId(null);
+        const petName = agendamento.pet?.nome || "";
+        if (!petName || !agendamento.cliente_id) return;
+        const { data: faturas } = await supabase
+          .from("contas_receber")
+          .select("id, descricao")
+          .eq("cliente_id", agendamento.cliente_id)
+          .eq("empresa_id", agendamento.empresa_id)
+          .in("status", ["pendente", "pago"])
+          .order("created_at", { ascending: false });
+        const fatura = (faturas || []).find((f: any) =>
+          (f.descricao || "").includes(petName) &&
+          (f.descricao || "").toLowerCase().includes((agendamento.tipo_servico || "").toLowerCase().substring(0, 10))
+        );
+        if (!fatura) return;
+        setFaturaId(fatura.id);
+        const { data: itens } = await supabase
+          .from("contas_receber_itens" as any)
+          .select("id, descricao, valor, tipo")
+          .eq("conta_receber_id", fatura.id);
+        const extras = (itens || [])
+          .filter((it: any) => it.tipo === "extra" || it.tipo === "cortesia")
+          .map((it: any) => {
+            // parse "Descricao xN (extra) — PetName"
+            const desc = (it.descricao || "").replace(` — ${petName}`, "");
+            const cortesia = it.tipo === "cortesia";
+            const m = desc.match(/^(.*?)\s*x(\d+)\s*\((extra|cortesia)\)$/i);
+            let descricao = cortesia ? desc.replace(" (cortesia)", "") : desc;
+            let quantidade = 1;
+            if (m) {
+              descricao = m[1].trim();
+              quantidade = parseInt(m[2]) || 1;
+            }
+            const valorUnit = quantidade > 0 ? Number(it.valor) / quantidade : Number(it.valor);
+            return { id: it.id, descricao, valor: cortesia ? 0 : valorUnit, quantidade, cortesia };
+          });
+        setServicosExtras(extras);
+      })();
     }
   }, [agendamento, baiasLoaded, form]);
+
+  // Extras helpers
+  function addServicoExtra() {
+    setServicosExtras(prev => [...prev, { descricao: "", valor: 0, quantidade: 1, cortesia: false }]);
+  }
+  function updateServicoExtra(index: number, field: keyof ServicoExtra, value: any) {
+    setServicosExtras(prev => {
+      const updated = [...prev];
+      if (field === "servico_id") {
+        const svc = servicos.find(s => s.id === value);
+        if (svc) updated[index] = { ...updated[index], servico_id: value, descricao: svc.descricao, valor: svc.valor };
+      } else {
+        updated[index] = { ...updated[index], [field]: value } as ServicoExtra;
+      }
+      return updated;
+    });
+  }
+  function removeServicoExtra(index: number) {
+    setServicosExtras(prev => prev.filter((_, i) => i !== index));
+  }
+  const totalExtras = useMemo(() => servicosExtras
+    .filter(e => !e.cortesia && e.valor > 0)
+    .reduce((sum, e) => sum + e.valor * (e.quantidade || 1), 0), [servicosExtras]);
 
   async function onSubmit(data: FormValues) {
     if (!agendamento?.id) return;
@@ -174,6 +251,37 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
 
       if ((data.status === "concluido" || data.status === "cancelado") && agendamento.status !== data.status) {
         await removeFromEsteira(agendamento.id);
+      }
+
+      // Sync extras to invoice (contas_receber + itens)
+      const petName = agendamento.pet?.nome || "";
+      if (faturaId) {
+        // Delete previous extra/cortesia items
+        await supabase
+          .from("contas_receber_itens" as any)
+          .delete()
+          .eq("conta_receber_id", faturaId)
+          .in("tipo", ["extra", "cortesia"]);
+
+        const novosExtras = servicosExtras.filter(e => e.descricao);
+        const newItems = novosExtras.map(e => {
+          const qtd = e.quantidade || 1;
+          if (e.cortesia) {
+            return { conta_receber_id: faturaId, empresa_id: agendamento.empresa_id, descricao: `${e.descricao} (cortesia) — ${petName}`, valor: 0, tipo: "cortesia" };
+          }
+          return { conta_receber_id: faturaId, empresa_id: agendamento.empresa_id, descricao: `${e.descricao} x${qtd} (extra) — ${petName}`, valor: e.valor * qtd, tipo: "extra" };
+        });
+        if (newItems.length > 0) {
+          await supabase.from("contas_receber_itens" as any).insert(newItems);
+        }
+
+        // Recompute fatura total from remaining items (principal/desconto kept, extras replaced)
+        const { data: allItems } = await supabase
+          .from("contas_receber_itens" as any)
+          .select("valor")
+          .eq("conta_receber_id", faturaId);
+        const novoTotal = (allItems || []).reduce((s: number, it: any) => s + Number(it.valor || 0), 0);
+        await supabase.from("contas_receber").update({ valor: Math.max(novoTotal, 0) }).eq("id", faturaId);
       }
 
       toast({ title: "Agendamento atualizado!" });
@@ -526,7 +634,94 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
               </FormItem>
             )} />
 
-            {/* Deseja gerar contrato? */}
+            {/* Serviços Extras */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <FormLabel className="text-sm font-medium">Serviços Extras</FormLabel>
+                <Button type="button" variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={addServicoExtra}>
+                  <Plus className="h-3.5 w-3.5" />
+                  Adicionar Extra
+                </Button>
+              </div>
+
+              {servicosExtras.length > 0 && (
+                <div className="space-y-2 rounded-md border border-border p-3">
+                  {servicosExtras.map((extra, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center">
+                      <Select
+                        value={extra.servico_id || ""}
+                        onValueChange={(val) => updateServicoExtra(idx, "servico_id", val)}
+                      >
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue placeholder={extra.descricao || "Selecione o serviço"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {servicos.map(s => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.descricao} — R$ {s.valor.toFixed(2)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={extra.valor || ""}
+                        onChange={(e) => updateServicoExtra(idx, "valor", parseFloat(e.target.value) || 0)}
+                        placeholder="Valor"
+                        className="w-24 h-9 text-sm"
+                        disabled={extra.cortesia}
+                      />
+
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={extra.quantidade || 1}
+                        onChange={(e) => updateServicoExtra(idx, "quantidade", Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-16 h-9 text-sm text-center"
+                        title="Quantidade"
+                      />
+
+                      <Button
+                        type="button"
+                        variant={extra.cortesia ? "default" : "outline"}
+                        size="sm"
+                        className="h-9 gap-1 text-xs whitespace-nowrap"
+                        onClick={() => updateServicoExtra(idx, "cortesia", !extra.cortesia)}
+                      >
+                        {extra.cortesia ? (<><Gift className="h-3.5 w-3.5" /> Cortesia</>) : (<><DollarSign className="h-3.5 w-3.5" /> Cobrar</>)}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-destructive hover:text-destructive"
+                        onClick={() => removeServicoExtra(idx)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+
+                  {totalExtras > 0 && (
+                    <div className="flex items-center justify-end pt-1 border-t border-border mt-2">
+                      <Badge variant="secondary" className="text-xs">
+                        Total extras: R$ {totalExtras.toFixed(2)}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              )}
+              {!faturaId && (
+                <p className="text-[11px] text-muted-foreground">
+                  Fatura vinculada não encontrada. Os extras só serão salvos na fatura se ela existir para este pet/serviço.
+                </p>
+              )}
+            </div>
+
             <div className="rounded-lg border border-border p-3 space-y-2">
               <FormLabel className="text-sm font-medium flex items-center gap-2">
                 <FileSignature className="h-4 w-4 text-primary" />

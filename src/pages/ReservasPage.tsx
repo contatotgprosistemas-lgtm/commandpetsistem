@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
-import { format, startOfDay, addDays, parseISO } from "date-fns";
+import { format, startOfDay, addDays, subDays, startOfWeek, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarCheck, Search, Filter, PawPrint, User, Hotel, Scissors, TreePine, HelpCircle, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -126,16 +126,24 @@ export default function ReservasPage() {
     let fromDate = today;
     let toDate = addDays(today, 1);
 
-    if (periodoFilter === "amanha") {
+    if (periodoFilter === "ontem") {
+      fromDate = subDays(today, 1);
+      toDate = today;
+    } else if (periodoFilter === "amanha") {
       fromDate = addDays(today, 1);
       toDate = addDays(today, 2);
     } else if (periodoFilter === "semana") {
       toDate = addDays(today, 7);
     } else if (periodoFilter === "mes") {
       toDate = addDays(today, 30);
+    } else if (periodoFilter === "semana_passada") {
+      // últimos 7 dias até hoje (exclusive)
+      fromDate = subDays(today, 7);
+      toDate = today;
     }
 
-    const { data, error } = await supabase
+    // Range query for the selected period
+    const rangeQuery = supabase
       .from("agendamentos")
       .select("id, data_hora, tipo_servico, status, baia, notas, valor, desconto, duracao_min, data_saida_provavel, hora_saida_provavel, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, cliente:clientes(id, nome, whatsapp, foto_url), pet:pets(id, nome, raca, especie, foto_url)")
       .eq("empresa_id", profile.empresa_id)
@@ -143,9 +151,21 @@ export default function ReservasPage() {
       .lt("data_hora", toDate.toISOString())
       .order("data_hora", { ascending: true });
 
-    if (!error && data) {
-      setReservas(data as unknown as Reserva[]);
-    }
+    // Always include pets currently 'na_empresa' regardless of date
+    const naEmpresaQuery = supabase
+      .from("agendamentos")
+      .select("id, data_hora, tipo_servico, status, baia, notas, valor, desconto, duracao_min, data_saida_provavel, hora_saida_provavel, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, cliente:clientes(id, nome, whatsapp, foto_url), pet:pets(id, nome, raca, especie, foto_url)")
+      .eq("empresa_id", profile.empresa_id)
+      .eq("status", "na_empresa")
+      .order("data_hora", { ascending: true });
+
+    const [{ data: rangeData }, { data: naEmpresaData }] = await Promise.all([rangeQuery, naEmpresaQuery]);
+
+    // Merge by id, dedupe
+    const byId = new Map<string, Reserva>();
+    for (const r of (rangeData || []) as unknown as Reserva[]) byId.set(r.id, r);
+    for (const r of (naEmpresaData || []) as unknown as Reserva[]) byId.set(r.id, r);
+    setReservas(Array.from(byId.values()).sort((a, b) => a.data_hora.localeCompare(b.data_hora)));
     setLoading(false);
   }
 
@@ -228,8 +248,10 @@ export default function ReservasPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="ontem">Ontem</SelectItem>
             <SelectItem value="hoje">Hoje</SelectItem>
             <SelectItem value="amanha">Amanhã</SelectItem>
+            <SelectItem value="semana_passada">Últimos 7 dias</SelectItem>
             <SelectItem value="semana">Próx. 7 dias</SelectItem>
             <SelectItem value="mes">Próx. 30 dias</SelectItem>
           </SelectContent>
