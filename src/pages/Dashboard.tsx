@@ -746,9 +746,20 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
             <div className="text-right shrink-0">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Saída prevista</p>
               <p className="text-sm font-medium text-foreground tabular-nums">
-                {item.data_saida_provavel
-                  ? `${format(new Date(item.data_saida_provavel + "T00:00:00"), "dd/MM/yyyy")}${item.hora_saida_provavel ? ` ${item.hora_saida_provavel.slice(0, 5)}` : ""}`
-                  : "—"}
+                {(() => {
+                  if (!item.data_saida_provavel) return "—";
+                  try {
+                    const dateStr = item.data_saida_provavel.includes("T")
+                      ? item.data_saida_provavel
+                      : item.data_saida_provavel + "T00:00:00";
+                    const d = new Date(dateStr);
+                    if (isNaN(d.getTime())) return "—";
+                    const hora = item.hora_saida_provavel ? ` ${item.hora_saida_provavel.slice(0, 5)}` : "";
+                    return `${format(d, "dd/MM/yyyy")}${hora}`;
+                  } catch {
+                    return "—";
+                  }
+                })()}
               </p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
