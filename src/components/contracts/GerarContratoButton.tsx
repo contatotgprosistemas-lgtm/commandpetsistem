@@ -155,6 +155,8 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
       data: dataHora,
       data_entrada: dataEntrada,
       data_saida: dataSaida,
+      hora_entrada: horaEntrada,
+      hora_saida: horaSaida,
       data_reserva: dataReserva,
       baia: agendamento.baia || "___",
       pets_mesmo_tutor: extras?.pets_mesmo_tutor || "",
