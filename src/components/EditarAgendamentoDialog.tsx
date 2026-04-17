@@ -567,7 +567,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
     {/* Contract generation dialog */}
     {contratoDialog && (
       <Dialog open={contratoDialog.open} onOpenChange={(v) => { if (!v) setContratoDialog(null); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl w-[95vw] h-[95vh] flex flex-col overflow-hidden p-0">
           <DialogHeader>
             <DialogTitle>Gerar Contrato</DialogTitle>
           </DialogHeader>
