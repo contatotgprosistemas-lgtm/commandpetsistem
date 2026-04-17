@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { FileSignature, Loader2, Copy, ExternalLink } from "lucide-react";
-import { formatDateBR } from "@/lib/utils";
 import { createContractShareLink } from "@/lib/contract-links";
+import { buildHospedagemContractValues, replaceContractPlaceholders } from "@/lib/contract-placeholders";
 
 interface Props {
   agendamento: {
@@ -113,63 +113,28 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
   }
 
   function fillTemplate(templateContent: string, dataSaidaProvavel?: string | null, horaSaidaProvavel?: string | null, extras?: Record<string, string>): string {
-    const petName = agendamento.pet?.nome || "";
-    const petRaca = agendamento.pet?.raca || "";
-    const petEspecie = agendamento.pet?.especie || "";
-    const clientName = agendamento.cliente?.nome || "";
-    const valor = agendamento.valor != null ? `R$ ${Number(agendamento.valor).toFixed(2)}` : "___";
-    const dataHora = formatDateBR(agendamento.data_hora);
-    const dataEntrada = formatDateBR(agendamento.data_hora);
-    const dataSaida = dataSaidaProvavel
-      ? formatDateBR(`${dataSaidaProvavel}T${horaSaidaProvavel || "00:00"}`)
-      : "___";
-    // Extract time HH:mm
-    const horaEntrada = (() => {
-      try {
-        const d = new Date(agendamento.data_hora);
-        return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-      } catch { return "___"; }
-    })();
-    const horaSaida = horaSaidaProvavel ? horaSaidaProvavel.slice(0, 5) : "___";
-    const entradaDateOnly = agendamento.data_hora.split("T")[0];
-    const dataReserva = dataSaidaProvavel && dataSaidaProvavel !== entradaDateOnly
-      ? `${dataEntrada} a ${dataSaida}`
-      : dataEntrada;
-
-    const map: Record<string, string> = {
-      cliente_nome: clientName,
-      cliente_cpf: extras?.cliente_cpf || "___",
-      cliente_email: extras?.cliente_email || "___",
-      cliente_endereco: extras?.cliente_endereco || "___",
-      cliente_whatsapp: agendamento.cliente?.whatsapp || "___",
-      pet_nome: petName,
-      pet_raca: petRaca,
-      pet_especie: petEspecie,
-      pet_sexo: extras?.pet_sexo || "___",
-      pet_cor: extras?.pet_cor || "___",
-      pet_castrado: extras?.pet_castrado || "___",
-      tipo_servico: agendamento.tipo_servico,
-      servicos: agendamento.tipo_servico,
-      servico: agendamento.tipo_servico,
-      valor: valor,
-      data: dataHora,
-      data_entrada: dataEntrada,
-      data_saida: dataSaida,
-      hora_entrada: horaEntrada,
-      hora_saida: horaSaida,
-      data_reserva: dataReserva,
-      baia: agendamento.baia || "___",
-      pets_mesmo_tutor: extras?.pets_mesmo_tutor || "",
-    };
-
-    // Normalize: lowercase + strip diacritics so {{Data_Saída}}, {{data_saida}}, {{DATA_SAIDA}} all match
-    const stripAccents = (s: string) =>
-      s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-    return templateContent.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, key) => {
-      const norm = stripAccents(String(key));
-      return norm in map ? map[norm] : full;
+    const values = buildHospedagemContractValues({
+      clienteNome: agendamento.cliente?.nome,
+      clienteCpf: extras?.cliente_cpf,
+      clienteEmail: extras?.cliente_email,
+      clienteEndereco: extras?.cliente_endereco,
+      clienteWhatsapp: agendamento.cliente?.whatsapp,
+      petNome: agendamento.pet?.nome,
+      petRaca: agendamento.pet?.raca,
+      petEspecie: agendamento.pet?.especie,
+      petSexo: extras?.pet_sexo,
+      petCor: extras?.pet_cor,
+      petCastrado: extras?.pet_castrado === "Sim" ? true : extras?.pet_castrado === "Não" ? false : null,
+      tipoServico: agendamento.tipo_servico,
+      valor: agendamento.valor,
+      dataEntrada: agendamento.data_hora,
+      dataSaida: dataSaidaProvavel,
+      horaSaida: horaSaidaProvavel,
+      baia: agendamento.baia,
+      petsMesmoTutor: extras?.pets_mesmo_tutor,
     });
+
+    return replaceContractPlaceholders(templateContent, values);
   }
 
   function handleTemplateChange(templateId: string) {
