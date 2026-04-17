@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { createContractShareLink } from "@/lib/contract-links";
+import { buildHospedagemContractValues, replaceContractPlaceholders } from "@/lib/contract-placeholders";
 
 const schema = z.object({
   cliente_id: z.string().uuid("Selecione um cliente"),
@@ -528,44 +529,37 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         const dataAtual = format(new Date(), "dd/MM/yyyy");
 
         const fillTpl = (c: string) => {
-          const valor = valorContrato > 0 ? `R$ ${valorContrato.toFixed(2)}` : "___";
-          const dataEntrada = format(
-            new Date((data.data_entrada || data.data_reserva) + "T00:00:00"),
-            "dd/MM/yyyy"
-          );
-          const dataSaida = data.data_saida_provavel
-            ? format(new Date(data.data_saida_provavel + "T00:00:00"), "dd/MM/yyyy")
-            : "___";
-          const dataReserva = data.data_saida_provavel && data.data_saida_provavel !== (data.data_entrada || data.data_reserva)
-            ? `${dataEntrada} a ${dataSaida}`
-            : dataEntrada;
-          return c
-            .replace(/\{\{cliente_nome\}\}/g, fullCliente?.nome || clienteObj?.nome || "___")
-            .replace(/\{\{cliente_cpf\}\}/g, fullCliente?.cpf || "___")
-            .replace(/\{\{cliente_endereco\}\}/g, fullCliente?.endereco || "___")
-            .replace(/\{\{cliente_email\}\}/g, fullCliente?.email || "___")
-            .replace(/\{\{cliente_whatsapp\}\}/g, fullCliente?.whatsapp || fullCliente?.telefone || "___")
-            .replace(/\{\{pet_nome\}\}/g, fullPet?.nome || petObj?.nome || "___")
-            .replace(/\{\{pet_raca\}\}/g, fullPet?.raca || "___")
-            .replace(/\{\{pet_especie\}\}/g, fullPet?.especie || "___")
-            .replace(/\{\{pet_peso\}\}/g, fullPet?.peso ? `${fullPet.peso}kg` : "___")
-            .replace(/\{\{pet_porte\}\}/g, fullPet?.porte || "___")
-            .replace(/\{\{pet_sexo\}\}/g, fullPet?.sexo || "___")
-            .replace(/\{\{pet_cor\}\}/g, fullPet?.cor || "___")
-            .replace(/\{\{pet_castrado\}\}/g, fullPet?.castrado != null ? (String(fullPet.castrado) === "true" ? "Sim" : "Não") : "___")
-            .replace(/\{\{pets_mesmo_tutor\}\}/g, petsMesmoTutor)
-            .replace(/\{\{tipo_servico\}\}/g, data.tipo_servico)
-            .replace(/\{\{servicos\}\}/g, data.tipo_servico)
-            .replace(/\{\{plano\}\}/g, data.tipo_servico)
-            .replace(/\{\{valor\}\}/g, valor)
-            .replace(/\{\{valor_servico\}\}/g, valor)
-            .replace(/\{\{valor_plano\}\}/g, valor)
-            .replace(/\{\{data\}\}/g, dataReserva)
-            .replace(/\{\{data_reserva\}\}/g, dataReserva)
-            .replace(/\{\{data_entrada\}\}/g, dataEntrada)
-            .replace(/\{\{data_saida\}\}/g, dataSaida)
-            .replace(/\{\{data_atual\}\}/g, dataAtual)
-            .replace(/\{\{baia\}\}/g, data.baia || "___");
+          const values = buildHospedagemContractValues({
+            clienteNome: fullCliente?.nome || clienteObj?.nome,
+            clienteCpf: fullCliente?.cpf,
+            clienteEmail: fullCliente?.email,
+            clienteEndereco: fullCliente?.endereco,
+            clienteWhatsapp: fullCliente?.whatsapp || fullCliente?.telefone,
+            petNome: fullPet?.nome || petObj?.nome,
+            petRaca: fullPet?.raca,
+            petEspecie: fullPet?.especie,
+            petSexo: fullPet?.sexo,
+            petCor: fullPet?.cor,
+            petCastrado: fullPet?.castrado,
+            tipoServico: data.tipo_servico,
+            valor: valorContrato > 0 ? valorContrato : null,
+            dataEntrada: data.data_entrada || `${data.data_reserva}T${data.hora_entrada || data.hora_reserva || "00:00"}`,
+            horaEntrada: data.hora_entrada || data.hora_reserva || "___",
+            dataSaida: data.data_saida_provavel || null,
+            horaSaida: data.hora_saida_provavel || "___",
+            baia: data.baia,
+            petsMesmoTutor,
+          });
+
+          return replaceContractPlaceholders(c, {
+            ...values,
+            pet_peso: fullPet?.peso ? `${fullPet.peso}kg` : "___",
+            pet_porte: fullPet?.porte || "___",
+            plano: data.tipo_servico || "___",
+            valor_servico: values.valor,
+            valor_plano: values.valor,
+            data_atual: dataAtual,
+          });
         };
 
         const filledContent = matched ? fillTpl(matched.content) : "";
