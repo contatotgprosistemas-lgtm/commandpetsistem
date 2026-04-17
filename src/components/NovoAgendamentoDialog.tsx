@@ -579,6 +579,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           },
           templates: allTemplates,
           selectedTemplate: matched?.id || "",
+          fillTemplate: fillTpl,
           content: filledContent,
           title: tplTitle,
           loading: false,
@@ -1142,7 +1143,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                       setContratoDialog(prev => prev ? {
                         ...prev,
                         selectedTemplate: val,
-                        content: tpl.content,
+                        content: typeof prev.fillTemplate === "function" ? prev.fillTemplate(tpl.content) : tpl.content,
                         title: `${tpl.name} — ${prev.agendamento.pet?.nome || "Pet"}`,
                       } : null);
                     }
