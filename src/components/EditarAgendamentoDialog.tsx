@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, FileSignature, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { CalendarIcon, FileSignature, Copy, ExternalLink, Loader2, Plus, Trash2, Gift, DollarSign } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -62,12 +63,23 @@ interface Props {
   onSuccess?: () => void;
 }
 
+interface ServicoExtra {
+  id?: string; // existing item id
+  servico_id?: string;
+  descricao: string;
+  valor: number;
+  quantidade: number;
+  cortesia: boolean;
+}
+
 export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
-  const [servicos, setServicos] = useState<{ id: string; descricao: string }[]>([]);
+  const [servicos, setServicos] = useState<{ id: string; descricao: string; valor: number }[]>([]);
   const [baias, setBaias] = useState<{ id: string; nome: string }[]>([]);
   const [baiasLoaded, setBaiasLoaded] = useState(false);
   const [gerarContrato, setGerarContrato] = useState(false);
+  const [servicosExtras, setServicosExtras] = useState<ServicoExtra[]>([]);
+  const [faturaId, setFaturaId] = useState<string | null>(null);
   const [contratoDialog, setContratoDialog] = useState<{
     open: boolean;
     agendamento: any;
@@ -95,7 +107,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
   useEffect(() => {
     if (open) {
       setBaiasLoaded(false);
-      supabase.from("servicos").select("id, descricao").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data); });
+      supabase.from("servicos").select("id, descricao, valor").eq("ativo", true).order("descricao").then(({ data }) => { if (data) setServicos(data as any); });
       supabase.from("baias").select("id, nome").eq("ativa", true).order("nome").then(({ data }) => {
         if (data) setBaias(data);
         setBaiasLoaded(true);
