@@ -86,7 +86,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     setLoading(false);
   }
 
-  function fillTemplate(templateContent: string, dataSaidaProvavel?: string | null, horaSaidaProvavel?: string | null): string {
+  function fillTemplate(templateContent: string, dataSaidaProvavel?: string | null, horaSaidaProvavel?: string | null, extras?: Record<string, string>): string {
     const petName = agendamento.pet?.nome || "";
     const petRaca = agendamento.pet?.raca || "";
     const petEspecie = agendamento.pet?.especie || "";
@@ -102,20 +102,38 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
       ? `${dataEntrada} a ${dataSaida}`
       : dataEntrada;
 
-    return templateContent
-      .replace(/\{\{cliente_nome\}\}/g, clientName)
-      .replace(/\{\{cliente_cpf\}\}/g, "___")
-      .replace(/\{\{cliente_endereco\}\}/g, "___")
-      .replace(/\{\{pet_nome\}\}/g, petName)
-      .replace(/\{\{pet_raca\}\}/g, petRaca)
-      .replace(/\{\{pet_especie\}\}/g, petEspecie)
-      .replace(/\{\{tipo_servico\}\}/g, agendamento.tipo_servico)
-      .replace(/\{\{valor\}\}/g, valor)
-      .replace(/\{\{data\}\}/g, dataHora)
-      .replace(/\{\{data_entrada\}\}/g, dataEntrada)
-      .replace(/\{\{data_saida\}\}/g, dataSaida)
-      .replace(/\{\{data_reserva\}\}/g, dataReserva)
-      .replace(/\{\{baia\}\}/g, agendamento.baia || "___");
+    const map: Record<string, string> = {
+      cliente_nome: clientName,
+      cliente_cpf: extras?.cliente_cpf || "___",
+      cliente_email: extras?.cliente_email || "___",
+      cliente_endereco: extras?.cliente_endereco || "___",
+      cliente_whatsapp: agendamento.cliente?.whatsapp || "___",
+      pet_nome: petName,
+      pet_raca: petRaca,
+      pet_especie: petEspecie,
+      pet_sexo: extras?.pet_sexo || "___",
+      pet_cor: extras?.pet_cor || "___",
+      pet_castrado: extras?.pet_castrado || "___",
+      tipo_servico: agendamento.tipo_servico,
+      servicos: agendamento.tipo_servico,
+      servico: agendamento.tipo_servico,
+      valor: valor,
+      data: dataHora,
+      data_entrada: dataEntrada,
+      data_saida: dataSaida,
+      data_reserva: dataReserva,
+      baia: agendamento.baia || "___",
+      pets_mesmo_tutor: extras?.pets_mesmo_tutor || "",
+    };
+
+    // Normalize: lowercase + strip diacritics so {{Data_Saída}}, {{data_saida}}, {{DATA_SAIDA}} all match
+    const stripAccents = (s: string) =>
+      s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+    return templateContent.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, key) => {
+      const norm = stripAccents(String(key));
+      return norm in map ? map[norm] : full;
+    });
   }
 
   function handleTemplateChange(templateId: string) {
