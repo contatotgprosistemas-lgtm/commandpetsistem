@@ -529,7 +529,16 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
         const fillTpl = (c: string) => {
           const valor = valorContrato > 0 ? `R$ ${valorContrato.toFixed(2)}` : "___";
-          const dataReserva = format(new Date(data.data_reserva + "T00:00:00"), "dd/MM/yyyy");
+          const dataEntrada = format(
+            new Date((data.data_entrada || data.data_reserva) + "T00:00:00"),
+            "dd/MM/yyyy"
+          );
+          const dataSaida = data.data_saida_provavel
+            ? format(new Date(data.data_saida_provavel + "T00:00:00"), "dd/MM/yyyy")
+            : "___";
+          const dataReserva = data.data_saida_provavel && data.data_saida_provavel !== (data.data_entrada || data.data_reserva)
+            ? `${dataEntrada} a ${dataSaida}`
+            : dataEntrada;
           return c
             .replace(/\{\{cliente_nome\}\}/g, fullCliente?.nome || clienteObj?.nome || "___")
             .replace(/\{\{cliente_cpf\}\}/g, fullCliente?.cpf || "___")
@@ -553,6 +562,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             .replace(/\{\{valor_plano\}\}/g, valor)
             .replace(/\{\{data\}\}/g, dataReserva)
             .replace(/\{\{data_reserva\}\}/g, dataReserva)
+            .replace(/\{\{data_entrada\}\}/g, dataEntrada)
+            .replace(/\{\{data_saida\}\}/g, dataSaida)
             .replace(/\{\{data_atual\}\}/g, dataAtual)
             .replace(/\{\{baia\}\}/g, data.baia || "___");
         };
