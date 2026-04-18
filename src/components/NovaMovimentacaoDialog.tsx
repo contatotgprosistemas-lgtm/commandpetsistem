@@ -15,6 +15,8 @@ interface NovaMovimentacaoDialogProps {
   onSuccess: () => void;
 }
 
+type Modo = "entrada" | "saida" | "transferencia";
+
 export function NovaMovimentacaoDialog({ open, onOpenChange, onSuccess }: NovaMovimentacaoDialogProps) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -25,8 +27,9 @@ export function NovaMovimentacaoDialog({ open, onOpenChange, onSuccess }: NovaMo
   const [pessoa, setPessoa] = useState("");
   const [complemento, setComplemento] = useState("");
   const [contaBancariaId, setContaBancariaId] = useState("");
+  const [contaDestinoId, setContaDestinoId] = useState("");
   const [valor, setValor] = useState("");
-  const [tipoValor, setTipoValor] = useState<"entrada" | "saida">("entrada");
+  const [modo, setModo] = useState<Modo>("entrada");
 
   useEffect(() => {
     if (!open || !profile?.empresa_id) return;
@@ -46,22 +49,91 @@ export function NovaMovimentacaoDialog({ open, onOpenChange, onSuccess }: NovaMo
     setPessoa("");
     setComplemento("");
     setContaBancariaId("");
+    setContaDestinoId("");
     setValor("");
-    setTipoValor("entrada");
+    setModo("entrada");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile?.empresa_id) return;
     const numValor = parseFloat(valor);
-    if (!dataMov || !numValor) {
+    if (!dataMov || !numValor || numValor <= 0) {
       toast.error("Preencha data e valor.");
       return;
     }
 
     setLoading(true);
+
+    if (modo === "transferencia") {
+      if (!contaBancariaId || !contaDestinoId) {
+        toast.error("Selecione conta de origem e destino.");
+        setLoading(false);
+        return;
+      }
+      if (contaBancariaId === contaDestinoId) {
+        toast.error("Conta de origem e destino devem ser diferentes.");
+        setLoading(false);
+        return;
+      }
+
+      const origemLabel = bancos.find(b => b.id === contaBancariaId)?.label || "";
+      const destinoLabel = bancos.find(b => b.id === contaDestinoId)?.label || "";
+      const absValor = Math.abs(numValor);
+      const descComp = complemento || `Transferência ${origemLabel} → ${destinoLabel}`;
+
+      const { error: errOut } = await supabase.from("movimentacoes").insert({
+        empresa_id: profile.empresa_id,
+        data_movimentacao: dataMov,
+        plano_contas: "Transferência entre contas",
+        pessoa: pessoa || null,
+        complemento: descComp,
+        banco: origemLabel,
+        conta_bancaria_id: contaBancariaId,
+        valor: -absValor,
+        tipo: "transferencia",
+      });
+
+      if (errOut) {
+        toast.error("Erro ao registrar saída: " + errOut.message);
+        setLoading(false);
+        return;
+      }
+
+      const { error: errIn } = await supabase.from("movimentacoes").insert({
+        empresa_id: profile.empresa_id,
+        data_movimentacao: dataMov,
+        plano_contas: "Transferência entre contas",
+        pessoa: pessoa || null,
+        complemento: descComp,
+        banco: destinoLabel,
+        conta_bancaria_id: contaDestinoId,
+        valor: absValor,
+        tipo: "transferencia",
+      });
+
+      if (errIn) {
+        toast.error("Erro ao registrar entrada: " + errIn.message);
+        setLoading(false);
+        return;
+      }
+
+      await Promise.all([
+        supabase.rpc("sincronizar_saldo_bancario", { p_conta_bancaria_id: contaBancariaId }),
+        supabase.rpc("sincronizar_saldo_bancario", { p_conta_bancaria_id: contaDestinoId }),
+      ]);
+
+      toast.success("Transferência realizada com sucesso!");
+      setLoading(false);
+      resetForm();
+      onOpenChange(false);
+      onSuccess();
+      return;
+    }
+
+    // entrada / saida
     const bancoLabel = bancos.find(b => b.id === contaBancariaId)?.label || null;
-    const finalValor = tipoValor === "saida" ? -Math.abs(numValor) : Math.abs(numValor);
+    const finalValor = modo === "saida" ? -Math.abs(numValor) : Math.abs(numValor);
 
     const { error } = await supabase.from("movimentacoes").insert({
       empresa_id: profile.empresa_id,
@@ -81,7 +153,6 @@ export function NovaMovimentacaoDialog({ open, onOpenChange, onSuccess }: NovaMo
       return;
     }
 
-    // Sync bank balance if a bank was selected
     if (contaBancariaId) {
       await supabase.rpc("sincronizar_saldo_bancario", { p_conta_bancaria_id: contaBancariaId });
     }
@@ -92,6 +163,8 @@ export function NovaMovimentacaoDialog({ open, onOpenChange, onSuccess }: NovaMo
     onOpenChange(false);
     onSuccess();
   };
+
+  const isTransfer = modo === "transferencia";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -107,42 +180,72 @@ export function NovaMovimentacaoDialog({ open, onOpenChange, onSuccess }: NovaMo
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Tipo</Label>
-              <Select value={tipoValor} onValueChange={(v) => setTipoValor(v as "entrada" | "saida")}>
+              <Select value={modo} onValueChange={(v) => setModo(v as Modo)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="entrada">Entrada</SelectItem>
                   <SelectItem value="saida">Saída</SelectItem>
+                  <SelectItem value="transferencia">Transferência entre contas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">Plano de Contas</Label>
-            <Input value={planoContas} onChange={e => setPlanoContas(e.target.value)} placeholder="Ex: Receita de Serviços" />
-          </div>
+          {!isTransfer && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Plano de Contas</Label>
+              <Input value={planoContas} onChange={e => setPlanoContas(e.target.value)} placeholder="Ex: Receita de Serviços" />
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label className="text-xs">Pessoa</Label>
-            <Input value={pessoa} onChange={e => setPessoa(e.target.value)} placeholder="Nome da pessoa" />
+            <Input value={pessoa} onChange={e => setPessoa(e.target.value)} placeholder="Nome da pessoa (opcional)" />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Complemento</Label>
-            <Input value={complemento} onChange={e => setComplemento(e.target.value)} placeholder="Descrição adicional" />
+            <Label className="text-xs">{isTransfer ? "Descrição" : "Complemento"}</Label>
+            <Input value={complemento} onChange={e => setComplemento(e.target.value)} placeholder={isTransfer ? "Motivo da transferência" : "Descrição adicional"} />
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">Conta Bancária</Label>
-            <Select value={contaBancariaId} onValueChange={setContaBancariaId}>
-              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-              <SelectContent>
-                {bancos.map(b => (
-                  <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {isTransfer ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Conta Origem</Label>
+                <Select value={contaBancariaId} onValueChange={setContaBancariaId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {bancos.map(b => (
+                      <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Conta Destino</Label>
+                <Select value={contaDestinoId} onValueChange={setContaDestinoId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {bancos.filter(b => b.id !== contaBancariaId).map(b => (
+                      <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Conta Bancária</Label>
+              <Select value={contaBancariaId} onValueChange={setContaBancariaId}>
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  {bancos.map(b => (
+                    <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label className="text-xs">Valor (R$)</Label>
