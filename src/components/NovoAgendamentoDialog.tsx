@@ -24,6 +24,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { createContractShareLink } from "@/lib/contract-links";
 import { buildHospedagemContractValues, replaceContractPlaceholders } from "@/lib/contract-placeholders";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { MultiplosAgendamentosPanel, type Estadia } from "@/components/MultiplosAgendamentosPanel";
 
 const schema = z.object({
   cliente_id: z.string().uuid("Selecione um cliente"),
@@ -117,6 +119,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [baias, setBaias] = useState<{ id: string; nome: string; capacidade_pets: number }[]>([]);
   const [clientePopoverOpen, setClientePopoverOpen] = useState(false);
   const [gerarContrato, setGerarContrato] = useState(false);
+  const [mode, setMode] = useState<"unico" | "multiplo">("unico");
+  const [estadias, setEstadias] = useState<Estadia[]>([]);
   const [contratoDialog, setContratoDialog] = useState<{
     open: boolean;
     agendamento: any;
@@ -319,7 +323,143 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   }, [form.watch("valor"), totalExtras, selectedPetIds.length, descontoStr]);
 
   async function onSubmit(data: FormValues) {
+    if (mode === "multiplo") {
+      await executeMultiplo(data);
+      return;
+    }
     await executeSubmit(data, useReplacement);
+  }
+
+  async function executeMultiplo(data: FormValues) {
+    if (!empresaId) {
+      toast({ title: "Erro", description: "Empresa não encontrada.", variant: "destructive" });
+      return;
+    }
+    if (estadias.length === 0) {
+      toast({ title: "Adicione ao menos uma estadia", variant: "destructive" });
+      return;
+    }
+    const invalidas = estadias.filter(e => !e.data_entrada || !e.data_saida);
+    if (invalidas.length > 0) {
+      toast({ title: "Preencha todas as datas das estadias", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const valorPorDiaria = servicoObj?.valor || (data.valor ? parseFloat(data.valor) : 0);
+      const qtdPets = data.pet_ids.length;
+
+      // Cria N agendamentos (um por estadia × pet)
+      const rows: any[] = [];
+      for (const est of estadias) {
+        const dataHora = new Date(est.data_entrada + "T" + est.hora_entrada + ":00");
+        const diff = differenceInCalendarDays(new Date(est.data_saida + "T00:00:00"), new Date(est.data_entrada + "T00:00:00"));
+        const diariasEst = Math.max(diff, 1);
+        const valorEst = valorPorDiaria * diariasEst;
+
+        for (const pet_id of data.pet_ids) {
+          rows.push({
+            empresa_id: empresaId,
+            cliente_id: data.cliente_id,
+            pet_id,
+            tipo_servico: data.tipo_servico,
+            data_hora: dataHora.toISOString(),
+            data_saida_provavel: new Date(est.data_saida + "T" + est.hora_saida + ":00").toISOString(),
+            hora_saida_provavel: est.hora_saida || null,
+            baia: data.baia || null,
+            valor: valorEst,
+            desconto: 0,
+            forma_pagamento: data.forma_pagamento || null,
+            notas: `${data.notas || ""}${data.notas ? " | " : ""}Estadia recorrente (${format(new Date(est.data_entrada + "T00:00:00"), "dd/MM")} → ${format(new Date(est.data_saida + "T00:00:00"), "dd/MM")})`.trim(),
+          });
+        }
+      }
+
+      const { error: errIns } = await supabase.from("agendamentos").insert(rows as any);
+      if (errIns) throw errIns;
+
+      // Fatura única consolidada por pet
+      const isPagPosterior = data.forma_pagamento === "Pagamento Posterior";
+      const primeiraEntrada = estadias.reduce((min, e) => e.data_entrada < min ? e.data_entrada : min, estadias[0].data_entrada);
+      const vencimento = isPagPosterior && data.data_pagamento ? data.data_pagamento : primeiraEntrada;
+
+      const totalDiarias = estadias.reduce((sum, e) => {
+        const diff = differenceInCalendarDays(new Date(e.data_saida + "T00:00:00"), new Date(e.data_entrada + "T00:00:00"));
+        return sum + Math.max(diff, 1);
+      }, 0);
+
+      const extrasACobrar = servicosExtras.filter(e => !e.cortesia && e.valor > 0 && e.descricao);
+      const descontoTotal = data.desconto ? parseFloat(data.desconto) : 0;
+      const descontoPorPet = qtdPets > 0 ? descontoTotal / qtdPets : 0;
+
+      for (let idx = 0; idx < data.pet_ids.length; idx++) {
+        const petName = pets.find(p => p.id === data.pet_ids[idx])?.nome || "Pet";
+        const valorPet = valorPorDiaria * totalDiarias;
+
+        const lineItems: { descricao: string; valor: number; tipo: string }[] = [];
+        if (valorPet > 0) {
+          lineItems.push({
+            descricao: `${data.tipo_servico} — ${petName} (${estadias.length} estadia${estadias.length > 1 ? "s" : ""}, ${totalDiarias} diária${totalDiarias > 1 ? "s" : ""})`,
+            valor: valorPet,
+            tipo: "principal",
+          });
+        }
+        for (const extra of extrasACobrar) {
+          const qtd = extra.quantidade || 1;
+          lineItems.push({ descricao: `${extra.descricao} x${qtd} (extra) — ${petName}`, valor: extra.valor * qtd, tipo: "extra" });
+        }
+        for (const extra of servicosExtras.filter(e => e.cortesia && e.descricao)) {
+          lineItems.push({ descricao: `${extra.descricao} (cortesia) — ${petName}`, valor: 0, tipo: "cortesia" });
+        }
+        if (lineItems.length === 0) continue;
+
+        const totalBruto = lineItems.reduce((s, li) => s + li.valor, 0);
+        const totalFatura = Math.max(totalBruto - descontoPorPet, 0);
+        if (descontoPorPet > 0) {
+          lineItems.push({ descricao: `Desconto — ${petName}`, valor: -descontoPorPet, tipo: "desconto" });
+        }
+
+        const descricaoFatura = `${data.tipo_servico} (${estadias.length}x) — ${petName}`;
+
+        const { data: insertedFatura } = await supabase.from("contas_receber").insert({
+          empresa_id: empresaId,
+          cliente_id: data.cliente_id,
+          descricao: descricaoFatura,
+          valor: totalFatura,
+          vencimento,
+          categoria: data.forma_pagamento || "A definir",
+          status: "pendente",
+        } as any).select("id").single();
+
+        if (insertedFatura?.id && lineItems.length > 0) {
+          await supabase.from("contas_receber_itens" as any).insert(
+            lineItems.map(li => ({
+              conta_receber_id: insertedFatura.id,
+              empresa_id: empresaId,
+              descricao: li.descricao,
+              valor: li.valor,
+              tipo: li.tipo,
+            }))
+          );
+        }
+      }
+
+      toast({
+        title: `${estadias.length} estadia(s) × ${qtdPets} pet(s) = ${rows.length} agendamento(s) criado(s) com 1 fatura consolidada por pet.`,
+      });
+
+      form.reset();
+      setEstadias([]);
+      setServicosExtras([]);
+      setMode("unico");
+      setOpen(false);
+      onSuccess?.();
+    } catch (err: any) {
+      toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function executeSubmit(data: FormValues, useRepl: boolean) {
@@ -807,77 +947,104 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               </div>
             )}
 
-            {/* Row 1: Reserva + Hora Reserva + Saída Prevista + Hr Saída Prevista */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <FormField control={form.control} name="data_reserva" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Reserva *</FormLabel>
-                  <FormControl>
-                    <DatePickerField value={field.value} onChange={field.onChange} placeholder="Data reserva" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="hora_reserva" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora Reserva *</FormLabel>
-                  <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="data_saida_provavel" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data Saída Prevista</FormLabel>
-                  <FormControl>
-                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Data saída prev." />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="hora_saida_provavel" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hr Saída Prevista</FormLabel>
-                  <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
+            {/* Modo: Único / Múltiplas datas */}
+            <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="unico">Data única</TabsTrigger>
+                <TabsTrigger value="multiplo">Múltiplas datas (recorrência)</TabsTrigger>
+              </TabsList>
 
-            {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <FormField control={form.control} name="data_entrada" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data da Entrada</FormLabel>
-                  <FormControl>
-                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Entrada" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="hora_entrada" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora da Entrada</FormLabel>
-                  <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="data_saida" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data da Saída</FormLabel>
-                  <FormControl>
-                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Saída" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="hora_saida" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora da Saída</FormLabel>
-                  <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
+              <TabsContent value="unico" className="space-y-4 mt-4">
+                {/* Row 1: Reserva + Hora Reserva + Saída Prevista + Hr Saída Prevista */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <FormField control={form.control} name="data_reserva" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reserva *</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value} onChange={field.onChange} placeholder="Data reserva" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_reserva" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hora Reserva *</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="data_saida_provavel" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data Saída Prevista</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Data saída prev." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_saida_provavel" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hr Saída Prevista</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+
+                {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <FormField control={form.control} name="data_entrada" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data da Entrada</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Entrada" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_entrada" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hora da Entrada</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="data_saida" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data da Saída</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Saída" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_saida" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hora da Saída</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="multiplo" className="mt-4">
+                <MultiplosAgendamentosPanel
+                  estadias={estadias}
+                  onChange={(novas) => {
+                    setEstadias(novas);
+                    // Sincroniza data_reserva/hora_reserva com a primeira estadia para passar validação Zod
+                    if (novas.length > 0) {
+                      const primeira = [...novas].sort((a, b) => `${a.data_entrada}T${a.hora_entrada}`.localeCompare(`${b.data_entrada}T${b.hora_entrada}`))[0];
+                      form.setValue("data_reserva", primeira.data_entrada, { shouldValidate: true });
+                      form.setValue("hora_reserva", primeira.hora_entrada || "09:00", { shouldValidate: true });
+                    }
+                  }}
+                  valorPorDiaria={servicoObj?.valor || 0}
+                  qtdPets={selectedPetIds.length}
+                />
+              </TabsContent>
+            </Tabs>
 
             {/* Row 3: Quarto + Diárias + Valor */}
             <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-3" : isBanho ? "grid-cols-1 sm:grid-cols-1" : "grid-cols-2")}>
