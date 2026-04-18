@@ -87,7 +87,7 @@ const schema = z.object({
   data_nascimento: z.string().optional().or(z.literal("")),
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
-  cpf: z.string().trim().min(1, "CPF é obrigatório").max(14),
+  cpf: z.string().trim().min(1, "CPF/CNPJ é obrigatório").max(18),
   cep: z.string().trim().max(10).optional().or(z.literal("")),
   endereco: z.string().trim().max(500).optional().or(z.literal("")),
   numero: z.string().trim().max(20).optional().or(z.literal("")),
@@ -289,8 +289,8 @@ export default function CadastroPublicoPage() {
                 )} />
                 <FormField control={form.control} name="cpf" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CPF *</FormLabel>
-                    <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
+                    <FormLabel>CPF/CNPJ *</FormLabel>
+                    <FormControl><Input placeholder="CPF ou CNPJ" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
