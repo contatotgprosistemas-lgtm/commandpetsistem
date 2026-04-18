@@ -19,7 +19,7 @@ import { ClienteTimelineTab } from "@/components/ClienteTimelineTab";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
-  cpf: z.string().trim().max(14).optional().or(z.literal("")),
+  cpf: z.string().trim().max(18).optional().or(z.literal("")),
   data_nascimento: z.string().optional().or(z.literal("")),
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
@@ -147,8 +147,8 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="cpf" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>CPF</FormLabel>
-                      <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
+                      <FormLabel>CPF/CNPJ</FormLabel>
+                      <FormControl><Input placeholder="CPF ou CNPJ" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

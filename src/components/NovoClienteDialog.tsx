@@ -133,8 +133,8 @@ export function NovoClienteDialog({ onSuccess, empresaId: empresaIdProp }: { onS
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="cpf" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>CPF *</FormLabel>
-                  <FormControl><Input placeholder="000.000.000-00" {...field} /></FormControl>
+                  <FormLabel>CPF/CNPJ *</FormLabel>
+                  <FormControl><Input placeholder="CPF ou CNPJ" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
