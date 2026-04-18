@@ -947,77 +947,104 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               </div>
             )}
 
-            {/* Row 1: Reserva + Hora Reserva + Saída Prevista + Hr Saída Prevista */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <FormField control={form.control} name="data_reserva" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Reserva *</FormLabel>
-                  <FormControl>
-                    <DatePickerField value={field.value} onChange={field.onChange} placeholder="Data reserva" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="hora_reserva" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora Reserva *</FormLabel>
-                  <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="data_saida_provavel" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data Saída Prevista</FormLabel>
-                  <FormControl>
-                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Data saída prev." />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="hora_saida_provavel" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hr Saída Prevista</FormLabel>
-                  <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
+            {/* Modo: Único / Múltiplas datas */}
+            <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="unico">Data única</TabsTrigger>
+                <TabsTrigger value="multiplo">Múltiplas datas (recorrência)</TabsTrigger>
+              </TabsList>
 
-            {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <FormField control={form.control} name="data_entrada" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data da Entrada</FormLabel>
-                  <FormControl>
-                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Entrada" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="hora_entrada" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora da Entrada</FormLabel>
-                  <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="data_saida" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data da Saída</FormLabel>
-                  <FormControl>
-                    <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Saída" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="hora_saida" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora da Saída</FormLabel>
-                  <FormControl><Input type="time" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
+              <TabsContent value="unico" className="space-y-4 mt-4">
+                {/* Row 1: Reserva + Hora Reserva + Saída Prevista + Hr Saída Prevista */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <FormField control={form.control} name="data_reserva" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reserva *</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value} onChange={field.onChange} placeholder="Data reserva" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_reserva" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hora Reserva *</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="data_saida_provavel" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data Saída Prevista</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Data saída prev." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_saida_provavel" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hr Saída Prevista</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+
+                {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <FormField control={form.control} name="data_entrada" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data da Entrada</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Entrada" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_entrada" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hora da Entrada</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="data_saida" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data da Saída</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Saída" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_saida" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hora da Saída</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="multiplo" className="mt-4">
+                <MultiplosAgendamentosPanel
+                  estadias={estadias}
+                  onChange={(novas) => {
+                    setEstadias(novas);
+                    // Sincroniza data_reserva/hora_reserva com a primeira estadia para passar validação Zod
+                    if (novas.length > 0) {
+                      const primeira = [...novas].sort((a, b) => `${a.data_entrada}T${a.hora_entrada}`.localeCompare(`${b.data_entrada}T${b.hora_entrada}`))[0];
+                      form.setValue("data_reserva", primeira.data_entrada, { shouldValidate: true });
+                      form.setValue("hora_reserva", primeira.hora_entrada || "09:00", { shouldValidate: true });
+                    }
+                  }}
+                  valorPorDiaria={servicoObj?.valor || 0}
+                  qtdPets={selectedPetIds.length}
+                />
+              </TabsContent>
+            </Tabs>
 
             {/* Row 3: Quarto + Diárias + Valor */}
             <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-3" : isBanho ? "grid-cols-1 sm:grid-cols-1" : "grid-cols-2")}>
