@@ -24,6 +24,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { createContractShareLink } from "@/lib/contract-links";
 import { buildHospedagemContractValues, replaceContractPlaceholders } from "@/lib/contract-placeholders";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { MultiplosAgendamentosPanel, type Estadia } from "@/components/MultiplosAgendamentosPanel";
 
 const schema = z.object({
   cliente_id: z.string().uuid("Selecione um cliente"),
