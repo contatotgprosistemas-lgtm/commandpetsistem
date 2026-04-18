@@ -17,7 +17,7 @@ import { resolveEmpresaId } from "@/lib/empresa";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
-  cpf: z.string().trim().min(1, "CPF é obrigatório").max(14),
+  cpf: z.string().trim().min(1, "CPF/CNPJ é obrigatório").max(18),
   data_nascimento: z.string().optional().or(z.literal("")),
   whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
