@@ -87,17 +87,17 @@ export function NfseDocumentos({ empresaId }: Props) {
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div>
         ) : (
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
+          <div className="rounded-md border">
+            <Table className="text-xs">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Número</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="px-2 whitespace-nowrap">Data</TableHead>
+                  <TableHead className="px-2">Cliente</TableHead>
+                  <TableHead className="px-2">Descrição</TableHead>
+                  <TableHead className="px-2">Nº</TableHead>
+                  <TableHead className="px-2 text-right whitespace-nowrap">Valor</TableHead>
+                  <TableHead className="px-2">Status</TableHead>
+                  <TableHead className="px-2 text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -105,34 +105,34 @@ export function NfseDocumentos({ empresaId }: Props) {
                   <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Nenhuma nota emitida ainda</TableCell></TableRow>
                 ) : docs.map((d: any) => (
                   <TableRow key={d.id}>
-                    <TableCell>{d.created_at ? format(new Date(d.created_at), "dd/MM/yyyy HH:mm") : "-"}</TableCell>
-                    <TableCell>{d.clientes?.nome || d.tomador_nome || "-"}</TableCell>
-                    <TableCell className="max-w-[260px] truncate">{d.descricao}</TableCell>
-                    <TableCell>{d.numero || "—"}</TableCell>
-                    <TableCell className="text-right">R$ {Number(d.valor_servico).toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[d.status] || "outline"}>{d.status}</Badge>
+                    <TableCell className="px-2 whitespace-nowrap">{d.created_at ? format(new Date(d.created_at), "dd/MM/yy HH:mm") : "-"}</TableCell>
+                    <TableCell className="px-2 max-w-[120px] truncate">{d.clientes?.nome || d.tomador_nome || "-"}</TableCell>
+                    <TableCell className="px-2 max-w-[160px] truncate">{d.descricao}</TableCell>
+                    <TableCell className="px-2">{d.numero || "—"}</TableCell>
+                    <TableCell className="px-2 text-right whitespace-nowrap">R$ {Number(d.valor_servico).toFixed(2)}</TableCell>
+                    <TableCell className="px-2">
+                      <Badge variant={STATUS_VARIANT[d.status] || "outline"} className="text-[10px]">{d.status}</Badge>
                       {d.erro_mensagem && (
-                        <div className="text-xs text-destructive mt-1 max-w-[220px] truncate" title={d.erro_mensagem}>{d.erro_mensagem}</div>
+                        <div className="text-[10px] text-destructive mt-1 max-w-[140px] truncate" title={d.erro_mensagem}>{d.erro_mensagem}</div>
                       )}
                     </TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button size="icon" variant="ghost" disabled={busyId === d.id} onClick={() => consultar(d.id)} title="Atualizar status">
-                        {busyId === d.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    <TableCell className="px-2 text-right whitespace-nowrap">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" disabled={busyId === d.id} onClick={() => consultar(d.id)} title="Atualizar status">
+                        {busyId === d.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                       </Button>
                       {d.link_visualizacao && (
-                        <Button size="icon" variant="ghost" asChild title="Visualizar">
-                          <a href={d.link_visualizacao} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" asChild title="Visualizar">
+                          <a href={d.link_visualizacao} target="_blank" rel="noreferrer"><ExternalLink className="h-3.5 w-3.5" /></a>
                         </Button>
                       )}
                       {d.pdf_url && (
-                        <Button size="icon" variant="ghost" asChild title="PDF">
-                          <a href={d.pdf_url} target="_blank" rel="noreferrer"><Download className="h-4 w-4" /></a>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" asChild title="PDF">
+                          <a href={d.pdf_url} target="_blank" rel="noreferrer"><Download className="h-3.5 w-3.5" /></a>
                         </Button>
                       )}
                       {d.status !== "cancelada" && d.asaas_nfse_id && (
-                        <Button size="icon" variant="ghost" onClick={() => cancelar(d.id)} title="Cancelar">
-                          <Ban className="h-4 w-4 text-destructive" />
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cancelar(d.id)} title="Cancelar">
+                          <Ban className="h-3.5 w-3.5 text-destructive" />
                         </Button>
                       )}
                     </TableCell>

@@ -86,16 +86,16 @@ export function NfseEmissaoLista({ empresaId }: Props) {
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div>
         ) : (
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
+          <div className="rounded-md border">
+            <Table className="text-xs">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Pago em</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>NFS-e</TableHead>
-                  <TableHead className="text-right">Ação</TableHead>
+                  <TableHead className="px-2">Cliente</TableHead>
+                  <TableHead className="px-2">Descrição</TableHead>
+                  <TableHead className="px-2 whitespace-nowrap">Pago em</TableHead>
+                  <TableHead className="px-2 text-right whitespace-nowrap">Valor</TableHead>
+                  <TableHead className="px-2">NFS-e</TableHead>
+                  <TableHead className="px-2 text-right">Ação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -103,24 +103,25 @@ export function NfseEmissaoLista({ empresaId }: Props) {
                   <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Nenhuma fatura paga</TableCell></TableRow>
                 ) : filtradas.map((c: any) => (
                   <TableRow key={c.id}>
-                    <TableCell>{c.clientes?.nome || "-"}</TableCell>
-                    <TableCell className="max-w-[280px] truncate">{c.descricao}</TableCell>
-                    <TableCell>{c.data_baixa ? format(new Date(c.data_baixa), "dd/MM/yyyy") : "-"}</TableCell>
-                    <TableCell className="text-right">R$ {Number(c.valor_pago ?? c.valor).toFixed(2)}</TableCell>
-                    <TableCell>
-                      {c.nfse_status ? <Badge variant="outline">{c.nfse_status}</Badge> : <span className="text-xs text-muted-foreground">—</span>}
+                    <TableCell className="px-2 max-w-[140px] truncate">{c.clientes?.nome || "-"}</TableCell>
+                    <TableCell className="px-2 max-w-[180px] truncate">{c.descricao}</TableCell>
+                    <TableCell className="px-2 whitespace-nowrap">{c.data_baixa ? format(new Date(c.data_baixa), "dd/MM/yy") : "-"}</TableCell>
+                    <TableCell className="px-2 text-right whitespace-nowrap">R$ {Number(c.valor_pago ?? c.valor).toFixed(2)}</TableCell>
+                    <TableCell className="px-2">
+                      {c.nfse_status ? <Badge variant="outline" className="text-[10px]">{c.nfse_status}</Badge> : <span className="text-muted-foreground">—</span>}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="px-2 text-right">
                       <Button
                         size="sm"
                         variant={c.nfse_status ? "outline" : "default"}
                         disabled={emitindoId === c.id}
                         onClick={() => emitir(c.id)}
+                        className="h-7 px-2"
                       >
                         {emitindoId === c.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <Loader2 className="h-3 w-3 animate-spin" />
                         ) : (
-                          <><FileText className="h-3.5 w-3.5 mr-1" /> {c.nfse_status ? "Reemitir" : "Emitir NF"}</>
+                          <><FileText className="h-3 w-3 mr-1" /> {c.nfse_status ? "Reemitir" : "Emitir"}</>
                         )}
                       </Button>
                     </TableCell>
