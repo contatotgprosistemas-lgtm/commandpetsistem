@@ -21,6 +21,7 @@ export function NovaMovimentacaoDialog({ open, onOpenChange, onSuccess }: NovaMo
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [bancos, setBancos] = useState<{ id: string; label: string }[]>([]);
+  const [planoContasOpts, setPlanoContasOpts] = useState<{ nome: string; tipo: string }[]>([]);
 
   const [dataMov, setDataMov] = useState(() => new Date().toISOString().split("T")[0]);
   const [planoContas, setPlanoContas] = useState("");
@@ -41,7 +42,29 @@ export function NovaMovimentacaoDialog({ open, onOpenChange, onSuccess }: NovaMo
       .then(({ data }) => {
         if (data) setBancos(data.map((b: any) => ({ id: b.id, label: `${b.banco} - ${b.titular}` })));
       });
+
+    // Buscar plano de contas (items + tipo da categoria)
+    supabase
+      .from("plano_contas_items")
+      .select("nome, ativo, plano_contas_categorias!inner(tipo, empresa_id)")
+      .eq("plano_contas_categorias.empresa_id", profile.empresa_id)
+      .eq("ativo", true)
+      .order("nome")
+      .then(({ data }) => {
+        if (data) {
+          setPlanoContasOpts(
+            (data as any[]).map(d => ({
+              nome: d.nome,
+              tipo: d.plano_contas_categorias?.tipo,
+            }))
+          );
+        }
+      });
   }, [open, profile?.empresa_id]);
+
+  const filteredPlanoContas = planoContasOpts.filter(p =>
+    modo === "entrada" ? p.tipo === "receita" : modo === "saida" ? p.tipo === "despesa" : true
+  );
 
   const resetForm = () => {
     setDataMov(new Date().toISOString().split("T")[0]);
@@ -194,7 +217,20 @@ export function NovaMovimentacaoDialog({ open, onOpenChange, onSuccess }: NovaMo
           {!isTransfer && (
             <div className="space-y-1.5">
               <Label className="text-xs">Plano de Contas</Label>
-              <Input value={planoContas} onChange={e => setPlanoContas(e.target.value)} placeholder="Ex: Receita de Serviços" />
+              <Select value={planoContas} onValueChange={setPlanoContas}>
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  {filteredPlanoContas.length === 0 ? (
+                    <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                      Nenhuma conta cadastrada. Cadastre em Financeiro › Plano de Contas.
+                    </div>
+                  ) : (
+                    filteredPlanoContas.map(p => (
+                      <SelectItem key={p.nome} value={p.nome}>{p.nome}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
