@@ -20,7 +20,7 @@ export default function NotasFiscaisPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
+    <div className="p-4 md:p-6 space-y-4 w-full max-w-full overflow-x-hidden">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Notas Fiscais (NFS-e)</h1>
         <p className="text-muted-foreground text-sm">
