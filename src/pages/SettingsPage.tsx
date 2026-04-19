@@ -707,11 +707,42 @@ function AsaasIntegrationPanel() {
     } else {
       ({ error } = await supabase.from("asaas_contas").insert(payload));
     }
+
+    // Replicar/atualizar conta bancária correspondente em Financeiro
+    if (!error) {
+      try {
+        const { data: existente } = await supabase
+          .from("contas_bancarias")
+          .select("id")
+          .eq("empresa_id", profile.empresa_id)
+          .eq("banco", "Asaas")
+          .ilike("titular", form.label)
+          .maybeSingle();
+
+        if (existente?.id) {
+          await supabase
+            .from("contas_bancarias")
+            .update({ titular: form.label, banco: "Asaas" })
+            .eq("id", existente.id);
+        } else {
+          await supabase.from("contas_bancarias").insert({
+            empresa_id: profile.empresa_id,
+            titular: form.label,
+            banco: "Asaas",
+            saldo_inicial: 0,
+            saldo_atual: 0,
+          });
+        }
+      } catch (e) {
+        console.warn("Falha ao replicar conta bancária:", e);
+      }
+    }
+
     setSaving(false);
     if (error) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: editId ? "Conta atualizada!" : "Conta cadastrada!" });
+      toast({ title: editId ? "Conta atualizada!" : "Conta cadastrada e replicada no Financeiro!" });
       setDialogOpen(false);
       fetchContas();
     }
