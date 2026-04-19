@@ -203,7 +203,7 @@ export function NovaMovimentacaoDialog({ open, onOpenChange, onSuccess }: NovaMo
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Tipo</Label>
-              <Select value={modo} onValueChange={(v) => setModo(v as Modo)}>
+              <Select value={modo} onValueChange={(v) => { setModo(v as Modo); setPlanoContas(""); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="entrada">Entrada</SelectItem>
