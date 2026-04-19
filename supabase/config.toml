@@ -15,9 +15,6 @@ verify_jwt = false
 [functions.contract-pdf]
 verify_jwt = false
 
-[functions.focus-nfe]
-verify_jwt = false
-
 [functions.sign-contract]
 verify_jwt = false
 
