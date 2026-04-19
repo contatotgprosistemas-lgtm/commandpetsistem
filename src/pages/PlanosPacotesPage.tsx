@@ -138,14 +138,42 @@ export default function PlanosPacotesPage() {
 
   async function handleFaturar(sub: any) {
     const planName = plans.find((p: any) => p.id === sub.plan_id)?.name || packages.find((p: any) => p.id === sub.package_id)?.name || "Plano/Pacote";
+
+    // Buscar dia de vencimento do cliente
+    const { data: cliente } = await supabase
+      .from("clientes")
+      .select("dia_vencimento_fatura")
+      .eq("id", sub.cliente_id)
+      .maybeSingle();
+
+    const hoje = new Date();
+    let vencimento = hoje;
+    const diaVenc = cliente?.dia_vencimento_fatura;
+    if (diaVenc && diaVenc >= 1 && diaVenc <= 31) {
+      const ano = hoje.getFullYear();
+      const mes = hoje.getMonth();
+      // Dia neste mês (clamped ao último dia)
+      const ultimoDiaMesAtual = new Date(ano, mes + 1, 0).getDate();
+      const diaEsteMes = Math.min(diaVenc, ultimoDiaMesAtual);
+      const dataEsteMes = new Date(ano, mes, diaEsteMes);
+      if (dataEsteMes >= new Date(ano, mes, hoje.getDate())) {
+        vencimento = dataEsteMes;
+      } else {
+        // Já passou — próximo mês
+        const ultimoDiaMesProx = new Date(ano, mes + 2, 0).getDate();
+        const diaProxMes = Math.min(diaVenc, ultimoDiaMesProx);
+        vencimento = new Date(ano, mes + 1, diaProxMes);
+      }
+    }
+
     const { error } = await supabase.from("contas_receber").insert({
       empresa_id: empresaId, cliente_id: sub.cliente_id,
       descricao: `Fatura manual: ${planName}`,
-      valor: sub.final_price, vencimento: format(new Date(), "yyyy-MM-dd"),
+      valor: sub.final_price, vencimento: format(vencimento, "yyyy-MM-dd"),
       status: "pendente", categoria: "Planos e Pacotes"
     });
     if (error) { toast.error("Erro ao gerar fatura"); return; }
-    toast.success("Fatura gerada com sucesso!");
+    toast.success(`Fatura gerada — vencimento ${format(vencimento, "dd/MM/yyyy")}`);
   }
 
   // Dashboard metrics
