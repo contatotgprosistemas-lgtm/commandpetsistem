@@ -126,7 +126,7 @@ export default function FinancePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
               {contasBancarias.map((cb: any) => (
                 <div key={cb.id} className="bg-primary rounded-lg p-5 text-primary-foreground">
-                  <p className="text-sm font-medium opacity-90">Saldo {cb.banco}</p>
+                  <p className="text-sm font-medium opacity-90">Saldo {cb.titular}</p>
                   <p className="text-2xl font-bold mt-1">
                     R$ {Number(cb.saldo_atual).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </p>
