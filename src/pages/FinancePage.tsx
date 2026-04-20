@@ -285,6 +285,13 @@ export default function FinancePage() {
         conta={editConta}
       />
 
+      <EditarContaBancariaDialog
+        open={!!editContaBancaria}
+        onOpenChange={(o) => { if (!o) setEditContaBancaria(null); }}
+        onSuccess={() => { setEditContaBancaria(null); fetchContasBancarias(); }}
+        conta={editContaBancaria}
+      />
+
       <DividirFaturaDialog
         open={!!dividirConta}
         onOpenChange={(o) => { if (!o) setDividirConta(null); }}
