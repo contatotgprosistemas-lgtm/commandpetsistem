@@ -24,6 +24,7 @@ import PlanoContasPage from "@/pages/PlanoContasPage";
 import { ImportContasReceberDialog } from "@/components/ImportContasReceberDialog";
 import { ImportContasPagarDialog } from "@/components/ImportContasPagarDialog";
 import { EditarContaReceberDialog } from "@/components/EditarContaReceberDialog";
+import { EditarContaBancariaDialog } from "@/components/EditarContaBancariaDialog";
 import { DividirFaturaDialog } from "@/components/DividirFaturaDialog";
 import { SplitSquareVertical } from "lucide-react";
 import FinanceConfigPage from "@/pages/FinanceConfigPage";
