@@ -125,6 +125,16 @@ export default function FinancePage() {
 
         <TabsContent value="contas-bancárias">
           {contasBancarias.length > 0 && (
+            <>
+            <div className="bg-card border border-border rounded-lg p-5 mt-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Saldo Total</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Soma de todas as contas bancárias</p>
+              </div>
+              <p className="font-mono-tabular text-2xl font-semibold text-foreground">
+                R$ {contasBancarias.reduce((sum: number, cb: any) => sum + Number(cb.saldo_atual), 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
               {contasBancarias.map((cb: any) => {
                 const saldo = Number(cb.saldo_atual);
@@ -168,6 +178,7 @@ export default function FinancePage() {
                 );
               })}
             </div>
+            </>
           )}
           <div className="flex items-center justify-between mt-4 mb-2">
             <h2 className="text-sm font-medium text-foreground">Contas Bancárias</h2>
