@@ -65,6 +65,7 @@ export default function FinancePage() {
   const [importPagarOpen, setImportPagarOpen] = useState(false);
 
   const [editConta, setEditConta] = useState<ContaReceber | null>(null);
+  const [editContaBancaria, setEditContaBancaria] = useState<any | null>(null);
   const [dividirConta, setDividirConta] = useState<ContaReceber | null>(null);
 
   async function fetchContas() {
