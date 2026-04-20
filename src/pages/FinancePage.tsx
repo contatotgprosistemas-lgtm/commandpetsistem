@@ -24,6 +24,7 @@ import PlanoContasPage from "@/pages/PlanoContasPage";
 import { ImportContasReceberDialog } from "@/components/ImportContasReceberDialog";
 import { ImportContasPagarDialog } from "@/components/ImportContasPagarDialog";
 import { EditarContaReceberDialog } from "@/components/EditarContaReceberDialog";
+import { EditarContaBancariaDialog } from "@/components/EditarContaBancariaDialog";
 import { DividirFaturaDialog } from "@/components/DividirFaturaDialog";
 import { SplitSquareVertical } from "lucide-react";
 import FinanceConfigPage from "@/pages/FinanceConfigPage";
@@ -64,6 +65,7 @@ export default function FinancePage() {
   const [importPagarOpen, setImportPagarOpen] = useState(false);
 
   const [editConta, setEditConta] = useState<ContaReceber | null>(null);
+  const [editContaBancaria, setEditContaBancaria] = useState<any | null>(null);
   const [dividirConta, setDividirConta] = useState<ContaReceber | null>(null);
 
   async function fetchContas() {
@@ -124,14 +126,47 @@ export default function FinancePage() {
         <TabsContent value="contas-bancárias">
           {contasBancarias.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-              {contasBancarias.map((cb: any) => (
-                <div key={cb.id} className="bg-primary rounded-lg p-5 text-primary-foreground">
-                  <p className="text-sm font-medium opacity-90">Saldo {cb.titular}</p>
-                  <p className="text-2xl font-bold mt-1">
-                    R$ {Number(cb.saldo_atual).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-              ))}
+              {contasBancarias.map((cb: any) => {
+                const saldo = Number(cb.saldo_atual);
+                const podeExcluir = Math.abs(saldo) < 0.01;
+                return (
+                  <div key={cb.id} className="bg-primary rounded-lg p-5 text-primary-foreground relative">
+                    <div className="flex items-start justify-between">
+                      <p className="text-sm font-medium opacity-90 pr-2">Saldo {cb.titular}</p>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-1 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditContaBancaria(cb)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            disabled={!podeExcluir}
+                            onClick={async () => {
+                              if (!podeExcluir) return;
+                              if (!confirm(`Excluir conta "${cb.titular}"? O histórico de movimentações será mantido.`)) return;
+                              const { error } = await supabase.from("contas_bancarias").delete().eq("id", cb.id);
+                              if (error) { toast.error("Erro ao excluir: " + error.message); return; }
+                              toast.success("Conta excluída");
+                              fetchContasBancarias();
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            {podeExcluir ? "Excluir" : "Excluir (saldo ≠ 0)"}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <p className="text-2xl font-bold mt-1">
+                      R$ {saldo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           )}
           <div className="flex items-center justify-between mt-4 mb-2">
@@ -248,6 +283,13 @@ export default function FinancePage() {
         onOpenChange={(o) => { if (!o) setEditConta(null); }}
         onSuccess={() => { setEditConta(null); fetchContas(); }}
         conta={editConta}
+      />
+
+      <EditarContaBancariaDialog
+        open={!!editContaBancaria}
+        onOpenChange={(o) => { if (!o) setEditContaBancaria(null); }}
+        onSuccess={() => { setEditContaBancaria(null); fetchContasBancarias(); }}
+        conta={editContaBancaria}
       />
 
       <DividirFaturaDialog
