@@ -94,6 +94,19 @@ async function processPayment(supabase: any, conta: any, payment: any, valorIndi
   const today = new Date().toISOString().split("T")[0];
   const valorPago = valorIndividual ?? payment.value ?? conta.valor;
 
+  // Resolve which Asaas account processed this payment
+  let asaasContaLabel: string | null = null;
+  if (conta.asaas_conta_id) {
+    const { data: ac } = await supabase
+      .from("asaas_contas")
+      .select("label")
+      .eq("id", conta.asaas_conta_id)
+      .maybeSingle();
+    asaasContaLabel = ac?.label ?? null;
+  }
+
+  const bancoLabel = asaasContaLabel ? `PIX - ${asaasContaLabel}` : "PIX - Asaas";
+
   // Update invoice as paid
   await supabase
     .from("contas_receber")
@@ -101,19 +114,29 @@ async function processPayment(supabase: any, conta: any, payment: any, valorIndi
       status: "pago",
       data_baixa: today,
       valor_pago: valorPago,
-      banco: "PIX - Asaas",
+      banco: bancoLabel,
       observacao_baixa: `Pagamento PIX confirmado. ID: ${payment.id}`,
     })
     .eq("id", conta.id);
 
-  // Find the Asaas bank account (prefer bank with "asaas" in name, fallback to first)
+  // Find the matching bank account: prefer exact match by titular = label da conta Asaas
   const { data: bancos } = await supabase
     .from("contas_bancarias")
-    .select("id, saldo_atual, banco")
-    .eq("empresa_id", conta.empresa_id)
-    .order("banco");
+    .select("id, saldo_atual, banco, titular")
+    .eq("empresa_id", conta.empresa_id);
 
-  const banco = bancos?.find((b: any) => b.banco.toLowerCase().includes("asaas")) || bancos?.[0] || null;
+  let banco: any = null;
+  if (asaasContaLabel) {
+    banco = bancos?.find(
+      (b: any) =>
+        b.banco?.toLowerCase() === "asaas" &&
+        b.titular?.toLowerCase() === asaasContaLabel!.toLowerCase()
+    );
+  }
+  // Fallback: any Asaas bank account, then first
+  if (!banco) {
+    banco = bancos?.find((b: any) => b.banco?.toLowerCase().includes("asaas")) || bancos?.[0] || null;
+  }
 
   if (banco) {
     // Get client name for movimentacao
@@ -129,8 +152,8 @@ async function processPayment(supabase: any, conta: any, payment: any, valorIndi
       data_movimentacao: today,
       plano_contas: conta.categoria || conta.descricao,
       pessoa: cliente?.nome || "Cliente",
-      complemento: `${conta.descricao} (PIX Asaas)`,
-      banco: "PIX - Asaas",
+      complemento: `${conta.descricao} (${bancoLabel})`,
+      banco: bancoLabel,
       valor: valorPago,
       tipo: "contas_a_receber",
       conta_receber_id: conta.id,
@@ -141,5 +164,5 @@ async function processPayment(supabase: any, conta: any, payment: any, valorIndi
     await supabase.rpc("sincronizar_saldo_bancario", { p_conta_bancaria_id: banco.id });
   }
 
-  console.log(`Payment processed: Invoice ${conta.id}, Value: ${valorPago}`);
+  console.log(`Payment processed: Invoice ${conta.id}, Value: ${valorPago}, Account: ${asaasContaLabel ?? "default"}`);
 }
