@@ -73,6 +73,8 @@ Deno.serve(async (req) => {
       .order("prioridade", { ascending: true });
 
     let ASAAS_API_KEY: string | null = null;
+    let ASAAS_CONTA_ID: string | null = null;
+    let ASAAS_CONTA_LABEL: string | null = null;
 
     if (asaasContas && asaasContas.length > 0) {
       const now = new Date();
@@ -83,6 +85,8 @@ Deno.serve(async (req) => {
       for (const ac of asaasContas) {
         if (!ac.teto_mensal) {
           ASAAS_API_KEY = ac.api_key;
+          ASAAS_CONTA_ID = ac.id;
+          ASAAS_CONTA_LABEL = ac.label;
           break;
         }
 
@@ -121,13 +125,18 @@ Deno.serve(async (req) => {
 
         if (totalReceived + totalValue <= ac.teto_mensal) {
           ASAAS_API_KEY = ac.api_key;
+          ASAAS_CONTA_ID = ac.id;
+          ASAAS_CONTA_LABEL = ac.label;
           break;
         }
       }
 
       if (!ASAAS_API_KEY) {
-        ASAAS_API_KEY = asaasContas[asaasContas.length - 1].api_key;
-        console.log(`All accounts exceeded cap, using last account: "${asaasContas[asaasContas.length - 1].label}"`);
+        const last = asaasContas[asaasContas.length - 1];
+        ASAAS_API_KEY = last.api_key;
+        ASAAS_CONTA_ID = last.id;
+        ASAAS_CONTA_LABEL = last.label;
+        console.log(`All accounts exceeded cap, using last account: "${last.label}"`);
       }
     } else {
       ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY") || null;
@@ -222,11 +231,11 @@ Deno.serve(async (req) => {
     const paymentData = await paymentRes.json();
     if (!paymentRes.ok) throw new Error(`Asaas payment error: ${JSON.stringify(paymentData)}`);
 
-    // Save asaas_payment_id on all invoices
+    // Save asaas_payment_id and asaas_conta_id on all invoices
     for (const c of unpaidContas) {
       await serviceSupabase
         .from("contas_receber")
-        .update({ asaas_payment_id: paymentData.id })
+        .update({ asaas_payment_id: paymentData.id, asaas_conta_id: ASAAS_CONTA_ID })
         .eq("id", c.id);
     }
 
