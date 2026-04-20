@@ -1019,6 +1019,7 @@ export type Database = {
       }
       contas_receber: {
         Row: {
+          asaas_conta_id: string | null
           asaas_payment_id: string | null
           banco: string | null
           categoria: string | null
@@ -1039,6 +1040,7 @@ export type Database = {
           vencimento: string
         }
         Insert: {
+          asaas_conta_id?: string | null
           asaas_payment_id?: string | null
           banco?: string | null
           categoria?: string | null
@@ -1059,6 +1061,7 @@ export type Database = {
           vencimento: string
         }
         Update: {
+          asaas_conta_id?: string | null
           asaas_payment_id?: string | null
           banco?: string | null
           categoria?: string | null
@@ -1079,6 +1082,13 @@ export type Database = {
           vencimento?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contas_receber_asaas_conta_id_fkey"
+            columns: ["asaas_conta_id"]
+            isOneToOne: false
+            referencedRelation: "asaas_contas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contas_receber_cliente_id_fkey"
             columns: ["cliente_id"]
