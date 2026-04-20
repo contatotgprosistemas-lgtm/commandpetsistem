@@ -231,11 +231,11 @@ Deno.serve(async (req) => {
     const paymentData = await paymentRes.json();
     if (!paymentRes.ok) throw new Error(`Asaas payment error: ${JSON.stringify(paymentData)}`);
 
-    // Save asaas_payment_id on all invoices
+    // Save asaas_payment_id and asaas_conta_id on all invoices
     for (const c of unpaidContas) {
       await serviceSupabase
         .from("contas_receber")
-        .update({ asaas_payment_id: paymentData.id })
+        .update({ asaas_payment_id: paymentData.id, asaas_conta_id: ASAAS_CONTA_ID })
         .eq("id", c.id);
     }
 
