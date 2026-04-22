@@ -33,7 +33,12 @@ function MenuNode({ id, data, selected }: NodeProps) {
         if (edge.source !== id || !edge.sourceHandle?.startsWith('option-')) return edge;
         const optionIndex = Number(edge.sourceHandle.replace('option-', ''));
         if (Number.isNaN(optionIndex) || optionIndex < idx) return edge;
-        return { ...edge, sourceHandle: `option-${optionIndex - 1}` };
+        const nextHandle = `option-${optionIndex - 1}`;
+        return {
+          ...edge,
+          id: `${edge.source}:${nextHandle}:${edge.target}`,
+          sourceHandle: nextHandle,
+        };
       }));
   }, [id, options, setEdges, update]);
 
