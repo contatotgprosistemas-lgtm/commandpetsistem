@@ -423,6 +423,66 @@ export default function KanbanPage() {
           })}
         </div>
       </div>
+
+      {/* Edit Card Dialog */}
+      <Dialog open={!!editItem} onOpenChange={(o) => !o && setEditItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Card • {editItem?.cliente?.nome ?? ""}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Etapa</label>
+              <Select value={editEstagio} onValueChange={setEditEstagio}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {KANBAN_STAGES.map(s => (
+                    <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Valor Estimado (R$)</label>
+              <Input
+                type="number"
+                value={editValor}
+                onChange={e => setEditValor(e.target.value)}
+                placeholder="0,00"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Notas</label>
+              <Textarea
+                value={editNotas}
+                onChange={e => setEditNotas(e.target.value)}
+                placeholder="Anotações sobre este lead..."
+                rows={3}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => editItem && deleteItem.mutate(editItem.id)}
+                disabled={deleteItem.isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Remover
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEditItem(null)}>Cancelar</Button>
+                <Button size="sm" onClick={() => updateItem.mutate()} disabled={updateItem.isPending}>
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
