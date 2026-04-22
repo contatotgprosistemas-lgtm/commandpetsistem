@@ -249,6 +249,17 @@ export default function Dashboard() {
   }
 
   async function handleCheckout(item: Agendamento) {
+    // Hotel: if there's a previsão de saída, ask user what to do when antecipated/late
+    if (isHotelService(item.tipo_servico) && item.data_saida_provavel) {
+      const prev = new Date(item.data_saida_provavel);
+      const today = new Date();
+      const prevDay = new Date(prev.getFullYear(), prev.getMonth(), prev.getDate());
+      const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      if (prevDay.getTime() !== todayDay.getTime()) {
+        setHotelCheckoutOpen(item);
+        return;
+      }
+    }
     const now = new Date();
     const horaSaida = format(now, "HH:mm");
     const { error } = await supabase.from("agendamentos").update({
