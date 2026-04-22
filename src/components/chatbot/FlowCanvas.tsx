@@ -66,6 +66,48 @@ const edgeDefaults = {
   style: { strokeWidth: 1.5, stroke: 'hsl(var(--muted-foreground))' },
 };
 
+const buildEdgeId = (source: string, target: string, sourceHandle?: string | null) =>
+  `${source}:${sourceHandle ?? 'default'}:${target}`;
+
+const createFlowEdge = (source: string, target: string, sourceHandle?: string | null): Edge => ({
+  id: buildEdgeId(source, target, sourceHandle),
+  source,
+  target,
+  ...(sourceHandle ? { sourceHandle } : {}),
+  ...edgeDefaults,
+});
+
+const getStepConfig = (step: any): Record<string, any> => {
+  if (!step?.condition_config || typeof step.condition_config !== 'object' || Array.isArray(step.condition_config)) {
+    return {};
+  }
+
+  return step.condition_config as Record<string, any>;
+};
+
+const getNodeDataFromStep = (step: any) => {
+  const config = getStepConfig(step);
+  const baseData = {
+    message: step.message || '',
+    options: Array.isArray(step.options) ? step.options : [],
+    delay_seconds: step.delay_seconds || 0,
+    step_type: step.step_type,
+    db_id: step.id,
+  };
+
+  if (step.step_type === 'condition') {
+    return {
+      ...baseData,
+      condition_config: config,
+    };
+  }
+
+  return {
+    ...baseData,
+    ...config,
+  };
+};
+
 type Props = {
   flowId: string;
   flowName: string;
@@ -158,22 +200,38 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
           x: step.position_x !== undefined && step.position_x !== 0 ? step.position_x : 300,
           y: step.position_y !== undefined && step.position_y !== 0 ? step.position_y : (idx + 1) * 220,
         },
-        data: {
-          message: step.message,
-          options: step.options || [],
-          delay_seconds: step.delay_seconds || 0,
-          condition_config: step.condition_config || {},
-          step_type: step.step_type,
-          db_id: step.id,
-        },
+        data: getNodeDataFromStep(step),
       });
 
       if (idx === 0) {
-        flowEdges.push({ id: `start-${step.id}`, source: 'start', target: step.id, ...edgeDefaults });
+        flowEdges.push(createFlowEdge('start', step.id));
       }
 
-      if (step.next_step_id) {
-        flowEdges.push({ id: `${step.id}-${step.next_step_id}`, source: step.id, target: step.next_step_id, ...edgeDefaults });
+      const config = getStepConfig(step);
+
+      if (nodeType === 'menu') {
+        const options = Array.isArray(step.options) ? step.options : [];
+        options.forEach((option: any, optionIndex: number) => {
+          if (option?.next_step_id) {
+            flowEdges.push(createFlowEdge(step.id, option.next_step_id, `option-${optionIndex}`));
+          }
+        });
+
+        if (!options.length && step.next_step_id) {
+          flowEdges.push(createFlowEdge(step.id, step.next_step_id));
+        }
+      } else if (nodeType === 'condition') {
+        if (config.true_step_id) {
+          flowEdges.push(createFlowEdge(step.id, config.true_step_id, 'true'));
+        }
+        if (config.false_step_id) {
+          flowEdges.push(createFlowEdge(step.id, config.false_step_id, 'false'));
+        }
+        if (!config.true_step_id && !config.false_step_id && step.next_step_id) {
+          flowEdges.push(createFlowEdge(step.id, step.next_step_id, 'true'));
+        }
+      } else if (step.next_step_id) {
+        flowEdges.push(createFlowEdge(step.id, step.next_step_id));
       }
     });
 
@@ -182,7 +240,22 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
   }
 
   const onConnect = useCallback((connection: Connection) => {
-    setEdges(eds => addEdge({ ...connection, ...edgeDefaults }, eds));
+    if (!connection.source || !connection.target) return;
+
+    const newHandle = connection.sourceHandle ?? '__default__';
+
+    setEdges(eds => {
+      const filtered = eds.filter(edge => {
+        if (edge.source !== connection.source) return true;
+        return (edge.sourceHandle ?? '__default__') !== newHandle;
+      });
+
+      return addEdge({
+        ...connection,
+        id: buildEdgeId(connection.source, connection.target, connection.sourceHandle),
+        ...edgeDefaults,
+      }, filtered);
+    });
   }, [setEdges]);
 
   const onDragOver = useCallback((event: DragEvent) => {
