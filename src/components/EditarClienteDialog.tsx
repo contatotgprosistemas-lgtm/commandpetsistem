@@ -26,6 +26,7 @@ const schema = z.object({
   cep: z.string().trim().max(10).optional().or(z.literal("")),
   endereco: z.string().trim().max(300).optional().or(z.literal("")),
   numero: z.string().trim().max(20).optional().or(z.literal("")),
+  complemento: z.string().trim().max(100).optional().or(z.literal("")),
   como_conheceu: z.string().optional().or(z.literal("")),
   notas: z.string().trim().max(1000).optional().or(z.literal("")),
 });
@@ -47,7 +48,7 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", cpf: "", data_nascimento: "", whatsapp: "", email: "", cep: "", endereco: "", numero: "", como_conheceu: "", notas: "" },
+    defaultValues: { nome: "", cpf: "", data_nascimento: "", whatsapp: "", email: "", cep: "", endereco: "", numero: "", complemento: "", como_conheceu: "", notas: "" },
   });
 
   useEffect(() => {
@@ -61,6 +62,7 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         cep: cliente.cep || "",
         endereco: cliente.endereco || "",
         numero: "",
+        complemento: "",
         como_conheceu: cliente.como_conheceu || "",
         notas: cliente.notas || "",
       });
@@ -94,10 +96,9 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
     if (!cliente?.id) return;
     setLoading(true);
     try {
-      let enderecoFinal = data.endereco || null;
-      if (data.numero && enderecoFinal) {
-        enderecoFinal = `${enderecoFinal}, ${data.numero}`;
-      }
+      let enderecoFinal: string | null = data.endereco || null;
+      if (data.numero) enderecoFinal = enderecoFinal ? `${enderecoFinal}, ${data.numero}` : data.numero;
+      if (data.complemento) enderecoFinal = enderecoFinal ? `${enderecoFinal} - ${data.complemento}` : data.complemento;
 
       const { error } = await supabase.from("clientes").update({
         nome: data.nome,
@@ -206,13 +207,22 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
                     </FormItem>
                   )} />
                 </div>
-                <FormField control={form.control} name="numero" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Número</FormLabel>
-                    <FormControl><Input placeholder="Nº da casa/apto" className="w-32" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField control={form.control} name="numero" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número</FormLabel>
+                      <FormControl><Input placeholder="Nº" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="complemento" render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Complemento</FormLabel>
+                      <FormControl><Input placeholder="Apto, bloco, referência" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
                 <FormField control={form.control} name="como_conheceu" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Como nos conheceu?</FormLabel>

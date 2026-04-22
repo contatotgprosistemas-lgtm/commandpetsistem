@@ -24,6 +24,7 @@ const schema = z.object({
   cep: z.string().trim().max(10).optional().or(z.literal("")),
   endereco: z.string().trim().max(300).optional().or(z.literal("")),
   numero: z.string().trim().max(20).optional().or(z.literal("")),
+  complemento: z.string().trim().max(100).optional().or(z.literal("")),
   como_conheceu: z.string().optional().or(z.literal("")),
   notas: z.string().trim().max(1000).optional().or(z.literal("")),
 });
@@ -40,7 +41,7 @@ export function NovoClienteDialog({ onSuccess, empresaId: empresaIdProp }: { onS
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", cpf: "", data_nascimento: "", whatsapp: "", email: "", cep: "", endereco: "", numero: "", como_conheceu: "", notas: "" },
+    defaultValues: { nome: "", cpf: "", data_nascimento: "", whatsapp: "", email: "", cep: "", endereco: "", numero: "", complemento: "", como_conheceu: "", notas: "" },
   });
 
   async function buscarCep(cep: string) {
@@ -73,7 +74,9 @@ export function NovoClienteDialog({ onSuccess, empresaId: empresaIdProp }: { onS
         return;
       }
 
-      const enderecoCompleto = data.numero ? `${data.endereco}, ${data.numero}` : data.endereco;
+      let enderecoCompleto = data.endereco || "";
+      if (data.numero) enderecoCompleto = enderecoCompleto ? `${enderecoCompleto}, ${data.numero}` : data.numero;
+      if (data.complemento) enderecoCompleto = enderecoCompleto ? `${enderecoCompleto} - ${data.complemento}` : data.complemento;
 
       const { error } = await supabase.from("clientes").insert({
         empresa_id: empresaId,
@@ -192,13 +195,22 @@ export function NovoClienteDialog({ onSuccess, empresaId: empresaIdProp }: { onS
                 </FormItem>
               )} />
             </div>
-            <FormField control={form.control} name="numero" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Número</FormLabel>
-                <FormControl><Input placeholder="Nº da casa/apto" className="w-32" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <div className="grid grid-cols-3 gap-4">
+              <FormField control={form.control} name="numero" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número</FormLabel>
+                  <FormControl><Input placeholder="Nº" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="complemento" render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Complemento</FormLabel>
+                  <FormControl><Input placeholder="Apto, bloco, referência" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
             <FormField control={form.control} name="como_conheceu" render={({ field }) => (
               <FormItem>
                 <FormLabel>Como nos conheceu?</FormLabel>
