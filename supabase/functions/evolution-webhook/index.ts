@@ -41,6 +41,82 @@ async function sendAutoReply(
   }
 }
 
+// Build menu text with numbered options
+function buildMenuText(message: string, options: { label: string }[]): string {
+  if (!options?.length) return message;
+  const lines = options.map((opt, i) => `${i + 1}. ${opt.label}`);
+  return `${message}\n\n${lines.join("\n")}`;
+}
+
+// Render a single step as outgoing message(s) and return the next step id (or null if flow ends)
+async function renderStep(
+  step: any,
+  baseUrl: string,
+  headers: Record<string, string>,
+  instanceName: string,
+  phone: string,
+  supabase: any,
+  conversaId: string,
+  empresaId: string,
+): Promise<string | null> {
+  if (!step) return null;
+
+  if (step.delay_seconds && step.delay_seconds > 0) {
+    await new Promise((r) => setTimeout(r, Math.min(step.delay_seconds * 1000, 5000)));
+  }
+
+  if (step.step_type === "message") {
+    if (step.message?.trim()) {
+      await sendAutoReply(baseUrl, headers, instanceName, phone, step.message, supabase, conversaId, empresaId);
+    }
+    return step.next_step_id || null;
+  }
+
+  if (step.step_type === "menu") {
+    const text = buildMenuText(step.message || "", step.options || []);
+    if (text.trim()) {
+      await sendAutoReply(baseUrl, headers, instanceName, phone, text, supabase, conversaId, empresaId);
+    }
+    // For menu, we WAIT for the user's reply — do not advance now.
+    return step.id;
+  }
+
+  // For redirect / other types: just advance to next step
+  return step.next_step_id || null;
+}
+
+// Run the flow until we hit a menu (waiting for input) or the end.
+async function runFlowFromStep(
+  startStepId: string,
+  steps: any[],
+  baseUrl: string,
+  headers: Record<string, string>,
+  instanceName: string,
+  phone: string,
+  supabase: any,
+  conversaId: string,
+  empresaId: string,
+): Promise<string | null> {
+  const stepMap = new Map(steps.map((s) => [s.id, s]));
+  let currentId: string | null = startStepId;
+  let safety = 0;
+  let lastWaitingStepId: string | null = null;
+
+  while (currentId && safety < 20) {
+    safety++;
+    const step: any = stepMap.get(currentId);
+    if (!step) break;
+    const nextId = await renderStep(step, baseUrl, headers, instanceName, phone, supabase, conversaId, empresaId);
+    if (step.step_type === "menu") {
+      lastWaitingStepId = step.id;
+      break;
+    }
+    if (!nextId || nextId === currentId) break;
+    currentId = nextId;
+  }
+  return lastWaitingStepId;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
