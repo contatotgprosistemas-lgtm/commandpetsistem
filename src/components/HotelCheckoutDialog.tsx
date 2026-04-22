@@ -32,7 +32,6 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
   const [valorAjuste, setValorAjuste] = useState<string>("");
   const [obs, setObs] = useState("");
   const [saidaReal, setSaidaReal] = useState<string>(format(new Date(), "yyyy-MM-dd"));
-  const [horaSaidaReal, setHoraSaidaReal] = useState<string>(format(new Date(), "HH:mm"));
 
   const info = useMemo(() => {
     if (!agendamento) return null;
@@ -43,7 +42,7 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
     const saidaPrevDate = agendamento.data_saida_provavel
       ? new Date(agendamento.data_saida_provavel)
       : null;
-    const hoje = saidaReal ? new Date(`${saidaReal}T${horaSaidaReal || "00:00"}:00`) : new Date();
+    const hoje = saidaReal ? new Date(`${saidaReal}T12:00:00`) : new Date();
     const diariasPrevistas = saidaPrevDate
       ? Math.max(0, differenceInCalendarDays(saidaPrevDate, entradaDate))
       : 0;
@@ -64,7 +63,7 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
       valorDiaria,
       sugestaoAjuste,
     };
-  }, [agendamento, saidaReal, horaSaidaReal]);
+  }, [agendamento, saidaReal]);
 
   const tipo: "antecipado" | "atrasado" | "no_prazo" | "n_a" = useMemo(() => {
     if (!info?.isHotel || !info?.saidaPrevDate) return "n_a";
@@ -80,7 +79,6 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
       setAcaoAtrasado("fatura_diferenca");
       setObs("");
       setSaidaReal(format(new Date(), "yyyy-MM-dd"));
-      setHoraSaidaReal(format(new Date(), "HH:mm"));
     }
   }, [open]);
 
@@ -91,8 +89,11 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
   const valorAjusteNum = Number(valorAjuste.replace(",", ".")) || 0;
 
   const finalizarCheckout = async (extras: { obs: string }) => {
-    const now = saidaReal ? new Date(`${saidaReal}T${horaSaidaReal || "00:00"}:00`) : new Date();
-    const horaSaida = horaSaidaReal || format(now, "HH:mm");
+    const nowReal = new Date();
+    const now = saidaReal
+      ? new Date(`${saidaReal}T${format(nowReal, "HH:mm")}:00`)
+      : nowReal;
+    const horaSaida = format(nowReal, "HH:mm");
     const { error } = await supabase
       .from("agendamentos")
       .update({
@@ -242,20 +243,12 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Saída real</p>
-              <div className="flex gap-1">
-                <Input
-                  type="date"
-                  value={saidaReal}
-                  onChange={(e) => setSaidaReal(e.target.value)}
-                  className="h-8 text-xs px-2"
-                />
-                <Input
-                  type="time"
-                  value={horaSaidaReal}
-                  onChange={(e) => setHoraSaidaReal(e.target.value)}
-                  className="h-8 text-xs px-2 w-24"
-                />
-              </div>
+              <Input
+                type="date"
+                value={saidaReal}
+                onChange={(e) => setSaidaReal(e.target.value)}
+                className="h-8 text-xs px-2"
+              />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Diárias previstas</p>
