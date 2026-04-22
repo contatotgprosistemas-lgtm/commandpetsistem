@@ -242,7 +242,20 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Saída real</p>
-              <p className="font-medium">{format(new Date(), "dd/MM/yyyy")}</p>
+              <div className="flex gap-1">
+                <Input
+                  type="date"
+                  value={saidaReal}
+                  onChange={(e) => setSaidaReal(e.target.value)}
+                  className="h-8 text-xs px-2"
+                />
+                <Input
+                  type="time"
+                  value={horaSaidaReal}
+                  onChange={(e) => setHoraSaidaReal(e.target.value)}
+                  className="h-8 text-xs px-2 w-24"
+                />
+              </div>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Diárias previstas</p>
