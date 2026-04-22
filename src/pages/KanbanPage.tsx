@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, User, DollarSign, GripVertical, Phone, Mail, MessageCircle } from "lucide-react";
+import { Plus, User, DollarSign, GripVertical, Phone, Mail, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -43,6 +44,10 @@ export default function KanbanPage() {
   const [selectedClienteId, setSelectedClienteId] = useState("");
   const [valorEstimado, setValorEstimado] = useState("");
   const [estagio, setEstagio] = useState("novo_lead");
+  const [editItem, setEditItem] = useState<FunilItem | null>(null);
+  const [editValor, setEditValor] = useState("");
+  const [editEstagio, setEditEstagio] = useState("novo_lead");
+  const [editNotas, setEditNotas] = useState("");
 
   // Fetch funnel items with client data
   const { data: funilItems, isLoading } = useQuery({
@@ -123,6 +128,49 @@ export default function KanbanPage() {
     },
     onError: () => toast.error("Erro ao adicionar lead"),
   });
+
+  // Edit funnel item mutation
+  const updateItem = useMutation({
+    mutationFn: async () => {
+      if (!editItem) throw new Error("Item não encontrado");
+      const { error } = await supabase
+        .from("funil_vendas")
+        .update({
+          estagio: editEstagio,
+          valor_estimado: editValor ? parseFloat(editValor) : 0,
+          notas: editNotas || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editItem.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-funil"] });
+      setEditItem(null);
+      toast.success("Card atualizado");
+    },
+    onError: () => toast.error("Erro ao atualizar card"),
+  });
+
+  const deleteItem = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("funil_vendas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-funil"] });
+      setEditItem(null);
+      toast.success("Card removido");
+    },
+    onError: () => toast.error("Erro ao remover card"),
+  });
+
+  const openEdit = (item: FunilItem) => {
+    setEditItem(item);
+    setEditValor(item.valor_estimado ? String(item.valor_estimado) : "");
+    setEditEstagio(item.estagio);
+    setEditNotas(item.notas ?? "");
+  };
 
   const getItemsByStage = (stage: string) =>
     funilItems?.filter(item => item.estagio === stage) ?? [];
