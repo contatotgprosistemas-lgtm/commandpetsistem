@@ -369,6 +369,13 @@ export default function KanbanPage() {
                                 <MessageCircle className="h-3.5 w-3.5" />
                               </button>
                             )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openEdit(item); }}
+                              className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                              title="Editar card"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
                           </div>
 
                           {item.cliente?.whatsapp && (
