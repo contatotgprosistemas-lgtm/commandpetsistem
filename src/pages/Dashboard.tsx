@@ -608,6 +608,12 @@ export default function Dashboard() {
           onSuccess={fetchAgendamentos}
         />
       )}
+      <HotelCheckoutDialog
+        agendamento={hotelCheckoutOpen}
+        open={!!hotelCheckoutOpen}
+        onOpenChange={(o) => { if (!o) setHotelCheckoutOpen(null); }}
+        onCompleted={() => { setHotelCheckoutOpen(null); fetchAgendamentos(); }}
+      />
     </div>
   );
 }
