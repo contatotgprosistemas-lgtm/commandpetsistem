@@ -241,7 +241,8 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
       const startEdge = edges.find(e => e.source === 'start');
       const firstNodeId = startEdge?.target;
 
-      const stepsToSave: any[] = [];
+      type StepDraft = { tempId: string; nextTempId: string | null; payload: any };
+      const stepsToSave: StepDraft[] = [];
       const visited = new Set<string>();
       const queue: string[] = firstNodeId ? [firstNodeId] : [];
       let position = 0;
@@ -259,17 +260,21 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
         const nextId = edgeMap.get(nodeId);
 
         stepsToSave.push({
-          flow_id: flowId,
-          empresa_id: empresaId,
-          position: position++,
-          message: data.message || '',
-          step_type: data.step_type || node.type || 'message',
-          options: data.options || [],
-          delay_seconds: data.delay_seconds || 0,
-          condition_config: data.condition_config || null,
-          position_x: node.position.x,
-          position_y: node.position.y,
-          next_step_id: null,
+          tempId: nodeId,
+          nextTempId: nextId || null,
+          payload: {
+            flow_id: flowId,
+            empresa_id: empresaId,
+            position: position++,
+            message: data.message || '',
+            step_type: data.step_type || node.type || 'message',
+            options: data.options || [],
+            delay_seconds: data.delay_seconds || 0,
+            condition_config: data.condition_config || null,
+            position_x: node.position.x,
+            position_y: node.position.y,
+            next_step_id: null,
+          },
         });
 
         if (nextId && !visited.has(nextId)) queue.push(nextId);
@@ -280,32 +285,48 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
       allStepNodes.forEach(n => {
         if (!visited.has(n.id)) {
           const data = n.data as Record<string, any>;
+          const nextId = edgeMap.get(n.id) || null;
           stepsToSave.push({
-            flow_id: flowId,
-            empresa_id: empresaId,
-            position: position++,
-            message: data.message || '',
-            step_type: data.step_type || n.type || 'message',
-            options: data.options || [],
-            delay_seconds: data.delay_seconds || 0,
-            condition_config: data.condition_config || null,
-            position_x: n.position.x,
-            position_y: n.position.y,
-            next_step_id: null,
+            tempId: n.id,
+            nextTempId: nextId,
+            payload: {
+              flow_id: flowId,
+              empresa_id: empresaId,
+              position: position++,
+              message: data.message || '',
+              step_type: data.step_type || n.type || 'message',
+              options: data.options || [],
+              delay_seconds: data.delay_seconds || 0,
+              condition_config: data.condition_config || null,
+              position_x: n.position.x,
+              position_y: n.position.y,
+              next_step_id: null,
+            },
           });
         }
       });
 
       if (stepsToSave.length > 0) {
-        const { data: inserted, error } = await supabase.from('chatbot_flow_steps').insert(stepsToSave).select('id, position');
+        const { data: inserted, error } = await supabase
+          .from('chatbot_flow_steps')
+          .insert(stepsToSave.map(s => s.payload))
+          .select('id, position');
         if (error) throw error;
-        if (inserted && inserted.length > 1) {
-          const posToId = new Map<number, string>();
-          inserted.forEach((s: any) => posToId.set(s.position, s.id));
-          for (let i = 0; i < inserted.length - 1; i++) {
-            const cId = posToId.get(i);
-            const nId = posToId.get(i + 1);
-            if (cId && nId) await supabase.from('chatbot_flow_steps').update({ next_step_id: nId }).eq('id', cId);
+        // Map tempId -> real DB id (via position which is unique per draft)
+        const posToRealId = new Map<number, string>();
+        (inserted || []).forEach((s: any) => posToRealId.set(s.position, s.id));
+        const tempToRealId = new Map<string, string>();
+        stepsToSave.forEach(s => {
+          const realId = posToRealId.get(s.payload.position);
+          if (realId) tempToRealId.set(s.tempId, realId);
+        });
+        // Update next_step_id ONLY for edges actually drawn by the user
+        for (const s of stepsToSave) {
+          if (!s.nextTempId) continue;
+          const cId = tempToRealId.get(s.tempId);
+          const nId = tempToRealId.get(s.nextTempId);
+          if (cId && nId) {
+            await supabase.from('chatbot_flow_steps').update({ next_step_id: nId }).eq('id', cId);
           }
         }
       }
