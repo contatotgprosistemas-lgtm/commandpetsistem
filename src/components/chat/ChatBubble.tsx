@@ -137,19 +137,19 @@ function AudioPlayer({ src, isAgent }: { src: string; isAgent: boolean }) {
       <button
         onClick={toggle}
         className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-          isAgent ? "bg-primary-foreground/20 hover:bg-primary-foreground/30" : "bg-muted hover:bg-muted/80"
+          isAgent ? "bg-foreground/10 hover:bg-foreground/20" : "bg-muted hover:bg-muted/80"
         }`}
       >
         {playing ? <Pause className="h-3.5 w-3.5" fill="currentColor" /> : <Play className="h-3.5 w-3.5 ml-0.5" fill="currentColor" />}
       </button>
       <div className="flex-1 flex flex-col gap-1">
-        <div className={`h-1 rounded-full overflow-hidden ${isAgent ? "bg-primary-foreground/20" : "bg-muted"}`}>
+        <div className={`h-1 rounded-full overflow-hidden ${isAgent ? "bg-foreground/15" : "bg-muted"}`}>
           <div
-            className={`h-full rounded-full transition-all ${isAgent ? "bg-primary-foreground/60" : "bg-foreground/40"}`}
+            className={`h-full rounded-full transition-all ${isAgent ? "bg-foreground/50" : "bg-foreground/40"}`}
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className={`text-[10px] font-mono ${isAgent ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+        <span className={`text-[10px] font-mono ${isAgent ? "text-foreground/60" : "text-muted-foreground"}`}>
           {formatDur(playing ? (audioRef.current?.currentTime || 0) : duration)}
         </span>
       </div>
