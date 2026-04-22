@@ -62,11 +62,11 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
             target="_blank"
             rel="noopener noreferrer"
             className={`flex items-center gap-2 px-3 py-2 ${
-              isAgent ? "hover:text-primary-foreground/80" : "hover:text-foreground/80"
+              isAgent ? "hover:text-foreground/80" : "hover:text-foreground/80"
             }`}
           >
             <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
-              isAgent ? "bg-primary-foreground/10" : "bg-muted"
+              isAgent ? "bg-foreground/10" : "bg-muted"
             }`}>
               <FileText className="h-5 w-5" />
             </div>
@@ -74,7 +74,7 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
               <p className="text-sm font-medium truncate">
                 {resolvedUrl.split("/").pop()?.split("?")[0] || "Documento"}
               </p>
-              <p className={`text-[10px] ${isAgent ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+              <p className={`text-[10px] ${isAgent ? "text-foreground/60" : "text-muted-foreground"}`}>
                 Documento
               </p>
             </div>
