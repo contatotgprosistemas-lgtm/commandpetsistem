@@ -27,7 +27,15 @@ function MenuNode({ id, data, selected }: NodeProps) {
   const removeOption = useCallback((e: React.MouseEvent, idx: number) => {
     e.stopPropagation();
     update('options', options.filter((_, i) => i !== idx));
-  }, [options, update]);
+    setEdges(eds => eds
+      .filter(edge => !(edge.source === id && edge.sourceHandle === `option-${idx}`))
+      .map(edge => {
+        if (edge.source !== id || !edge.sourceHandle?.startsWith('option-')) return edge;
+        const optionIndex = Number(edge.sourceHandle.replace('option-', ''));
+        if (Number.isNaN(optionIndex) || optionIndex < idx) return edge;
+        return { ...edge, sourceHandle: `option-${optionIndex - 1}` };
+      }));
+  }, [id, options, setEdges, update]);
 
   const updateOption = useCallback((idx: number, label: string) => {
     const newOpts = [...options];
