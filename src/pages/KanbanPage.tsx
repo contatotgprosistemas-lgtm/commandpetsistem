@@ -372,16 +372,6 @@ export default function KanbanPage() {
                                 <MessageCircle className="h-3.5 w-3.5" />
                               </button>
                             )}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); openEdit(item); }}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onPointerDown={(e) => e.stopPropagation()}
-                              draggable={false}
-                              className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center bg-muted hover:bg-primary/20 text-foreground hover:text-primary transition-colors border border-border"
-                              title="Editar card"
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </button>
                           </div>
 
                           {item.cliente?.whatsapp && (
@@ -413,6 +403,25 @@ export default function KanbanPage() {
                           <p className="text-[10px] text-muted-foreground/50 mt-1.5 font-mono">
                             {format(new Date(item.updated_at), "dd/MM HH:mm", { locale: ptBR })}
                           </p>
+
+                          <div className="mt-2 flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEdit(item);
+                              }}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              draggable={false}
+                              className="h-7 px-2 shrink-0"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              <span>Editar</span>
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
