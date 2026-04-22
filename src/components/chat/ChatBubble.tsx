@@ -32,8 +32,8 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
       <div
         className={`relative max-w-[75%] rounded-lg text-sm ${
           isAgent
-            ? "bg-primary text-primary-foreground rounded-br-sm"
-            : "bg-card text-foreground shadow-sm border border-border/50 rounded-bl-sm"
+            ? "bg-[hsl(var(--chat-bubble-out,142_70%_85%))] text-foreground shadow-sm rounded-br-sm"
+            : "bg-card text-foreground shadow-sm rounded-bl-sm"
         }`}
       >
         {/* Image message */}
@@ -90,10 +90,10 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
 
         {/* Timestamp */}
         <div className={`flex items-center gap-1 justify-end px-3 pb-1 ${
-          isAgent ? "text-primary-foreground/60" : "text-muted-foreground"
+          isAgent ? "text-foreground/50" : "text-muted-foreground"
         }`}>
           <span className="font-mono text-[10px]">{formatTime(created_at)}</span>
-          {isAgent && <CheckCheck className="h-3 w-3" />}
+          {isAgent && <CheckCheck className="h-3 w-3 text-sky-500" />}
         </div>
       </div>
     </div>
