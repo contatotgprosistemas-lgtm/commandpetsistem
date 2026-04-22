@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, User, DollarSign, GripVertical, Phone, Mail, MessageCircle } from "lucide-react";
+import { Plus, User, DollarSign, GripVertical, Phone, Mail, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -43,6 +44,10 @@ export default function KanbanPage() {
   const [selectedClienteId, setSelectedClienteId] = useState("");
   const [valorEstimado, setValorEstimado] = useState("");
   const [estagio, setEstagio] = useState("novo_lead");
+  const [editItem, setEditItem] = useState<FunilItem | null>(null);
+  const [editValor, setEditValor] = useState("");
+  const [editEstagio, setEditEstagio] = useState("novo_lead");
+  const [editNotas, setEditNotas] = useState("");
 
   // Fetch funnel items with client data
   const { data: funilItems, isLoading } = useQuery({
@@ -123,6 +128,49 @@ export default function KanbanPage() {
     },
     onError: () => toast.error("Erro ao adicionar lead"),
   });
+
+  // Edit funnel item mutation
+  const updateItem = useMutation({
+    mutationFn: async () => {
+      if (!editItem) throw new Error("Item não encontrado");
+      const { error } = await supabase
+        .from("funil_vendas")
+        .update({
+          estagio: editEstagio,
+          valor_estimado: editValor ? parseFloat(editValor) : 0,
+          notas: editNotas || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editItem.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-funil"] });
+      setEditItem(null);
+      toast.success("Card atualizado");
+    },
+    onError: () => toast.error("Erro ao atualizar card"),
+  });
+
+  const deleteItem = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("funil_vendas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kanban-funil"] });
+      setEditItem(null);
+      toast.success("Card removido");
+    },
+    onError: () => toast.error("Erro ao remover card"),
+  });
+
+  const openEdit = (item: FunilItem) => {
+    setEditItem(item);
+    setEditValor(item.valor_estimado ? String(item.valor_estimado) : "");
+    setEditEstagio(item.estagio);
+    setEditNotas(item.notas ?? "");
+  };
 
   const getItemsByStage = (stage: string) =>
     funilItems?.filter(item => item.estagio === stage) ?? [];
@@ -321,6 +369,13 @@ export default function KanbanPage() {
                                 <MessageCircle className="h-3.5 w-3.5" />
                               </button>
                             )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openEdit(item); }}
+                              className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                              title="Editar card"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
                           </div>
 
                           {item.cliente?.whatsapp && (
@@ -368,6 +423,66 @@ export default function KanbanPage() {
           })}
         </div>
       </div>
+
+      {/* Edit Card Dialog */}
+      <Dialog open={!!editItem} onOpenChange={(o) => !o && setEditItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Card • {editItem?.cliente?.nome ?? ""}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Etapa</label>
+              <Select value={editEstagio} onValueChange={setEditEstagio}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {KANBAN_STAGES.map(s => (
+                    <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Valor Estimado (R$)</label>
+              <Input
+                type="number"
+                value={editValor}
+                onChange={e => setEditValor(e.target.value)}
+                placeholder="0,00"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Notas</label>
+              <Textarea
+                value={editNotas}
+                onChange={e => setEditNotas(e.target.value)}
+                placeholder="Anotações sobre este lead..."
+                rows={3}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => editItem && deleteItem.mutate(editItem.id)}
+                disabled={deleteItem.isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Remover
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEditItem(null)}>Cancelar</Button>
+                <Button size="sm" onClick={() => updateItem.mutate()} disabled={updateItem.isPending}>
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
