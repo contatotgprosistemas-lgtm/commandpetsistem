@@ -119,7 +119,11 @@ Deno.serve(async (req) => {
         }
 
         const phone = remoteJid.replace("@s.whatsapp.net", "");
-        const pushName = msg.pushName || phone;
+        // pushName from WhatsApp:
+        // - For incoming (fromMe=false): name of the contact (good!)
+        // - For outgoing (fromMe=true): name of the OWNER of the WhatsApp (the company itself - we must IGNORE)
+        const rawPushName = (msg.pushName || "").trim();
+        const pushName = !isFromMe && rawPushName ? rawPushName : "";
 
         // Determine message type and content
         let content = "";
@@ -203,7 +207,7 @@ Deno.serve(async (req) => {
         // Find or create conversation
         let { data: conversa } = await supabase
           .from("conversas")
-          .select("id, status, unread_count")
+          .select("id, status, unread_count, contato_nome, cliente_id")
           .eq("empresa_id", empresaId)
           .eq("contato_telefone", phone)
           .single();
@@ -223,7 +227,7 @@ Deno.serve(async (req) => {
             .from("conversas")
             .insert({
               empresa_id: empresaId,
-              contato_nome: cliente?.nome || pushName,
+              contato_nome: cliente?.nome || pushName || phone,
               contato_telefone: phone,
               cliente_id: cliente?.id || null,
               status: "novo",
@@ -233,6 +237,31 @@ Deno.serve(async (req) => {
             .single();
 
           conversa = newConversa;
+        } else if (!isFromMe) {
+          // Update contato_nome with incoming pushName when better than current
+          // Also link cliente if missing
+          const updates: Record<string, any> = {};
+          const currentName = ((conversa as any).contato_nome || "").trim();
+          const looksLikePhone = /^\d+$/.test(currentName);
+          if (pushName && (looksLikePhone || !currentName)) {
+            updates.contato_nome = pushName;
+          }
+          if (!(conversa as any).cliente_id) {
+            const { data: cliente } = await supabase
+              .from("clientes")
+              .select("id, nome")
+              .eq("empresa_id", empresaId)
+              .or(`whatsapp.eq.${phone},telefone.eq.${phone}`)
+              .limit(1)
+              .maybeSingle();
+            if (cliente) {
+              updates.cliente_id = cliente.id;
+              if (cliente.nome) updates.contato_nome = cliente.nome;
+            }
+          }
+          if (Object.keys(updates).length > 0) {
+            await supabase.from("conversas").update(updates).eq("id", conversa.id);
+          }
         }
 
         if (!conversa) {
