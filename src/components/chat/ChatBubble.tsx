@@ -32,8 +32,8 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
       <div
         className={`relative max-w-[75%] rounded-lg text-sm ${
           isAgent
-            ? "bg-[hsl(var(--chat-bubble-out,142_70%_85%))] text-foreground shadow-sm rounded-br-sm"
-            : "bg-card text-foreground shadow-sm rounded-bl-sm"
+            ? "bg-[hsl(var(--chat-bubble-out))] text-foreground shadow-sm rounded-br-sm"
+            : "bg-[hsl(var(--chat-bubble-in))] text-foreground shadow-sm rounded-bl-sm"
         }`}
       >
         {/* Image message */}
