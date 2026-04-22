@@ -31,6 +31,7 @@ import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
 
 import { AgendaCalendar } from "@/components/agenda/AgendaCalendar";
 import { FaltaDialog } from "@/components/FaltaDialog";
+import { HotelCheckoutDialog, isHotelService } from "@/components/HotelCheckoutDialog";
 
 interface Agendamento {
   id: string;
@@ -91,6 +92,7 @@ export default function Dashboard() {
   const [fichaOpen, setFichaOpen] = useState<Agendamento | null>(null);
   const [editOpen, setEditOpen] = useState<Agendamento | null>(null);
   const [faltaOpen, setFaltaOpen] = useState<Agendamento | null>(null);
+  const [hotelCheckoutOpen, setHotelCheckoutOpen] = useState<Agendamento | null>(null);
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
