@@ -177,15 +177,6 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
       }
     });
 
-    for (let i = 0; i < steps.length - 1; i++) {
-      const current = steps[i] as any;
-      const next = steps[i + 1] as any;
-      const hasEdge = flowEdges.some(e => e.source === current.id);
-      if (!hasEdge && current.step_type !== 'menu' && current.step_type !== 'condition') {
-        flowEdges.push({ id: `auto-${current.id}-${next.id}`, source: current.id, target: next.id, ...edgeDefaults });
-      }
-    }
-
     setNodes(flowNodes);
     setEdges(flowEdges);
   }
