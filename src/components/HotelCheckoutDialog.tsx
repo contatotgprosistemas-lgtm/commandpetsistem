@@ -91,8 +91,8 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
   const valorAjusteNum = Number(valorAjuste.replace(",", ".")) || 0;
 
   const finalizarCheckout = async (extras: { obs: string }) => {
-    const now = new Date();
-    const horaSaida = format(now, "HH:mm");
+    const now = saidaReal ? new Date(`${saidaReal}T${horaSaidaReal || "00:00"}:00`) : new Date();
+    const horaSaida = horaSaidaReal || format(now, "HH:mm");
     const { error } = await supabase
       .from("agendamentos")
       .update({
