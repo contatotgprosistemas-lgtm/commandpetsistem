@@ -383,6 +383,113 @@ Deno.serve(async (req) => {
           const baseUrl = EVOLUTION_API_URL.replace(/\/$/, "");
           const apiHeaders = { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY };
 
+          // ─── NEW: chatbot_flows engine ──────────────────────────────
+          let flowHandled = false;
+          try {
+            // Check if there's an active session for this conversation
+            const { data: session } = await supabase
+              .from("chatbot_sessions")
+              .select("*")
+              .eq("conversa_id", conversa.id)
+              .maybeSingle();
+
+            // Or pick an active flow for the empresa (first one wins)
+            let flowId: string | null = session?.flow_id ?? null;
+            if (!flowId) {
+              const { data: flow } = await supabase
+                .from("chatbot_flows")
+                .select("id")
+                .eq("empresa_id", empresaId)
+                .eq("active", true)
+                .order("updated_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              flowId = flow?.id ?? null;
+            }
+
+            if (flowId) {
+              const { data: steps } = await supabase
+                .from("chatbot_flow_steps")
+                .select("*")
+                .eq("flow_id", flowId)
+                .order("position", { ascending: true });
+
+              if (steps && steps.length > 0) {
+                let nextStartStepId: string | null = null;
+
+                if (!session) {
+                  // Start from first step
+                  nextStartStepId = steps[0].id;
+                } else if (session.current_step_id) {
+                  // We were waiting at a menu step — process user's choice
+                  const currentStep = steps.find((s: any) => s.id === session.current_step_id);
+                  if (currentStep?.step_type === "menu") {
+                    const opts = (currentStep.options || []) as { label: string; next_step_id?: string }[];
+                    const userInput = content.trim().toLowerCase();
+                    const numChoice = parseInt(userInput, 10);
+                    let chosenIndex = -1;
+                    if (!isNaN(numChoice) && numChoice >= 1 && numChoice <= opts.length) {
+                      chosenIndex = numChoice - 1;
+                    } else {
+                      chosenIndex = opts.findIndex((o) => o.label?.toLowerCase().trim() === userInput);
+                    }
+                    if (chosenIndex >= 0) {
+                      const chosen = opts[chosenIndex];
+                      nextStartStepId = chosen.next_step_id || currentStep.next_step_id || null;
+                    } else {
+                      // Invalid input — re-send the menu
+                      nextStartStepId = currentStep.id;
+                    }
+                  } else {
+                    nextStartStepId = currentStep?.next_step_id || null;
+                  }
+                } else {
+                  nextStartStepId = steps[0].id;
+                }
+
+                if (nextStartStepId) {
+                  const waitingStepId = await runFlowFromStep(
+                    nextStartStepId,
+                    steps,
+                    baseUrl,
+                    apiHeaders,
+                    instance,
+                    phone,
+                    supabase,
+                    conversa.id,
+                    empresaId,
+                  );
+
+                  // Upsert session
+                  if (waitingStepId) {
+                    await supabase
+                      .from("chatbot_sessions")
+                      .upsert(
+                        {
+                          conversa_id: conversa.id,
+                          empresa_id: empresaId,
+                          flow_id: flowId,
+                          current_step_id: waitingStepId,
+                          last_interaction_at: new Date().toISOString(),
+                        },
+                        { onConflict: "conversa_id" },
+                      );
+                  } else {
+                    // Flow ended — clear session
+                    await supabase.from("chatbot_sessions").delete().eq("conversa_id", conversa.id);
+                  }
+                  flowHandled = true;
+                }
+              }
+            }
+          } catch (flowErr) {
+            console.error("Flow execution error:", flowErr);
+          }
+
+          if (flowHandled) {
+            continue;
+          }
+
           // Fetch active chatbot rules for this empresa
           const { data: regras } = await supabase
             .from("chatbot_regras")
