@@ -371,10 +371,13 @@ export default function KanbanPage() {
                             )}
                             <button
                               onClick={(e) => { e.stopPropagation(); openEdit(item); }}
-                              className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              draggable={false}
+                              className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center bg-muted hover:bg-primary/20 text-foreground hover:text-primary transition-colors border border-border"
                               title="Editar card"
                             >
-                              <Pencil className="h-3.5 w-3.5" />
+                              <Pencil className="h-3 w-3" />
                             </button>
                           </div>
 
