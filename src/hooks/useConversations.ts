@@ -38,6 +38,8 @@ export function useConversations() {
       return data as unknown as ConversaWithRelations[];
     },
     enabled: !!empresaId,
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 
   useEffect(() => {
@@ -69,6 +71,8 @@ export function useMessages(conversaId: string | null) {
       return data;
     },
     enabled: !!conversaId,
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
   });
 
   useEffect(() => {
