@@ -45,7 +45,8 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
     if (c.is_archived && queueFilter !== "finalizadas") return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      if (!c.contato_nome.toLowerCase().includes(q) && !c.contato_telefone.includes(q)) return false;
+      const displayName = c.clientes?.nome || c.contato_nome || "";
+      if (!displayName.toLowerCase().includes(q) && !c.contato_telefone.includes(q)) return false;
     }
     if (statusFilter !== "todos" && c.status !== statusFilter) return false;
     if (queueFilter === "nao_lidas" && (c.unread_count ?? 0) === 0) return false;
@@ -134,6 +135,7 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
         ) : (
           filtered.map(conv => {
             const hasUnread = (conv.unread_count ?? 0) > 0;
+            const displayName = conv.clientes?.nome || conv.contato_nome || conv.contato_telefone;
             return (
             <button
               key={conv.id}
@@ -147,7 +149,7 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
                 <div className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-medium shrink-0 ${
                   hasUnread ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
                 }`}>
-                  {getInitials(conv.contato_nome)}
+                  {getInitials(displayName)}
                 </div>
                 {conv.is_favorited && (
                   <Star className="absolute -top-1 -right-1 h-3.5 w-3.5 text-warning fill-warning" />
@@ -157,7 +159,7 @@ export function ConversationList({ conversas, selectedId, onSelect, profileId, i
               <div className="flex-1 min-w-0">
                 {/* Name + time */}
                 <div className="flex items-center justify-between">
-                  <span className={`text-sm truncate ${hasUnread ? "font-bold text-foreground" : "font-medium text-foreground"}`}>{conv.contato_nome}</span>
+                  <span className={`text-sm truncate ${hasUnread ? "font-bold text-foreground" : "font-medium text-foreground"}`}>{displayName}</span>
                   {conv.ultima_mensagem_at && (
                     <span className={`font-mono text-[11px] ml-2 shrink-0 ${
                       (conv.unread_count ?? 0) > 0 ? "text-primary font-semibold" : "text-muted-foreground"
