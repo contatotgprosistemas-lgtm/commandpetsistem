@@ -51,6 +51,11 @@
     --sidebar-border: 224 20% 18%;
     --sidebar-ring: 224 76% 55%;
     --sidebar-muted: 220 10% 50%;
+
+    /* WhatsApp chat colors */
+    --chat-bubble-out: 142 60% 85%;
+    --chat-bubble-in: 0 0% 100%;
+    --chat-bg: 60 5% 92%;
   }
 
   .dark {

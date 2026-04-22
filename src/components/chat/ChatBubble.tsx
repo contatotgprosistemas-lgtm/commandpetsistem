@@ -32,8 +32,8 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
       <div
         className={`relative max-w-[75%] rounded-lg text-sm ${
           isAgent
-            ? "bg-primary text-primary-foreground rounded-br-sm"
-            : "bg-card text-foreground shadow-sm border border-border/50 rounded-bl-sm"
+            ? "bg-[hsl(var(--chat-bubble-out))] text-foreground shadow-sm rounded-br-sm"
+            : "bg-[hsl(var(--chat-bubble-in))] text-foreground shadow-sm rounded-bl-sm"
         }`}
       >
         {/* Image message */}
@@ -62,11 +62,11 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
             target="_blank"
             rel="noopener noreferrer"
             className={`flex items-center gap-2 px-3 py-2 ${
-              isAgent ? "hover:text-primary-foreground/80" : "hover:text-foreground/80"
+              isAgent ? "hover:text-foreground/80" : "hover:text-foreground/80"
             }`}
           >
             <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
-              isAgent ? "bg-primary-foreground/10" : "bg-muted"
+              isAgent ? "bg-foreground/10" : "bg-muted"
             }`}>
               <FileText className="h-5 w-5" />
             </div>
@@ -74,7 +74,7 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
               <p className="text-sm font-medium truncate">
                 {resolvedUrl.split("/").pop()?.split("?")[0] || "Documento"}
               </p>
-              <p className={`text-[10px] ${isAgent ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+              <p className={`text-[10px] ${isAgent ? "text-foreground/60" : "text-muted-foreground"}`}>
                 Documento
               </p>
             </div>
@@ -90,10 +90,10 @@ export function ChatBubble({ conteudo, remetente, tipo, created_at, formatTime }
 
         {/* Timestamp */}
         <div className={`flex items-center gap-1 justify-end px-3 pb-1 ${
-          isAgent ? "text-primary-foreground/60" : "text-muted-foreground"
+          isAgent ? "text-foreground/50" : "text-muted-foreground"
         }`}>
           <span className="font-mono text-[10px]">{formatTime(created_at)}</span>
-          {isAgent && <CheckCheck className="h-3 w-3" />}
+          {isAgent && <CheckCheck className="h-3 w-3 text-sky-500" />}
         </div>
       </div>
     </div>
@@ -137,19 +137,19 @@ function AudioPlayer({ src, isAgent }: { src: string; isAgent: boolean }) {
       <button
         onClick={toggle}
         className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-          isAgent ? "bg-primary-foreground/20 hover:bg-primary-foreground/30" : "bg-muted hover:bg-muted/80"
+          isAgent ? "bg-foreground/10 hover:bg-foreground/20" : "bg-muted hover:bg-muted/80"
         }`}
       >
         {playing ? <Pause className="h-3.5 w-3.5" fill="currentColor" /> : <Play className="h-3.5 w-3.5 ml-0.5" fill="currentColor" />}
       </button>
       <div className="flex-1 flex flex-col gap-1">
-        <div className={`h-1 rounded-full overflow-hidden ${isAgent ? "bg-primary-foreground/20" : "bg-muted"}`}>
+        <div className={`h-1 rounded-full overflow-hidden ${isAgent ? "bg-foreground/15" : "bg-muted"}`}>
           <div
-            className={`h-full rounded-full transition-all ${isAgent ? "bg-primary-foreground/60" : "bg-foreground/40"}`}
+            className={`h-full rounded-full transition-all ${isAgent ? "bg-foreground/50" : "bg-foreground/40"}`}
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className={`text-[10px] font-mono ${isAgent ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+        <span className={`text-[10px] font-mono ${isAgent ? "text-foreground/60" : "text-muted-foreground"}`}>
           {formatDur(playing ? (audioRef.current?.currentTime || 0) : duration)}
         </span>
       </div>
