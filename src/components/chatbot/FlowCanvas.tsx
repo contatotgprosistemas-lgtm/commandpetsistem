@@ -331,7 +331,7 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
       const startEdge = edges.find(e => e.source === 'start');
       const firstNodeId = startEdge?.target;
 
-      type StepDraft = { tempId: string; payload: any; edgeRefs: { sourceHandle: string | null; targetTempId: string }[] };
+      type StepDraft = { tempId: string; nextTempId: string | null; payload: any };
       const stepsToSave: StepDraft[] = [];
       const visited = new Set<string>();
       const queue: string[] = firstNodeId ? [firstNodeId] : [];
@@ -377,6 +377,7 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
 
         stepsToSave.push({
           tempId: nodeId,
+          nextTempId: nextStepId,
           payload: {
             flow_id: flowId,
             empresa_id: empresaId,
@@ -388,12 +389,8 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
             condition_config: Object.keys(config).length > 0 ? config : null,
             position_x: node.position.x,
             position_y: node.position.y,
-            next_step_id: nextStepId,
+            next_step_id: null,
           },
-          edgeRefs: nodeEdges.filter(edge => !!edge.target).map(edge => ({
-            sourceHandle: edge.sourceHandle ?? null,
-            targetTempId: edge.target,
-          })),
         });
 
         nodeEdges.forEach(edge => {
@@ -434,6 +431,7 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
 
           stepsToSave.push({
             tempId: n.id,
+            nextTempId: nextStepId,
             payload: {
               flow_id: flowId,
               empresa_id: empresaId,
@@ -445,12 +443,8 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
               condition_config: Object.keys(config).length > 0 ? config : null,
               position_x: n.position.x,
               position_y: n.position.y,
-              next_step_id: nextStepId,
+              next_step_id: null,
             },
-            edgeRefs: nodeEdges.filter(edge => !!edge.target).map(edge => ({
-              sourceHandle: edge.sourceHandle ?? null,
-              targetTempId: edge.target,
-            })),
           });
         }
       });
@@ -476,7 +470,7 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
 
           const payload = { ...s.payload };
 
-          payload.next_step_id = payload.next_step_id ? tempToRealId.get(payload.next_step_id) ?? null : null;
+          payload.next_step_id = s.nextTempId ? tempToRealId.get(s.nextTempId) ?? null : null;
 
           if (Array.isArray(payload.options)) {
             payload.options = payload.options.map((option: any) => ({
