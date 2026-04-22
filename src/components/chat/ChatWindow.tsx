@@ -241,8 +241,8 @@ export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) 
       <div
         className="flex-1 overflow-y-auto px-4 py-3"
         style={{
-          backgroundColor: "hsl(var(--background))",
-          backgroundImage: "radial-gradient(circle at 25px 25px, hsl(var(--muted) / 0.3) 1px, transparent 0)",
+          backgroundColor: "hsl(var(--chat-bg))",
+          backgroundImage: "radial-gradient(circle at 25px 25px, hsl(var(--muted-foreground) / 0.08) 1px, transparent 0)",
           backgroundSize: "50px 50px",
         }}
       >
