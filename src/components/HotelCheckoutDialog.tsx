@@ -31,6 +31,8 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
   const [acaoAtrasado, setAcaoAtrasado] = useState<AtrasadoAcao>("fatura_diferenca");
   const [valorAjuste, setValorAjuste] = useState<string>("");
   const [obs, setObs] = useState("");
+  const [saidaReal, setSaidaReal] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [horaSaidaReal, setHoraSaidaReal] = useState<string>(format(new Date(), "HH:mm"));
 
   const info = useMemo(() => {
     if (!agendamento) return null;
@@ -41,7 +43,7 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
     const saidaPrevDate = agendamento.data_saida_provavel
       ? new Date(agendamento.data_saida_provavel)
       : null;
-    const hoje = new Date();
+    const hoje = saidaReal ? new Date(`${saidaReal}T${horaSaidaReal || "00:00"}:00`) : new Date();
     const diariasPrevistas = saidaPrevDate
       ? Math.max(0, differenceInCalendarDays(saidaPrevDate, entradaDate))
       : 0;
@@ -62,7 +64,7 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
       valorDiaria,
       sugestaoAjuste,
     };
-  }, [agendamento]);
+  }, [agendamento, saidaReal, horaSaidaReal]);
 
   const tipo: "antecipado" | "atrasado" | "no_prazo" | "n_a" = useMemo(() => {
     if (!info?.isHotel || !info?.saidaPrevDate) return "n_a";
@@ -77,8 +79,10 @@ export function HotelCheckoutDialog({ agendamento, open, onOpenChange, onComplet
       setAcaoAntecipado("manter");
       setAcaoAtrasado("fatura_diferenca");
       setObs("");
+      setSaidaReal(format(new Date(), "yyyy-MM-dd"));
+      setHoraSaidaReal(format(new Date(), "HH:mm"));
     }
-  }, [open, info]);
+  }, [open]);
 
   if (!agendamento || !info) return null;
 
