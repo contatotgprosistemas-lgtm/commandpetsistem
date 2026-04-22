@@ -82,6 +82,7 @@ export type Database = {
         Row: {
           atendente_id: string | null
           baia: string | null
+          checkout_obs: string | null
           cliente_id: string
           created_at: string
           data_entrada: string | null
@@ -109,6 +110,7 @@ export type Database = {
         Insert: {
           atendente_id?: string | null
           baia?: string | null
+          checkout_obs?: string | null
           cliente_id: string
           created_at?: string
           data_entrada?: string | null
@@ -136,6 +138,7 @@ export type Database = {
         Update: {
           atendente_id?: string | null
           baia?: string | null
+          checkout_obs?: string | null
           cliente_id?: string
           created_at?: string
           data_entrada?: string | null
@@ -750,6 +753,7 @@ export type Database = {
           id: string
           nome: string
           notas: string | null
+          saldo_credito: number
           tags: string[] | null
           telefone: string | null
           updated_at: string
@@ -773,6 +777,7 @@ export type Database = {
           id?: string
           nome: string
           notas?: string | null
+          saldo_credito?: number
           tags?: string[] | null
           telefone?: string | null
           updated_at?: string
@@ -796,6 +801,7 @@ export type Database = {
           id?: string
           nome?: string
           notas?: string | null
+          saldo_credito?: number
           tags?: string[] | null
           telefone?: string | null
           updated_at?: string
