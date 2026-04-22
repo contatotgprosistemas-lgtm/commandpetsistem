@@ -10,7 +10,14 @@ function ServicoIcon({ tipo }: { tipo?: string | null }) {
   return null;
 }
 import { supabase } from "@/integrations/supabase/client";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import * as Recharts from "recharts";
+const AreaChart = Recharts.AreaChart as any;
+const Area = Recharts.Area as any;
+const XAxis = Recharts.XAxis as any;
+const YAxis = Recharts.YAxis as any;
+const CartesianGrid = Recharts.CartesianGrid as any;
+const Tooltip = Recharts.Tooltip as any;
+const ResponsiveContainer = Recharts.ResponsiveContainer as any;
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
