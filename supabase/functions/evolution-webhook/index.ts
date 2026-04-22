@@ -281,12 +281,14 @@ Deno.serve(async (req) => {
         }
 
         // Find or create conversation
-        let { data: conversa } = await supabase
+        let { data: conversas } = await supabase
           .from("conversas")
           .select("id, status, unread_count, contato_nome, cliente_id")
           .eq("empresa_id", empresaId)
           .eq("contato_telefone", phone)
-          .single();
+          .order("ultima_mensagem_at", { ascending: false })
+          .limit(1);
+        let conversa: any = conversas && conversas.length > 0 ? conversas[0] : null;
 
         const isNewConversation = !conversa;
 
