@@ -363,6 +363,9 @@ export default function KanbanPage() {
                                   e.stopPropagation();
                                   navigate(`/crm?phone=${encodeURIComponent(item.cliente?.whatsapp || "")}`);
                                 }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                draggable={false}
                                 className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
                                 title="Abrir conversa no CRM"
                               >
