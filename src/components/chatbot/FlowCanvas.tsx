@@ -108,6 +108,27 @@ const getNodeDataFromStep = (step: any) => {
   };
 };
 
+const extractNodeConfig = (nodeType: string | undefined, data: Record<string, any>) => {
+  if (nodeType === 'condition') {
+    return data.condition_config && typeof data.condition_config === 'object' && !Array.isArray(data.condition_config)
+      ? { ...data.condition_config }
+      : {};
+  }
+
+  const ignoredKeys = new Set([
+    'message',
+    'options',
+    'delay_seconds',
+    'condition_config',
+    'step_type',
+    'db_id',
+  ]);
+
+  return Object.fromEntries(
+    Object.entries(data).filter(([key, value]) => !ignoredKeys.has(key) && value !== undefined)
+  );
+};
+
 type Props = {
   flowId: string;
   flowName: string;
@@ -327,9 +348,7 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
 
         const data = node.data as Record<string, any>;
         const nodeEdges = edgeMap.get(nodeId) || [];
-        const config = data.condition_config && typeof data.condition_config === 'object' && !Array.isArray(data.condition_config)
-          ? { ...data.condition_config }
-          : {};
+        const config = extractNodeConfig(node.type, data);
         const options = Array.isArray(data.options)
           ? data.options.map((option: any) => ({ ...option, next_step_id: null }))
           : [];
@@ -386,9 +405,7 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
         if (!visited.has(n.id)) {
           const data = n.data as Record<string, any>;
           const nodeEdges = edgeMap.get(n.id) || [];
-          const config = data.condition_config && typeof data.condition_config === 'object' && !Array.isArray(data.condition_config)
-            ? { ...data.condition_config }
-            : {};
+          const config = extractNodeConfig(n.type, data);
           const options = Array.isArray(data.options)
             ? data.options.map((option: any) => ({ ...option, next_step_id: null }))
             : [];
