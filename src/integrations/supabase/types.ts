@@ -686,6 +686,68 @@ export type Database = {
           },
         ]
       }
+      chatbot_sessions: {
+        Row: {
+          conversa_id: string
+          created_at: string
+          current_step_id: string | null
+          empresa_id: string
+          flow_id: string
+          id: string
+          last_interaction_at: string
+          variables: Json
+        }
+        Insert: {
+          conversa_id: string
+          created_at?: string
+          current_step_id?: string | null
+          empresa_id: string
+          flow_id: string
+          id?: string
+          last_interaction_at?: string
+          variables?: Json
+        }
+        Update: {
+          conversa_id?: string
+          created_at?: string
+          current_step_id?: string | null
+          empresa_id?: string
+          flow_id?: string
+          id?: string
+          last_interaction_at?: string
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_sessions_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: true
+            referencedRelation: "conversas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chatbot_sessions_current_step_id_fkey"
+            columns: ["current_step_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_flow_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chatbot_sessions_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chatbot_sessions_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_registros: {
         Row: {
           agendamento_id: string

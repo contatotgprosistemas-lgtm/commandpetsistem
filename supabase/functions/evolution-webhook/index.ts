@@ -41,6 +41,82 @@ async function sendAutoReply(
   }
 }
 
+// Build menu text with numbered options
+function buildMenuText(message: string, options: { label: string }[]): string {
+  if (!options?.length) return message;
+  const lines = options.map((opt, i) => `${i + 1}. ${opt.label}`);
+  return `${message}\n\n${lines.join("\n")}`;
+}
+
+// Render a single step as outgoing message(s) and return the next step id (or null if flow ends)
+async function renderStep(
+  step: any,
+  baseUrl: string,
+  headers: Record<string, string>,
+  instanceName: string,
+  phone: string,
+  supabase: any,
+  conversaId: string,
+  empresaId: string,
+): Promise<string | null> {
+  if (!step) return null;
+
+  if (step.delay_seconds && step.delay_seconds > 0) {
+    await new Promise((r) => setTimeout(r, Math.min(step.delay_seconds * 1000, 5000)));
+  }
+
+  if (step.step_type === "message") {
+    if (step.message?.trim()) {
+      await sendAutoReply(baseUrl, headers, instanceName, phone, step.message, supabase, conversaId, empresaId);
+    }
+    return step.next_step_id || null;
+  }
+
+  if (step.step_type === "menu") {
+    const text = buildMenuText(step.message || "", step.options || []);
+    if (text.trim()) {
+      await sendAutoReply(baseUrl, headers, instanceName, phone, text, supabase, conversaId, empresaId);
+    }
+    // For menu, we WAIT for the user's reply — do not advance now.
+    return step.id;
+  }
+
+  // For redirect / other types: just advance to next step
+  return step.next_step_id || null;
+}
+
+// Run the flow until we hit a menu (waiting for input) or the end.
+async function runFlowFromStep(
+  startStepId: string,
+  steps: any[],
+  baseUrl: string,
+  headers: Record<string, string>,
+  instanceName: string,
+  phone: string,
+  supabase: any,
+  conversaId: string,
+  empresaId: string,
+): Promise<string | null> {
+  const stepMap = new Map(steps.map((s) => [s.id, s]));
+  let currentId: string | null = startStepId;
+  let safety = 0;
+  let lastWaitingStepId: string | null = null;
+
+  while (currentId && safety < 20) {
+    safety++;
+    const step: any = stepMap.get(currentId);
+    if (!step) break;
+    const nextId = await renderStep(step, baseUrl, headers, instanceName, phone, supabase, conversaId, empresaId);
+    if (step.step_type === "menu") {
+      lastWaitingStepId = step.id;
+      break;
+    }
+    if (!nextId || nextId === currentId) break;
+    currentId = nextId;
+  }
+  return lastWaitingStepId;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -306,6 +382,113 @@ Deno.serve(async (req) => {
         if (!isFromMe && EVOLUTION_API_URL && EVOLUTION_API_KEY) {
           const baseUrl = EVOLUTION_API_URL.replace(/\/$/, "");
           const apiHeaders = { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY };
+
+          // ─── NEW: chatbot_flows engine ──────────────────────────────
+          let flowHandled = false;
+          try {
+            // Check if there's an active session for this conversation
+            const { data: session } = await supabase
+              .from("chatbot_sessions")
+              .select("*")
+              .eq("conversa_id", conversa.id)
+              .maybeSingle();
+
+            // Or pick an active flow for the empresa (first one wins)
+            let flowId: string | null = session?.flow_id ?? null;
+            if (!flowId) {
+              const { data: flow } = await supabase
+                .from("chatbot_flows")
+                .select("id")
+                .eq("empresa_id", empresaId)
+                .eq("active", true)
+                .order("updated_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              flowId = flow?.id ?? null;
+            }
+
+            if (flowId) {
+              const { data: steps } = await supabase
+                .from("chatbot_flow_steps")
+                .select("*")
+                .eq("flow_id", flowId)
+                .order("position", { ascending: true });
+
+              if (steps && steps.length > 0) {
+                let nextStartStepId: string | null = null;
+
+                if (!session) {
+                  // Start from first step
+                  nextStartStepId = steps[0].id;
+                } else if (session.current_step_id) {
+                  // We were waiting at a menu step — process user's choice
+                  const currentStep = steps.find((s: any) => s.id === session.current_step_id);
+                  if (currentStep?.step_type === "menu") {
+                    const opts = (currentStep.options || []) as { label: string; next_step_id?: string }[];
+                    const userInput = content.trim().toLowerCase();
+                    const numChoice = parseInt(userInput, 10);
+                    let chosenIndex = -1;
+                    if (!isNaN(numChoice) && numChoice >= 1 && numChoice <= opts.length) {
+                      chosenIndex = numChoice - 1;
+                    } else {
+                      chosenIndex = opts.findIndex((o) => o.label?.toLowerCase().trim() === userInput);
+                    }
+                    if (chosenIndex >= 0) {
+                      const chosen = opts[chosenIndex];
+                      nextStartStepId = chosen.next_step_id || currentStep.next_step_id || null;
+                    } else {
+                      // Invalid input — re-send the menu
+                      nextStartStepId = currentStep.id;
+                    }
+                  } else {
+                    nextStartStepId = currentStep?.next_step_id || null;
+                  }
+                } else {
+                  nextStartStepId = steps[0].id;
+                }
+
+                if (nextStartStepId) {
+                  const waitingStepId = await runFlowFromStep(
+                    nextStartStepId,
+                    steps,
+                    baseUrl,
+                    apiHeaders,
+                    instance,
+                    phone,
+                    supabase,
+                    conversa.id,
+                    empresaId,
+                  );
+
+                  // Upsert session
+                  if (waitingStepId) {
+                    await supabase
+                      .from("chatbot_sessions")
+                      .upsert(
+                        {
+                          conversa_id: conversa.id,
+                          empresa_id: empresaId,
+                          flow_id: flowId,
+                          current_step_id: waitingStepId,
+                          last_interaction_at: new Date().toISOString(),
+                        },
+                        { onConflict: "conversa_id" },
+                      );
+                  } else {
+                    // Flow ended — clear session
+                    await supabase.from("chatbot_sessions").delete().eq("conversa_id", conversa.id);
+                  }
+                  flowHandled = true;
+                }
+              }
+            }
+          } catch (flowErr) {
+            console.error("Flow execution error:", flowErr);
+          }
+
+          if (flowHandled) {
+            continue;
+          }
 
           // Fetch active chatbot rules for this empresa
           const { data: regras } = await supabase
