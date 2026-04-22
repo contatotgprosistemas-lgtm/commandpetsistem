@@ -299,13 +299,18 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
     try {
       await supabase.from('chatbot_flow_steps').delete().eq('flow_id', flowId);
 
-      const edgeMap = new Map<string, string>();
-      edges.forEach(e => { if (e.source !== 'start') edgeMap.set(e.source, e.target); });
+      const edgeMap = new Map<string, Edge[]>();
+      edges.forEach(edge => {
+        if (!edge.source || edge.source === 'start') return;
+        const current = edgeMap.get(edge.source) || [];
+        current.push(edge);
+        edgeMap.set(edge.source, current);
+      });
 
       const startEdge = edges.find(e => e.source === 'start');
       const firstNodeId = startEdge?.target;
 
-      type StepDraft = { tempId: string; nextTempId: string | null; payload: any };
+      type StepDraft = { tempId: string; payload: any; edgeRefs: { sourceHandle: string | null; targetTempId: string }[] };
       const stepsToSave: StepDraft[] = [];
       const visited = new Set<string>();
       const queue: string[] = firstNodeId ? [firstNodeId] : [];
@@ -321,51 +326,114 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
         if (!node) continue;
 
         const data = node.data as Record<string, any>;
-        const nextId = edgeMap.get(nodeId);
+        const nodeEdges = edgeMap.get(nodeId) || [];
+        const config = data.condition_config && typeof data.condition_config === 'object' && !Array.isArray(data.condition_config)
+          ? { ...data.condition_config }
+          : {};
+        const options = Array.isArray(data.options)
+          ? data.options.map((option: any) => ({ ...option, next_step_id: null }))
+          : [];
+
+        let nextStepId: string | null = null;
+
+        if (node.type === 'menu') {
+          const fallbackEdge = nodeEdges.find(edge => !edge.sourceHandle);
+          nextStepId = fallbackEdge?.target ?? null;
+
+          nodeEdges.forEach(edge => {
+            if (!edge.sourceHandle?.startsWith('option-')) return;
+            const optionIndex = Number(edge.sourceHandle.replace('option-', ''));
+            if (Number.isNaN(optionIndex) || !options[optionIndex]) return;
+            options[optionIndex] = { ...options[optionIndex], next_step_id: edge.target };
+          });
+        } else if (node.type === 'condition') {
+          const trueEdge = nodeEdges.find(edge => edge.sourceHandle === 'true');
+          const falseEdge = nodeEdges.find(edge => edge.sourceHandle === 'false');
+          config.true_step_id = trueEdge?.target ?? null;
+          config.false_step_id = falseEdge?.target ?? null;
+          nextStepId = trueEdge?.target ?? null;
+        } else {
+          nextStepId = nodeEdges[0]?.target ?? null;
+        }
 
         stepsToSave.push({
           tempId: nodeId,
-          nextTempId: nextId || null,
           payload: {
             flow_id: flowId,
             empresa_id: empresaId,
             position: position++,
             message: data.message || '',
             step_type: data.step_type || node.type || 'message',
-            options: data.options || [],
+            options,
             delay_seconds: data.delay_seconds || 0,
-            condition_config: data.condition_config || null,
+            condition_config: Object.keys(config).length > 0 ? config : null,
             position_x: node.position.x,
             position_y: node.position.y,
-            next_step_id: null,
+            next_step_id: nextStepId,
           },
+          edgeRefs: nodeEdges.filter(edge => !!edge.target).map(edge => ({
+            sourceHandle: edge.sourceHandle ?? null,
+            targetTempId: edge.target,
+          })),
         });
 
-        if (nextId && !visited.has(nextId)) queue.push(nextId);
-        const outEdges = edges.filter(e => e.source === nodeId && e.target !== nextId);
-        outEdges.forEach(e => { if (!visited.has(e.target)) queue.push(e.target); });
+        nodeEdges.forEach(edge => {
+          if (edge.target && !visited.has(edge.target)) queue.push(edge.target);
+        });
       }
 
       allStepNodes.forEach(n => {
         if (!visited.has(n.id)) {
           const data = n.data as Record<string, any>;
-          const nextId = edgeMap.get(n.id) || null;
+          const nodeEdges = edgeMap.get(n.id) || [];
+          const config = data.condition_config && typeof data.condition_config === 'object' && !Array.isArray(data.condition_config)
+            ? { ...data.condition_config }
+            : {};
+          const options = Array.isArray(data.options)
+            ? data.options.map((option: any) => ({ ...option, next_step_id: null }))
+            : [];
+
+          let nextStepId: string | null = null;
+
+          if (n.type === 'menu') {
+            const fallbackEdge = nodeEdges.find(edge => !edge.sourceHandle);
+            nextStepId = fallbackEdge?.target ?? null;
+
+            nodeEdges.forEach(edge => {
+              if (!edge.sourceHandle?.startsWith('option-')) return;
+              const optionIndex = Number(edge.sourceHandle.replace('option-', ''));
+              if (Number.isNaN(optionIndex) || !options[optionIndex]) return;
+              options[optionIndex] = { ...options[optionIndex], next_step_id: edge.target };
+            });
+          } else if (n.type === 'condition') {
+            const trueEdge = nodeEdges.find(edge => edge.sourceHandle === 'true');
+            const falseEdge = nodeEdges.find(edge => edge.sourceHandle === 'false');
+            config.true_step_id = trueEdge?.target ?? null;
+            config.false_step_id = falseEdge?.target ?? null;
+            nextStepId = trueEdge?.target ?? null;
+          } else {
+            nextStepId = nodeEdges[0]?.target ?? null;
+          }
+
           stepsToSave.push({
             tempId: n.id,
-            nextTempId: nextId,
             payload: {
               flow_id: flowId,
               empresa_id: empresaId,
               position: position++,
               message: data.message || '',
               step_type: data.step_type || n.type || 'message',
-              options: data.options || [],
+              options,
               delay_seconds: data.delay_seconds || 0,
-              condition_config: data.condition_config || null,
+              condition_config: Object.keys(config).length > 0 ? config : null,
               position_x: n.position.x,
               position_y: n.position.y,
-              next_step_id: null,
+              next_step_id: nextStepId,
             },
+            edgeRefs: nodeEdges.filter(edge => !!edge.target).map(edge => ({
+              sourceHandle: edge.sourceHandle ?? null,
+              targetTempId: edge.target,
+            })),
           });
         }
       });
@@ -384,14 +452,39 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
           const realId = posToRealId.get(s.payload.position);
           if (realId) tempToRealId.set(s.tempId, realId);
         });
-        // Update next_step_id ONLY for edges actually drawn by the user
+        // Rewrite internal ids inside the saved JSON after insert
         for (const s of stepsToSave) {
-          if (!s.nextTempId) continue;
           const cId = tempToRealId.get(s.tempId);
-          const nId = tempToRealId.get(s.nextTempId);
-          if (cId && nId) {
-            await supabase.from('chatbot_flow_steps').update({ next_step_id: nId }).eq('id', cId);
+          if (!cId) continue;
+
+          const payload = { ...s.payload };
+
+          payload.next_step_id = payload.next_step_id ? tempToRealId.get(payload.next_step_id) ?? null : null;
+
+          if (Array.isArray(payload.options)) {
+            payload.options = payload.options.map((option: any) => ({
+              ...option,
+              next_step_id: option?.next_step_id ? tempToRealId.get(option.next_step_id) ?? null : null,
+            }));
           }
+
+          if (payload.condition_config && typeof payload.condition_config === 'object' && !Array.isArray(payload.condition_config)) {
+            payload.condition_config = {
+              ...payload.condition_config,
+              true_step_id: payload.condition_config.true_step_id
+                ? tempToRealId.get(payload.condition_config.true_step_id) ?? null
+                : null,
+              false_step_id: payload.condition_config.false_step_id
+                ? tempToRealId.get(payload.condition_config.false_step_id) ?? null
+                : null,
+            };
+          }
+
+          await supabase.from('chatbot_flow_steps').update({
+            next_step_id: payload.next_step_id,
+            options: payload.options,
+            condition_config: payload.condition_config,
+          }).eq('id', cId);
         }
       }
 
