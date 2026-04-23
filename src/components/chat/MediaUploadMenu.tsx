@@ -20,8 +20,24 @@ export function MediaUploadMenu({ onMediaUploaded, disabled }: MediaUploadMenuPr
     setOpen(false);
 
     // Get empresa_id for tenant-scoped storage path
-    const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
-    const empresaId = profile?.empresa_id || "unknown";
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth?.user?.id;
+    if (!userId) {
+      toast({ title: "Não autenticado", description: "Faça login novamente.", variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("empresa_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const empresaId = profile?.empresa_id;
+    if (!empresaId) {
+      toast({ title: "Empresa não configurada", description: "Sua conta não está vinculada a uma empresa.", variant: "destructive" });
+      setUploading(false);
+      return;
+    }
 
     const ext = file.name.split(".").pop() || "bin";
     const fileName = `${empresaId}/${type}_${Date.now()}.${ext}`;
