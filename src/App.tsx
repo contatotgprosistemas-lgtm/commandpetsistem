@@ -32,6 +32,12 @@ import ReservasPage from "@/pages/ReservasPage";
 
 import ContractSignPage from "@/pages/ContractSignPage";
 import PontoPage from "@/pages/PontoPage";
+import ComercialDashboard from "@/pages/comercial/ComercialDashboard";
+import ComercialConversas from "@/pages/comercial/ComercialConversas";
+import ComercialContatos from "@/pages/comercial/ComercialContatos";
+import ComercialPipeline from "@/pages/comercial/ComercialPipeline";
+import ComercialCampanhas from "@/pages/comercial/ComercialCampanhas";
+import ComercialAutomacao from "@/pages/comercial/ComercialAutomacao";
 import LoginPage from "@/pages/LoginPage";
 import LandingPage from "@/pages/LandingPage";
 import SignupPage from "@/pages/SignupPage";
