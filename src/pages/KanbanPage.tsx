@@ -507,7 +507,7 @@ export default function KanbanPage() {
       <Dialog open={!!editItem} onOpenChange={(o) => !o && setEditItem(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Card • {editItem?.cliente?.nome ?? ""}</DialogTitle>
+            <DialogTitle>Editar Card • {editItem?.cliente?.nome ?? editItem?.crm_contato?.nome ?? ""}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
@@ -569,7 +569,7 @@ export default function KanbanPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir card?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover o card de <strong>{deleteConfirm?.cliente?.nome ?? "este lead"}</strong> do funil? Essa ação não pode ser desfeita.
+              Tem certeza que deseja remover o card de <strong>{deleteConfirm?.cliente?.nome ?? deleteConfirm?.crm_contato?.nome ?? "este lead"}</strong> do funil? Essa ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
