@@ -7,6 +7,16 @@ import { toast } from "sonner";
 import { Plus, User, DollarSign, GripVertical, Phone, Mail, MessageCircle, Pencil, Trash2, MoreVertical } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,6 +59,7 @@ export default function KanbanPage() {
   const [editValor, setEditValor] = useState("");
   const [editEstagio, setEditEstagio] = useState("novo_lead");
   const [editNotas, setEditNotas] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<FunilItem | null>(null);
 
   // Fetch funnel items with client data
   const { data: funilItems, isLoading } = useQuery({
@@ -339,15 +350,20 @@ export default function KanbanPage() {
                   {items.map(item => (
                     <div
                       key={item.id}
-                      draggable
-                      onDragStart={e => handleDragStart(e, item.id)}
-                      onDragEnd={handleDragEnd}
-                      className={`rounded-md border border-border bg-card p-3 cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-all group ${
+                      className={`rounded-md border border-border bg-card p-3 shadow-sm hover:shadow-md transition-all group ${
                         draggedItem === item.id ? "opacity-40 scale-95" : ""
                       }`}
                     >
                       <div className="flex items-start gap-2">
-                        <GripVertical className="h-4 w-4 text-muted-foreground/30 mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div
+                          draggable
+                          onDragStart={e => handleDragStart(e, item.id)}
+                          onDragEnd={handleDragEnd}
+                          className="cursor-grab active:cursor-grabbing pt-0.5 shrink-0"
+                          title="Arraste para mover"
+                        >
+                          <GripVertical className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1">
                             <div className="flex items-center gap-1.5 min-w-0">
@@ -361,14 +377,9 @@ export default function KanbanPage() {
                             <div className="flex items-center gap-0.5 shrink-0">
                               {item.cliente?.whatsapp && (
                                 <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/crm?phone=${encodeURIComponent(item.cliente?.whatsapp || "")}`);
-                                  }}
-                                  onMouseDown={(e) => e.stopPropagation()}
-                                  onPointerDown={(e) => e.stopPropagation()}
-                                  draggable={false}
-                                  className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                                  type="button"
+                                  onClick={() => navigate(`/crm?phone=${encodeURIComponent(item.cliente?.whatsapp || "")}`)}
+                                  className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
                                   title="Abrir conversa no CRM"
                                 >
                                   <MessageCircle className="h-3.5 w-3.5" />
@@ -376,28 +387,23 @@ export default function KanbanPage() {
                               )}
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <button
-                                    onClick={(e) => e.stopPropagation()}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onPointerDown={(e) => e.stopPropagation()}
-                                    draggable={false}
-                                    className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
                                     title="Mais ações"
                                   >
-                                    <MoreVertical className="h-3.5 w-3.5" />
-                                  </button>
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-36">
-                                  <DropdownMenuItem onClick={() => openEdit(item)}>
+                                <DropdownMenuContent align="end" className="w-40">
+                                  <DropdownMenuItem onSelect={() => openEdit(item)}>
                                     <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
-                                    onClick={() => {
-                                      if (confirm(`Excluir o card de ${item.cliente?.nome ?? "este lead"}?`)) {
-                                        deleteItem.mutate(item.id);
-                                      }
-                                    }}
+                                    onSelect={() => setDeleteConfirm(item)}
                                   >
                                     <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
                                   </DropdownMenuItem>
@@ -511,6 +517,30 @@ export default function KanbanPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(o) => !o && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir card?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover o card de <strong>{deleteConfirm?.cliente?.nome ?? "este lead"}</strong> do funil? Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteConfirm) deleteItem.mutate(deleteConfirm.id);
+                setDeleteConfirm(null);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
