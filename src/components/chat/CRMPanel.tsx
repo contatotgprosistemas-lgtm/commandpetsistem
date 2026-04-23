@@ -81,6 +81,16 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
     enabled: !!clienteId,
   });
 
+  const { data: pets } = useQuery({
+    queryKey: ["crm-cliente-pets", clienteId],
+    queryFn: async () => {
+      if (!clienteId) return [];
+      const { data } = await supabase.from("pets").select("nome").eq("cliente_id", clienteId).order("created_at");
+      return data ?? [];
+    },
+    enabled: !!clienteId,
+  });
+
   const { data: crmContato } = useQuery({
     queryKey: ["crm-contato", crmContatoId],
     queryFn: async () => {
@@ -269,8 +279,10 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
   const displayName = cliente?.nome || (crmContato as any)?.nome || contatoNome || "Contato";
   const displayPhone = cliente?.telefone || cliente?.whatsapp || (crmContato as any)?.telefone || telefone || "—";
   const displayEmail = cliente?.email || (crmContato as any)?.email || "—";
-  const displayEmpresa = (crmContato as any)?.empresa;
-  const displayOrigem = cliente?.como_conheceu || (crmContato as any)?.origem;
+  const displayPet = pets && pets.length > 0
+    ? pets.map((p: any) => p.nome).filter(Boolean).join(", ")
+    : (crmContato as any)?.empresa;
+  const displayInteresse = cliente?.como_conheceu || (crmContato as any)?.origem;
   const displayObs = (crmContato as any)?.observacoes;
 
   if (isLoading) {
@@ -335,13 +347,14 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
                 { icon: Phone, label: "Telefone", value: cliente?.telefone || "—" },
                 { icon: Phone, label: "WhatsApp", value: cliente?.whatsapp || "—" },
                 { icon: Mail, label: "Email", value: cliente?.email || "—" },
+                { icon: User, label: "Pet", value: displayPet || "—" },
                 { icon: MapPin, label: "Endereço", value: cliente?.endereco || "—" },
                 { icon: Calendar, label: "Cliente desde", value: cliente?.created_at ? format(new Date(cliente.created_at), "dd/MM/yyyy", { locale: ptBR }) : "—" },
               ] : [
                 { icon: Phone, label: "Telefone", value: displayPhone },
                 { icon: Mail, label: "Email", value: displayEmail },
-                { icon: User, label: "Empresa", value: displayEmpresa || "—" },
-                { icon: TrendingUp, label: "Origem", value: displayOrigem || "—" },
+                { icon: User, label: "Pet", value: displayPet || "—" },
+                { icon: TrendingUp, label: "Interesse", value: displayInteresse || "—" },
               ]).map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-start gap-2 text-xs">
                   <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" strokeWidth={1.5} />
@@ -355,7 +368,7 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
                 <div className="flex items-start gap-2 text-xs">
                   <TrendingUp className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" strokeWidth={1.5} />
                   <div>
-                    <p className="text-muted-foreground">Origem</p>
+                    <p className="text-muted-foreground">Interesse</p>
                     <p className="text-foreground font-medium">{cliente.como_conheceu}</p>
                   </div>
                 </div>
@@ -602,12 +615,12 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-muted-foreground">Empresa</label>
-                <Input value={cEmpresa} onChange={e => setCEmpresa(e.target.value)} placeholder="Empresa do contato" />
+                <label className="text-xs text-muted-foreground">Pet</label>
+                <Input value={cEmpresa} onChange={e => setCEmpresa(e.target.value)} placeholder="Nome do pet" />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Origem</label>
-                <Input value={cOrigem} onChange={e => setCOrigem(e.target.value)} placeholder="Indicação, anúncio…" />
+                <label className="text-xs text-muted-foreground">Interesse</label>
+                <Input value={cOrigem} onChange={e => setCOrigem(e.target.value)} placeholder="Banho, hotel, adestramento…" />
               </div>
             </div>
             <div>
