@@ -604,6 +604,7 @@ Deno.serve(async (req) => {
 
           // ─── NEW: chatbot_flows engine ──────────────────────────────
           let flowHandled = false;
+          let chatbotEnabled = true;
           try {
             // Respect per-conversation chatbot toggle
             const { data: conv } = await supabase
@@ -612,6 +613,7 @@ Deno.serve(async (req) => {
               .eq("id", conversa.id)
               .maybeSingle();
             if (conv && conv.chatbot_enabled === false) {
+              chatbotEnabled = false;
               throw new Error("__CHATBOT_DISABLED__");
             }
 
@@ -718,6 +720,11 @@ Deno.serve(async (req) => {
           }
 
           if (flowHandled) {
+            continue;
+          }
+
+          // Skip auto-reply rules if chatbot is disabled for this conversation
+          if (!chatbotEnabled) {
             continue;
           }
 
