@@ -13,8 +13,8 @@ export default function CRMInbox() {
   const { data: conversas, isLoading } = useConversations();
   const [selectedConversaId, setSelectedConversaId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [showCRM, setShowCRM] = useState(false);
   const isMobile = useIsMobile();
+  const [showCRM, setShowCRM] = useState(!isMobile);
 
   useEffect(() => {
     const phone = searchParams.get("phone");
