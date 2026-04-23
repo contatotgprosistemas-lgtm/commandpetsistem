@@ -378,6 +378,7 @@ const App = () => (
             >
               <Route index element={<OperacionalDashboard />} />
               <Route path="agenda" element={<OperacionalAgendaPage />} />
+              <Route path="reservas" element={<ReservasPage />} />
               <Route path="clientes" element={<OperacionalClientesPage />} />
               <Route path="pets" element={<OperacionalPetsPage />} />
               <Route path="ponto" element={<OperacionalPontoPage />} />
