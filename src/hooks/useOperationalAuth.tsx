@@ -52,9 +52,9 @@ export function OperationalAuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (!hasInitialized.current) {
-      setLoading(true);
-    }
+    // Set session immediately so ProtectedRoute doesn't bounce while we resolve the user record
+    setSession(s);
+    setLoading(true);
 
     // First try operational_users
     const { data: opData, error: opError } = await supabase

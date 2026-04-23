@@ -68,10 +68,7 @@ export default function OperacionalLoginPage() {
 
     await supabase.auth.signOut();
     toast.error("Acesso não autorizado ao portal operacional.");
-
-    toast.success("Login realizado!");
     setLoading(false);
-    navigate("/operacional", { replace: true });
   };
 
   return (
