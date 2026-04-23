@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, User, DollarSign, GripVertical, Phone, Mail, MessageCircle, Pencil, Trash2, MoreVertical, Building2, Tag, StickyNote, UserPlus } from "lucide-react";
+import { Plus, User, DollarSign, GripVertical, Phone, Mail, MessageCircle, Pencil, Trash2, MoreVertical, Building2, Tag, StickyNote } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
