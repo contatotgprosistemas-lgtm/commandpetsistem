@@ -29,8 +29,17 @@ function MessageNode({ id, data, selected }: NodeProps) {
     if (!file) return;
     setUploading(true);
     try {
-      const { data: profile } = await supabase.from('profiles').select('empresa_id').single();
-      const empresaId = profile?.empresa_id || 'unknown';
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth?.user?.id;
+      if (!userId) throw new Error('Você precisa estar logado para enviar arquivos.');
+      const { data: profile, error: profileErr } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (profileErr) throw profileErr;
+      const empresaId = profile?.empresa_id;
+      if (!empresaId) throw new Error('Sua conta não está vinculada a nenhuma empresa. Configure em Configurações.');
       const ext = file.name.split('.').pop() || 'bin';
       const path = `${empresaId}/chatbot_${messageType}_${Date.now()}.${ext}`;
       const { error } = await supabase.storage
