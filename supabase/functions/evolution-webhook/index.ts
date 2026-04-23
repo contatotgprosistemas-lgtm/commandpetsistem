@@ -322,7 +322,18 @@ Deno.serve(async (req) => {
         // Determine message type and content
         let content = "";
         let messageType = "texto";
-        const msgData = msg.message;
+        let msgData = msg.message;
+
+        // Unwrap envelope wrappers used by WhatsApp/Baileys for ephemeral/view-once/edited
+        for (let i = 0; i < 4 && msgData; i++) {
+          if (msgData.ephemeralMessage?.message) { msgData = msgData.ephemeralMessage.message; continue; }
+          if (msgData.viewOnceMessage?.message) { msgData = msgData.viewOnceMessage.message; continue; }
+          if (msgData.viewOnceMessageV2?.message) { msgData = msgData.viewOnceMessageV2.message; continue; }
+          if (msgData.viewOnceMessageV2Extension?.message) { msgData = msgData.viewOnceMessageV2Extension.message; continue; }
+          if (msgData.editedMessage?.message?.protocolMessage?.editedMessage) { msgData = msgData.editedMessage.message.protocolMessage.editedMessage; continue; }
+          if (msgData.documentWithCaptionMessage?.message) { msgData = { ...msgData, ...msgData.documentWithCaptionMessage.message }; continue; }
+          break;
+        }
 
         if (msgData?.conversation) {
           content = msgData.conversation;
@@ -378,24 +389,103 @@ Deno.serve(async (req) => {
           if (!content) content = "[áudio]";
         } else if (msgData?.videoMessage) {
           messageType = "midia";
-          content = msgData.videoMessage.caption || "[vídeo]";
+          content = msgData.videoMessage.caption || "";
+          if (EVOLUTION_API_URL && EVOLUTION_API_KEY && key.id) {
+            try {
+              const baseUrl = EVOLUTION_API_URL.replace(/\/$/, "");
+              const mediaRes = await fetch(`${baseUrl}/chat/getBase64FromMediaMessage/${instance}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
+                body: JSON.stringify({ message: { key }, convertToMp4: false }),
+              });
+              if (mediaRes.ok) {
+                const mediaData = await mediaRes.json();
+                if (mediaData.base64) {
+                  const mimeType = msgData.videoMessage.mimetype || "video/mp4";
+                  content = `data:${mimeType};base64,${mediaData.base64}`;
+                }
+              }
+            } catch (mediaErr) {
+              console.error("Failed to download video:", mediaErr);
+            }
+          }
+          if (!content) content = "[vídeo]";
         } else if (msgData?.documentMessage || msgData?.documentWithCaptionMessage) {
           messageType = "documento";
           const docMsg = msgData.documentMessage || msgData.documentWithCaptionMessage?.message?.documentMessage;
-          content = docMsg?.fileName || "[documento]";
+          const fileName = docMsg?.fileName || "[documento]";
+          content = fileName;
+          if (EVOLUTION_API_URL && EVOLUTION_API_KEY && key.id) {
+            try {
+              const baseUrl = EVOLUTION_API_URL.replace(/\/$/, "");
+              const mediaRes = await fetch(`${baseUrl}/chat/getBase64FromMediaMessage/${instance}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", apikey: EVOLUTION_API_KEY },
+                body: JSON.stringify({ message: { key }, convertToMp4: false }),
+              });
+              if (mediaRes.ok) {
+                const mediaData = await mediaRes.json();
+                if (mediaData.base64) {
+                  const mimeType = docMsg?.mimetype || "application/octet-stream";
+                  content = `data:${mimeType};base64,${mediaData.base64}`;
+                }
+              }
+            } catch (mediaErr) {
+              console.error("Failed to download document:", mediaErr);
+            }
+          }
         } else if (msgData?.stickerMessage) {
           messageType = "texto";
           content = "🏷️ Figurinha";
         } else if (msgData?.contactMessage || msgData?.contactsArrayMessage) {
           messageType = "texto";
-          content = "👤 Contato compartilhado";
+          const c = msgData.contactMessage || msgData.contactsArrayMessage?.contacts?.[0];
+          const nome = c?.displayName ? ` (${c.displayName})` : "";
+          content = `👤 Contato compartilhado${nome}`;
         } else if (msgData?.locationMessage || msgData?.liveLocationMessage) {
           messageType = "texto";
           const loc = msgData.locationMessage || msgData.liveLocationMessage;
           content = `📍 Localização: ${loc?.degreesLatitude || ""},${loc?.degreesLongitude || ""}`;
-        } else {
-          content = "[mídia não suportada]";
+        } else if (msgData?.reactionMessage) {
           messageType = "texto";
+          content = `Reagiu: ${msgData.reactionMessage.text || "👍"}`;
+        } else if (msgData?.pollCreationMessage || msgData?.pollCreationMessageV3 || msgData?.pollCreationMessageV2) {
+          messageType = "texto";
+          const poll = msgData.pollCreationMessage || msgData.pollCreationMessageV3 || msgData.pollCreationMessageV2;
+          content = `📊 Enquete: ${poll?.name || ""}`;
+        } else if (msgData?.pollUpdateMessage) {
+          messageType = "texto";
+          content = "📊 Voto em enquete";
+        } else if (msgData?.buttonsResponseMessage) {
+          messageType = "texto";
+          content = msgData.buttonsResponseMessage.selectedDisplayText || msgData.buttonsResponseMessage.selectedButtonId || "[resposta de botão]";
+        } else if (msgData?.listResponseMessage) {
+          messageType = "texto";
+          content = msgData.listResponseMessage.title || msgData.listResponseMessage.singleSelectReply?.selectedRowId || "[resposta de lista]";
+        } else if (msgData?.templateButtonReplyMessage) {
+          messageType = "texto";
+          content = msgData.templateButtonReplyMessage.selectedDisplayText || "[resposta]";
+        } else if (msgData?.protocolMessage) {
+          // Protocol messages (delete/edit/etc.) – ignore silently
+          continue;
+        } else if (msgData?.senderKeyDistributionMessage || msgData?.messageContextInfo) {
+          // Internal protocol payloads – ignore
+          continue;
+        } else {
+          // Final fallback: try to extract any text-like field, otherwise log keys
+          const textGuess =
+            msgData?.imageMessage?.caption ||
+            msgData?.videoMessage?.caption ||
+            msgData?.title ||
+            msgData?.text;
+          if (textGuess) {
+            content = String(textGuess);
+            messageType = "texto";
+          } else {
+            console.warn("Unsupported message keys:", msgData ? Object.keys(msgData) : []);
+            content = "[mídia não suportada]";
+            messageType = "texto";
+          }
         }
 
         // Find or create conversation
