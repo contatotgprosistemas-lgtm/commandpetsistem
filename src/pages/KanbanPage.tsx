@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, User, DollarSign, GripVertical, Phone, Mail, MessageCircle, Pencil, Trash2, MoreVertical } from "lucide-react";
+import { Plus, User, DollarSign, GripVertical, Phone, Mail, MessageCircle, Pencil, Trash2, MoreVertical, Building2, Tag, StickyNote, UserPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
@@ -36,12 +36,14 @@ const KANBAN_STAGES = [
 
 type FunilItem = {
   id: string;
-  cliente_id: string;
+  cliente_id: string | null;
+  crm_contato_id: string | null;
   estagio: string;
   valor_estimado: number | null;
   notas: string | null;
   updated_at: string;
   cliente?: { id: string; nome: string; email: string | null; whatsapp: string | null } | null;
+  crm_contato?: { id: string; nome: string; telefone: string | null; email: string | null; empresa: string | null; origem: string | null } | null;
 };
 
 export default function KanbanPage() {
@@ -67,7 +69,7 @@ export default function KanbanPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("funil_vendas")
-        .select("*, cliente:cliente_id(id, nome, email, whatsapp)")
+        .select("*, cliente:cliente_id(id, nome, email, whatsapp), crm_contato:crm_contato_id(id, nome, telefone, email, empresa, origem)")
         .eq("empresa_id", empresaId!)
         .order("updated_at", { ascending: false });
       if (error) throw error;
