@@ -24,15 +24,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const KANBAN_STAGES = [
-  { key: "novo_lead", label: "Novo Lead", color: "border-t-blue-500", bg: "bg-blue-500/10" },
-  { key: "contato_iniciado", label: "Contato Iniciado", color: "border-t-cyan-500", bg: "bg-cyan-500/10" },
-  { key: "qualificacao", label: "Qualificação", color: "border-t-amber-500", bg: "bg-amber-500/10" },
-  { key: "proposta", label: "Proposta", color: "border-t-orange-500", bg: "bg-orange-500/10" },
-  { key: "negociacao", label: "Negociação", color: "border-t-purple-500", bg: "bg-purple-500/10" },
-  { key: "fechado_ganho", label: "Fechado Ganho", color: "border-t-emerald-500", bg: "bg-emerald-500/10" },
-  { key: "fechado_perdido", label: "Fechado Perdido", color: "border-t-red-500", bg: "bg-red-500/10" },
+const STAGE_COLOR_OPTIONS = [
+  { label: "Azul", value: "border-t-blue-500" },
+  { label: "Ciano", value: "border-t-cyan-500" },
+  { label: "Âmbar", value: "border-t-amber-500" },
+  { label: "Laranja", value: "border-t-orange-500" },
+  { label: "Roxo", value: "border-t-purple-500" },
+  { label: "Verde", value: "border-t-emerald-500" },
+  { label: "Vermelho", value: "border-t-red-500" },
+  { label: "Rosa", value: "border-t-pink-500" },
+  { label: "Cinza", value: "border-t-slate-500" },
 ];
+
+type Stage = {
+  id: string;
+  key: string;
+  label: string;
+  color: string;
+  ordem: number;
+  is_default: boolean;
+};
 
 type FunilItem = {
   id: string;
@@ -62,6 +73,27 @@ export default function KanbanPage() {
   const [editEstagio, setEditEstagio] = useState("novo_lead");
   const [editNotas, setEditNotas] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<FunilItem | null>(null);
+  const [stageDialogOpen, setStageDialogOpen] = useState(false);
+  const [editStage, setEditStage] = useState<Stage | null>(null);
+  const [stageForm, setStageForm] = useState({ label: "", color: "border-t-blue-500" });
+  const [deleteStageConfirm, setDeleteStageConfirm] = useState<Stage | null>(null);
+
+  // Fetch stages
+  const { data: stages } = useQuery({
+    queryKey: ["funil-estagios", empresaId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("funil_estagios")
+        .select("*")
+        .eq("empresa_id", empresaId!)
+        .order("ordem", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Stage[];
+    },
+    enabled: !!empresaId,
+  });
+
+  const KANBAN_STAGES = stages ?? [];
 
   // Fetch funnel items with client data
   const { data: funilItems, isLoading } = useQuery({
@@ -178,6 +210,69 @@ export default function KanbanPage() {
     },
     onError: () => toast.error("Erro ao remover card"),
   });
+
+  // Stage mutations
+  const saveStage = useMutation({
+    mutationFn: async () => {
+      if (!empresaId) throw new Error("Sem empresa");
+      if (!stageForm.label.trim()) throw new Error("Nome obrigatório");
+      if (editStage) {
+        const { error } = await supabase
+          .from("funil_estagios")
+          .update({ label: stageForm.label.trim(), color: stageForm.color })
+          .eq("id", editStage.id);
+        if (error) throw error;
+      } else {
+        const key = stageForm.label.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/(^_|_$)/g, "") + "_" + Date.now().toString(36);
+        const maxOrdem = (stages ?? []).reduce((m, s) => Math.max(m, s.ordem), 0);
+        const { error } = await supabase.from("funil_estagios").insert({
+          empresa_id: empresaId,
+          key,
+          label: stageForm.label.trim(),
+          color: stageForm.color,
+          ordem: maxOrdem + 1,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["funil-estagios"] });
+      setStageDialogOpen(false);
+      setEditStage(null);
+      setStageForm({ label: "", color: "border-t-blue-500" });
+      toast.success("Etapa salva");
+    },
+    onError: (e: Error) => toast.error(e.message || "Erro ao salvar etapa"),
+  });
+
+  const deleteStage = useMutation({
+    mutationFn: async (stage: Stage) => {
+      const itemsInStage = (funilItems ?? []).filter(f => f.estagio === stage.key);
+      if (itemsInStage.length > 0) {
+        throw new Error(`Existem ${itemsInStage.length} card(s) nesta etapa. Mova-os antes de excluir.`);
+      }
+      const { error } = await supabase.from("funil_estagios").delete().eq("id", stage.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["funil-estagios"] });
+      setDeleteStageConfirm(null);
+      toast.success("Etapa removida");
+    },
+    onError: (e: Error) => toast.error(e.message || "Erro ao remover etapa"),
+  });
+
+  const openEditStage = (stage: Stage) => {
+    setEditStage(stage);
+    setStageForm({ label: stage.label, color: stage.color });
+    setStageDialogOpen(true);
+  };
+
+  const openNewStage = () => {
+    setEditStage(null);
+    setStageForm({ label: "", color: "border-t-blue-500" });
+    setStageDialogOpen(true);
+  };
 
   const openEdit = (item: FunilItem) => {
     setEditItem(item);
@@ -334,11 +429,35 @@ export default function KanbanPage() {
               >
                 {/* Column header */}
                 <div className={`px-3 py-2.5 border-t-[3px] rounded-t-lg ${stage.color}`}>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-foreground">{stage.label}</h3>
+                  <div className="flex items-center justify-between gap-1">
+                    <h3 className="text-xs font-semibold text-foreground truncate flex-1">{stage.label}</h3>
                     <span className="min-w-[22px] h-[22px] flex items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
                       {count}
                     </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          title="Opções da etapa"
+                        >
+                          <MoreVertical className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onSelect={() => openEditStage(stage)}>
+                          <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onSelect={() => setDeleteStageConfirm(stage)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                   {total > 0 && (
                     <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">
@@ -500,6 +619,15 @@ export default function KanbanPage() {
               </div>
             );
           })}
+          {/* Add stage column */}
+          <button
+            type="button"
+            onClick={openNewStage}
+            className="w-[260px] shrink-0 flex items-center justify-center rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-colors min-h-[120px]"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            <span className="text-xs font-medium">Nova etapa</span>
+          </button>
         </div>
       </div>
 
@@ -580,6 +708,68 @@ export default function KanbanPage() {
                 if (deleteConfirm) deleteItem.mutate(deleteConfirm.id);
                 setDeleteConfirm(null);
               }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Stage edit / new dialog */}
+      <Dialog open={stageDialogOpen} onOpenChange={(o) => { if (!o) { setStageDialogOpen(false); setEditStage(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editStage ? "Editar etapa" : "Nova etapa"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Nome</label>
+              <Input
+                value={stageForm.label}
+                onChange={e => setStageForm(s => ({ ...s, label: e.target.value }))}
+                placeholder="Ex: Aguardando retorno"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Cor</label>
+              <Select value={stageForm.color} onValueChange={(v) => setStageForm(s => ({ ...s, color: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STAGE_COLOR_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      <span className="inline-flex items-center gap-2">
+                        <span className={`inline-block h-3 w-3 rounded-sm border-t-[3px] ${opt.value}`} />
+                        {opt.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => { setStageDialogOpen(false); setEditStage(null); }}>Cancelar</Button>
+              <Button size="sm" onClick={() => saveStage.mutate()} disabled={saveStage.isPending || !stageForm.label.trim()}>
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stage delete confirmation */}
+      <AlertDialog open={!!deleteStageConfirm} onOpenChange={(o) => !o && setDeleteStageConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir etapa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A etapa <strong>{deleteStageConfirm?.label}</strong> será removida do funil. Cards existentes nesta etapa precisam ser movidos antes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteStageConfirm && deleteStage.mutate(deleteStageConfirm)}
             >
               Excluir
             </AlertDialogAction>
