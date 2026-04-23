@@ -373,13 +373,13 @@ const App = () => (
             {/* Operacional auth */}
             <Route path="/operacional/login" element={<OperacionalLoginPage />} />
 
-            {/* Módulo Comercial (novo - paralelo) */}
-            <Route path="/comercial" element={<ProtectedRoute><AppLayout><ComercialDashboard /></AppLayout></ProtectedRoute>} />
-            <Route path="/comercial/conversas" element={<ProtectedRoute><AppLayout><ComercialConversas /></AppLayout></ProtectedRoute>} />
-            <Route path="/comercial/contatos" element={<ProtectedRoute><AppLayout><ComercialContatos /></AppLayout></ProtectedRoute>} />
-            <Route path="/comercial/pipeline" element={<ProtectedRoute><AppLayout><ComercialPipeline /></AppLayout></ProtectedRoute>} />
-            <Route path="/comercial/campanhas" element={<ProtectedRoute><AppLayout><ComercialCampanhas /></AppLayout></ProtectedRoute>} />
-            <Route path="/comercial/automacao" element={<ProtectedRoute><AppLayout><ComercialAutomacao /></AppLayout></ProtectedRoute>} />
+            {/* Módulo Comercial (novo - paralelo, layout próprio fullscreen) */}
+            <Route path="/comercial" element={<ProtectedRoute><ComercialDashboard /></ProtectedRoute>} />
+            <Route path="/comercial/conversas" element={<ProtectedRoute><ComercialConversas /></ProtectedRoute>} />
+            <Route path="/comercial/contatos" element={<ProtectedRoute><ComercialContatos /></ProtectedRoute>} />
+            <Route path="/comercial/pipeline" element={<ProtectedRoute><ComercialPipeline /></ProtectedRoute>} />
+            <Route path="/comercial/campanhas" element={<ProtectedRoute><ComercialCampanhas /></ProtectedRoute>} />
+            <Route path="/comercial/automacao" element={<ProtectedRoute><ComercialAutomacao /></ProtectedRoute>} />
 
             {/* Operacional portal (protected) */}
             <Route
