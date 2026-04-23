@@ -33,8 +33,17 @@ export default function CRMInbox() {
 
   const selectedConversa = conversas?.find(c => c.id === selectedConversaId) ?? null;
   const clienteId = selectedConversa?.cliente_id || null;
+  const crmContatoId = (selectedConversa as any)?.crm_contato_id || null;
 
-  const crmPanel = <CRMPanel clienteId={clienteId} telefone={selectedConversa?.contato_telefone} />;
+  const crmPanel = (
+    <CRMPanel
+      clienteId={clienteId}
+      crmContatoId={crmContatoId}
+      conversaId={selectedConversa?.id ?? null}
+      telefone={selectedConversa?.contato_telefone}
+      contatoNome={selectedConversa?.contato_nome}
+    />
+  );
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] relative overflow-hidden">
