@@ -41,6 +41,65 @@ async function sendAutoReply(
   }
 }
 
+async function sendAutoMedia(
+  baseUrl: string,
+  headers: Record<string, string>,
+  instanceName: string,
+  phone: string,
+  mediaType: "image" | "audio" | "video" | "document",
+  mediaUrl: string,
+  caption: string,
+  fileName: string | undefined,
+  supabase: any,
+  conversaId: string,
+  empresaId: string,
+) {
+  try {
+    const cleanNumber = String(phone).replace(/\D/g, "");
+    if (cleanNumber.length < 10 || !mediaUrl) return;
+
+    let endpoint = "";
+    let body: Record<string, any> = { number: phone };
+
+    if (mediaType === "audio") {
+      endpoint = `${baseUrl}/message/sendWhatsAppAudio/${instanceName}`;
+      body.audio = mediaUrl;
+    } else {
+      endpoint = `${baseUrl}/message/sendMedia/${instanceName}`;
+      body.mediatype = mediaType; // image | video | document
+      body.media = mediaUrl;
+      if (caption) body.caption = caption;
+      if (mediaType === "document") {
+        body.fileName = fileName || "arquivo.pdf";
+        body.mimetype = fileName?.toLowerCase().endsWith(".pdf") ? "application/pdf" : "application/octet-stream";
+      }
+    }
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+    const txt = await res.text();
+    console.log(`Media (${mediaType}) sent to ${phone}: ${res.status} ${txt.slice(0, 200)}`);
+
+    const tipoDb = mediaType === "image" ? "imagem"
+      : mediaType === "audio" ? "audio"
+      : mediaType === "document" ? "documento"
+      : "midia";
+
+    await supabase.from("mensagens").insert({
+      conversa_id: conversaId,
+      empresa_id: empresaId,
+      conteudo: mediaUrl,
+      remetente: "bot",
+      tipo: tipoDb,
+    });
+  } catch (err) {
+    console.error("Failed to send auto-media:", err);
+  }
+}
+
 // Build menu text with numbered options
 function buildMenuText(message: string, options: { label: string }[]): string {
   if (!options?.length) return message;
@@ -66,7 +125,18 @@ async function renderStep(
   }
 
   if (step.step_type === "message") {
-    if (step.message?.trim()) {
+    const cfg = (step.condition_config && typeof step.condition_config === "object") ? step.condition_config : {};
+    const messageType = cfg.message_type || "text";
+    const mediaUrl = cfg.media_url || "";
+    const fileName = cfg.media_filename || undefined;
+
+    if (messageType !== "text" && mediaUrl) {
+      await sendAutoMedia(
+        baseUrl, headers, instanceName, phone,
+        messageType as any, mediaUrl, step.message || "", fileName,
+        supabase, conversaId, empresaId,
+      );
+    } else if (step.message?.trim()) {
       await sendAutoReply(baseUrl, headers, instanceName, phone, step.message, supabase, conversaId, empresaId);
     }
     return step.next_step_id || null;
