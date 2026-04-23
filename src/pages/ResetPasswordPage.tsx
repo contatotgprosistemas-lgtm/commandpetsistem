@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { toast } from "@/hooks/use-toast";
+import { translateAuthError } from "@/lib/authErrors";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao redefinir senha", description: translateAuthError(error, "Não foi possível atualizar a senha."), variant: "destructive" });
     } else {
       toast({ title: "Senha atualizada com sucesso!" });
       navigate("/login");

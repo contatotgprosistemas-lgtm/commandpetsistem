@@ -25,7 +25,12 @@ export default function PortalResetPasswordPage() {
     if (password.length < 6) { toast.error("Senha deve ter pelo menos 6 caracteres."); return; }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
-    if (error) { toast.error("Erro ao redefinir senha: " + error.message); setLoading(false); return; }
+    if (error) {
+      const { translateAuthError } = await import("@/lib/authErrors");
+      toast.error(translateAuthError(error, "Erro ao redefinir senha."));
+      setLoading(false);
+      return;
+    }
     toast.success("Senha redefinida com sucesso!");
     navigate("/portal/login");
     setLoading(false);

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Building2, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { translateAuthError } from "@/lib/authErrors";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export default function SignupPage() {
     setLoading(false);
 
     if (authError) {
-      toast({ title: "Erro ao criar conta", description: authError.message, variant: "destructive" });
+      toast({ title: "Erro ao criar conta", description: translateAuthError(authError, "Não foi possível criar a conta."), variant: "destructive" });
       return;
     }
 
