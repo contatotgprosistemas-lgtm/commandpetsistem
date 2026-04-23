@@ -1544,6 +1544,7 @@ export type Database = {
         Row: {
           atendente_id: string | null
           chatbot_enabled: boolean
+          chatbot_flow_started_at: string | null
           cliente_id: string | null
           contato_nome: string
           contato_telefone: string
@@ -1562,6 +1563,7 @@ export type Database = {
         Insert: {
           atendente_id?: string | null
           chatbot_enabled?: boolean
+          chatbot_flow_started_at?: string | null
           cliente_id?: string | null
           contato_nome: string
           contato_telefone: string
@@ -1580,6 +1582,7 @@ export type Database = {
         Update: {
           atendente_id?: string | null
           chatbot_enabled?: boolean
+          chatbot_flow_started_at?: string | null
           cliente_id?: string | null
           contato_nome?: string
           contato_telefone?: string
