@@ -233,6 +233,18 @@ async function runFlowFromStep(
       lastWaitingStepId = step.id;
       break;
     }
+    // Message step configured to wait for user reply before advancing.
+    if (typeof nextId === "string" && nextId.startsWith("__WAIT__:")) {
+      lastWaitingStepId = nextId.slice("__WAIT__:".length);
+      // Advance the session pointer to next_step_id so the user's reply triggers the following step.
+      if (step.next_step_id) {
+        await supabase
+          .from("chatbot_sessions")
+          .update({ current_step_id: step.next_step_id, updated_at: new Date().toISOString() })
+          .eq("conversa_id", conversaId);
+      }
+      break;
+    }
     if (!nextId || nextId === currentId) break;
     currentId = nextId;
   }
