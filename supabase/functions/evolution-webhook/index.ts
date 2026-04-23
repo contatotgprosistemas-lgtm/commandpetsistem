@@ -139,6 +139,10 @@ async function renderStep(
     } else if (step.message?.trim()) {
       await sendAutoReply(baseUrl, headers, instanceName, phone, step.message, supabase, conversaId, empresaId);
     }
+    // Respect "Continuar = Após resposta": pause the flow on this step until the user replies.
+    if (cfg.continue_mode === "after_reply") {
+      return `__WAIT__:${step.id}`;
+    }
     return step.next_step_id || null;
   }
 
