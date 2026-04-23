@@ -129,8 +129,10 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
   open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; onSaved: () => void;
 }) {
   const { profile } = useAuth();
-  const [itens, setItens] = useState<{ produto_id: string; descricao: string; quantidade: number; valor_unitario: number; subtotal: number }[]>([]);
+  const [itens, setItens] = useState<{ produto_id: string | null; servico_id: string | null; descricao: string; quantidade: number; valor_unitario: number; subtotal: number }[]>([]);
+  const [tipoItem, setTipoItem] = useState<"produto" | "servico">("produto");
   const [produtoId, setProdutoId] = useState("");
+  const [servicoId, setServicoId] = useState("");
   const [quantidade, setQuantidade] = useState("1");
   const [desconto, setDesconto] = useState("0");
   const [formaPagamento, setFormaPagamento] = useState("dinheiro");
@@ -149,6 +151,15 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
     enabled: open && !!empresaId,
   });
 
+  const { data: servicos } = useQuery({
+    queryKey: ["servicos-ativos", empresaId],
+    queryFn: async () => {
+      const { data } = await supabase.from("servicos").select("id, descricao, valor, tipo").eq("ativo", true).order("descricao");
+      return data || [];
+    },
+    enabled: open && !!empresaId,
+  });
+
   const { data: clientes } = useQuery({
     queryKey: ["clientes-venda", empresaId],
     queryFn: async () => {
@@ -162,31 +173,57 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
     p.descricao.toLowerCase().includes(searchProd.toLowerCase()) ||
     (p.codigo_barras && p.codigo_barras.includes(searchProd))
   );
+  const filteredServicos = servicos?.filter(s =>
+    s.descricao.toLowerCase().includes(searchProd.toLowerCase())
+  );
 
   const addItem = () => {
-    const prod = produtos?.find(p => p.id === produtoId);
-    if (!prod) return;
     const qty = parseInt(quantidade) || 1;
-    if (qty > prod.estoque_atual) {
-      toast.error(`Estoque insuficiente! Disponível: ${prod.estoque_atual}`);
-      return;
-    }
-    const existing = itens.findIndex(i => i.produto_id === prod.id);
-    if (existing >= 0) {
-      const updated = [...itens];
-      updated[existing].quantidade += qty;
-      updated[existing].subtotal = updated[existing].quantidade * updated[existing].valor_unitario;
-      setItens(updated);
+    if (tipoItem === "produto") {
+      const prod = produtos?.find(p => p.id === produtoId);
+      if (!prod) return;
+      if (qty > prod.estoque_atual) {
+        toast.error(`Estoque insuficiente! Disponível: ${prod.estoque_atual}`);
+        return;
+      }
+      const existing = itens.findIndex(i => i.produto_id === prod.id);
+      if (existing >= 0) {
+        const updated = [...itens];
+        updated[existing].quantidade += qty;
+        updated[existing].subtotal = updated[existing].quantidade * updated[existing].valor_unitario;
+        setItens(updated);
+      } else {
+        setItens([...itens, {
+          produto_id: prod.id,
+          servico_id: null,
+          descricao: prod.descricao,
+          quantidade: qty,
+          valor_unitario: Number(prod.valor),
+          subtotal: qty * Number(prod.valor),
+        }]);
+      }
     } else {
-      setItens([...itens, {
-        produto_id: prod.id,
-        descricao: prod.descricao,
-        quantidade: qty,
-        valor_unitario: Number(prod.valor),
-        subtotal: qty * Number(prod.valor),
-      }]);
+      const serv = servicos?.find(s => s.id === servicoId);
+      if (!serv) return;
+      const existing = itens.findIndex(i => i.servico_id === serv.id);
+      if (existing >= 0) {
+        const updated = [...itens];
+        updated[existing].quantidade += qty;
+        updated[existing].subtotal = updated[existing].quantidade * updated[existing].valor_unitario;
+        setItens(updated);
+      } else {
+        setItens([...itens, {
+          produto_id: null,
+          servico_id: serv.id,
+          descricao: serv.descricao,
+          quantidade: qty,
+          valor_unitario: Number(serv.valor),
+          subtotal: qty * Number(serv.valor),
+        }]);
+      }
     }
     setProdutoId("");
+    setServicoId("");
     setQuantidade("1");
     setSearchProd("");
   };
