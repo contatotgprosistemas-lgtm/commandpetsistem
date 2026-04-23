@@ -594,6 +594,7 @@ export type Database = {
           empresa_id: string
           id: string
           name: string
+          start_position: Json | null
           trigger_keyword: string | null
           updated_at: string
           variables: Json | null
@@ -605,6 +606,7 @@ export type Database = {
           empresa_id: string
           id?: string
           name: string
+          start_position?: Json | null
           trigger_keyword?: string | null
           updated_at?: string
           variables?: Json | null
@@ -616,6 +618,7 @@ export type Database = {
           empresa_id?: string
           id?: string
           name?: string
+          start_position?: Json | null
           trigger_keyword?: string | null
           updated_at?: string
           variables?: Json | null

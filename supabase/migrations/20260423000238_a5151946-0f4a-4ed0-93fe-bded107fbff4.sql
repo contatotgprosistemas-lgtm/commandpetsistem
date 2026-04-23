@@ -1,0 +1,1 @@
+ALTER TABLE public.chatbot_flows ADD COLUMN IF NOT EXISTS start_position jsonb DEFAULT '{"x":300,"y":0}'::jsonb;

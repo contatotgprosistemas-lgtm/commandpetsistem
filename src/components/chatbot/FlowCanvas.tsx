@@ -184,6 +184,16 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
   }, [flowId]);
 
   async function loadFlow() {
+    const { data: flowRow } = await supabase
+      .from('chatbot_flows')
+      .select('start_position')
+      .eq('id', flowId)
+      .maybeSingle();
+
+    const startPos = (flowRow as any)?.start_position && typeof (flowRow as any).start_position === 'object'
+      ? { x: Number((flowRow as any).start_position.x ?? 300), y: Number((flowRow as any).start_position.y ?? 0) }
+      : { x: 300, y: 0 };
+
     const { data: steps } = await supabase
       .from('chatbot_flow_steps')
       .select('*')
@@ -194,7 +204,7 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
       setNodes([{
         id: 'start',
         type: 'start',
-        position: { x: 300, y: 50 },
+        position: startPos,
         data: {},
         deletable: false,
       }]);
@@ -204,7 +214,7 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
     const flowNodes: Node[] = [{
       id: 'start',
       type: 'start',
-      position: { x: 300, y: 0 },
+      position: startPos,
       data: {},
       deletable: false,
     }];
@@ -499,7 +509,15 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
         }
       }
 
-      await supabase.from('chatbot_flows').update({ variables: variables as any }).eq('id', flowId);
+      const startNode = nodes.find(n => n.id === 'start');
+      const startPosition = startNode
+        ? { x: startNode.position.x, y: startNode.position.y }
+        : { x: 300, y: 0 };
+
+      await supabase
+        .from('chatbot_flows')
+        .update({ variables: variables as any, start_position: startPosition as any })
+        .eq('id', flowId);
       toast.success('Fluxo salvo com sucesso!');
       initialized.current = false;
       loadFlow();
