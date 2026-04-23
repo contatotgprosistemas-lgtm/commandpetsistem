@@ -575,6 +575,55 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
           </ScrollArea>
         </TabsContent>
       </Tabs>
+
+      {/* CRM Contact Dialog */}
+      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{crmContatoId ? "Editar contato" : "Cadastrar contato no CRM"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <p className="text-[11px] text-muted-foreground">
+              Este cadastro fica apenas no CRM e <strong>não cria um cliente operacional</strong>.
+            </p>
+            <div>
+              <label className="text-xs text-muted-foreground">Nome *</label>
+              <Input value={cName} onChange={e => setCName(e.target.value)} placeholder="Nome do contato" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-muted-foreground">Telefone</label>
+                <Input value={cPhone} onChange={e => setCPhone(e.target.value)} placeholder="(11) 9..." />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Email</label>
+                <Input type="email" value={cEmail} onChange={e => setCEmail(e.target.value)} placeholder="email@..." />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-muted-foreground">Empresa</label>
+                <Input value={cEmpresa} onChange={e => setCEmpresa(e.target.value)} placeholder="Empresa do contato" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Origem</label>
+                <Input value={cOrigem} onChange={e => setCOrigem(e.target.value)} placeholder="Indicação, anúncio…" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Observações</label>
+              <Textarea value={cObs} onChange={e => setCObs(e.target.value)} placeholder="Notas internas..." className="min-h-[60px]" />
+            </div>
+            <Button
+              className="w-full"
+              disabled={!cName.trim() || saveCrmContact.isPending}
+              onClick={() => saveCrmContact.mutate()}
+            >
+              {crmContatoId ? "Salvar alterações" : "Cadastrar contato"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
