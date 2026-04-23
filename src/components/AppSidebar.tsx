@@ -29,6 +29,7 @@ import {
   CalendarCheck,
   Wallet,
   Wrench,
+  Sparkles,
 } from "lucide-react";
 
 type MenuItem = { icon: any; label: string; path: string };
@@ -206,6 +207,7 @@ export function AppSidebar() {
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
         {renderNavItem({ icon: LayoutDashboard, label: "Dashboard", path: "/" })}
+        {renderNavItem({ icon: Sparkles, label: "CRM", path: "/crm" })}
 
         {renderSubmenu("Operacional", Wrench, operacionalItems, isOperacionalActive, operacionalOpen, setOperacionalOpen)}
         {renderSubmenu("Finanças", Wallet, financasItems, isFinancasActive, financasOpen, setFinancasOpen)}

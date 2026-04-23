@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 10%;
 
-    --primary: 224 76% 48%;
+    --primary: 250 84% 60%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 94%;
@@ -24,7 +24,7 @@
     --muted: 220 14% 94%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 256 65% 52%;
+    --accent: 326 84% 58%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -39,15 +39,17 @@
     --info: 217 91% 60%;
     --info-foreground: 0 0% 100%;
 
-    --primary-glow: 224 90% 65%;
+    --primary-glow: 268 92% 70%;
 
-    --chart-1: 224 76% 55%;
-    --chart-2: 188 70% 45%;
-    --chart-3: 152 60% 45%;
-    --chart-4: 38 92% 55%;
-    --chart-5: 280 65% 55%;
+    --chart-1: 250 84% 60%;
+    --chart-2: 326 84% 58%;
+    --chart-3: 188 90% 50%;
+    --chart-4: 152 65% 48%;
+    --chart-5: 38 92% 55%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    --gradient-brand: linear-gradient(135deg, hsl(250 84% 60%) 0%, hsl(280 84% 60%) 50%, hsl(326 84% 58%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(240 18% 10%) 0%, hsl(245 22% 7%) 100%);
     --shadow-sm: 0 1px 2px 0 hsl(220 25% 10% / 0.05);
     --shadow-md: 0 4px 12px -2px hsl(220 25% 10% / 0.08);
     --shadow-lg: 0 12px 32px -8px hsl(220 25% 10% / 0.12);
@@ -55,24 +57,27 @@
 
     --border: 220 13% 90%;
     --input: 220 13% 90%;
-    --ring: 224 76% 48%;
+    --ring: 250 84% 60%;
 
     --radius: 0.625rem;
 
-    --sidebar-background: 224 25% 12%;
-    --sidebar-foreground: 220 14% 90%;
-    --sidebar-primary: 224 76% 55%;
+    --sidebar-background: 240 18% 8%;
+    --sidebar-foreground: 220 14% 92%;
+    --sidebar-primary: 250 84% 62%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 20% 18%;
-    --sidebar-accent-foreground: 220 14% 90%;
-    --sidebar-border: 224 20% 18%;
-    --sidebar-ring: 224 76% 55%;
-    --sidebar-muted: 220 10% 50%;
+    --sidebar-accent: 240 18% 14%;
+    --sidebar-accent-foreground: 220 14% 92%;
+    --sidebar-border: 240 18% 14%;
+    --sidebar-ring: 250 84% 62%;
+    --sidebar-muted: 220 10% 55%;
 
     /* WhatsApp chat colors */
-    --chat-bubble-out: 142 60% 85%;
+    --chat-bubble-out: 250 84% 92%;
     --chat-bubble-in: 0 0% 100%;
-    --chat-bg: 60 5% 92%;
+    --chat-bubble-out-dark: 250 40% 22%;
+    --chat-bubble-in-dark: 240 12% 14%;
+    --chat-bg: 240 14% 96%;
+    --chat-bg-dark: 240 18% 6%;
   }
 
   .dark {

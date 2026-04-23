@@ -68,6 +68,11 @@ import PortalTransportePage from "@/pages/portal/PortalTransportePage";
 import PortalEstouChegandoPage from "@/pages/portal/PortalEstouChegandoPage";
 import PortalContratosPage from "@/pages/portal/PortalContratosPage";
 
+// CRM module
+import { CRMLayout } from "@/components/crm/CRMLayout";
+import CRMDashboard from "@/pages/crm/CRMDashboard";
+import CRMPlaceholder from "@/pages/crm/CRMPlaceholder";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -330,6 +335,27 @@ const App = () => (
 
             {/* Operacional auth */}
             <Route path="/operacional/login" element={<OperacionalLoginPage />} />
+
+            {/* CRM module (fullscreen, sidebar interna própria) */}
+            <Route
+              path="/crm"
+              element={
+                <ProtectedRoute>
+                  <CRMLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<CRMDashboard />} />
+              <Route path="conversas" element={<CRMPlaceholder title="Conversas" description="Atendimento omnichannel estilo WhatsApp Web." />} />
+              <Route path="contatos" element={<CRMPlaceholder title="Contatos" description="Base de contatos do CRM com tags, score e segmentação." />} />
+              <Route path="pipeline" element={<CRMPlaceholder title="Pipeline" description="Funil de vendas Kanban com drag-and-drop." />} />
+              <Route path="tarefas" element={<CRMPlaceholder title="Tarefas" description="Follow-ups e atividades comerciais." />} />
+              <Route path="automacao" element={<CRMPlaceholder title="Automação" description="Construtor visual de chatbot e fluxos." />} />
+              <Route path="campanhas" element={<CRMPlaceholder title="Campanhas" description="Disparos em massa por canal." />} />
+              <Route path="canais" element={<CRMPlaceholder title="Canais" description="Multi números WhatsApp, Instagram e Facebook." />} />
+              <Route path="analytics" element={<CRMPlaceholder title="Analytics" description="BI interno e indicadores comerciais." />} />
+              <Route path="configuracoes" element={<CRMPlaceholder title="Configurações" description="Equipe, permissões, integrações e API." />} />
+            </Route>
 
             {/* Operacional portal (protected) */}
             <Route
