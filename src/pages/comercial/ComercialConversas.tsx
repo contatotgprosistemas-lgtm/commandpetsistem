@@ -121,7 +121,7 @@ export default function ComercialConversas() {
           )}
         </div>
 
-        {aiOpen && selected && <AIPanel messages={messages.map((m) => ({ from: m.direction, text: m.body }))} onClose={() => setAiOpen(false)} onUse={(t) => setDraft(t)} />}
+        {aiOpen && selected && <AIPanel messages={messages.map((m) => ({ from: (m.direction === "me" ? "me" : "them") as "me" | "them", text: m.body }))} onClose={() => setAiOpen(false)} onUse={(t) => setDraft(t)} />}
       </div>
 
       {newOpen && <NewConversation onClose={() => setNewOpen(false)} />}
