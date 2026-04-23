@@ -253,6 +253,8 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
     const itensPayload = itens.map(i => ({
       venda_id: venda.id,
       produto_id: i.produto_id,
+      servico_id: i.servico_id,
+      descricao: i.descricao,
       quantidade: i.quantidade,
       valor_unitario: i.valor_unitario,
       subtotal: i.subtotal,
@@ -281,11 +283,29 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
 
         {/* Add item */}
         <div className="border rounded-lg p-4 space-y-3">
-          <Label className="font-semibold">Adicionar Produto</Label>
+          <div className="flex items-center justify-between">
+            <Label className="font-semibold">Adicionar Item</Label>
+            <div className="flex gap-1 rounded-md bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => { setTipoItem("produto"); setProdutoId(""); setServicoId(""); setSearchProd(""); }}
+                className={`px-3 py-1 text-xs rounded ${tipoItem === "produto" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
+              >Produto</button>
+              <button
+                type="button"
+                onClick={() => { setTipoItem("servico"); setProdutoId(""); setServicoId(""); setSearchProd(""); }}
+                className={`px-3 py-1 text-xs rounded ${tipoItem === "servico" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
+              >Serviço</button>
+            </div>
+          </div>
           <div className="flex gap-2">
             <div className="flex-1">
-              <Input placeholder="Buscar por nome ou código de barras..." value={searchProd} onChange={e => setSearchProd(e.target.value)} />
-              {searchProd && filteredProdutos && filteredProdutos.length > 0 && (
+              <Input
+                placeholder={tipoItem === "produto" ? "Buscar por nome ou código de barras..." : "Buscar serviço..."}
+                value={searchProd}
+                onChange={e => setSearchProd(e.target.value)}
+              />
+              {tipoItem === "produto" && searchProd && filteredProdutos && filteredProdutos.length > 0 && (
                 <div className="border rounded-md mt-1 max-h-32 overflow-y-auto bg-background shadow-md">
                   {filteredProdutos.map(p => (
                     <button key={p.id} className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between"
@@ -296,9 +316,20 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
                   ))}
                 </div>
               )}
+              {tipoItem === "servico" && searchProd && filteredServicos && filteredServicos.length > 0 && (
+                <div className="border rounded-md mt-1 max-h-32 overflow-y-auto bg-background shadow-md">
+                  {filteredServicos.map(s => (
+                    <button key={s.id} className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between"
+                      onClick={() => { setServicoId(s.id); setSearchProd(s.descricao); }}>
+                      <span>{s.descricao} <span className="text-xs text-muted-foreground">({s.tipo})</span></span>
+                      <span className="text-muted-foreground">R$ {Number(s.valor).toFixed(2)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <Input className="w-20" type="number" min="1" value={quantidade} onChange={e => setQuantidade(e.target.value)} placeholder="Qtd" />
-            <Button onClick={addItem} disabled={!produtoId}>Adicionar</Button>
+            <Button onClick={addItem} disabled={tipoItem === "produto" ? !produtoId : !servicoId}>Adicionar</Button>
           </div>
         </div>
 
