@@ -16,6 +16,7 @@ import {
   Phone, Mail, MapPin, Tag, ChevronRight,
   Plus, Calendar,
   CheckCircle2, Circle,
+  UserPlus, Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -40,10 +41,13 @@ type Task = { id: string; title: string; description: string | null; due_date: s
 
 interface CRMPanelProps {
   clienteId: string | null;
+  crmContatoId?: string | null;
+  conversaId?: string | null;
   telefone?: string;
+  contatoNome?: string;
 }
 
-export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
+export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contatoNome }: CRMPanelProps) {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const empresaId = profile?.empresa_id;
@@ -53,6 +57,18 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
   const [taskDesc, setTaskDesc] = useState("");
   const [taskDue, setTaskDue] = useState("");
   const [taskPriority, setTaskPriority] = useState("media");
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [cName, setCName] = useState("");
+  const [cPhone, setCPhone] = useState("");
+  const [cEmail, setCEmail] = useState("");
+  const [cEmpresa, setCEmpresa] = useState("");
+  const [cOrigem, setCOrigem] = useState("");
+  const [cObs, setCObs] = useState("");
+
+  // Owner = either operational client or CRM-only contact
+  const ownerCol: "cliente_id" | "crm_contato_id" = clienteId ? "cliente_id" : "crm_contato_id";
+  const ownerVal: string | null = clienteId || crmContatoId || null;
+  const ownerKey = ownerVal ? `${ownerCol}:${ownerVal}` : "none";
 
   const { data: cliente, isLoading } = useQuery({
     queryKey: ["crm-cliente", clienteId],
@@ -65,53 +81,68 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
     enabled: !!clienteId,
   });
 
-  const { data: funil } = useQuery({
-    queryKey: ["crm-funil", clienteId],
+  const { data: crmContato } = useQuery({
+    queryKey: ["crm-contato", crmContatoId],
     queryFn: async () => {
-      if (!clienteId) return null;
-      const { data } = await supabase.from("funil_vendas").select("*").eq("cliente_id", clienteId).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+      if (!crmContatoId) return null;
+      const { data } = await (supabase as any).from("crm_contatos").select("*").eq("id", crmContatoId).maybeSingle();
       return data;
     },
-    enabled: !!clienteId,
+    enabled: !!crmContatoId,
+  });
+
+  const { data: funil } = useQuery({
+    queryKey: ["crm-funil", ownerKey],
+    queryFn: async () => {
+      if (!ownerVal) return null;
+      const { data } = await supabase.from("funil_vendas").select("*").eq(ownerCol, ownerVal).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+      return data;
+    },
+    enabled: !!ownerVal,
   });
 
   const { data: notas } = useQuery({
-    queryKey: ["crm-notas", clienteId],
+    queryKey: ["crm-notas", ownerKey],
     queryFn: async () => {
-      if (!clienteId) return [];
-      const { data } = await supabase.from("notas_contato").select("*, profiles:autor_id(nome)").eq("cliente_id", clienteId).order("created_at", { ascending: false });
+      if (!ownerVal) return [];
+      const { data } = await supabase.from("notas_contato").select("*, profiles:autor_id(nome)").eq(ownerCol, ownerVal).order("created_at", { ascending: false });
       return data ?? [];
     },
-    enabled: !!clienteId,
+    enabled: !!ownerVal,
   });
 
   const { data: tasks } = useQuery({
-    queryKey: ["crm-tasks", clienteId],
+    queryKey: ["crm-tasks", ownerKey],
     queryFn: async () => {
-      if (!clienteId) return [];
-      const { data } = await (supabase as any).from("contact_tasks").select("*, assigned:assigned_user_id(nome)").eq("cliente_id", clienteId).order("due_date", { ascending: true });
+      if (!ownerVal) return [];
+      const { data } = await (supabase as any).from("contact_tasks").select("*, assigned:assigned_user_id(nome)").eq(ownerCol, ownerVal).order("due_date", { ascending: true });
       return (data ?? []) as Task[];
     },
-    enabled: !!clienteId,
+    enabled: !!ownerVal,
   });
 
   const { data: historico } = useQuery({
-    queryKey: ["crm-historico", clienteId],
+    queryKey: ["crm-historico", ownerKey],
     queryFn: async () => {
-      if (!clienteId) return [];
-      const { data } = await supabase.from("historico_interacoes").select("*, profiles:user_id(nome)").eq("cliente_id", clienteId).order("created_at", { ascending: false }).limit(50);
+      if (!ownerVal) return [];
+      const { data } = await supabase.from("historico_interacoes").select("*, profiles:user_id(nome)").eq(ownerCol, ownerVal).order("created_at", { ascending: false }).limit(50);
       return data ?? [];
     },
-    enabled: !!clienteId,
+    enabled: !!ownerVal,
   });
 
   const addNote = useMutation({
     mutationFn: async (conteudo: string) => {
-      if (!clienteId || !empresaId) throw new Error("Missing data");
-      await supabase.from("notas_contato").insert({ cliente_id: clienteId, empresa_id: empresaId, conteudo, autor_id: profile?.id });
+      if (!ownerVal || !empresaId) throw new Error("Missing data");
+      await supabase.from("notas_contato").insert({
+        [ownerCol]: ownerVal,
+        empresa_id: empresaId,
+        conteudo,
+        autor_id: profile?.id,
+      } as any);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["crm-notas", clienteId] });
+      queryClient.invalidateQueries({ queryKey: ["crm-notas", ownerKey] });
       setNewNote("");
       toast.success("Nota adicionada");
     },
@@ -119,7 +150,7 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
 
   const updateFunnel = useMutation({
     mutationFn: async ({ estagio, valor_estimado }: { estagio?: string; valor_estimado?: number }) => {
-      if (!clienteId || !empresaId) throw new Error("Missing");
+      if (!ownerVal || !empresaId) throw new Error("Missing");
       const updateData: { estagio?: string; valor_estimado?: number } = {};
       if (estagio !== undefined) updateData.estagio = estagio;
       if (valor_estimado !== undefined) updateData.valor_estimado = valor_estimado;
@@ -128,27 +159,28 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
         await supabase.from("funil_vendas").update(updateData).eq("id", funil.id);
       } else {
         await supabase.from("funil_vendas").insert({
-          cliente_id: clienteId, empresa_id: empresaId,
+          [ownerCol]: ownerVal,
+          empresa_id: empresaId,
           estagio: estagio || "novo_lead",
           valor_estimado: valor_estimado ?? 0,
-        });
+        } as any);
       }
       if (estagio) {
         await supabase.from("historico_interacoes").insert({
-          cliente_id: clienteId, empresa_id: empresaId, tipo: "funil",
+          [ownerCol]: ownerVal, empresa_id: empresaId, tipo: "funil",
           descricao: `Movido para: ${FUNNEL_STAGES.find(s => s.key === estagio)?.label}`, user_id: profile?.id,
-        });
+        } as any);
       }
       if (valor_estimado !== undefined) {
         await supabase.from("historico_interacoes").insert({
-          cliente_id: clienteId, empresa_id: empresaId, tipo: "funil",
+          [ownerCol]: ownerVal, empresa_id: empresaId, tipo: "funil",
           descricao: `Valor da negociação: R$ ${valor_estimado.toFixed(2)}`, user_id: profile?.id,
-        });
+        } as any);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["crm-funil", clienteId] });
-      queryClient.invalidateQueries({ queryKey: ["crm-historico", clienteId] });
+      queryClient.invalidateQueries({ queryKey: ["crm-funil", ownerKey] });
+      queryClient.invalidateQueries({ queryKey: ["crm-historico", ownerKey] });
       queryClient.invalidateQueries({ queryKey: ["kanban-funil"] });
       toast.success("Funil atualizado");
     },
@@ -156,15 +188,15 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
 
   const addTask = useMutation({
     mutationFn: async () => {
-      if (!clienteId || !empresaId) throw new Error("Missing");
+      if (!ownerVal || !empresaId) throw new Error("Missing");
       await (supabase as any).from("contact_tasks").insert({
-        cliente_id: clienteId, empresa_id: empresaId, title: taskTitle,
+        [ownerCol]: ownerVal, empresa_id: empresaId, title: taskTitle,
         description: taskDesc || null, due_date: taskDue || null,
         priority: taskPriority, assigned_user_id: profile?.id,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["crm-tasks", clienteId] });
+      queryClient.invalidateQueries({ queryKey: ["crm-tasks", ownerKey] });
       setTaskDialogOpen(false);
       setTaskTitle(""); setTaskDesc(""); setTaskDue(""); setTaskPriority("media");
       toast.success("Tarefa criada");
@@ -176,27 +208,70 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
       const newStatus = currentStatus === "concluida" ? "pendente" : "concluida";
       await (supabase as any).from("contact_tasks").update({ status: newStatus }).eq("id", id);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-tasks", clienteId] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-tasks", ownerKey] }),
   });
 
-  if (!clienteId) {
-    return (
-      <div className="w-80 border-l border-border bg-card flex flex-col shrink-0">
-        <div className="p-6 text-center">
-          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-            <User className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
-          </div>
-          <h3 className="text-sm font-semibold text-foreground mb-1">Contato não cadastrado</h3>
-          {telefone && (
-            <p className="text-xs text-muted-foreground font-mono mb-4">{telefone}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Cadastre este contato como cliente para acessar funil, notas, tarefas e histórico.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Create/update a CRM-only contact (does NOT create an operational client)
+  const saveCrmContact = useMutation({
+    mutationFn: async () => {
+      if (!empresaId) throw new Error("Missing empresa");
+      if (!cName.trim()) throw new Error("Nome obrigatório");
+
+      if (crmContatoId) {
+        await (supabase as any).from("crm_contatos").update({
+          nome: cName.trim(),
+          telefone: cPhone.trim() || null,
+          email: cEmail.trim() || null,
+          empresa: cEmpresa.trim() || null,
+          origem: cOrigem.trim() || null,
+          observacoes: cObs.trim() || null,
+        }).eq("id", crmContatoId);
+        return crmContatoId;
+      }
+
+      const { data, error } = await (supabase as any).from("crm_contatos").insert({
+        empresa_id: empresaId,
+        nome: cName.trim(),
+        telefone: cPhone.trim() || null,
+        email: cEmail.trim() || null,
+        empresa: cEmpresa.trim() || null,
+        origem: cOrigem.trim() || null,
+        observacoes: cObs.trim() || null,
+      }).select("id").single();
+      if (error) throw error;
+
+      // Link to current conversation
+      if (conversaId && data?.id) {
+        await supabase.from("conversas").update({ crm_contato_id: data.id } as any).eq("id", conversaId);
+      }
+      return data?.id;
+    },
+    onSuccess: () => {
+      setContactDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["conversas"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-contato"] });
+      toast.success(crmContatoId ? "Contato atualizado" : "Contato cadastrado no CRM");
+    },
+    onError: (e: any) => toast.error(e?.message || "Erro ao salvar contato"),
+  });
+
+  const openContactDialog = () => {
+    setCName((crmContato as any)?.nome || contatoNome || "");
+    setCPhone((crmContato as any)?.telefone || telefone || "");
+    setCEmail((crmContato as any)?.email || "");
+    setCEmpresa((crmContato as any)?.empresa || "");
+    setCOrigem((crmContato as any)?.origem || "");
+    setCObs((crmContato as any)?.observacoes || "");
+    setContactDialogOpen(true);
+  };
+
+  // Display fields shared by both modes
+  const displayName = cliente?.nome || (crmContato as any)?.nome || contatoNome || "Contato";
+  const displayPhone = cliente?.telefone || cliente?.whatsapp || (crmContato as any)?.telefone || telefone || "—";
+  const displayEmail = cliente?.email || (crmContato as any)?.email || "—";
+  const displayEmpresa = (crmContato as any)?.empresa;
+  const displayOrigem = cliente?.como_conheceu || (crmContato as any)?.origem;
+  const displayObs = (crmContato as any)?.observacoes;
 
   if (isLoading) {
     return (
