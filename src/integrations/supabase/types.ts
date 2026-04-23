@@ -883,6 +883,308 @@ export type Database = {
           },
         ]
       }
+      comercial_contatos: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          empresa_contato: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          notas: string | null
+          origem: string | null
+          tags: string[] | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          empresa_contato?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          notas?: string | null
+          origem?: string | null
+          tags?: string[] | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          empresa_contato?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          notas?: string | null
+          origem?: string | null
+          tags?: string[] | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercial_contatos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comercial_conversations: {
+        Row: {
+          canal: string
+          contato_id: string | null
+          created_at: string
+          deal_value: string | null
+          empresa_id: string
+          fixada: boolean | null
+          id: string
+          last_message_at: string | null
+          last_message_text: string | null
+          numero_label: string | null
+          online: boolean | null
+          origem: string | null
+          pipeline_stage: string | null
+          status: string
+          tag_label: string | null
+          tag_tone: string | null
+          unread_count: number | null
+          updated_at: string
+        }
+        Insert: {
+          canal?: string
+          contato_id?: string | null
+          created_at?: string
+          deal_value?: string | null
+          empresa_id: string
+          fixada?: boolean | null
+          id?: string
+          last_message_at?: string | null
+          last_message_text?: string | null
+          numero_label?: string | null
+          online?: boolean | null
+          origem?: string | null
+          pipeline_stage?: string | null
+          status?: string
+          tag_label?: string | null
+          tag_tone?: string | null
+          unread_count?: number | null
+          updated_at?: string
+        }
+        Update: {
+          canal?: string
+          contato_id?: string | null
+          created_at?: string
+          deal_value?: string | null
+          empresa_id?: string
+          fixada?: boolean | null
+          id?: string
+          last_message_at?: string | null
+          last_message_text?: string | null
+          numero_label?: string | null
+          online?: boolean | null
+          origem?: string | null
+          pipeline_stage?: string | null
+          status?: string
+          tag_label?: string | null
+          tag_tone?: string | null
+          unread_count?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercial_conversations_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "comercial_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comercial_conversations_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comercial_deals: {
+        Row: {
+          canal: string | null
+          contato_id: string | null
+          created_at: string
+          dias_no_estagio: number | null
+          empresa_id: string
+          id: string
+          probabilidade: number | null
+          responsavel_id: string | null
+          responsavel_iniciais: string | null
+          responsavel_nome: string | null
+          stage_id: string | null
+          tags: string[] | null
+          titulo: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          canal?: string | null
+          contato_id?: string | null
+          created_at?: string
+          dias_no_estagio?: number | null
+          empresa_id: string
+          id?: string
+          probabilidade?: number | null
+          responsavel_id?: string | null
+          responsavel_iniciais?: string | null
+          responsavel_nome?: string | null
+          stage_id?: string | null
+          tags?: string[] | null
+          titulo: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          canal?: string | null
+          contato_id?: string | null
+          created_at?: string
+          dias_no_estagio?: number | null
+          empresa_id?: string
+          id?: string
+          probabilidade?: number | null
+          responsavel_id?: string | null
+          responsavel_iniciais?: string | null
+          responsavel_nome?: string | null
+          stage_id?: string | null
+          tags?: string[] | null
+          titulo?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercial_deals_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "comercial_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comercial_deals_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comercial_deals_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "comercial_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comercial_messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          direction: string
+          empresa_id: string
+          id: string
+          sent_by: string | null
+          status: string | null
+          type: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          direction: string
+          empresa_id: string
+          id?: string
+          sent_by?: string | null
+          status?: string | null
+          type?: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          empresa_id?: string
+          id?: string
+          sent_by?: string | null
+          status?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercial_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "comercial_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comercial_messages_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comercial_pipeline_stages: {
+        Row: {
+          cor: string
+          created_at: string
+          empresa_id: string
+          id: string
+          is_default: boolean
+          nome: string
+          posicao: number
+          updated_at: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          is_default?: boolean
+          nome: string
+          posicao?: number
+          updated_at?: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          is_default?: boolean
+          nome?: string
+          posicao?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercial_pipeline_stages_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conexoes_whatsapp: {
         Row: {
           created_at: string
