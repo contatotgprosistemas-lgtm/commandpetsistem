@@ -12,6 +12,7 @@ import { EmojiPicker } from "@/components/chat/EmojiPicker";
 import { QuickRepliesMenu } from "@/components/chat/QuickRepliesMenu";
 import { ConversationActions } from "@/components/chat/ConversationActions";
 import { ConversationTagManager } from "@/components/chat/ConversationTagManager";
+import { ChatbotToggle } from "@/components/chat/ChatbotToggle";
 import { ChatStatusTag } from "@/components/ChatStatusTag";
 import { useConversaTags } from "@/hooks/useConversationTags";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -209,6 +210,7 @@ export function ChatWindow({ conversa, onToggleCRM, showCRM }: ChatWindowProps) 
             <Phone className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </button>
           <ConversationTagManager conversaId={conversa.id} />
+          <ChatbotToggle conversaId={conversa.id} enabled={(conversa as any).chatbot_enabled !== false} />
           <ConversationActions conversaId={conversa.id} currentAtendenteId={conversa.atendente_id} currentStatus={conversa.status} />
           {onToggleCRM && (
             <button
