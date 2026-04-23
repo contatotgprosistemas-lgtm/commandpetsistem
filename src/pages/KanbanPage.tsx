@@ -358,21 +358,52 @@ export default function KanbanPage() {
                                 {item.cliente?.nome ?? "Sem nome"}
                               </span>
                             </div>
-                            {item.cliente?.whatsapp && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/crm?phone=${encodeURIComponent(item.cliente?.whatsapp || "")}`);
-                                }}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                draggable={false}
-                                className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                                title="Abrir conversa no CRM"
-                              >
-                                <MessageCircle className="h-3.5 w-3.5" />
-                              </button>
-                            )}
+                            <div className="flex items-center gap-0.5 shrink-0">
+                              {item.cliente?.whatsapp && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/crm?phone=${encodeURIComponent(item.cliente?.whatsapp || "")}`);
+                                  }}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  draggable={false}
+                                  className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                                  title="Abrir conversa no CRM"
+                                >
+                                  <MessageCircle className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    onClick={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    draggable={false}
+                                    className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                    title="Mais ações"
+                                  >
+                                    <MoreVertical className="h-3.5 w-3.5" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-36">
+                                  <DropdownMenuItem onClick={() => openEdit(item)}>
+                                    <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => {
+                                      if (confirm(`Excluir o card de ${item.cliente?.nome ?? "este lead"}?`)) {
+                                        deleteItem.mutate(item.id);
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </div>
 
                           {item.cliente?.whatsapp && (
@@ -404,25 +435,6 @@ export default function KanbanPage() {
                           <p className="text-[10px] text-muted-foreground/50 mt-1.5 font-mono">
                             {format(new Date(item.updated_at), "dd/MM HH:mm", { locale: ptBR })}
                           </p>
-
-                          <div className="mt-2 flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEdit(item);
-                              }}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onPointerDown={(e) => e.stopPropagation()}
-                              draggable={false}
-                              className="h-7 px-2 shrink-0"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              <span>Editar</span>
-                            </Button>
-                          </div>
                         </div>
                       </div>
                     </div>
