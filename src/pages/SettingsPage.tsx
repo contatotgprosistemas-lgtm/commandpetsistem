@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff, Trash2, Camera, X, Upload } from "lucide-react";
 import { WhatsAppConnectionPanel } from "@/components/WhatsAppConnectionPanel";
 import { PermissoesCargoPanel } from "@/components/PermissoesCargoPanel";
+import { translateAuthError } from "@/lib/authErrors";
 
 // ─── Dados da Empresa ───────────────────────────────────────────────
 function EmpresaTab() {
@@ -568,7 +569,7 @@ function SegurancaTab() {
     const { error } = await supabase.auth.updateUser({ password: newPw });
     setSaving(false);
     if (error) {
-      toast({ title: "Erro ao alterar senha", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao alterar senha", description: translateAuthError(error, "Não foi possível alterar a senha."), variant: "destructive" });
     } else {
       toast({ title: "Senha alterada com sucesso!" });
       setCurrentPw(""); setNewPw(""); setConfirmPw("");
