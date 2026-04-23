@@ -619,6 +619,15 @@ export default function KanbanPage() {
               </div>
             );
           })}
+          {/* Add stage column */}
+          <button
+            type="button"
+            onClick={openNewStage}
+            className="w-[260px] shrink-0 flex items-center justify-center rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-colors min-h-[120px]"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            <span className="text-xs font-medium">Nova etapa</span>
+          </button>
         </div>
       </div>
 
