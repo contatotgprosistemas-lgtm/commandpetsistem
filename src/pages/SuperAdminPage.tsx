@@ -357,6 +357,7 @@ export default function SuperAdminPage() {
                     <SelectItem value="atendente">Atendente</SelectItem>
                     <SelectItem value="financeiro">Financeiro</SelectItem>
                     <SelectItem value="operacional">Operacional</SelectItem>
+                    <SelectItem value="banhista">Banhista</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -414,6 +415,7 @@ export default function SuperAdminPage() {
                                 <SelectItem value="atendente">Atendente</SelectItem>
                                 <SelectItem value="financeiro">Financeiro</SelectItem>
                                 <SelectItem value="operacional">Operacional</SelectItem>
+                                <SelectItem value="banhista">Banhista</SelectItem>
                               </SelectContent>
                             </Select>
                           </TableCell>
