@@ -5237,27 +5237,33 @@ export type Database = {
       vendas_produtos_itens: {
         Row: {
           created_at: string
+          descricao: string | null
           id: string
-          produto_id: string
+          produto_id: string | null
           quantidade: number
+          servico_id: string | null
           subtotal: number
           valor_unitario: number
           venda_id: string
         }
         Insert: {
           created_at?: string
+          descricao?: string | null
           id?: string
-          produto_id: string
+          produto_id?: string | null
           quantidade?: number
+          servico_id?: string | null
           subtotal: number
           valor_unitario: number
           venda_id: string
         }
         Update: {
           created_at?: string
+          descricao?: string | null
           id?: string
-          produto_id?: string
+          produto_id?: string | null
           quantidade?: number
+          servico_id?: string | null
           subtotal?: number
           valor_unitario?: number
           venda_id?: string
@@ -5268,6 +5274,13 @@ export type Database = {
             columns: ["produto_id"]
             isOneToOne: false
             referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_produtos_itens_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos"
             referencedColumns: ["id"]
           },
           {

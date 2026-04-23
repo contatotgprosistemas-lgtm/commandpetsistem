@@ -129,8 +129,10 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
   open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; onSaved: () => void;
 }) {
   const { profile } = useAuth();
-  const [itens, setItens] = useState<{ produto_id: string; descricao: string; quantidade: number; valor_unitario: number; subtotal: number }[]>([]);
+  const [itens, setItens] = useState<{ produto_id: string | null; servico_id: string | null; descricao: string; quantidade: number; valor_unitario: number; subtotal: number }[]>([]);
+  const [tipoItem, setTipoItem] = useState<"produto" | "servico">("produto");
   const [produtoId, setProdutoId] = useState("");
+  const [servicoId, setServicoId] = useState("");
   const [quantidade, setQuantidade] = useState("1");
   const [desconto, setDesconto] = useState("0");
   const [formaPagamento, setFormaPagamento] = useState("dinheiro");
@@ -149,6 +151,15 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
     enabled: open && !!empresaId,
   });
 
+  const { data: servicos } = useQuery({
+    queryKey: ["servicos-ativos", empresaId],
+    queryFn: async () => {
+      const { data } = await supabase.from("servicos").select("id, descricao, valor, tipo").eq("ativo", true).order("descricao");
+      return data || [];
+    },
+    enabled: open && !!empresaId,
+  });
+
   const { data: clientes } = useQuery({
     queryKey: ["clientes-venda", empresaId],
     queryFn: async () => {
@@ -162,31 +173,57 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
     p.descricao.toLowerCase().includes(searchProd.toLowerCase()) ||
     (p.codigo_barras && p.codigo_barras.includes(searchProd))
   );
+  const filteredServicos = servicos?.filter(s =>
+    s.descricao.toLowerCase().includes(searchProd.toLowerCase())
+  );
 
   const addItem = () => {
-    const prod = produtos?.find(p => p.id === produtoId);
-    if (!prod) return;
     const qty = parseInt(quantidade) || 1;
-    if (qty > prod.estoque_atual) {
-      toast.error(`Estoque insuficiente! Disponível: ${prod.estoque_atual}`);
-      return;
-    }
-    const existing = itens.findIndex(i => i.produto_id === prod.id);
-    if (existing >= 0) {
-      const updated = [...itens];
-      updated[existing].quantidade += qty;
-      updated[existing].subtotal = updated[existing].quantidade * updated[existing].valor_unitario;
-      setItens(updated);
+    if (tipoItem === "produto") {
+      const prod = produtos?.find(p => p.id === produtoId);
+      if (!prod) return;
+      if (qty > prod.estoque_atual) {
+        toast.error(`Estoque insuficiente! Disponível: ${prod.estoque_atual}`);
+        return;
+      }
+      const existing = itens.findIndex(i => i.produto_id === prod.id);
+      if (existing >= 0) {
+        const updated = [...itens];
+        updated[existing].quantidade += qty;
+        updated[existing].subtotal = updated[existing].quantidade * updated[existing].valor_unitario;
+        setItens(updated);
+      } else {
+        setItens([...itens, {
+          produto_id: prod.id,
+          servico_id: null,
+          descricao: prod.descricao,
+          quantidade: qty,
+          valor_unitario: Number(prod.valor),
+          subtotal: qty * Number(prod.valor),
+        }]);
+      }
     } else {
-      setItens([...itens, {
-        produto_id: prod.id,
-        descricao: prod.descricao,
-        quantidade: qty,
-        valor_unitario: Number(prod.valor),
-        subtotal: qty * Number(prod.valor),
-      }]);
+      const serv = servicos?.find(s => s.id === servicoId);
+      if (!serv) return;
+      const existing = itens.findIndex(i => i.servico_id === serv.id);
+      if (existing >= 0) {
+        const updated = [...itens];
+        updated[existing].quantidade += qty;
+        updated[existing].subtotal = updated[existing].quantidade * updated[existing].valor_unitario;
+        setItens(updated);
+      } else {
+        setItens([...itens, {
+          produto_id: null,
+          servico_id: serv.id,
+          descricao: serv.descricao,
+          quantidade: qty,
+          valor_unitario: Number(serv.valor),
+          subtotal: qty * Number(serv.valor),
+        }]);
+      }
     }
     setProdutoId("");
+    setServicoId("");
     setQuantidade("1");
     setSearchProd("");
   };
@@ -216,6 +253,8 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
     const itensPayload = itens.map(i => ({
       venda_id: venda.id,
       produto_id: i.produto_id,
+      servico_id: i.servico_id,
+      descricao: i.descricao,
       quantidade: i.quantidade,
       valor_unitario: i.valor_unitario,
       subtotal: i.subtotal,
@@ -244,11 +283,29 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
 
         {/* Add item */}
         <div className="border rounded-lg p-4 space-y-3">
-          <Label className="font-semibold">Adicionar Produto</Label>
+          <div className="flex items-center justify-between">
+            <Label className="font-semibold">Adicionar Item</Label>
+            <div className="flex gap-1 rounded-md bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => { setTipoItem("produto"); setProdutoId(""); setServicoId(""); setSearchProd(""); }}
+                className={`px-3 py-1 text-xs rounded ${tipoItem === "produto" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
+              >Produto</button>
+              <button
+                type="button"
+                onClick={() => { setTipoItem("servico"); setProdutoId(""); setServicoId(""); setSearchProd(""); }}
+                className={`px-3 py-1 text-xs rounded ${tipoItem === "servico" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
+              >Serviço</button>
+            </div>
+          </div>
           <div className="flex gap-2">
             <div className="flex-1">
-              <Input placeholder="Buscar por nome ou código de barras..." value={searchProd} onChange={e => setSearchProd(e.target.value)} />
-              {searchProd && filteredProdutos && filteredProdutos.length > 0 && (
+              <Input
+                placeholder={tipoItem === "produto" ? "Buscar por nome ou código de barras..." : "Buscar serviço..."}
+                value={searchProd}
+                onChange={e => setSearchProd(e.target.value)}
+              />
+              {tipoItem === "produto" && searchProd && filteredProdutos && filteredProdutos.length > 0 && (
                 <div className="border rounded-md mt-1 max-h-32 overflow-y-auto bg-background shadow-md">
                   {filteredProdutos.map(p => (
                     <button key={p.id} className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between"
@@ -259,9 +316,20 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
                   ))}
                 </div>
               )}
+              {tipoItem === "servico" && searchProd && filteredServicos && filteredServicos.length > 0 && (
+                <div className="border rounded-md mt-1 max-h-32 overflow-y-auto bg-background shadow-md">
+                  {filteredServicos.map(s => (
+                    <button key={s.id} className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between"
+                      onClick={() => { setServicoId(s.id); setSearchProd(s.descricao); }}>
+                      <span>{s.descricao} <span className="text-xs text-muted-foreground">({s.tipo})</span></span>
+                      <span className="text-muted-foreground">R$ {Number(s.valor).toFixed(2)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <Input className="w-20" type="number" min="1" value={quantidade} onChange={e => setQuantidade(e.target.value)} placeholder="Qtd" />
-            <Button onClick={addItem} disabled={!produtoId}>Adicionar</Button>
+            <Button onClick={addItem} disabled={tipoItem === "produto" ? !produtoId : !servicoId}>Adicionar</Button>
           </div>
         </div>
 
