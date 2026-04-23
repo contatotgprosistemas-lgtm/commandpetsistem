@@ -604,7 +604,19 @@ Deno.serve(async (req) => {
 
           // ─── NEW: chatbot_flows engine ──────────────────────────────
           let flowHandled = false;
+          let chatbotEnabled = true;
           try {
+            // Respect per-conversation chatbot toggle
+            const { data: conv } = await supabase
+              .from("conversas")
+              .select("chatbot_enabled")
+              .eq("id", conversa.id)
+              .maybeSingle();
+            if (conv && conv.chatbot_enabled === false) {
+              chatbotEnabled = false;
+              throw new Error("__CHATBOT_DISABLED__");
+            }
+
             // Check if there's an active session for this conversation
             const { data: session } = await supabase
               .from("chatbot_sessions")
@@ -702,10 +714,17 @@ Deno.serve(async (req) => {
               }
             }
           } catch (flowErr) {
-            console.error("Flow execution error:", flowErr);
+            if ((flowErr as Error)?.message !== "__CHATBOT_DISABLED__") {
+              console.error("Flow execution error:", flowErr);
+            }
           }
 
           if (flowHandled) {
+            continue;
+          }
+
+          // Skip auto-reply rules if chatbot is disabled for this conversation
+          if (!chatbotEnabled) {
             continue;
           }
 

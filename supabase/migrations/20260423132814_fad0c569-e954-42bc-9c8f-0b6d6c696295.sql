@@ -1,0 +1,1 @@
+ALTER TABLE public.conversas ADD COLUMN IF NOT EXISTS chatbot_enabled boolean NOT NULL DEFAULT true;
