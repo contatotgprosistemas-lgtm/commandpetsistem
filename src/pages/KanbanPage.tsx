@@ -429,11 +429,35 @@ export default function KanbanPage() {
               >
                 {/* Column header */}
                 <div className={`px-3 py-2.5 border-t-[3px] rounded-t-lg ${stage.color}`}>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-foreground">{stage.label}</h3>
+                  <div className="flex items-center justify-between gap-1">
+                    <h3 className="text-xs font-semibold text-foreground truncate flex-1">{stage.label}</h3>
                     <span className="min-w-[22px] h-[22px] flex items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
                       {count}
                     </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          title="Opções da etapa"
+                        >
+                          <MoreVertical className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onSelect={() => openEditStage(stage)}>
+                          <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onSelect={() => setDeleteStageConfirm(stage)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                   {total > 0 && (
                     <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">
