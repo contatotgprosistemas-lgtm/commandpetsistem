@@ -6,7 +6,6 @@ import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import logoDefault from "@/assets/logo.png";
 import {
   LayoutDashboard,
-  MessageSquare,
   PawPrint,
   DollarSign,
   Users,
