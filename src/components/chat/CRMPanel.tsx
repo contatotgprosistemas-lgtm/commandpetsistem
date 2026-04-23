@@ -347,13 +347,14 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
                 { icon: Phone, label: "Telefone", value: cliente?.telefone || "—" },
                 { icon: Phone, label: "WhatsApp", value: cliente?.whatsapp || "—" },
                 { icon: Mail, label: "Email", value: cliente?.email || "—" },
+                { icon: User, label: "Pet", value: displayPet || "—" },
                 { icon: MapPin, label: "Endereço", value: cliente?.endereco || "—" },
                 { icon: Calendar, label: "Cliente desde", value: cliente?.created_at ? format(new Date(cliente.created_at), "dd/MM/yyyy", { locale: ptBR }) : "—" },
               ] : [
                 { icon: Phone, label: "Telefone", value: displayPhone },
                 { icon: Mail, label: "Email", value: displayEmail },
-                { icon: User, label: "Empresa", value: displayEmpresa || "—" },
-                { icon: TrendingUp, label: "Origem", value: displayOrigem || "—" },
+                { icon: User, label: "Pet", value: displayPet || "—" },
+                { icon: TrendingUp, label: "Interesse", value: displayInteresse || "—" },
               ]).map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-start gap-2 text-xs">
                   <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" strokeWidth={1.5} />
@@ -367,7 +368,7 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
                 <div className="flex items-start gap-2 text-xs">
                   <TrendingUp className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" strokeWidth={1.5} />
                   <div>
-                    <p className="text-muted-foreground">Origem</p>
+                    <p className="text-muted-foreground">Interesse</p>
                     <p className="text-foreground font-medium">{cliente.como_conheceu}</p>
                   </div>
                 </div>
