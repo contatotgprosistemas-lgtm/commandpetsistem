@@ -32,6 +32,12 @@ import ReservasPage from "@/pages/ReservasPage";
 
 import ContractSignPage from "@/pages/ContractSignPage";
 import PontoPage from "@/pages/PontoPage";
+import ComercialDashboard from "@/pages/comercial/ComercialDashboard";
+import ComercialConversas from "@/pages/comercial/ComercialConversas";
+import ComercialContatos from "@/pages/comercial/ComercialContatos";
+import ComercialPipeline from "@/pages/comercial/ComercialPipeline";
+import ComercialCampanhas from "@/pages/comercial/ComercialCampanhas";
+import ComercialAutomacao from "@/pages/comercial/ComercialAutomacao";
 import LoginPage from "@/pages/LoginPage";
 import LandingPage from "@/pages/LandingPage";
 import SignupPage from "@/pages/SignupPage";
@@ -366,6 +372,14 @@ const App = () => (
 
             {/* Operacional auth */}
             <Route path="/operacional/login" element={<OperacionalLoginPage />} />
+
+            {/* Módulo Comercial (novo - paralelo) */}
+            <Route path="/comercial" element={<ProtectedRoute><AppLayout><ComercialDashboard /></AppLayout></ProtectedRoute>} />
+            <Route path="/comercial/conversas" element={<ProtectedRoute><AppLayout><ComercialConversas /></AppLayout></ProtectedRoute>} />
+            <Route path="/comercial/contatos" element={<ProtectedRoute><AppLayout><ComercialContatos /></AppLayout></ProtectedRoute>} />
+            <Route path="/comercial/pipeline" element={<ProtectedRoute><AppLayout><ComercialPipeline /></AppLayout></ProtectedRoute>} />
+            <Route path="/comercial/campanhas" element={<ProtectedRoute><AppLayout><ComercialCampanhas /></AppLayout></ProtectedRoute>} />
+            <Route path="/comercial/automacao" element={<ProtectedRoute><AppLayout><ComercialAutomacao /></AppLayout></ProtectedRoute>} />
 
             {/* Operacional portal (protected) */}
             <Route

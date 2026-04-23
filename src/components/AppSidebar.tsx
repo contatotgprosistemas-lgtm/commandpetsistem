@@ -33,6 +33,9 @@ import {
   Briefcase,
   Wallet,
   Wrench,
+  Sparkles,
+  Contact,
+  Megaphone,
 } from "lucide-react";
 
 type MenuItem = { icon: any; label: string; path: string };
@@ -54,6 +57,27 @@ export function AppSidebar() {
     { icon: MessageSquare, label: "CRM WhatsApp", path: "/crm" },
     { icon: Kanban, label: "Pipeline Vendas", path: "/kanban" },
     { icon: Bot, label: "Chatbot", path: "/chatbot" },
+  ];
+
+  // --- Módulo Comercial Novo (Khronnos) ---
+  const comercialNovoPaths = [
+    "/comercial",
+    "/comercial/conversas",
+    "/comercial/contatos",
+    "/comercial/pipeline",
+    "/comercial/campanhas",
+    "/comercial/automacao",
+  ];
+  const isComercialNovoActive = comercialNovoPaths.some((p) => location.pathname === p || location.pathname.startsWith(p + "/"));
+  const [comercialNovoOpen, setComercialNovoOpen] = useState(isComercialNovoActive);
+
+  const comercialNovoItems: MenuItem[] = [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/comercial" },
+    { icon: MessageSquare, label: "Conversas", path: "/comercial/conversas" },
+    { icon: Contact, label: "Contatos", path: "/comercial/contatos" },
+    { icon: Kanban, label: "Pipeline", path: "/comercial/pipeline" },
+    { icon: Megaphone, label: "Campanhas", path: "/comercial/campanhas" },
+    { icon: Bot, label: "Automação", path: "/comercial/automacao" },
   ];
 
   // --- Módulo Operacional ---
@@ -223,6 +247,7 @@ export function AppSidebar() {
         {renderNavItem({ icon: LayoutDashboard, label: "Dashboard", path: "/" })}
 
         {renderSubmenu("Comercial", Briefcase, comercialItems, isComercialActive, comercialOpen, setComercialOpen)}
+        {renderSubmenu("Comercial Novo", Sparkles, comercialNovoItems, isComercialNovoActive, comercialNovoOpen, setComercialNovoOpen)}
         {renderSubmenu("Operacional", Wrench, operacionalItems, isOperacionalActive, operacionalOpen, setOperacionalOpen)}
         {renderSubmenu("Finanças", Wallet, financasItems, isFinancasActive, financasOpen, setFinancasOpen)}
 
