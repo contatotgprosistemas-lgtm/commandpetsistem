@@ -33,7 +33,7 @@ export function ComercialLayout({
   noPadding?: boolean;
 }) {
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-background">
+    <div className="flex h-screen w-full overflow-hidden bg-background">
       <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card">
         <div className="flex h-14 items-center gap-2 border-b border-border px-4">
           <div
