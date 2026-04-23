@@ -624,6 +624,19 @@ Deno.serve(async (req) => {
               .eq("conversa_id", conversa.id)
               .maybeSingle();
 
+            // RULE: if the bot already ran in this conversation and there's no active
+            // session anymore (flow ended or expired), do NOT restart the flow.
+            // It will only restart after the conversation is finalized (which clears
+            // chatbot_flow_started_at via DB trigger).
+            const { data: convFlowState } = await supabase
+              .from("conversas")
+              .select("chatbot_flow_started_at, status")
+              .eq("id", conversa.id)
+              .maybeSingle();
+            if (!session && convFlowState?.chatbot_flow_started_at) {
+              throw new Error("__CHATBOT_ALREADY_RAN__");
+            }
+
             // Or pick an active flow for the empresa (first one wins)
             let flowId: string | null = session?.flow_id ?? null;
             if (!flowId) {
@@ -691,6 +704,14 @@ Deno.serve(async (req) => {
                     empresaId,
                   );
 
+                  // Mark conversation as having started the chatbot flow (once)
+                  if (!convFlowState?.chatbot_flow_started_at) {
+                    await supabase
+                      .from("conversas")
+                      .update({ chatbot_flow_started_at: new Date().toISOString() })
+                      .eq("id", conversa.id);
+                  }
+
                   // Upsert session
                   if (waitingStepId) {
                     await supabase
@@ -714,7 +735,11 @@ Deno.serve(async (req) => {
               }
             }
           } catch (flowErr) {
-            if ((flowErr as Error)?.message !== "__CHATBOT_DISABLED__") {
+            const m = (flowErr as Error)?.message;
+            if (m === "__CHATBOT_ALREADY_RAN__") {
+              // Silent skip — conversation already went through the flow.
+              flowHandled = true;
+            } else if (m !== "__CHATBOT_DISABLED__") {
               console.error("Flow execution error:", flowErr);
             }
           }
