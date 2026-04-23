@@ -81,6 +81,16 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
     enabled: !!clienteId,
   });
 
+  const { data: pets } = useQuery({
+    queryKey: ["crm-cliente-pets", clienteId],
+    queryFn: async () => {
+      if (!clienteId) return [];
+      const { data } = await supabase.from("pets").select("nome").eq("cliente_id", clienteId).order("created_at");
+      return data ?? [];
+    },
+    enabled: !!clienteId,
+  });
+
   const { data: crmContato } = useQuery({
     queryKey: ["crm-contato", crmContatoId],
     queryFn: async () => {
