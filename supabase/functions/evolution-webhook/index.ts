@@ -139,6 +139,10 @@ async function renderStep(
     } else if (step.message?.trim()) {
       await sendAutoReply(baseUrl, headers, instanceName, phone, step.message, supabase, conversaId, empresaId);
     }
+    // Respect "Continuar = Após resposta": pause the flow on this step until the user replies.
+    if (cfg.continue_mode === "after_reply") {
+      return `__WAIT__:${step.id}`;
+    }
     return step.next_step_id || null;
   }
 
@@ -227,6 +231,11 @@ async function runFlowFromStep(
     const nextId = await renderStep(step, baseUrl, headers, instanceName, phone, supabase, conversaId, empresaId);
     if (step.step_type === "menu") {
       lastWaitingStepId = step.id;
+      break;
+    }
+    // Message step configured to wait for user reply before advancing.
+    if (typeof nextId === "string" && nextId.startsWith("__WAIT__:")) {
+      lastWaitingStepId = nextId.slice("__WAIT__:".length);
       break;
     }
     if (!nextId || nextId === currentId) break;
