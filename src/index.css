@@ -36,6 +36,23 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+
+    --primary-glow: 224 90% 65%;
+
+    --chart-1: 224 76% 55%;
+    --chart-2: 188 70% 45%;
+    --chart-3: 152 60% 45%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 280 65% 55%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --shadow-sm: 0 1px 2px 0 hsl(220 25% 10% / 0.05);
+    --shadow-md: 0 4px 12px -2px hsl(220 25% 10% / 0.08);
+    --shadow-lg: 0 12px 32px -8px hsl(220 25% 10% / 0.12);
+    --shadow-glow: 0 0 32px hsl(var(--primary-glow) / 0.25);
+
     --border: 220 13% 90%;
     --input: 220 13% 90%;
     --ring: 224 76% 48%;
@@ -86,6 +103,15 @@
     --sidebar-accent-foreground: 220 14% 96%;
     --sidebar-border: 224 22% 14%;
     --sidebar-ring: 224 76% 55%;
+    --info: 217 91% 65%;
+    --info-foreground: 0 0% 100%;
+    --primary-glow: 224 90% 70%;
+    --chart-1: 224 76% 60%;
+    --chart-2: 188 70% 55%;
+    --chart-3: 152 60% 55%;
+    --chart-4: 38 92% 60%;
+    --chart-5: 280 65% 60%;
+    --shadow-glow: 0 0 32px hsl(var(--primary-glow) / 0.35);
   }
 }
 
