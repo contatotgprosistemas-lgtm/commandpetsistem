@@ -615,12 +615,12 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-muted-foreground">Empresa</label>
-                <Input value={cEmpresa} onChange={e => setCEmpresa(e.target.value)} placeholder="Empresa do contato" />
+                <label className="text-xs text-muted-foreground">Pet</label>
+                <Input value={cEmpresa} onChange={e => setCEmpresa(e.target.value)} placeholder="Nome do pet" />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Origem</label>
-                <Input value={cOrigem} onChange={e => setCOrigem(e.target.value)} placeholder="Indicação, anúncio…" />
+                <label className="text-xs text-muted-foreground">Interesse</label>
+                <Input value={cOrigem} onChange={e => setCOrigem(e.target.value)} placeholder="Banho, hotel, adestramento…" />
               </div>
             </div>
             <div>
