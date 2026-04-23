@@ -930,8 +930,9 @@ export type Database = {
       contact_tasks: {
         Row: {
           assigned_user_id: string | null
-          cliente_id: string
+          cliente_id: string | null
           created_at: string
+          crm_contato_id: string | null
           description: string | null
           due_date: string | null
           empresa_id: string
@@ -943,8 +944,9 @@ export type Database = {
         }
         Insert: {
           assigned_user_id?: string | null
-          cliente_id: string
+          cliente_id?: string | null
           created_at?: string
+          crm_contato_id?: string | null
           description?: string | null
           due_date?: string | null
           empresa_id: string
@@ -956,8 +958,9 @@ export type Database = {
         }
         Update: {
           assigned_user_id?: string | null
-          cliente_id?: string
+          cliente_id?: string | null
           created_at?: string
+          crm_contato_id?: string | null
           description?: string | null
           due_date?: string | null
           empresa_id?: string
@@ -980,6 +983,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_tasks_crm_contato_id_fkey"
+            columns: ["crm_contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
             referencedColumns: ["id"]
           },
           {
@@ -1537,6 +1547,7 @@ export type Database = {
           contato_nome: string
           contato_telefone: string
           created_at: string
+          crm_contato_id: string | null
           empresa_id: string
           id: string
           is_archived: boolean
@@ -1553,6 +1564,7 @@ export type Database = {
           contato_nome: string
           contato_telefone: string
           created_at?: string
+          crm_contato_id?: string | null
           empresa_id: string
           id?: string
           is_archived?: boolean
@@ -1569,6 +1581,7 @@ export type Database = {
           contato_nome?: string
           contato_telefone?: string
           created_at?: string
+          crm_contato_id?: string | null
           empresa_id?: string
           id?: string
           is_archived?: boolean
@@ -1592,6 +1605,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_crm_contato_id_fkey"
+            columns: ["crm_contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
             referencedColumns: ["id"]
           },
           {
@@ -1628,6 +1648,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "conversation_tags_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_contatos: {
+        Row: {
+          created_at: string
+          email: string | null
+          empresa: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          observacoes: string | null
+          origem: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          empresa?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          observacoes?: string | null
+          origem?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          empresa?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          origem?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contatos_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
@@ -2423,8 +2490,9 @@ export type Database = {
       }
       funil_vendas: {
         Row: {
-          cliente_id: string
+          cliente_id: string | null
           created_at: string
+          crm_contato_id: string | null
           empresa_id: string
           estagio: string
           id: string
@@ -2433,8 +2501,9 @@ export type Database = {
           valor_estimado: number | null
         }
         Insert: {
-          cliente_id: string
+          cliente_id?: string | null
           created_at?: string
+          crm_contato_id?: string | null
           empresa_id: string
           estagio?: string
           id?: string
@@ -2443,8 +2512,9 @@ export type Database = {
           valor_estimado?: number | null
         }
         Update: {
-          cliente_id?: string
+          cliente_id?: string | null
           created_at?: string
+          crm_contato_id?: string | null
           empresa_id?: string
           estagio?: string
           id?: string
@@ -2461,6 +2531,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "funil_vendas_crm_contato_id_fkey"
+            columns: ["crm_contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "funil_vendas_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
@@ -2471,8 +2548,9 @@ export type Database = {
       }
       historico_interacoes: {
         Row: {
-          cliente_id: string
+          cliente_id: string | null
           created_at: string
+          crm_contato_id: string | null
           descricao: string
           empresa_id: string
           id: string
@@ -2480,8 +2558,9 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          cliente_id: string
+          cliente_id?: string | null
           created_at?: string
+          crm_contato_id?: string | null
           descricao: string
           empresa_id: string
           id?: string
@@ -2489,8 +2568,9 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          cliente_id?: string
+          cliente_id?: string | null
           created_at?: string
+          crm_contato_id?: string | null
           descricao?: string
           empresa_id?: string
           id?: string
@@ -2503,6 +2583,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historico_interacoes_crm_contato_id_fkey"
+            columns: ["crm_contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
             referencedColumns: ["id"]
           },
           {
@@ -2912,27 +2999,30 @@ export type Database = {
       notas_contato: {
         Row: {
           autor_id: string | null
-          cliente_id: string
+          cliente_id: string | null
           conteudo: string
           created_at: string
+          crm_contato_id: string | null
           empresa_id: string
           id: string
           updated_at: string
         }
         Insert: {
           autor_id?: string | null
-          cliente_id: string
+          cliente_id?: string | null
           conteudo: string
           created_at?: string
+          crm_contato_id?: string | null
           empresa_id: string
           id?: string
           updated_at?: string
         }
         Update: {
           autor_id?: string | null
-          cliente_id?: string
+          cliente_id?: string | null
           conteudo?: string
           created_at?: string
+          crm_contato_id?: string | null
           empresa_id?: string
           id?: string
           updated_at?: string
@@ -2950,6 +3040,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_contato_crm_contato_id_fkey"
+            columns: ["crm_contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
             referencedColumns: ["id"]
           },
           {
