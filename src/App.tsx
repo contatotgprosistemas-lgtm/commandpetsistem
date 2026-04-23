@@ -373,6 +373,14 @@ const App = () => (
             {/* Operacional auth */}
             <Route path="/operacional/login" element={<OperacionalLoginPage />} />
 
+            {/* Módulo Comercial (novo - paralelo) */}
+            <Route path="/comercial" element={<ProtectedRoute><AppLayout><ComercialDashboard /></AppLayout></ProtectedRoute>} />
+            <Route path="/comercial/conversas" element={<ProtectedRoute><AppLayout><ComercialConversas /></AppLayout></ProtectedRoute>} />
+            <Route path="/comercial/contatos" element={<ProtectedRoute><AppLayout><ComercialContatos /></AppLayout></ProtectedRoute>} />
+            <Route path="/comercial/pipeline" element={<ProtectedRoute><AppLayout><ComercialPipeline /></AppLayout></ProtectedRoute>} />
+            <Route path="/comercial/campanhas" element={<ProtectedRoute><AppLayout><ComercialCampanhas /></AppLayout></ProtectedRoute>} />
+            <Route path="/comercial/automacao" element={<ProtectedRoute><AppLayout><ComercialAutomacao /></AppLayout></ProtectedRoute>} />
+
             {/* Operacional portal (protected) */}
             <Route
               path="/operacional"
