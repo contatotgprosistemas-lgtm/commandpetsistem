@@ -29,6 +29,7 @@ import {
   CalendarCheck,
   Wallet,
   Wrench,
+  Sparkles,
 } from "lucide-react";
 
 type MenuItem = { icon: any; label: string; path: string };
