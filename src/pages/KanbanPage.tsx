@@ -349,7 +349,14 @@ export default function KanbanPage() {
 
                 {/* Cards */}
                 <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
-                  {items.map(item => (
+                  {items.map(item => {
+                    const displayName = item.cliente?.nome ?? item.crm_contato?.nome ?? "Sem nome";
+                    const displayPhone = item.cliente?.whatsapp ?? item.crm_contato?.telefone ?? null;
+                    const displayEmail = item.cliente?.email ?? item.crm_contato?.email ?? null;
+                    const displayCompany = item.crm_contato?.empresa ?? null;
+                    const displayOrigem = item.crm_contato?.origem ?? null;
+                    const isCrmOnly = !item.cliente_id && !!item.crm_contato_id;
+                    return (
                     <div
                       key={item.id}
                       className={`rounded-md border border-border bg-card p-3 shadow-sm hover:shadow-md transition-all group ${
@@ -372,15 +379,27 @@ export default function KanbanPage() {
                             <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                               <User className="h-3 w-3 text-primary" />
                             </div>
-                              <span className="text-sm font-medium text-foreground truncate">
-                                {item.cliente?.nome ?? "Sem nome"}
-                              </span>
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium text-foreground truncate leading-tight">
+                                  {displayName}
+                                </div>
+                                {isCrmOnly && (
+                                  <div className="text-[9px] uppercase tracking-wide text-amber-600 dark:text-amber-400 font-semibold">
+                                    Lead CRM
+                                  </div>
+                                )}
+                                {!isCrmOnly && item.cliente_id && (
+                                  <div className="text-[9px] uppercase tracking-wide text-emerald-600 dark:text-emerald-400 font-semibold">
+                                    Cliente
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-0.5 shrink-0">
-                              {item.cliente?.whatsapp && (
+                              {displayPhone && (
                                 <button
                                   type="button"
-                                  onClick={() => navigate(`/crm?phone=${encodeURIComponent(item.cliente?.whatsapp || "")}`)}
+                                  onClick={() => navigate(`/crm?phone=${encodeURIComponent(displayPhone)}`)}
                                   className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
                                   title="Abrir conversa no CRM"
                                 >
@@ -414,16 +433,36 @@ export default function KanbanPage() {
                             </div>
                           </div>
 
-                          {item.cliente?.whatsapp && (
+                          {displayPhone && (
                             <div className="flex items-center gap-1 mt-1.5">
                               <Phone className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-[11px] text-muted-foreground font-mono">{item.cliente.whatsapp}</span>
+                              <a
+                                href={`https://wa.me/${displayPhone.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[11px] text-muted-foreground hover:text-primary font-mono truncate"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {displayPhone}
+                              </a>
                             </div>
                           )}
-                          {item.cliente?.email && (
+                          {displayEmail && (
                             <div className="flex items-center gap-1 mt-0.5">
                               <Mail className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-[11px] text-muted-foreground truncate">{item.cliente.email}</span>
+                              <span className="text-[11px] text-muted-foreground truncate">{displayEmail}</span>
+                            </div>
+                          )}
+                          {displayCompany && (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <Building2 className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-[11px] text-muted-foreground truncate">{displayCompany}</span>
+                            </div>
+                          )}
+                          {displayOrigem && (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <Tag className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-[11px] text-muted-foreground truncate">{displayOrigem}</span>
                             </div>
                           )}
 
@@ -437,16 +476,20 @@ export default function KanbanPage() {
                           )}
 
                           {item.notas && (
-                            <p className="text-[10px] text-muted-foreground mt-1.5 line-clamp-2">{item.notas}</p>
+                            <div className="flex items-start gap-1 mt-1.5">
+                              <StickyNote className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+                              <p className="text-[10px] text-muted-foreground line-clamp-2">{item.notas}</p>
+                            </div>
                           )}
 
                           <p className="text-[10px] text-muted-foreground/50 mt-1.5 font-mono">
-                            {format(new Date(item.updated_at), "dd/MM HH:mm", { locale: ptBR })}
+                            Atualizado {format(new Date(item.updated_at), "dd/MM HH:mm", { locale: ptBR })}
                           </p>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
 
                   {items.length === 0 && !isLoading && (
                     <div className="flex items-center justify-center py-8">
