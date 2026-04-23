@@ -758,13 +758,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "contact_tasks_crm_contato_id_fkey"
-            columns: ["crm_contato_id"]
-            isOneToOne: false
-            referencedRelation: "crm_contatos"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "contact_tasks_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
@@ -1379,13 +1372,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "conversas_crm_contato_id_fkey"
-            columns: ["crm_contato_id"]
-            isOneToOne: false
-            referencedRelation: "crm_contatos"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "conversas_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
@@ -1394,49 +1380,748 @@ export type Database = {
           },
         ]
       }
-      crm_contatos: {
+      crm_anotacoes_internas: {
         Row: {
+          autor_id: string
+          contato_id: string | null
+          conteudo: string
+          conversa_id: string | null
           created_at: string
-          email: string | null
-          empresa: string | null
           empresa_id: string
           id: string
+        }
+        Insert: {
+          autor_id: string
+          contato_id?: string | null
+          conteudo: string
+          conversa_id?: string | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+        }
+        Update: {
+          autor_id?: string
+          contato_id?: string | null
+          conteudo?: string
+          conversa_id?: string | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_anotacoes_internas_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_anotacoes_internas_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "crm_conversas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_atendentes_canal: {
+        Row: {
+          canal_id: string
+          empresa_id: string
+          user_id: string
+        }
+        Insert: {
+          canal_id: string
+          empresa_id: string
+          user_id: string
+        }
+        Update: {
+          canal_id?: string
+          empresa_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_atendentes_canal_canal_id_fkey"
+            columns: ["canal_id"]
+            isOneToOne: false
+            referencedRelation: "crm_canais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_atividades: {
+        Row: {
+          autor_id: string | null
+          contato_id: string | null
+          created_at: string
+          descricao: string
+          empresa_id: string
+          id: string
+          lead_id: string | null
+          metadata: Json | null
+          tipo: string
+        }
+        Insert: {
+          autor_id?: string | null
+          contato_id?: string | null
+          created_at?: string
+          descricao: string
+          empresa_id: string
+          id?: string
+          lead_id?: string | null
+          metadata?: Json | null
+          tipo: string
+        }
+        Update: {
+          autor_id?: string | null
+          contato_id?: string | null
+          created_at?: string
+          descricao?: string
+          empresa_id?: string
+          id?: string
+          lead_id?: string | null
+          metadata?: Json | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_atividades_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_atividades_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_canais: {
+        Row: {
+          ativo: boolean
+          config: Json
+          cor: string | null
+          created_at: string
+          empresa_id: string
+          id: string
+          identificador: string | null
           nome: string
-          observacoes: string | null
-          origem: string | null
-          telefone: string | null
+          numero_telefone: string | null
+          provedor: Database["public"]["Enums"]["crm_canal_provedor"]
+          setor: string | null
+          status: Database["public"]["Enums"]["crm_canal_status"]
+          tipo: Database["public"]["Enums"]["crm_canal_tipo"]
+          ultima_conexao: string | null
           updated_at: string
         }
         Insert: {
+          ativo?: boolean
+          config?: Json
+          cor?: string | null
           created_at?: string
-          email?: string | null
-          empresa?: string | null
           empresa_id: string
           id?: string
+          identificador?: string | null
           nome: string
-          observacoes?: string | null
-          origem?: string | null
-          telefone?: string | null
+          numero_telefone?: string | null
+          provedor?: Database["public"]["Enums"]["crm_canal_provedor"]
+          setor?: string | null
+          status?: Database["public"]["Enums"]["crm_canal_status"]
+          tipo?: Database["public"]["Enums"]["crm_canal_tipo"]
+          ultima_conexao?: string | null
           updated_at?: string
         }
         Update: {
+          ativo?: boolean
+          config?: Json
+          cor?: string | null
           created_at?: string
-          email?: string | null
-          empresa?: string | null
+          empresa_id?: string
+          id?: string
+          identificador?: string | null
+          nome?: string
+          numero_telefone?: string | null
+          provedor?: Database["public"]["Enums"]["crm_canal_provedor"]
+          setor?: string | null
+          status?: Database["public"]["Enums"]["crm_canal_status"]
+          tipo?: Database["public"]["Enums"]["crm_canal_tipo"]
+          ultima_conexao?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_contato_tag_links: {
+        Row: {
+          contato_id: string
+          empresa_id: string
+          tag_id: string
+        }
+        Insert: {
+          contato_id: string
+          empresa_id: string
+          tag_id: string
+        }
+        Update: {
+          contato_id?: string
+          empresa_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contato_tag_links_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_contato_tag_links_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contato_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_contato_tags: {
+        Row: {
+          cor: string
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
           empresa_id?: string
           id?: string
           nome?: string
+        }
+        Relationships: []
+      }
+      crm_contatos: {
+        Row: {
+          avatar_url: string | null
+          cidade: string | null
+          created_at: string
+          documento: string | null
+          email: string | null
+          empresa: string | null
+          empresa_id: string
+          endereco: string | null
+          estado: string | null
+          id: string
+          metadata: Json
+          nome: string
+          observacoes: string | null
+          origem: string | null
+          responsavel_id: string | null
+          score: number
+          telefone: string | null
+          ultima_interacao: string | null
+          updated_at: string
+          valor_potencial: number | null
+          whatsapp: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          cidade?: string | null
+          created_at?: string
+          documento?: string | null
+          email?: string | null
+          empresa?: string | null
+          empresa_id: string
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          metadata?: Json
+          nome: string
           observacoes?: string | null
           origem?: string | null
+          responsavel_id?: string | null
+          score?: number
           telefone?: string | null
+          ultima_interacao?: string | null
+          updated_at?: string
+          valor_potencial?: number | null
+          whatsapp?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          cidade?: string | null
+          created_at?: string
+          documento?: string | null
+          email?: string | null
+          empresa?: string | null
+          empresa_id?: string
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          metadata?: Json
+          nome?: string
+          observacoes?: string | null
+          origem?: string | null
+          responsavel_id?: string | null
+          score?: number
+          telefone?: string | null
+          ultima_interacao?: string | null
+          updated_at?: string
+          valor_potencial?: number | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      crm_conversas: {
+        Row: {
+          arquivada: boolean
+          atendente_id: string | null
+          canal_id: string
+          contato_id: string
+          created_at: string
+          empresa_id: string
+          fixada: boolean
+          id: string
+          identificador_externo: string | null
+          intencao: string | null
+          nao_lidas: number
+          prioridade: Database["public"]["Enums"]["crm_conversa_prioridade"]
+          resumo_ia: string | null
+          sentimento: string | null
+          status: Database["public"]["Enums"]["crm_conversa_status"]
+          ultima_mensagem: string | null
+          ultima_mensagem_em: string | null
+          updated_at: string
+        }
+        Insert: {
+          arquivada?: boolean
+          atendente_id?: string | null
+          canal_id: string
+          contato_id: string
+          created_at?: string
+          empresa_id: string
+          fixada?: boolean
+          id?: string
+          identificador_externo?: string | null
+          intencao?: string | null
+          nao_lidas?: number
+          prioridade?: Database["public"]["Enums"]["crm_conversa_prioridade"]
+          resumo_ia?: string | null
+          sentimento?: string | null
+          status?: Database["public"]["Enums"]["crm_conversa_status"]
+          ultima_mensagem?: string | null
+          ultima_mensagem_em?: string | null
+          updated_at?: string
+        }
+        Update: {
+          arquivada?: boolean
+          atendente_id?: string | null
+          canal_id?: string
+          contato_id?: string
+          created_at?: string
+          empresa_id?: string
+          fixada?: boolean
+          id?: string
+          identificador_externo?: string | null
+          intencao?: string | null
+          nao_lidas?: number
+          prioridade?: Database["public"]["Enums"]["crm_conversa_prioridade"]
+          resumo_ia?: string | null
+          sentimento?: string | null
+          status?: Database["public"]["Enums"]["crm_conversa_status"]
+          ultima_mensagem?: string | null
+          ultima_mensagem_em?: string | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "crm_contatos_empresa_id_fkey"
-            columns: ["empresa_id"]
+            foreignKeyName: "crm_conversas_canal_id_fkey"
+            columns: ["canal_id"]
             isOneToOne: false
-            referencedRelation: "empresas"
+            referencedRelation: "crm_canais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_conversas_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_leads: {
+        Row: {
+          contato_id: string
+          created_at: string
+          data_fechamento: string | null
+          data_previsao_fechamento: string | null
+          descricao: string | null
+          empresa_id: string
+          etapa_id: string
+          id: string
+          motivo_perda: string | null
+          ordem: number
+          origem: string | null
+          pipeline_id: string
+          probabilidade: number | null
+          responsavel_id: string | null
+          status: Database["public"]["Enums"]["crm_lead_status"]
+          titulo: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          contato_id: string
+          created_at?: string
+          data_fechamento?: string | null
+          data_previsao_fechamento?: string | null
+          descricao?: string | null
+          empresa_id: string
+          etapa_id: string
+          id?: string
+          motivo_perda?: string | null
+          ordem?: number
+          origem?: string | null
+          pipeline_id: string
+          probabilidade?: number | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["crm_lead_status"]
+          titulo: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          contato_id?: string
+          created_at?: string
+          data_fechamento?: string | null
+          data_previsao_fechamento?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          etapa_id?: string
+          id?: string
+          motivo_perda?: string | null
+          ordem?: number
+          origem?: string | null
+          pipeline_id?: string
+          probabilidade?: number | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["crm_lead_status"]
+          titulo?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_leads_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipeline_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_mensagens: {
+        Row: {
+          conteudo: string | null
+          conversa_id: string
+          created_at: string
+          direcao: Database["public"]["Enums"]["crm_mensagem_direcao"]
+          empresa_id: string
+          entregue_em: string | null
+          enviada_em: string | null
+          id: string
+          identificador_externo: string | null
+          lida_em: string | null
+          metadata: Json
+          midia_filename: string | null
+          midia_mimetype: string | null
+          midia_tamanho: number | null
+          midia_url: string | null
+          reacao: string | null
+          remetente_id: string | null
+          remetente_nome: string | null
+          reply_to_id: string | null
+          status: Database["public"]["Enums"]["crm_mensagem_status"]
+          tipo: Database["public"]["Enums"]["crm_mensagem_tipo"]
+        }
+        Insert: {
+          conteudo?: string | null
+          conversa_id: string
+          created_at?: string
+          direcao: Database["public"]["Enums"]["crm_mensagem_direcao"]
+          empresa_id: string
+          entregue_em?: string | null
+          enviada_em?: string | null
+          id?: string
+          identificador_externo?: string | null
+          lida_em?: string | null
+          metadata?: Json
+          midia_filename?: string | null
+          midia_mimetype?: string | null
+          midia_tamanho?: number | null
+          midia_url?: string | null
+          reacao?: string | null
+          remetente_id?: string | null
+          remetente_nome?: string | null
+          reply_to_id?: string | null
+          status?: Database["public"]["Enums"]["crm_mensagem_status"]
+          tipo?: Database["public"]["Enums"]["crm_mensagem_tipo"]
+        }
+        Update: {
+          conteudo?: string | null
+          conversa_id?: string
+          created_at?: string
+          direcao?: Database["public"]["Enums"]["crm_mensagem_direcao"]
+          empresa_id?: string
+          entregue_em?: string | null
+          enviada_em?: string | null
+          id?: string
+          identificador_externo?: string | null
+          lida_em?: string | null
+          metadata?: Json
+          midia_filename?: string | null
+          midia_mimetype?: string | null
+          midia_tamanho?: number | null
+          midia_url?: string | null
+          reacao?: string | null
+          remetente_id?: string | null
+          remetente_nome?: string | null
+          reply_to_id?: string | null
+          status?: Database["public"]["Enums"]["crm_mensagem_status"]
+          tipo?: Database["public"]["Enums"]["crm_mensagem_tipo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_mensagens_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "crm_conversas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_pipeline_etapas: {
+        Row: {
+          cor: string
+          created_at: string
+          empresa_id: string
+          id: string
+          is_ganho: boolean
+          is_perdido: boolean
+          nome: string
+          ordem: number
+          pipeline_id: string
+          probabilidade: number
+          sla_horas: number | null
+          updated_at: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          is_ganho?: boolean
+          is_perdido?: boolean
+          nome: string
+          ordem?: number
+          pipeline_id: string
+          probabilidade?: number
+          sla_horas?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          is_ganho?: boolean
+          is_perdido?: boolean
+          nome?: string
+          ordem?: number
+          pipeline_id?: string
+          probabilidade?: number
+          sla_horas?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_pipeline_etapas_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_pipelines: {
+        Row: {
+          ativo: boolean
+          cor: string | null
+          created_at: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          is_padrao: boolean
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          is_padrao?: boolean
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          is_padrao?: boolean
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_respostas_rapidas: {
+        Row: {
+          atalho: string
+          ativo: boolean
+          categoria: string | null
+          conteudo: string
+          created_at: string
+          empresa_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          atalho: string
+          ativo?: boolean
+          categoria?: string | null
+          conteudo: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          atalho?: string
+          ativo?: boolean
+          categoria?: string | null
+          conteudo?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_tarefas: {
+        Row: {
+          concluida_em: string | null
+          contato_id: string | null
+          conversa_id: string | null
+          created_at: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          lead_id: string | null
+          prazo: string | null
+          responsavel_id: string | null
+          status: Database["public"]["Enums"]["crm_tarefa_status"]
+          tipo: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          concluida_em?: string | null
+          contato_id?: string | null
+          conversa_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          lead_id?: string | null
+          prazo?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["crm_tarefa_status"]
+          tipo?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          concluida_em?: string | null
+          contato_id?: string | null
+          conversa_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          lead_id?: string | null
+          prazo?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["crm_tarefa_status"]
+          tipo?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_tarefas_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tarefas_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "crm_conversas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tarefas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
             referencedColumns: ["id"]
           },
         ]
@@ -2270,13 +2955,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "funil_vendas_crm_contato_id_fkey"
-            columns: ["crm_contato_id"]
-            isOneToOne: false
-            referencedRelation: "crm_contatos"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "funil_vendas_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
@@ -2322,13 +3000,6 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "historico_interacoes_crm_contato_id_fkey"
-            columns: ["crm_contato_id"]
-            isOneToOne: false
-            referencedRelation: "crm_contatos"
             referencedColumns: ["id"]
           },
           {
@@ -2779,13 +3450,6 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notas_contato_crm_contato_id_fkey"
-            columns: ["crm_contato_id"]
-            isOneToOne: false
-            referencedRelation: "crm_contatos"
             referencedColumns: ["id"]
           },
           {
@@ -4728,6 +5392,45 @@ export type Database = {
         | "operacional"
         | "cliente"
         | "super_admin"
+      crm_canal_provedor:
+        | "evolution"
+        | "cloud_api"
+        | "baileys"
+        | "wppconnect"
+        | "meta"
+        | "manual"
+      crm_canal_status: "desconectado" | "conectando" | "conectado" | "erro"
+      crm_canal_tipo:
+        | "whatsapp"
+        | "instagram"
+        | "facebook"
+        | "email"
+        | "webchat"
+        | "sms"
+      crm_conversa_prioridade: "baixa" | "normal" | "alta" | "urgente"
+      crm_conversa_status:
+        | "aberta"
+        | "pendente"
+        | "em_atendimento"
+        | "finalizada"
+      crm_lead_status: "aberto" | "ganho" | "perdido"
+      crm_mensagem_direcao: "entrada" | "saida"
+      crm_mensagem_status:
+        | "pendente"
+        | "enviado"
+        | "entregue"
+        | "lido"
+        | "falhou"
+      crm_mensagem_tipo:
+        | "texto"
+        | "imagem"
+        | "audio"
+        | "video"
+        | "documento"
+        | "localizacao"
+        | "contato"
+        | "sistema"
+      crm_tarefa_status: "pendente" | "em_andamento" | "concluida" | "cancelada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4864,6 +5567,50 @@ export const Constants = {
         "cliente",
         "super_admin",
       ],
+      crm_canal_provedor: [
+        "evolution",
+        "cloud_api",
+        "baileys",
+        "wppconnect",
+        "meta",
+        "manual",
+      ],
+      crm_canal_status: ["desconectado", "conectando", "conectado", "erro"],
+      crm_canal_tipo: [
+        "whatsapp",
+        "instagram",
+        "facebook",
+        "email",
+        "webchat",
+        "sms",
+      ],
+      crm_conversa_prioridade: ["baixa", "normal", "alta", "urgente"],
+      crm_conversa_status: [
+        "aberta",
+        "pendente",
+        "em_atendimento",
+        "finalizada",
+      ],
+      crm_lead_status: ["aberto", "ganho", "perdido"],
+      crm_mensagem_direcao: ["entrada", "saida"],
+      crm_mensagem_status: [
+        "pendente",
+        "enviado",
+        "entregue",
+        "lido",
+        "falhou",
+      ],
+      crm_mensagem_tipo: [
+        "texto",
+        "imagem",
+        "audio",
+        "video",
+        "documento",
+        "localizacao",
+        "contato",
+        "sistema",
+      ],
+      crm_tarefa_status: ["pendente", "em_andamento", "concluida", "cancelada"],
     },
   },
 } as const
