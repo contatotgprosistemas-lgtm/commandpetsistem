@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { NovoClienteDialog } from "@/components/NovoClienteDialog";
 import { ImportContatosDialog } from "@/components/ImportContatosDialog";
 import { EditarClienteDialog } from "@/components/EditarClienteDialog";
-import { Search, Phone, Mail, Trash2, Users, Link2, MessageCircle, Pencil, KeyRound, Loader2, Download } from "lucide-react";
+import { Search, Phone, Mail, Trash2, Users, Link2, MessageCircle, Pencil, KeyRound, Loader2, Download, UsersRound } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -33,6 +33,7 @@ export default function ClientsPage() {
   const [accessEmail, setAccessEmail] = useState("");
   const [accessSenha, setAccessSenha] = useState("");
   const [creatingAccess, setCreatingAccess] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const { data: clientes, isLoading } = useQuery({
     queryKey: ["clientes", empresaId],
@@ -136,6 +137,29 @@ export default function ClientsPage() {
     toast.success("Exportação concluída!");
   };
 
+  const handleBulkPortalAccess = async () => {
+    const elegiveis = (clientes ?? []).filter((c: any) => !c.user_id && c.email && c.email.trim() !== "");
+    if (!elegiveis.length) {
+      toast.info("Nenhum cliente elegível (precisa ter email e ainda não ter acesso).");
+      return;
+    }
+    if (!confirm(`Criar acesso ao portal para ${elegiveis.length} clientes com a senha padrão "123456@nlr"? O processo pode levar alguns minutos.`)) return;
+    setBulkLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("criar-acesso-clientes-bulk", {
+        body: { senha: "123456@nlr" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Acessos criados: ${data.created} de ${data.total_eligible}. Pulados: ${data.skipped_count}.`);
+      handleRefresh();
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao criar acessos em lote");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-[1400px]">
       <div className="flex items-center justify-between">
@@ -146,6 +170,10 @@ export default function ClientsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="gap-2" onClick={handleBulkPortalAccess} disabled={bulkLoading}>
+            {bulkLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UsersRound className="h-4 w-4" strokeWidth={1.5} />}
+            Liberar Portal (Lote)
+          </Button>
           <Button
             size="sm"
             variant="outline"
