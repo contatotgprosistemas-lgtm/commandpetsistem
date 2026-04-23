@@ -73,6 +73,27 @@ export default function KanbanPage() {
   const [editEstagio, setEditEstagio] = useState("novo_lead");
   const [editNotas, setEditNotas] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<FunilItem | null>(null);
+  const [stageDialogOpen, setStageDialogOpen] = useState(false);
+  const [editStage, setEditStage] = useState<Stage | null>(null);
+  const [stageForm, setStageForm] = useState({ label: "", color: "border-t-blue-500" });
+  const [deleteStageConfirm, setDeleteStageConfirm] = useState<Stage | null>(null);
+
+  // Fetch stages
+  const { data: stages } = useQuery({
+    queryKey: ["funil-estagios", empresaId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("funil_estagios")
+        .select("*")
+        .eq("empresa_id", empresaId!)
+        .order("ordem", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Stage[];
+    },
+    enabled: !!empresaId,
+  });
+
+  const KANBAN_STAGES = stages ?? [];
 
   // Fetch funnel items with client data
   const { data: funilItems, isLoading } = useQuery({
