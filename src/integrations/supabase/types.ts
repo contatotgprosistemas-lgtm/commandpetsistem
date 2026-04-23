@@ -1543,6 +1543,7 @@ export type Database = {
       conversas: {
         Row: {
           atendente_id: string | null
+          chatbot_enabled: boolean
           cliente_id: string | null
           contato_nome: string
           contato_telefone: string
@@ -1560,6 +1561,7 @@ export type Database = {
         }
         Insert: {
           atendente_id?: string | null
+          chatbot_enabled?: boolean
           cliente_id?: string | null
           contato_nome: string
           contato_telefone: string
@@ -1577,6 +1579,7 @@ export type Database = {
         }
         Update: {
           atendente_id?: string | null
+          chatbot_enabled?: boolean
           cliente_id?: string | null
           contato_nome?: string
           contato_telefone?: string
