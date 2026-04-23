@@ -169,6 +169,19 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
     enabled: open && !!empresaId,
   });
 
+  const { data: formasPagamento } = useQuery({
+    queryKey: ["formas-pagamento-venda", empresaId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("formas_pagamento")
+        .select("id, nome, codigo")
+        .eq("ativo", true)
+        .order("nome");
+      return data || [];
+    },
+    enabled: open && !!empresaId,
+  });
+
   const filteredProdutos = produtos?.filter(p =>
     p.descricao.toLowerCase().includes(searchProd.toLowerCase()) ||
     (p.codigo_barras && p.codigo_barras.includes(searchProd))
@@ -375,10 +388,18 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
             <Select value={formaPagamento} onValueChange={setFormaPagamento}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="cartao_debito">Cartão Débito</SelectItem>
-                <SelectItem value="cartao_credito">Cartão Crédito</SelectItem>
+                {(formasPagamento && formasPagamento.length > 0) ? (
+                  formasPagamento.map((f: any) => (
+                    <SelectItem key={f.id} value={f.codigo}>{f.nome}</SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="cartao_debito">Cartão Débito</SelectItem>
+                    <SelectItem value="cartao_credito">Cartão Crédito</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
