@@ -59,6 +59,7 @@ export default function KanbanPage() {
   const [editValor, setEditValor] = useState("");
   const [editEstagio, setEditEstagio] = useState("novo_lead");
   const [editNotas, setEditNotas] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<FunilItem | null>(null);
 
   // Fetch funnel items with client data
   const { data: funilItems, isLoading } = useQuery({
