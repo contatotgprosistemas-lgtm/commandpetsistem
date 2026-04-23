@@ -279,8 +279,10 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
   const displayName = cliente?.nome || (crmContato as any)?.nome || contatoNome || "Contato";
   const displayPhone = cliente?.telefone || cliente?.whatsapp || (crmContato as any)?.telefone || telefone || "—";
   const displayEmail = cliente?.email || (crmContato as any)?.email || "—";
-  const displayEmpresa = (crmContato as any)?.empresa;
-  const displayOrigem = cliente?.como_conheceu || (crmContato as any)?.origem;
+  const displayPet = pets && pets.length > 0
+    ? pets.map((p: any) => p.nome).filter(Boolean).join(", ")
+    : (crmContato as any)?.empresa;
+  const displayInteresse = cliente?.como_conheceu || (crmContato as any)?.origem;
   const displayObs = (crmContato as any)?.observacoes;
 
   if (isLoading) {
