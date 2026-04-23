@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CreditCard, Bell, PawPrint, Calendar, Navigation } from "lucide-react";
+import { CreditCard, Bell, PawPrint, Calendar, Navigation, KeyRound } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +70,19 @@ export default function PortalDashboard() {
           Olá, {cliente?.nome?.split(" ")[0] ?? "Cliente"}! 👋
         </h1>
         <p className="text-sm text-muted-foreground">Aqui está um resumo da sua conta.</p>
+      </div>
+
+      <div
+        className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-3 cursor-pointer hover:bg-warning/15 transition-colors"
+        onClick={() => navigate("/portal/conta")}
+      >
+        <KeyRound className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+        <div className="text-sm">
+          <p className="font-medium text-foreground">Por segurança, altere sua senha</p>
+          <p className="text-xs text-muted-foreground">
+            Se este é seu primeiro acesso, recomendamos trocar a senha padrão. Toque aqui para ir até sua conta.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
