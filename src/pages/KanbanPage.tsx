@@ -24,15 +24,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const KANBAN_STAGES = [
-  { key: "novo_lead", label: "Novo Lead", color: "border-t-blue-500", bg: "bg-blue-500/10" },
-  { key: "contato_iniciado", label: "Contato Iniciado", color: "border-t-cyan-500", bg: "bg-cyan-500/10" },
-  { key: "qualificacao", label: "Qualificação", color: "border-t-amber-500", bg: "bg-amber-500/10" },
-  { key: "proposta", label: "Proposta", color: "border-t-orange-500", bg: "bg-orange-500/10" },
-  { key: "negociacao", label: "Negociação", color: "border-t-purple-500", bg: "bg-purple-500/10" },
-  { key: "fechado_ganho", label: "Fechado Ganho", color: "border-t-emerald-500", bg: "bg-emerald-500/10" },
-  { key: "fechado_perdido", label: "Fechado Perdido", color: "border-t-red-500", bg: "bg-red-500/10" },
+const STAGE_COLOR_OPTIONS = [
+  { label: "Azul", value: "border-t-blue-500" },
+  { label: "Ciano", value: "border-t-cyan-500" },
+  { label: "Âmbar", value: "border-t-amber-500" },
+  { label: "Laranja", value: "border-t-orange-500" },
+  { label: "Roxo", value: "border-t-purple-500" },
+  { label: "Verde", value: "border-t-emerald-500" },
+  { label: "Vermelho", value: "border-t-red-500" },
+  { label: "Rosa", value: "border-t-pink-500" },
+  { label: "Cinza", value: "border-t-slate-500" },
 ];
+
+type Stage = {
+  id: string;
+  key: string;
+  label: string;
+  color: string;
+  ordem: number;
+  is_default: boolean;
+};
 
 type FunilItem = {
   id: string;
