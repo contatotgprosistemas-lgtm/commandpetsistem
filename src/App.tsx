@@ -45,7 +45,6 @@ import UnsubscribePage from "@/pages/UnsubscribePage";
 import OperacionalLoginPage from "@/pages/operacional/OperacionalLoginPage";
 import OperacionalDashboard from "@/pages/operacional/OperacionalDashboard";
 import OperacionalAgendaPage from "@/pages/operacional/OperacionalAgendaPage";
-import ReservasPage from "@/pages/ReservasPage";
 import OperacionalClientesPage from "@/pages/operacional/OperacionalClientesPage";
 import OperacionalPetsPage from "@/pages/operacional/OperacionalPetsPage";
 import OperacionalPontoPage from "@/pages/operacional/OperacionalPontoPage";
