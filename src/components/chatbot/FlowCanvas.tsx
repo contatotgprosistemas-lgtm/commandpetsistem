@@ -509,7 +509,15 @@ export default function FlowCanvas({ flowId, flowName, initialVariables }: Props
         }
       }
 
-      await supabase.from('chatbot_flows').update({ variables: variables as any }).eq('id', flowId);
+      const startNode = nodes.find(n => n.id === 'start');
+      const startPosition = startNode
+        ? { x: startNode.position.x, y: startNode.position.y }
+        : { x: 300, y: 0 };
+
+      await supabase
+        .from('chatbot_flows')
+        .update({ variables: variables as any, start_position: startPosition as any })
+        .eq('id', flowId);
       toast.success('Fluxo salvo com sucesso!');
       initialized.current = false;
       loadFlow();
