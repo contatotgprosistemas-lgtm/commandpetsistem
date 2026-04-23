@@ -292,8 +292,23 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
           <User className="h-5 w-5 text-primary" strokeWidth={1.5} />
         </div>
-        <h3 className="text-sm font-semibold text-foreground">{cliente?.nome}</h3>
-        <p className="text-xs text-muted-foreground">{cliente?.telefone || cliente?.whatsapp || telefone}</p>
+        <h3 className="text-sm font-semibold text-foreground">{displayName}</h3>
+        <p className="text-xs text-muted-foreground">{displayPhone}</p>
+        {!clienteId && (
+          <div className="mt-2 flex items-center justify-center gap-1.5">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+              {crmContatoId ? "Contato CRM" : "Não cadastrado"}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 text-[10px] px-2"
+              onClick={openContactDialog}
+            >
+              {crmContatoId ? <><Pencil className="h-3 w-3 mr-1" /> Editar</> : <><UserPlus className="h-3 w-3 mr-1" /> Cadastrar contato</>}
+            </Button>
+          </div>
+        )}
         {funil && (
           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-2 ${
             FUNNEL_STAGES.find(s => s.key === funil.estagio)?.color
@@ -316,13 +331,18 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
         <TabsContent value="contato" className="flex-1 m-0">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-3">
-              {[
+              {(clienteId ? [
                 { icon: Phone, label: "Telefone", value: cliente?.telefone || "—" },
                 { icon: Phone, label: "WhatsApp", value: cliente?.whatsapp || "—" },
                 { icon: Mail, label: "Email", value: cliente?.email || "—" },
                 { icon: MapPin, label: "Endereço", value: cliente?.endereco || "—" },
                 { icon: Calendar, label: "Cliente desde", value: cliente?.created_at ? format(new Date(cliente.created_at), "dd/MM/yyyy", { locale: ptBR }) : "—" },
-              ].map(({ icon: Icon, label, value }) => (
+              ] : [
+                { icon: Phone, label: "Telefone", value: displayPhone },
+                { icon: Mail, label: "Email", value: displayEmail },
+                { icon: User, label: "Empresa", value: displayEmpresa || "—" },
+                { icon: TrendingUp, label: "Origem", value: displayOrigem || "—" },
+              ]).map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex items-start gap-2 text-xs">
                   <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" strokeWidth={1.5} />
                   <div>
@@ -331,7 +351,7 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
                   </div>
                 </div>
               ))}
-              {cliente?.como_conheceu && (
+              {clienteId && cliente?.como_conheceu && (
                 <div className="flex items-start gap-2 text-xs">
                   <TrendingUp className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" strokeWidth={1.5} />
                   <div>
@@ -340,7 +360,16 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
                   </div>
                 </div>
               )}
-              {cliente?.tags && cliente.tags.length > 0 && (
+              {!clienteId && displayObs && (
+                <div className="flex items-start gap-2 text-xs">
+                  <Tag className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" strokeWidth={1.5} />
+                  <div>
+                    <p className="text-muted-foreground">Observações</p>
+                    <p className="text-foreground whitespace-pre-wrap">{displayObs}</p>
+                  </div>
+                </div>
+              )}
+              {clienteId && cliente?.tags && cliente.tags.length > 0 && (
                 <div className="flex items-start gap-2 text-xs">
                   <Tag className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" strokeWidth={1.5} />
                   <div>
@@ -351,6 +380,16 @@ export function CRMPanel({ clienteId, crmContatoId, conversaId, telefone, contat
                       ))}
                     </div>
                   </div>
+                </div>
+              )}
+              {!clienteId && !crmContatoId && (
+                <div className="rounded-md border border-dashed border-border p-3 text-center mt-2">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Este contato ainda não está cadastrado. Cadastre-o no CRM para enriquecer com nome, e-mail, origem e observações.
+                  </p>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={openContactDialog}>
+                    <UserPlus className="h-3.5 w-3.5 mr-1" /> Cadastrar no CRM
+                  </Button>
                 </div>
               )}
             </div>
