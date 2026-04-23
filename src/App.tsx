@@ -68,6 +68,11 @@ import PortalTransportePage from "@/pages/portal/PortalTransportePage";
 import PortalEstouChegandoPage from "@/pages/portal/PortalEstouChegandoPage";
 import PortalContratosPage from "@/pages/portal/PortalContratosPage";
 
+// CRM module
+import { CRMLayout } from "@/components/crm/CRMLayout";
+import CRMDashboard from "@/pages/crm/CRMDashboard";
+import CRMPlaceholder from "@/pages/crm/CRMPlaceholder";
+
 const queryClient = new QueryClient();
 
 const App = () => (
