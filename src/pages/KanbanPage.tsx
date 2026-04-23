@@ -714,6 +714,68 @@ export default function KanbanPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Stage edit / new dialog */}
+      <Dialog open={stageDialogOpen} onOpenChange={(o) => { if (!o) { setStageDialogOpen(false); setEditStage(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editStage ? "Editar etapa" : "Nova etapa"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Nome</label>
+              <Input
+                value={stageForm.label}
+                onChange={e => setStageForm(s => ({ ...s, label: e.target.value }))}
+                placeholder="Ex: Aguardando retorno"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Cor</label>
+              <Select value={stageForm.color} onValueChange={(v) => setStageForm(s => ({ ...s, color: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STAGE_COLOR_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      <span className="inline-flex items-center gap-2">
+                        <span className={`inline-block h-3 w-3 rounded-sm border-t-[3px] ${opt.value}`} />
+                        {opt.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => { setStageDialogOpen(false); setEditStage(null); }}>Cancelar</Button>
+              <Button size="sm" onClick={() => saveStage.mutate()} disabled={saveStage.isPending || !stageForm.label.trim()}>
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stage delete confirmation */}
+      <AlertDialog open={!!deleteStageConfirm} onOpenChange={(o) => !o && setDeleteStageConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir etapa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A etapa <strong>{deleteStageConfirm?.label}</strong> será removida do funil. Cards existentes nesta etapa precisam ser movidos antes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteStageConfirm && deleteStage.mutate(deleteStageConfirm)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
