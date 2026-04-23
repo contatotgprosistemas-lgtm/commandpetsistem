@@ -1,14 +1,27 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 import { CornerDownLeft, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 function RedirectNode({ id, data, selected }: NodeProps) {
   const { setNodes, setEdges } = useReactFlow();
   const d = data as Record<string, any>;
+  const [agents, setAgents] = useState<{ user_id: string; nome: string }[]>([]);
 
   const update = useCallback((key: string, value: any) => {
     setNodes(nds => nds.map(n => n.id === id ? { ...n, data: { ...n.data, [key]: value } } : n));
   }, [id, setNodes]);
+
+  useEffect(() => {
+    if (d.redirect_type !== 'agent') return;
+    (async () => {
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('user_id, nome')
+        .order('nome');
+      if (prof) setAgents(prof.filter((p: any) => p.user_id) as any);
+    })();
+  }, [d.redirect_type]);
 
   const handleDelete = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -41,7 +54,29 @@ function RedirectNode({ id, data, selected }: NodeProps) {
           </select>
         </div>
         {d.redirect_type === 'agent' ? (
-          <p className="text-[10px] text-muted-foreground italic">O bot será desativado e a conversa encaminhada para um atendente.</p>
+          <>
+            <div>
+              <label className="text-[10px] text-muted-foreground">Atendente</label>
+              <select
+                value={d.agent_id || ''}
+                onChange={e => {
+                  const sel = agents.find(a => a.user_id === e.target.value);
+                  update('agent_id', e.target.value);
+                  update('agent_name', sel?.nome || '');
+                }}
+                className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1 mt-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                onClick={e => e.stopPropagation()}
+              >
+                <option value="">Qualquer atendente disponível</option>
+                {agents.map(a => (
+                  <option key={a.user_id} value={a.user_id}>{a.nome}</option>
+                ))}
+              </select>
+            </div>
+            <p className="text-[10px] text-muted-foreground italic">
+              O bot será desativado e o cliente verá: "Você foi transferido para {d.agent_name || 'um atendente'}".
+            </p>
+          </>
         ) : (
           <div>
             <label className="text-[10px] text-muted-foreground">Nome do fluxo</label>
