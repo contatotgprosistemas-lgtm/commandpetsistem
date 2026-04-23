@@ -14,7 +14,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff, Trash2, Camera, X, Upload } from "lucide-react";
-import { WhatsAppConnectionPanel } from "@/components/WhatsAppConnectionPanel";
 import { PermissoesCargoPanel } from "@/components/PermissoesCargoPanel";
 import { translateAuthError } from "@/lib/authErrors";
 
@@ -875,7 +874,6 @@ function AsaasIntegrationPanel() {
 function IntegracoesTab() {
   return (
     <div className="space-y-6">
-      <WhatsAppConnectionPanel />
       <AsaasIntegrationPanel />
     </div>
   );

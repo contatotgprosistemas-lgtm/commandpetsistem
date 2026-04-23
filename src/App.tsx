@@ -9,7 +9,6 @@ import { AppLayout } from "@/components/AppLayout";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { PortalProtectedRoute } from "@/components/portal/PortalProtectedRoute";
 import Dashboard from "@/pages/Dashboard";
-import CRMInbox from "@/pages/CRMInbox";
 import PetsPage from "@/pages/PetsPage";
 import AgendaPage from "@/pages/AgendaPage";
 import FinancePage from "@/pages/FinancePage";
@@ -21,8 +20,6 @@ import ServicosPage from "@/pages/ServicosPage";
 import ProdutosPage from "@/pages/ProdutosPage";
 import AuditLogPage from "@/pages/AuditLogPage";
 import PlanosPacotesPage from "@/pages/PlanosPacotesPage";
-import KanbanPage from "@/pages/KanbanPage";
-import ChatbotPage from "@/pages/ChatbotPage";
 import TaxiPetPage from "@/pages/TaxiPetPage";
 import ContratosPage from "@/pages/ContratosPage";
 import NotasFiscaisPage from "@/pages/NotasFiscaisPage";
@@ -32,12 +29,6 @@ import ReservasPage from "@/pages/ReservasPage";
 
 import ContractSignPage from "@/pages/ContractSignPage";
 import PontoPage from "@/pages/PontoPage";
-import ComercialDashboard from "@/pages/comercial/ComercialDashboard";
-import ComercialConversas from "@/pages/comercial/ComercialConversas";
-import ComercialContatos from "@/pages/comercial/ComercialContatos";
-import ComercialPipeline from "@/pages/comercial/ComercialPipeline";
-import ComercialCampanhas from "@/pages/comercial/ComercialCampanhas";
-import ComercialAutomacao from "@/pages/comercial/ComercialAutomacao";
 import LoginPage from "@/pages/LoginPage";
 import LandingPage from "@/pages/LandingPage";
 import SignupPage from "@/pages/SignupPage";
@@ -180,39 +171,6 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <EsteiraBanhoPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/crm"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <CRMInbox />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/kanban"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <KanbanPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/chatbot"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <ChatbotPage />
                   </AppLayout>
                 </ProtectedRoute>
               }
@@ -372,14 +330,6 @@ const App = () => (
 
             {/* Operacional auth */}
             <Route path="/operacional/login" element={<OperacionalLoginPage />} />
-
-            {/* Módulo Comercial (novo - paralelo, layout próprio fullscreen) */}
-            <Route path="/comercial" element={<ProtectedRoute><ComercialDashboard /></ProtectedRoute>} />
-            <Route path="/comercial/conversas" element={<ProtectedRoute><ComercialConversas /></ProtectedRoute>} />
-            <Route path="/comercial/contatos" element={<ProtectedRoute><ComercialContatos /></ProtectedRoute>} />
-            <Route path="/comercial/pipeline" element={<ProtectedRoute><ComercialPipeline /></ProtectedRoute>} />
-            <Route path="/comercial/campanhas" element={<ProtectedRoute><ComercialCampanhas /></ProtectedRoute>} />
-            <Route path="/comercial/automacao" element={<ProtectedRoute><ComercialAutomacao /></ProtectedRoute>} />
 
             {/* Operacional portal (protected) */}
             <Route
