@@ -211,6 +211,69 @@ export default function KanbanPage() {
     onError: () => toast.error("Erro ao remover card"),
   });
 
+  // Stage mutations
+  const saveStage = useMutation({
+    mutationFn: async () => {
+      if (!empresaId) throw new Error("Sem empresa");
+      if (!stageForm.label.trim()) throw new Error("Nome obrigatório");
+      if (editStage) {
+        const { error } = await supabase
+          .from("funil_estagios")
+          .update({ label: stageForm.label.trim(), color: stageForm.color })
+          .eq("id", editStage.id);
+        if (error) throw error;
+      } else {
+        const key = stageForm.label.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/(^_|_$)/g, "") + "_" + Date.now().toString(36);
+        const maxOrdem = (stages ?? []).reduce((m, s) => Math.max(m, s.ordem), 0);
+        const { error } = await supabase.from("funil_estagios").insert({
+          empresa_id: empresaId,
+          key,
+          label: stageForm.label.trim(),
+          color: stageForm.color,
+          ordem: maxOrdem + 1,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["funil-estagios"] });
+      setStageDialogOpen(false);
+      setEditStage(null);
+      setStageForm({ label: "", color: "border-t-blue-500" });
+      toast.success("Etapa salva");
+    },
+    onError: (e: Error) => toast.error(e.message || "Erro ao salvar etapa"),
+  });
+
+  const deleteStage = useMutation({
+    mutationFn: async (stage: Stage) => {
+      const itemsInStage = (funilItems ?? []).filter(f => f.estagio === stage.key);
+      if (itemsInStage.length > 0) {
+        throw new Error(`Existem ${itemsInStage.length} card(s) nesta etapa. Mova-os antes de excluir.`);
+      }
+      const { error } = await supabase.from("funil_estagios").delete().eq("id", stage.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["funil-estagios"] });
+      setDeleteStageConfirm(null);
+      toast.success("Etapa removida");
+    },
+    onError: (e: Error) => toast.error(e.message || "Erro ao remover etapa"),
+  });
+
+  const openEditStage = (stage: Stage) => {
+    setEditStage(stage);
+    setStageForm({ label: stage.label, color: stage.color });
+    setStageDialogOpen(true);
+  };
+
+  const openNewStage = () => {
+    setEditStage(null);
+    setStageForm({ label: "", color: "border-t-blue-500" });
+    setStageDialogOpen(true);
+  };
+
   const openEdit = (item: FunilItem) => {
     setEditItem(item);
     setEditValor(item.valor_estimado ? String(item.valor_estimado) : "");
