@@ -179,7 +179,24 @@ export function CRMPanel({ clienteId, telefone }: CRMPanelProps) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm-tasks", clienteId] }),
   });
 
-  if (!clienteId) return null;
+  if (!clienteId) {
+    return (
+      <div className="w-80 border-l border-border bg-card flex flex-col shrink-0">
+        <div className="p-6 text-center">
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+            <User className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+          </div>
+          <h3 className="text-sm font-semibold text-foreground mb-1">Contato não cadastrado</h3>
+          {telefone && (
+            <p className="text-xs text-muted-foreground font-mono mb-4">{telefone}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Cadastre este contato como cliente para acessar funil, notas, tarefas e histórico.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
