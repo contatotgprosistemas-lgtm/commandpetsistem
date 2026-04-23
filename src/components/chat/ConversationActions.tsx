@@ -42,7 +42,7 @@ export function ConversationActions({ conversaId, currentAtendenteId, currentSta
         .eq("empresa_id", empresaId!)
         .eq("status", "ativo");
       if (error) throw error;
-      return data;
+      return (data ?? []).filter((a: any) => (a.cargo ?? "").toLowerCase() !== "cliente");
     },
     enabled: !!empresaId,
   });
