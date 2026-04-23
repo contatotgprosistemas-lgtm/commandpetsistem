@@ -2488,6 +2488,50 @@ export type Database = {
           },
         ]
       }
+      funil_estagios: {
+        Row: {
+          color: string
+          created_at: string
+          empresa_id: string
+          id: string
+          is_default: boolean
+          key: string
+          label: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          is_default?: boolean
+          key: string
+          label: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          is_default?: boolean
+          key?: string
+          label?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funil_estagios_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funil_vendas: {
         Row: {
           cliente_id: string | null
