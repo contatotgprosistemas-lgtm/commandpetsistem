@@ -151,6 +151,54 @@ async function renderStep(
     return step.id;
   }
 
+  if (step.step_type === "redirect") {
+    const cfg = (step.condition_config && typeof step.condition_config === "object") ? step.condition_config : {};
+    if (cfg.redirect_type === "agent") {
+      let agentName = (cfg.agent_name || "").trim();
+      const agentId = cfg.agent_id || null;
+
+      // Resolve agent name from DB if missing
+      if (!agentName && agentId) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("nome")
+          .eq("user_id", agentId)
+          .maybeSingle();
+        if (prof?.nome) agentName = prof.nome;
+      }
+
+      const displayName = agentName || "um atendente";
+      const transferText = `🔔 Você foi transferido para ${displayName}. Em instantes você será atendido(a).`;
+
+      // Notify the customer on WhatsApp + log as bot message
+      await sendAutoReply(baseUrl, headers, instanceName, phone, transferText, supabase, conversaId, empresaId);
+
+      // Internal note for the team (visible in chat as system bubble)
+      await supabase.from("mensagens").insert({
+        conversa_id: conversaId,
+        empresa_id: empresaId,
+        conteudo: `Conversa transferida pelo chatbot para ${displayName}.`,
+        remetente: "bot",
+        tipo: "texto",
+      });
+
+      // Assign agent + mark conversation as in-service, disable bot for this conversation
+      const updates: Record<string, any> = {
+        status: "em_atendimento",
+        ultima_mensagem_at: new Date().toISOString(),
+        last_message_preview: `Transferida para ${displayName}`,
+      };
+      if (agentId) updates.atendente_id = agentId;
+      await supabase.from("conversas").update(updates).eq("id", conversaId);
+
+      // Stop the flow — clear any session
+      await supabase.from("chatbot_sessions").delete().eq("conversa_id", conversaId);
+
+      return null;
+    }
+    return step.next_step_id || null;
+  }
+
   // For redirect / other types: just advance to next step
   return step.next_step_id || null;
 }
