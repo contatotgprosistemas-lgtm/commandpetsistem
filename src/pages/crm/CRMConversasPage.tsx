@@ -89,7 +89,7 @@ export default function CRMConversasPage() {
     enabled: !!empresaId,
     queryFn: async () => {
       const { data, error } = await supabase.from("crm_conversas")
-        .select("*, contato:crm_contatos(*), canal:crm_canais(nome, cor)")
+        .select("*, contato:crm_contatos(*), canal:crm_canais(nome, cor), setor:crm_setores(id, nome, cor)")
         .eq("empresa_id", empresaId!)
         .eq("arquivada", false)
         .order("ultima_mensagem_em", { ascending: false, nullsFirst: false })
