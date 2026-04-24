@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle, Search } from "lucide-react";
+import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle, Search, ClipboardList, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -220,18 +220,28 @@ export default function PlanosPacotesPage() {
 
       {/* Dashboard Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <MetricCard title="Planos Ativos" value={String(plans.filter((p: any) => p.status === "ativo").length)} change="—" changeType="neutral" icon={<FileText className="h-4 w-4" strokeWidth={1.5} />} />
-        <MetricCard title="Pacotes Ativos" value={String(packages.filter((p: any) => p.status === "ativo").length)} change="—" changeType="neutral" icon={<Package className="h-4 w-4" strokeWidth={1.5} />} />
-        <MetricCard title="Contratações Ativas" value={String(activeSubs.length)} change="—" changeType="neutral" icon={<Users className="h-4 w-4" strokeWidth={1.5} />} />
-        <MetricCard title="Vencendo esta Semana" value={String(expiringThisWeek.length)} change="—" changeType="neutral" icon={<BarChart3 className="h-4 w-4" strokeWidth={1.5} />} />
-        <MetricCard title="Receita Recorrente" value={`R$ ${monthlyRevenue.toFixed(2)}`} change="—" changeType="neutral" icon={<Gift className="h-4 w-4" strokeWidth={1.5} />} />
+        <MetricCard title="Planos Ativos" value={String(plans.filter((p: any) => p.status === "ativo").length)} icon={<FileText className="h-4 w-4" strokeWidth={1.5} />} accent="blue" filled />
+        <MetricCard title="Pacotes Ativos" value={String(packages.filter((p: any) => p.status === "ativo").length)} icon={<Package className="h-4 w-4" strokeWidth={1.5} />} accent="violet" filled />
+        <MetricCard title="Contratações Ativas" value={String(activeSubs.length)} icon={<Users className="h-4 w-4" strokeWidth={1.5} />} accent="emerald" filled />
+        <MetricCard title="Vencendo esta Semana" value={String(expiringThisWeek.length)} icon={<BarChart3 className="h-4 w-4" strokeWidth={1.5} />} accent="amber" filled />
+        <MetricCard title="Receita Recorrente" value={`R$ ${monthlyRevenue.toFixed(2)}`} icon={<Gift className="h-4 w-4" strokeWidth={1.5} />} accent="emerald" filled />
       </div>
 
       <Tabs defaultValue="planos" className="w-full">
-        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4 flex-wrap">
-          {["Planos", "Pacotes", "Contratações", "Consumo"].map(tab => (
-            <TabsTrigger key={tab} value={tab.toLowerCase()} className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm">
-              {tab}
+        <TabsList className="bg-muted/40 border border-border rounded-xl p-1 h-auto gap-1 flex-wrap w-full justify-start overflow-x-auto">
+          {[
+            { v: "planos", l: "Planos", i: FileText },
+            { v: "pacotes", l: "Pacotes", i: Package },
+            { v: "contratações", l: "Contratações", i: ClipboardList },
+            { v: "consumo", l: "Consumo", i: Activity },
+          ].map(({ v, l, i: Icon }) => (
+            <TabsTrigger
+              key={v}
+              value={v}
+              className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-foreground text-muted-foreground px-3 py-1.5 text-xs font-medium gap-1.5 whitespace-nowrap"
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {l}
             </TabsTrigger>
           ))}
         </TabsList>
