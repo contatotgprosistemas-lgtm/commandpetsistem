@@ -25,6 +25,17 @@ function evoFetch(path: string, init: RequestInit = {}, baseUrl?: string, apiKey
   });
 }
 
+async function safeJson(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Evolution may return HTML on auth errors / wrong URL
+    return { _nonJson: true, raw: text.slice(0, 300) };
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -70,7 +81,9 @@ Deno.serve(async (req) => {
         : `crm_${empresaId.slice(0, 8)}_${crypto.randomUUID().slice(0, 8)}`;
       const webhookUrl = `${SUPABASE_URL}/functions/v1/evolution-webhook`;
 
-      const evoRes = await evoFetch("/instance/create", {
+      let evoRes: Response;
+      try {
+        evoRes = await evoFetch("/instance/create", {
         method: "POST",
         body: JSON.stringify({
           instanceName,
@@ -83,10 +96,16 @@ Deno.serve(async (req) => {
             events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "QRCODE_UPDATED"],
           },
         }),
-      }, serverUrl, apiKey);
-      const evoData = await evoRes.json();
-      if (!evoRes.ok) {
-        return new Response(JSON.stringify({ error: "Evolution falhou", details: evoData }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }, serverUrl, apiKey);
+      } catch (netErr) {
+        return new Response(JSON.stringify({ error: "Não foi possível acessar o servidor Evolution. Verifique a URL.", details: (netErr as Error).message }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const evoData = await safeJson(evoRes);
+      if (!evoRes.ok || evoData?._nonJson) {
+        const msg = evoData?._nonJson
+          ? `Resposta inválida da Evolution (HTTP ${evoRes.status}). Verifique URL e API Key.`
+          : (evoData?.message || evoData?.error || `Evolution retornou HTTP ${evoRes.status}`);
+        return new Response(JSON.stringify({ error: msg, details: evoData }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       const qr = evoData?.qrcode?.base64 ?? evoData?.qrcode?.code ?? null;
@@ -117,8 +136,19 @@ Deno.serve(async (req) => {
       const baseUrl = cfg.server_url as string | undefined;
       const apiKey = cfg.api_key as string | undefined;
 
-      const stateRes = await evoFetch(`/instance/connectionState/${inst}`, {}, baseUrl, apiKey);
-      const stateData = await stateRes.json();
+      let stateRes: Response;
+      try {
+        stateRes = await evoFetch(`/instance/connectionState/${inst}`, {}, baseUrl, apiKey);
+      } catch (netErr) {
+        return new Response(JSON.stringify({ error: "Não foi possível acessar o servidor Evolution.", details: (netErr as Error).message }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const stateData = await safeJson(stateRes);
+      if (!stateRes.ok || stateData?._nonJson) {
+        const msg = stateData?._nonJson
+          ? `Resposta inválida da Evolution (HTTP ${stateRes.status}). Verifique URL e API Key do canal.`
+          : (stateData?.message || stateData?.error || `Evolution retornou HTTP ${stateRes.status}`);
+        return new Response(JSON.stringify({ error: msg, details: stateData }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
       const state = stateData?.instance?.state ?? stateData?.state;
 
       let qr: string | null = null;
@@ -134,7 +164,7 @@ Deno.serve(async (req) => {
       } else if (state === "connecting" || state === "close") {
         novoStatus = "conectando";
         const qrRes = await evoFetch(`/instance/connect/${inst}`, {}, baseUrl, apiKey);
-        const qrData = await qrRes.json();
+        const qrData = await safeJson(qrRes);
         qr = qrData?.base64 ?? qrData?.qrcode?.base64 ?? qrData?.code ?? null;
       }
 
