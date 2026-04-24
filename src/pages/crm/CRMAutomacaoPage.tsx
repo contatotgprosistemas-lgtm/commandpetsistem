@@ -327,16 +327,67 @@ export default function CRMAutomacaoPage() {
 
       {/* Editor */}
       {!selected ? (
-        <div className="flex-1 flex items-center justify-center text-center px-6">
-          <div>
-            <Bot className="h-14 w-14 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-semibold">Construa seu primeiro fluxo</h3>
-            <p className="text-sm text-muted-foreground max-w-md mt-1">
-              Automatize respostas, qualifique leads e dispare ações com base em gatilhos.
-            </p>
-            <Button className="mt-5" onClick={() => setOpenNew(true)}>
-              <Plus className="h-4 w-4 mr-1.5" /> Novo fluxo
-            </Button>
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-6 lg:px-8 py-6">
+            <div className="flex items-start justify-between gap-4 mb-1">
+              <div>
+                <h1 className="text-xl font-semibold">Automação &amp; Chatbot</h1>
+                <p className="text-xs text-muted-foreground mt-0.5">Construtor visual de fluxos</p>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-2xl border bg-card p-6">
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div>
+                  <h2 className="text-base font-semibold">Comece com um template</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Acelere a criação de automações com fluxos pré-configurados.
+                  </p>
+                </div>
+                <Button onClick={() => createFromTemplate.mutate(null)} className="gap-1.5">
+                  <Plus className="h-4 w-4" /> Criar do zero
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                <button
+                  onClick={() => createFromTemplate.mutate(null)}
+                  className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all p-4 flex flex-col items-center justify-center gap-2 min-h-[148px] text-center"
+                >
+                  <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                    <Plus className="h-5 w-5" />
+                  </div>
+                  <div className="text-sm font-semibold">Fluxo em branco</div>
+                  <div className="text-[11px] text-muted-foreground">Construa do zero no editor visual</div>
+                </button>
+
+                {flowTemplates.map((tpl) => {
+                  const I = tpl.icon;
+                  return (
+                    <button
+                      key={tpl.id}
+                      onClick={() => createFromTemplate.mutate(tpl)}
+                      className="rounded-xl border border-border bg-background hover:border-primary/40 hover:shadow-card-hover transition-all p-4 flex flex-col gap-2 text-left min-h-[148px]"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className={`h-9 w-9 rounded-lg ${tpl.iconBg} flex items-center justify-center`}>
+                          <I className={`h-4 w-4 ${tpl.iconFg}`} />
+                        </div>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {tpl.etapas} etapas
+                        </Badge>
+                      </div>
+                      <div className="mt-1">
+                        <div className="text-sm font-semibold">{tpl.nome}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                          {tpl.desc}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       ) : (
