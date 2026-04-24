@@ -222,6 +222,44 @@ Deno.serve(async (req) => {
 
       await admin.from("crm_contatos").update({ ultima_interacao: ts }).eq("id", contato.id);
 
+      // ====== Auto-resposta fora do expediente ======
+      if (!fromMe) {
+        try {
+          const { data: hc } = await admin.from("crm_horario_comercial")
+            .select("*").eq("empresa_id", canal.empresa_id).maybeSingle();
+          if (hc?.ativo && !dentroDoExpediente(hc) && hc.mensagem_fora_expediente) {
+            // Busca conv atualizada para checar se já enviamos aviso recente
+            const { data: convFull } = await admin.from("crm_conversas")
+              .select("aviso_ausencia_em").eq("id", conv.id).maybeSingle();
+            const ja = convFull?.aviso_ausencia_em;
+            const ultimoMs = ja ? new Date(ja).getTime() : 0;
+            const horasDesde = (Date.now() - ultimoMs) / 36e5;
+            const podeEnviar = !ja || (!hc.enviar_apenas_uma_vez && horasDesde > 6);
+            if (podeEnviar && EVOLUTION_URL && EVOLUTION_KEY) {
+              const txt = String(hc.mensagem_fora_expediente)
+                .replace(/\{\{nome\}\}/g, contato.nome ?? "")
+                .replace(/\{\{primeiro_nome\}\}/g, (contato.nome ?? "").split(" ")[0]);
+              await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${instance}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+                body: JSON.stringify({ number: numero, text: txt }),
+              });
+              const nowIso = new Date().toISOString();
+              await admin.from("crm_mensagens").insert({
+                empresa_id: canal.empresa_id, conversa_id: conv.id, tipo: "texto",
+                direcao: "saida", conteudo: txt, status: "enviada",
+                remetente_nome: "🌙 Auto (fora do expediente)", enviada_em: nowIso,
+              });
+              await admin.from("crm_conversas").update({
+                aviso_ausencia_em: nowIso, ultima_mensagem: txt, ultima_mensagem_em: nowIso,
+              }).eq("id", conv.id);
+            }
+          }
+        } catch (e) {
+          console.error("ausencia error:", e);
+        }
+      }
+
       // ============ EXECUTOR DE FLUXOS ============
       if (!fromMe) {
         try {
