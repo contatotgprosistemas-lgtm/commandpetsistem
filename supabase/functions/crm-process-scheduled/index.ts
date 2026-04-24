@@ -47,23 +47,24 @@ Deno.serve(async (req) => {
         const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
         const now = new Date().toISOString();
 
-        await admin.from("crm_mensagens").insert({
+        const { error: scheduledMessageError } = await admin.from("crm_mensagens").insert({
           empresa_id: m.empresa_id,
           conversa_id: m.conversa_id,
           tipo: "texto",
           direcao: "saida",
           conteudo,
-          status: "enviada",
+          status: "enviado",
           remetente_nome: "⏰ Agendada",
           identificador_externo: externalId,
           enviada_em: now,
         });
+        if (scheduledMessageError) throw scheduledMessageError;
         await admin.from("crm_conversas").update({
           ultima_mensagem: conteudo,
           ultima_mensagem_em: now,
         }).eq("id", m.conversa_id);
         await admin.from("crm_mensagens_agendadas").update({
-          status: "enviada", enviada_em: now,
+          status: "enviado", enviada_em: now,
         }).eq("id", m.id);
         enviadas++;
       } catch (err) {
