@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, lazy, Suspense } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const ArrivalTrackingMap = lazy(() => import("@/components/estou-chegando/ArrivalTrackingMap").then(m => ({ default: m.ArrivalTrackingMap })));
 
@@ -86,6 +87,20 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
     if (diff < 60) return `${diff}s atrás`;
     if (diff < 3600) return `${Math.floor(diff / 60)}min atrás`;
     return `${Math.floor(diff / 3600)}h atrás`;
+  };
+
+  const removerDoMapa = async (id: string, nome: string) => {
+    const { error } = await supabase
+      .from("estou_chegando")
+      .update({ active: false })
+      .eq("id", id);
+    if (error) {
+      toast.error("Erro ao remover do mapa");
+      return;
+    }
+    toast.success(`${nome} removido do mapa`);
+    setEntries((prev) => prev.filter((e) => e.id !== id));
+    setCount((c) => Math.max(0, c - 1));
   };
 
   return (
