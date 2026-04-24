@@ -75,20 +75,71 @@ Deno.serve(async (req) => {
       user_metadata: { nome: cliente.nome },
     });
 
+    let userId: string;
+
     if (createErr) {
-      return new Response(
-        JSON.stringify({ error: createErr.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      const msg = (createErr.message || "").toLowerCase();
+      const isDuplicate =
+        msg.includes("already") ||
+        msg.includes("registered") ||
+        msg.includes("exists") ||
+        (createErr as any).code === "email_exists";
+
+      if (!isDuplicate) {
+        return new Response(
+          JSON.stringify({ error: createErr.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Find the existing auth user by email
+      let existingUserId: string | null = null;
+      let page = 1;
+      while (page <= 20 && !existingUserId) {
+        const { data: list, error: listErr } = await adminClient.auth.admin.listUsers({ page, perPage: 200 });
+        if (listErr) break;
+        const found = list.users.find((u) => (u.email ?? "").toLowerCase() === email.toLowerCase());
+        if (found) { existingUserId = found.id; break; }
+        if (!list.users.length || list.users.length < 200) break;
+        page++;
+      }
+
+      if (!existingUserId) {
+        return new Response(
+          JSON.stringify({ error: "Email já registrado, mas o usuário não pôde ser localizado." }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Ensure this auth user isn't already linked to a different cliente
+      const { data: jaVinculado } = await adminClient
+        .from("clientes")
+        .select("id")
+        .eq("user_id", existingUserId)
+        .maybeSingle();
+
+      if (jaVinculado && jaVinculado.id !== cliente_id) {
+        return new Response(
+          JSON.stringify({ error: "Este email já está vinculado a outro cliente." }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Update password so the admin's chosen senha works
+      await adminClient.auth.admin.updateUserById(existingUserId, {
+        password: senha,
+        email_confirm: true,
+      });
+
+      userId = existingUserId;
+    } else {
+      userId = newUser.user.id;
     }
 
-    const userId = newUser.user.id;
-
     // Assign "cliente" role
-    await adminClient.from("user_roles").insert({
-      user_id: userId,
-      role: "cliente",
-    });
+    await adminClient
+      .from("user_roles")
+      .upsert({ user_id: userId, role: "cliente" }, { onConflict: "user_id,role" });
 
     // Link user_id to clientes table
     await adminClient
