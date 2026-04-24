@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Sparkles,
   ListChecks,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -22,6 +23,7 @@ const items = [
   { to: "/crm/contatos", label: "Contatos", icon: Users },
   { to: "/crm/pipeline", label: "Pipeline", icon: GitBranch },
   { to: "/crm/tarefas", label: "Tarefas", icon: ListChecks },
+  { to: "/crm/templates", label: "Modelos", icon: FileText },
   { to: "/crm/automacao", label: "Automação", icon: Bot },
   { to: "/crm/campanhas", label: "Campanhas", icon: Megaphone },
   { to: "/crm/canais", label: "Canais", icon: Phone },
