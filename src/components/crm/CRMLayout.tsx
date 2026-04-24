@@ -52,9 +52,8 @@ export function CRMLayout() {
             Voltar ao sistema
           </button>
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-lg flex items-center justify-center"
-                 style={{ background: "var(--gradient-brand)" }}>
-              <Sparkles className="h-4 w-4 text-white" strokeWidth={2.2} />
+            <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-sidebar-primary">
+              <Sparkles className="h-4 w-4 text-sidebar-primary-foreground" strokeWidth={2.2} />
             </div>
             <div className="leading-tight">
               <div className="text-sm font-semibold text-sidebar-foreground">PetCRM</div>
@@ -85,8 +84,7 @@ export function CRMLayout() {
                     {isActive && (
                       <motion.span
                         layoutId="crm-nav-indicator"
-                        className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full"
-                        style={{ background: "var(--gradient-brand)" }}
+                        className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-sidebar-primary"
                       />
                     )}
                     <Icon className="h-[17px] w-[17px] shrink-0" strokeWidth={1.7} />
