@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
 
       // conversa
       let { data: conv } = await admin.from("crm_conversas")
-        .select("id, nao_lidas, status")
+        .select("id, nao_lidas, status, setor_id, aguardando_setor")
         .eq("empresa_id", canal.empresa_id)
         .eq("canal_id", canal.id)
         .eq("contato_id", contato.id)
@@ -142,38 +142,67 @@ Deno.serve(async (req) => {
           contato_id: contato.id,
           status: "aberta",
           identificador_externo: remoteJid,
+          setor_id: canal.setor_padrao_id ?? null,
         }).select("id, nao_lidas, status").single();
         conv = ins.data!;
 
         // ====== Roteamento automático de NOVAS conversas ======
         try {
-          const pool: string[] = (canal.roteamento_atendentes ?? []) as string[];
-          if (canal.roteamento === "round_robin" && pool.length > 0) {
-            const idx = ((canal.roteamento_ultimo_idx ?? 0) + 1) % pool.length;
-            const userId = pool[idx];
-            await admin.from("crm_canais").update({ roteamento_ultimo_idx: idx }).eq("id", canal.id);
-            await admin.from("crm_conversas").update({
-              atendente_id: userId, assumida_em: new Date().toISOString(),
-            }).eq("id", conv.id);
-          } else if (canal.roteamento === "menos_carga" && pool.length > 0) {
-            // Conta conversas abertas por atendente do pool
-            const { data: open } = await admin.from("crm_conversas")
-              .select("atendente_id")
-              .eq("empresa_id", canal.empresa_id).neq("status", "fechada")
-              .in("atendente_id", pool);
-            const counts = new Map<string, number>(pool.map((u) => [u, 0]));
-            (open ?? []).forEach((r: any) => {
-              if (r.atendente_id) counts.set(r.atendente_id, (counts.get(r.atendente_id) ?? 0) + 1);
+          const modo = canal.roteamento_modo ?? "nenhum";
+
+          // 1) Menu automático: envia opções e marca aguardando_setor
+          if (modo === "menu" && canal.menu_config?.opcoes?.length && EVOLUTION_URL && EVOLUTION_KEY) {
+            const opcoes: any[] = canal.menu_config.opcoes;
+            const cabecalho = canal.menu_config.texto ?? "Escolha uma opção:";
+            const lista = opcoes.map((o: any) => `${o.tecla} - ${o.rotulo}`).join("\n");
+            const txt = `${cabecalho}\n\n${lista}`;
+            await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${instance}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+              body: JSON.stringify({ number: numero, text: txt }),
             });
-            const sorted = [...counts.entries()].sort((a, b) => a[1] - b[1]);
-            const userId = sorted[0][0];
+            const nowIso = new Date().toISOString();
+            await admin.from("crm_mensagens").insert({
+              empresa_id: canal.empresa_id, conversa_id: conv.id, tipo: "texto",
+              direcao: "saida", conteudo: txt, status: "enviada",
+              remetente_nome: "🤖 Menu", enviada_em: nowIso,
+            });
             await admin.from("crm_conversas").update({
-              atendente_id: userId, assumida_em: new Date().toISOString(),
+              aguardando_setor: true, ultima_mensagem: txt, ultima_mensagem_em: nowIso,
             }).eq("id", conv.id);
+            conv.aguardando_setor = true;
+          }
+
+          // 2) Palavras-chave: detecta setor pela primeira mensagem
+          if (modo === "palavras_chave") {
+            const regras: any[] = canal.palavras_chave_config?.regras ?? [];
+            const lower = (text ?? "").toLowerCase();
+            for (const r of regras) {
+              const lista = String(r.palavras ?? "").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
+              if (lista.some((p) => lower.includes(p)) && r.setor_id) {
+                await admin.from("crm_conversas").update({ setor_id: r.setor_id }).eq("id", conv.id);
+                conv.setor_id = r.setor_id;
+                break;
+              }
+            }
           }
         } catch (e) {
           console.error("roteamento error:", e);
         }
+      } else if (!fromMe && conv.aguardando_setor) {
+        // Conversa existente aguardando escolha do menu
+        try {
+          const opcoes: any[] = canal.menu_config?.opcoes ?? [];
+          const escolha = (text ?? "").trim().split(/\s+/)[0];
+          const op = opcoes.find((o: any) => String(o.tecla).trim() === escolha);
+          if (op?.setor_id) {
+            await admin.from("crm_conversas").update({
+              setor_id: op.setor_id, aguardando_setor: false,
+            }).eq("id", conv.id);
+            conv.setor_id = op.setor_id;
+            conv.aguardando_setor = false;
+          }
+        } catch (e) { console.error("menu choice error:", e); }
       }
 
       // dedupe por externalId
