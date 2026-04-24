@@ -58,6 +58,7 @@ export default function OperacionalDashboard() {
   const [manejoTarget, setManejoTarget] = useState<any>(null);
   const [galeriaTarget, setGaleriaTarget] = useState<any>(null);
   const [manejoFilledIds, setManejoFilledIds] = useState<Set<string>>(new Set());
+  const [mediaCounts, setMediaCounts] = useState<Record<string, number>>({});
   const [selectedCheckins, setSelectedCheckins] = useState<Set<string>>(new Set());
   const [selectedNaEmpresa, setSelectedNaEmpresa] = useState<Set<string>>(new Set());
   const [massLoading, setMassLoading] = useState(false);
@@ -135,6 +136,21 @@ export default function OperacionalDashboard() {
           .select("agendamento_id")
           .in("agendamento_id", naEmpresaIds);
         setManejoFilledIds(new Set((manejoData ?? []).map((m: any) => m.agendamento_id)));
+      }
+
+      // Fetch media counts per pet for pets currently in the company
+      const petIds = [...new Set(naEmpresa.map((a: any) => a.pet?.id).filter(Boolean))];
+      if (petIds.length > 0) {
+        const { data: mediaData } = await supabase
+          .from("pet_media")
+          .select("pet_id")
+          .eq("empresa_id", user.empresa_id)
+          .in("pet_id", petIds);
+        const counts: Record<string, number> = {};
+        for (const m of mediaData ?? []) {
+          counts[(m as any).pet_id] = (counts[(m as any).pet_id] || 0) + 1;
+        }
+        setMediaCounts(counts);
       }
 
       setLoading(false);
@@ -423,8 +439,13 @@ export default function OperacionalDashboard() {
                       className={`gap-1 h-9 text-xs ${manejoFilledIds.has(item.id) ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 hover:text-emerald-700" : ""}`}>
                       <ClipboardList className="h-3.5 w-3.5" /> Manejo
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setGaleriaTarget(item)} className="gap-1 h-9 text-xs">
+                    <Button size="sm" variant="outline" onClick={() => setGaleriaTarget(item)} className="gap-1 h-9 text-xs relative">
                       <Camera className="h-3.5 w-3.5" /> Galeria
+                      {mediaCounts[item.pet?.id] > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-sm border border-background">
+                          {mediaCounts[item.pet?.id] > 99 ? "99+" : mediaCounts[item.pet?.id]}
+                        </span>
+                      )}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => handleCheckout(item)} className="gap-1 h-9 text-xs">
                       <LogOutIcon className="h-3.5 w-3.5" /> Saída
