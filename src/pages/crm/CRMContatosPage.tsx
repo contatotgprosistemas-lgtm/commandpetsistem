@@ -151,7 +151,7 @@ export default function CRMContatosPage() {
         const { error } = await supabase.from("crm_contato_tag_links").delete().eq("contato_id", contatoId).eq("tag_id", tagId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("crm_contato_tag_links").insert({ contato_id: contatoId, tag_id: tagId });
+        const { error } = await supabase.from("crm_contato_tag_links").insert({ contato_id: contatoId, tag_id: tagId, empresa_id: empresaId! });
         if (error) throw error;
       }
     },
