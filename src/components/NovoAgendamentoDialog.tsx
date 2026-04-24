@@ -863,6 +863,22 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               )} />
             </div>
 
+            {/* Disponibilidade de horários para banho avulso */}
+            {isBanho && dataReserva && (
+              <div className="space-y-1.5 rounded-md border border-border p-3 bg-muted/20">
+                <FormLabel className="text-sm">Horários disponíveis para banho ({format(new Date(dataReserva + "T00:00:00"), "dd/MM/yyyy")})</FormLabel>
+                <BanhoTimeSlotPicker
+                  value={horaReserva}
+                  onChange={(t) => form.setValue("hora_reserva", t, { shouldValidate: true })}
+                  availabilityMap={banhoAvail.availabilityMap}
+                  relevantDates={[dataReserva]}
+                  loading={banhoAvail.loading}
+                  conflictingDates={banhoConflicts}
+                  suggestions={banhoSuggestions}
+                />
+              </div>
+            )}
+
             {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <FormField control={form.control} name="data_entrada" render={({ field }) => (
