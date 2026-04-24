@@ -61,15 +61,16 @@
 
     --radius: 0.625rem;
 
-    --sidebar-background: 240 18% 8%;
-    --sidebar-foreground: 220 14% 92%;
-    --sidebar-primary: 250 84% 62%;
+    /* Light professional sidebar (print 3 reference) */
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 222 47% 18%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 18% 14%;
-    --sidebar-accent-foreground: 220 14% 92%;
-    --sidebar-border: 240 18% 14%;
-    --sidebar-ring: 250 84% 62%;
-    --sidebar-muted: 220 10% 55%;
+    --sidebar-accent: 217 91% 95%;
+    --sidebar-accent-foreground: 217 91% 35%;
+    --sidebar-border: 220 16% 92%;
+    --sidebar-ring: 217 91% 60%;
+    --sidebar-muted: 220 12% 48%;
 
     /* WhatsApp chat colors */
     --chat-bubble-out: 250 84% 92%;
