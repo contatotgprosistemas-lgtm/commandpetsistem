@@ -300,16 +300,39 @@ export default function OperacionalDashboard() {
                         });
                       }}
                     />
-                    <Avatar className="h-10 w-10 shrink-0">
-                      {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                        {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                          {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {(() => {
+                        const sv = getServiceVisual(item.tipo_servico);
+                        const Icon = sv.icon;
+                        return (
+                          <div className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full ${sv.bg} flex items-center justify-center ring-2 ring-card`} title={sv.label}>
+                            <Icon className={`h-3 w-3 ${sv.color}`} />
+                          </div>
+                        );
+                      })()}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground text-sm">{item.pet?.nome ?? "Pet"}</p>
                       <p className="text-xs text-muted-foreground truncate">{item.cliente?.nome ?? "—"}</p>
-                      <Badge variant="outline" className="mt-1 text-[10px]">{item.tipo_servico}</Badge>
+                      <div className="mt-1 flex items-center gap-1 flex-wrap">
+                        <Badge variant="outline" className="text-[10px]">{item.tipo_servico}</Badge>
+                        {isHospedagem(item.tipo_servico) && extrasFlags[item.id]?.hasBanho && (
+                          <Badge className="text-[10px] bg-amber-500/15 text-amber-700 border-amber-500/30 gap-1" variant="outline" title="Inclui Banho/Tosa">
+                            <Scissors className="h-2.5 w-2.5" /> Banho
+                          </Badge>
+                        )}
+                        {isHospedagem(item.tipo_servico) && extrasFlags[item.id]?.hasTaxiPet && (
+                          <Badge className="text-[10px] bg-sky-500/15 text-sky-700 border-sky-500/30 gap-1" variant="outline" title="Inclui TaxiPet">
+                            <Car className="h-2.5 w-2.5" /> TaxiPet
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -360,16 +383,39 @@ export default function OperacionalDashboard() {
                         });
                       }}
                     />
-                    <Avatar className="h-10 w-10 shrink-0">
-                      {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                        {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                          {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {(() => {
+                        const sv = getServiceVisual(item.tipo_servico);
+                        const Icon = sv.icon;
+                        return (
+                          <div className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full ${sv.bg} flex items-center justify-center ring-2 ring-card`} title={sv.label}>
+                            <Icon className={`h-3 w-3 ${sv.color}`} />
+                          </div>
+                        );
+                      })()}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground text-sm">{item.pet?.nome ?? "Pet"}</p>
                       <p className="text-xs text-muted-foreground truncate">{item.cliente?.nome ?? "—"}</p>
-                      <Badge variant="outline" className="mt-1 text-[10px]">{item._serviceLabel || item.tipo_servico}</Badge>
+                      <div className="mt-1 flex items-center gap-1 flex-wrap">
+                        <Badge variant="outline" className="text-[10px]">{item._serviceLabel || item.tipo_servico}</Badge>
+                        {isHospedagem(item.tipo_servico) && extrasFlags[item.id]?.hasBanho && (
+                          <Badge className="text-[10px] bg-amber-500/15 text-amber-700 border-amber-500/30 gap-1" variant="outline" title="Inclui Banho/Tosa">
+                            <Scissors className="h-2.5 w-2.5" /> Banho
+                          </Badge>
+                        )}
+                        {isHospedagem(item.tipo_servico) && extrasFlags[item.id]?.hasTaxiPet && (
+                          <Badge className="text-[10px] bg-sky-500/15 text-sky-700 border-sky-500/30 gap-1" variant="outline" title="Inclui TaxiPet">
+                            <Car className="h-2.5 w-2.5" /> TaxiPet
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
