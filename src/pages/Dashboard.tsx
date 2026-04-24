@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, TreePine, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap } from "lucide-react";
+import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap } from "lucide-react";
 
 function ServicoIcon({ tipo }: { tipo?: string | null }) {
   const t = (tipo || "").toLowerCase();
