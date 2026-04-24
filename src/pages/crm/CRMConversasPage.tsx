@@ -119,7 +119,7 @@ export default function CRMConversasPage() {
     enabled: !!selected?.contato?.id,
     queryFn: async () => {
       const { data } = await supabase.from("crm_leads")
-        .select("id, valor_potencial, etapa:crm_pipeline_etapas(id, nome, cor)")
+        .select("id, valor, etapa:crm_pipeline_etapas(id, nome, cor)")
         .eq("contato_id", selected!.contato!.id)
         .order("created_at", { ascending: false })
         .limit(1).maybeSingle();
@@ -801,11 +801,11 @@ export default function CRMConversasPage() {
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
             </div>
-            {leadInfo?.valor_potencial != null && (
+            {leadInfo?.valor != null && (
               <div className="mt-2 flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Valor potencial</span>
                 <span className="font-semibold text-success">
-                  {Number(leadInfo.valor_potencial).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  {Number(leadInfo.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </span>
               </div>
             )}
