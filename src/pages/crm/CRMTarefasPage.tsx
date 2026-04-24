@@ -111,15 +111,15 @@ export default function CRMTarefasPage() {
       if (!empresaId) throw new Error("empresa");
       if (t.id) {
         const { error } = await supabase.from("crm_tarefas").update({
-          titulo: t.titulo, descricao: t.descricao, tipo: t.tipo, prioridade: t.prioridade,
-          status: t.status, prazo: t.prazo, contato_id: t.contato_id || null,
+          titulo: t.titulo!, descricao: t.descricao, tipo: t.tipo, prioridade: t.prioridade,
+          status: (t.status as any) ?? "pendente", prazo: t.prazo, contato_id: t.contato_id || null,
         }).eq("id", t.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("crm_tarefas").insert({
           empresa_id: empresaId,
           titulo: t.titulo!, descricao: t.descricao, tipo: t.tipo || "tarefa",
-          prioridade: t.prioridade || "media", status: "pendente",
+          prioridade: t.prioridade || "media", status: "pendente" as any,
           prazo: t.prazo, contato_id: t.contato_id || null,
         });
         if (error) throw error;
@@ -135,7 +135,7 @@ export default function CRMTarefasPage() {
 
   const toggle = useMutation({
     mutationFn: async (t: Tarefa) => {
-      const novo = t.status === "concluida" ? "pendente" : "concluida";
+      const novo: any = t.status === "concluida" ? "pendente" : "concluida";
       const { error } = await supabase.from("crm_tarefas").update({
         status: novo,
         concluida_em: novo === "concluida" ? new Date().toISOString() : null,
