@@ -50,7 +50,6 @@ export default function ClientsPage() {
   const [accessEmail, setAccessEmail] = useState("");
   const [accessSenha, setAccessSenha] = useState("");
   const [creatingAccess, setCreatingAccess] = useState(false);
-  const [bulkLoading, setBulkLoading] = useState(false);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
 
