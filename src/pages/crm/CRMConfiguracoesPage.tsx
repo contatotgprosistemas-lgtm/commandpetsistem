@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Trash2, Clock, Users, Save, CalendarOff, Settings as SettingsIcon } from "lucide-react";
+import { Loader2, Plus, Trash2, Clock, Users, Save, CalendarOff, Settings as SettingsIcon, Building2, X } from "lucide-react";
 import { toast } from "sonner";
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -132,6 +132,7 @@ export default function CRMConfiguracoesPage() {
         <Tabs defaultValue="horario" className="space-y-4">
           <TabsList>
             <TabsTrigger value="horario" className="gap-1.5"><Clock className="h-3.5 w-3.5" />Horário comercial</TabsTrigger>
+            <TabsTrigger value="setores" className="gap-1.5"><Building2 className="h-3.5 w-3.5" />Setores</TabsTrigger>
             <TabsTrigger value="roteamento" className="gap-1.5"><Users className="h-3.5 w-3.5" />Roteamento</TabsTrigger>
           </TabsList>
 
