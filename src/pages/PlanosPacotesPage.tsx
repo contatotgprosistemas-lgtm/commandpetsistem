@@ -15,6 +15,7 @@ import { NovoPacoteDialog } from "@/components/planos/NovoPacoteDialog";
 import { ContratacaoDialog } from "@/components/planos/ContratacaoDialog";
 import { PlanejamentoDiasDialog } from "@/components/planos/PlanejamentoDiasDialog";
 import { EditarContratacaoDialog } from "@/components/planos/EditarContratacaoDialog";
+import { ConsumoTab } from "@/components/planos/ConsumoTab";
 import { CancelamentoContratacaoDialog } from "@/components/planos/CancelamentoContratacaoDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -398,28 +399,7 @@ export default function PlanosPacotesPage() {
 
         {/* CONSUMO TAB */}
         <TabsContent value="consumo">
-          <div className="mt-4">
-            {loading ? <LoadingSkeleton /> : usageLogs.length === 0 ? <EmptyState text="Nenhum consumo registrado" /> : (
-              <div className="bg-card rounded-lg shadow-card divide-y divide-border">
-                <div className="px-5 py-3 flex items-center text-xs font-medium text-muted-foreground">
-                  <span className="flex-1">Serviço</span>
-                  <span className="w-20 text-center">Qtd</span>
-                  <span className="w-24 text-center">Extra?</span>
-                  <span className="w-28 text-right">Data</span>
-                </div>
-                {usageLogs.map((log: any) => (
-                  <div key={log.id} className="flex items-center px-5 py-2.5 text-sm hover:bg-muted/30 transition-colors">
-                    <span className="flex-1 text-foreground">{log.service_name}</span>
-                    <span className="w-20 text-center text-muted-foreground">{log.quantity_used}</span>
-                    <span className="w-24 text-center">
-                      {log.was_extra ? <Badge variant="destructive" className="text-xs">Extra</Badge> : <Badge className="bg-emerald-500/15 text-emerald-600 border-0 text-xs">Incluído</Badge>}
-                    </span>
-                    <span className="w-28 text-right text-xs text-muted-foreground">{format(new Date(log.usage_date), "dd/MM/yy HH:mm")}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ConsumoTab />
         </TabsContent>
       </Tabs>
 

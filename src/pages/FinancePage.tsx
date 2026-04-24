@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2, MoreVertical, Pencil, Search, Ban, CheckSquare, XCircle, Upload, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2, MoreVertical, Pencil, Search, Ban, CheckSquare, XCircle, Upload, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, BarChart3, Wallet, FileText, Settings2, Receipt, Landmark, ArrowDownToLine, ArrowUpFromLine, ListTree } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +28,7 @@ import { EditarContaBancariaDialog } from "@/components/EditarContaBancariaDialo
 import { DividirFaturaDialog } from "@/components/DividirFaturaDialog";
 import { SplitSquareVertical } from "lucide-react";
 import FinanceConfigPage from "@/pages/FinanceConfigPage";
+import { FinanceAnalyticsTab } from "@/components/finance/FinanceAnalyticsTab";
 
 interface ContaReceber {
   id: string;
@@ -104,21 +105,32 @@ export default function FinancePage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Total a Receber" value={`R$ ${totalReceber.toFixed(2)}`} change="—" changeType="neutral" icon={<DollarSign className="h-4 w-4" strokeWidth={1.5} />} />
-        <MetricCard title="Total Recebido" value={`R$ ${totalPago.toFixed(2)}`} change="—" changeType="neutral" icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />} />
-        <MetricCard title="Faturas Pendentes" value={String(contas.filter(c => c.status === "pendente").length)} change="—" changeType="neutral" icon={<TrendingDown className="h-4 w-4" strokeWidth={1.5} />} />
-        <MetricCard title="Contas Vencidas" value={String(vencidas.length)} change="—" changeType="neutral" icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />} />
+        <MetricCard title="Total a Receber" value={`R$ ${totalReceber.toFixed(2)}`} icon={<DollarSign className="h-4 w-4" strokeWidth={1.5} />} accent="emerald" filled />
+        <MetricCard title="Total Recebido" value={`R$ ${totalPago.toFixed(2)}`} icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />} accent="blue" filled />
+        <MetricCard title="Faturas Pendentes" value={String(contas.filter(c => c.status === "pendente").length)} icon={<TrendingDown className="h-4 w-4" strokeWidth={1.5} />} accent="violet" filled />
+        <MetricCard title="Contas Vencidas" value={String(vencidas.length)} icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />} accent="amber" filled />
       </div>
 
       <Tabs defaultValue="contas-a-receber" className="w-full">
-        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-4 flex-wrap">
-          {["Contas a Receber", "Contas a Pagar", "Fluxo de Caixa", "DRE", "Movimentação", "Plano de Contas", "Contas Bancárias", "Configuração"].map(tab => (
+        <TabsList className="bg-muted/40 border border-border rounded-xl p-1 h-auto gap-1 flex-wrap w-full justify-start overflow-x-auto">
+          {[
+            { v: "contas-a-receber", l: "Contas a Receber", i: ArrowDownToLine },
+            { v: "contas-a-pagar", l: "Contas a Pagar", i: ArrowUpFromLine },
+            { v: "movimentação", l: "Movimentação", i: Receipt },
+            { v: "fluxo-de-caixa", l: "Fluxo de Caixa", i: Wallet },
+            { v: "analise", l: "Análise", i: BarChart3 },
+            { v: "dre", l: "DRE", i: FileText },
+            { v: "plano-de-contas", l: "Plano de Contas", i: ListTree },
+            { v: "contas-bancárias", l: "Contas Bancárias", i: Landmark },
+            { v: "configuração", l: "Configuração", i: Settings2 },
+          ].map(({ v, l, i: Icon }) => (
             <TabsTrigger
-              key={tab}
-              value={tab.toLowerCase().replace(/ /g, "-")}
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 pb-2 text-sm"
+              key={v}
+              value={v}
+              className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-foreground text-muted-foreground px-3 py-1.5 text-xs font-medium gap-1.5 whitespace-nowrap"
             >
-              {tab}
+              <Icon className="h-3.5 w-3.5" />
+              {l}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -238,6 +250,7 @@ export default function FinancePage() {
         </TabsContent>
 
         <TabsContent value="fluxo-de-caixa"><FluxoCaixaPage /></TabsContent>
+        <TabsContent value="analise"><FinanceAnalyticsTab /></TabsContent>
         <TabsContent value="dre"><DREPage /></TabsContent>
         <TabsContent value="movimentação"><MovimentacaoPage /></TabsContent>
         <TabsContent value="plano-de-contas"><PlanoContasPage /></TabsContent>

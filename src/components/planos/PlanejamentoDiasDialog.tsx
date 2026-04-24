@@ -232,7 +232,8 @@ export function PlanejamentoDiasDialog({ open, onOpenChange, subscription, onSuc
             cliente_id: subscription.cliente_id,
             pet_id: subscription.pet_id,
             tipo_servico: tipoServico,
-            data_hora: format(current, "yyyy-MM-dd") + "T" + (showHorarioBanho ? horaBanho : "08:00") + ":00",
+            // IMPORTANT: append -03:00 (Brasília) so Postgres does not interpret as UTC and shift -3h
+            data_hora: format(current, "yyyy-MM-dd") + "T" + (showHorarioBanho ? horaBanho : "08:00") + ":00-03:00",
             status: "agendado",
             subscription_id: subscription.id,
             notas: "Gerado automaticamente pelo plano",

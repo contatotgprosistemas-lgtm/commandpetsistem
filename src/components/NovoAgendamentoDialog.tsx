@@ -24,6 +24,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { createContractShareLink } from "@/lib/contract-links";
 import { buildHospedagemContractValues, replaceContractPlaceholders } from "@/lib/contract-placeholders";
+import { useBanhoAvailability } from "@/hooks/useBanhoAvailability";
+import { BanhoTimeSlotPicker } from "@/components/planos/BanhoTimeSlotPicker";
 
 const schema = z.object({
   cliente_id: z.string().uuid("Selecione um cliente"),
@@ -117,6 +119,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [baias, setBaias] = useState<{ id: string; nome: string; capacidade_pets: number }[]>([]);
   const [clientePopoverOpen, setClientePopoverOpen] = useState(false);
   const [gerarContrato, setGerarContrato] = useState(false);
+  const banhoAvail = useBanhoAvailability(empresaId || "");
   const [contratoDialog, setContratoDialog] = useState<{
     open: boolean;
     agendamento: any;
@@ -193,6 +196,23 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       form.setValue("valor", servicoObj.valor.toFixed(2));
     }
   }, [isBanho, servicoObj]);
+
+  // Check banho availability when date changes
+  useEffect(() => {
+    if (isBanho && dataReserva && empresaId) {
+      banhoAvail.checkAvailability([dataReserva]);
+    }
+  }, [isBanho, dataReserva, empresaId]);
+
+  const banhoConflicts = useMemo(() => {
+    if (!isBanho || !dataReserva || !horaReserva) return [];
+    return banhoAvail.getConflictingDates(horaReserva, [dataReserva]);
+  }, [isBanho, dataReserva, horaReserva, banhoAvail.availabilityMap]);
+
+  const banhoSuggestions = useMemo(() => {
+    if (!isBanho || banhoConflicts.length === 0) return [];
+    return banhoAvail.suggestAlternatives(dataReserva, horaReserva, 3);
+  }, [banhoConflicts, isBanho, dataReserva, horaReserva]);
   // Calculate diárias
   const diarias = useMemo(() => {
     if (!isHotel || !dataReserva || !dataSaidaProvavel) return 0;
@@ -842,6 +862,22 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 </FormItem>
               )} />
             </div>
+
+            {/* Disponibilidade de horários para banho avulso */}
+            {isBanho && dataReserva && (
+              <div className="space-y-1.5 rounded-md border border-border p-3 bg-muted/20">
+                <FormLabel className="text-sm">Horários disponíveis para banho ({format(new Date(dataReserva + "T00:00:00"), "dd/MM/yyyy")})</FormLabel>
+                <BanhoTimeSlotPicker
+                  value={horaReserva}
+                  onChange={(t) => form.setValue("hora_reserva", t, { shouldValidate: true })}
+                  availabilityMap={banhoAvail.availabilityMap}
+                  relevantDates={[dataReserva]}
+                  loading={banhoAvail.loading}
+                  conflictingDates={banhoConflicts}
+                  suggestions={banhoSuggestions}
+                />
+              </div>
+            )}
 
             {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
