@@ -1502,6 +1502,116 @@ export type Database = {
           },
         ]
       }
+      crm_campanha_destinatarios: {
+        Row: {
+          campanha_id: string
+          contato_id: string | null
+          created_at: string
+          empresa_id: string
+          enviado_em: string | null
+          erro: string | null
+          id: string
+          nome: string | null
+          numero: string
+          status: string
+        }
+        Insert: {
+          campanha_id: string
+          contato_id?: string | null
+          created_at?: string
+          empresa_id: string
+          enviado_em?: string | null
+          erro?: string | null
+          id?: string
+          nome?: string | null
+          numero: string
+          status?: string
+        }
+        Update: {
+          campanha_id?: string
+          contato_id?: string | null
+          created_at?: string
+          empresa_id?: string
+          enviado_em?: string | null
+          erro?: string | null
+          id?: string
+          nome?: string | null
+          numero?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_campanha_destinatarios_campanha_id_fkey"
+            columns: ["campanha_id"]
+            isOneToOne: false
+            referencedRelation: "crm_campanhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_campanhas: {
+        Row: {
+          agendado_para: string | null
+          canal_id: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          empresa_id: string
+          finalizado_em: string | null
+          id: string
+          iniciado_em: string | null
+          intervalo_segundos: number
+          mensagem: string
+          midia_url: string | null
+          nome: string
+          status: string
+          total_destinatarios: number
+          total_enviados: number
+          total_falhas: number
+          updated_at: string
+        }
+        Insert: {
+          agendado_para?: string | null
+          canal_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id: string
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string | null
+          intervalo_segundos?: number
+          mensagem: string
+          midia_url?: string | null
+          nome: string
+          status?: string
+          total_destinatarios?: number
+          total_enviados?: number
+          total_falhas?: number
+          updated_at?: string
+        }
+        Update: {
+          agendado_para?: string | null
+          canal_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string | null
+          intervalo_segundos?: number
+          mensagem?: string
+          midia_url?: string | null
+          nome?: string
+          status?: string
+          total_destinatarios?: number
+          total_enviados?: number
+          total_falhas?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_canais: {
         Row: {
           ativo: boolean
