@@ -674,6 +674,7 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
           </button>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+          <ServicoIcon tipo={item.tipo_servico} />
           <span>{item.tipo_servico}</span>
           {item.subscription_id && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">Plano</Badge>}
           <span>|</span>
