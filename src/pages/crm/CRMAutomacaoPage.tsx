@@ -17,9 +17,12 @@ import {
 } from "@/components/ui/select";
 import {
   Bot, Plus, Loader2, Zap, MessageSquare, Tag, Clock, GitBranch,
-  Trash2, ArrowDown, Pencil, Power, Play,
+  Trash2, ArrowDown, Pencil, Power, Play, History, CheckCircle2, XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type FlowStep = {
   id: string;
@@ -115,6 +118,21 @@ export default function CRMAutomacaoPage() {
   });
 
   const steps: FlowStep[] = selected?.definicao?.steps ?? [];
+
+  const { data: execucoes = [] } = useQuery({
+    queryKey: ["crm-flow-execs", selected?.id],
+    enabled: !!selected?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_flow_executions")
+        .select("*, contato:crm_contatos(nome)")
+        .eq("flow_id", selected!.id)
+        .order("iniciado_em", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const addStep = (type: FlowStep["type"]) => {
     if (!selected) return;
@@ -228,8 +246,16 @@ export default function CRMAutomacaoPage() {
           </div>
 
           {/* Canvas */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-2xl mx-auto space-y-3">
+          <Tabs defaultValue="builder" className="flex-1 flex flex-col min-h-0">
+            <div className="px-6 pt-3 border-b">
+              <TabsList>
+                <TabsTrigger value="builder" className="gap-1.5"><Bot className="h-3.5 w-3.5" />Construtor</TabsTrigger>
+                <TabsTrigger value="execucoes" className="gap-1.5"><History className="h-3.5 w-3.5" />Execuções ({execucoes.length})</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="builder" className="flex-1 overflow-y-auto p-6 mt-0">
+              <div className="max-w-2xl mx-auto space-y-3">
               {/* Gatilho */}
               <Card className="p-4 border-2 border-violet-500/30 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5">
                 <div className="flex items-start gap-3">
@@ -314,8 +340,54 @@ export default function CRMAutomacaoPage() {
                   })}
                 </div>
               </Card>
-            </div>
-          </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="execucoes" className="flex-1 overflow-y-auto p-6 mt-0">
+              <div className="max-w-3xl mx-auto">
+                {execucoes.length === 0 ? (
+                  <div className="text-center py-12">
+                    <History className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+                    <p className="text-sm text-muted-foreground">Nenhuma execução ainda.</p>
+                    <p className="text-xs text-muted-foreground mt-1">As execuções aparecem aqui quando o gatilho é disparado.</p>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border bg-card overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+                        <tr>
+                          <th className="text-left px-4 py-2.5 font-medium">Status</th>
+                          <th className="text-left px-4 py-2.5 font-medium">Contato</th>
+                          <th className="text-left px-4 py-2.5 font-medium">Iniciado</th>
+                          <th className="text-left px-4 py-2.5 font-medium">Detalhes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {execucoes.map((e: any) => (
+                          <tr key={e.id} className="border-t hover:bg-muted/30">
+                            <td className="px-4 py-2.5">
+                              {e.status === "concluido" ? (
+                                <span className="inline-flex items-center gap-1 text-xs text-success"><CheckCircle2 className="h-3.5 w-3.5" />Concluído</span>
+                              ) : e.status === "erro" ? (
+                                <span className="inline-flex items-center gap-1 text-xs text-destructive"><XCircle className="h-3.5 w-3.5" />Erro</span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" />{e.status}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5">{e.contato?.nome ?? "—"}</td>
+                            <td className="px-4 py-2.5 text-muted-foreground text-xs">
+                              {e.iniciado_em && format(new Date(e.iniciado_em), "dd/MM HH:mm:ss", { locale: ptBR })}
+                            </td>
+                            <td className="px-4 py-2.5 text-xs text-muted-foreground truncate max-w-xs">{e.erro ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </main>
       )}
 
