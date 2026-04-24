@@ -181,6 +181,28 @@ export default function CRMAutomacaoPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const createFromTemplate = useMutation({
+    mutationFn: async (tpl: FlowTemplate | null) => {
+      if (!empresaId) throw new Error("empresa");
+      const payload = tpl
+        ? { nome: tpl.nome, gatilho: tpl.gatilho, definicao: { steps: tpl.steps } as any }
+        : { nome: "Novo fluxo", gatilho: "mensagem_recebida", definicao: { steps: [] } as any };
+      const { data, error } = await supabase
+        .from("crm_flows")
+        .insert({ empresa_id: empresaId, ...payload })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (d: any) => {
+      qc.invalidateQueries({ queryKey: ["crm-flows"] });
+      setSelectedId(d.id);
+      toast.success("Fluxo criado a partir do template");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const update = useMutation({
     mutationFn: async (patch: Partial<Flow>) => {
       if (!selected) return;
