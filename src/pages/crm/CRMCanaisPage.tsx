@@ -7,16 +7,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Plus, QrCode, Trash2, Power, RefreshCcw, Loader2 } from "lucide-react";
+import { Phone, Plus, QrCode, Trash2, Power, RefreshCcw, Loader2, MessageSquare, ChevronRight, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CRMCanaisPage() {
   const qc = useQueryClient();
   const { data: empresaId } = useCurrentEmpresa();
   const [open, setOpen] = useState(false);
-  const [nome, setNome] = useState("");
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [instanceName, setInstanceName] = useState("");
+  const [serverUrl, setServerUrl] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [setor, setSetor] = useState("");
   const [qrDialog, setQrDialog] = useState<{ canalId: string; qr: string | null; status: string } | null>(null);
+
+  const resetWizard = () => {
+    setStep(1);
+    setInstanceName("");
+    setServerUrl("");
+    setApiKey("");
+    setSetor("");
+  };
 
   const { data: canais = [], isLoading } = useQuery({
     queryKey: ["crm-canais", empresaId],
@@ -32,16 +43,23 @@ export default function CRMCanaisPage() {
   const create = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("evolution-instance", {
-        body: { action: "create", nome, setor: setor || null },
+        body: {
+          action: "create",
+          nome: instanceName,
+          setor: setor || null,
+          server_url: serverUrl,
+          api_key: apiKey,
+          instance_name: instanceName,
+        },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       return data;
     },
     onSuccess: (data: any) => {
-      toast.success("Canal criado. Escaneie o QR Code.");
+      toast.success("Instância criada. Escaneie o QR Code.");
       setOpen(false);
-      setNome(""); setSetor("");
+      resetWizard();
       qc.invalidateQueries({ queryKey: ["crm-canais"] });
       setQrDialog({ canalId: data.canal.id, qr: data.qr, status: "conectando" });
     },
@@ -139,23 +157,97 @@ export default function CRMCanaisPage() {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Novo canal WhatsApp</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1.5">
-              <Label>Nome do canal *</Label>
-              <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Atendimento Geral" />
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <MessageSquare className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <DialogTitle>Conectar Evolution API</DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Etapa {step} de 3</p>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>Setor (opcional)</Label>
-              <Input value={setor} onChange={(e) => setSetor(e.target.value)} placeholder="Ex: Vendas, Suporte" />
+          </DialogHeader>
+
+          {step === 1 && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Nome da instância</Label>
+                <Input
+                  value={instanceName}
+                  onChange={(e) => setInstanceName(e.target.value)}
+                  placeholder="comercial"
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">URL do servidor Evolution</Label>
+                <Input
+                  value={serverUrl}
+                  onChange={(e) => setServerUrl(e.target.value)}
+                  placeholder="https://evo.seudominio.com"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">API Key (apikey global ou da instância)</Label>
+                <Input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="••••••••••••"
+                />
+              </div>
+              <div className="rounded-md bg-primary/5 border border-primary/10 px-3 py-2.5 text-xs text-foreground/80">
+                Vamos criar a instância no servidor Evolution, gerar o QR e configurar o webhook automaticamente em <code className="px-1 py-0.5 rounded bg-background border text-[11px]">/api/public/webhooks/evolution</code>.
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => create.mutate()} disabled={!nome || create.isPending}>
-              {create.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Criar e gerar QR
-            </Button>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">Confirme as informações antes de provisionar a instância.</p>
+              <div className="rounded-lg border divide-y text-sm">
+                <div className="flex justify-between p-3"><span className="text-muted-foreground">Instância</span><span className="font-medium">{instanceName}</span></div>
+                <div className="flex justify-between p-3"><span className="text-muted-foreground">Servidor</span><span className="font-medium truncate max-w-[60%]">{serverUrl}</span></div>
+                <div className="flex justify-between p-3"><span className="text-muted-foreground">API Key</span><span className="font-medium">••••••{apiKey.slice(-4)}</span></div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Setor (opcional)</Label>
+                <Input value={setor} onChange={(e) => setSetor(e.target.value)} placeholder="Ex: Vendas, Suporte" />
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-3 py-4 text-center">
+              <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="h-6 w-6 text-success" />
+              </div>
+              <p className="text-sm">Tudo pronto! Clique em <span className="font-semibold">Conectar e gerar QR</span> para finalizar.</p>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            {step > 1 ? (
+              <Button variant="outline" onClick={() => setStep((step - 1) as 1 | 2 | 3)}>Voltar</Button>
+            ) : (
+              <Button variant="outline" onClick={() => { setOpen(false); resetWizard(); }}>Cancelar</Button>
+            )}
+            {step < 3 ? (
+              <Button
+                onClick={() => setStep((step + 1) as 1 | 2 | 3)}
+                disabled={step === 1 && (!instanceName || !serverUrl || !apiKey)}
+                className="gap-1"
+              >
+                Avançar <ChevronRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button onClick={() => create.mutate()} disabled={create.isPending} className="gap-1.5">
+                {create.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronRight className="h-4 w-4" />}
+                Conectar e gerar QR
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
