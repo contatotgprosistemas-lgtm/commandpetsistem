@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera, CheckSquare, Plus } from "lucide-react";
+import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera, CheckSquare, Plus, Hotel, Scissors, TreePine, HelpCircle, Car } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,6 +18,34 @@ import { OperacionalGaleriaDialog } from "@/components/operacional/OperacionalGa
 import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
+import { useAgendamentoExtras } from "@/hooks/useAgendamentoExtras";
+
+// Service type visuals (same palette used in ReservasPage)
+const serviceTypeMap: Array<{
+  keywords: string[];
+  icon: typeof Hotel;
+  color: string;
+  bg: string;
+  label: string;
+}> = [
+  { keywords: ["hotel", "hospedagem", "diaria", "diária", "pernoite"], icon: Hotel, color: "text-lime-600", bg: "bg-lime-500/15", label: "Hotel" },
+  { keywords: ["escola", "daycare", "creche", "day_care"], icon: TreePine, color: "text-violet-600", bg: "bg-violet-500/15", label: "Daycare" },
+  { keywords: ["banho", "tosa", "grooming", "estética", "estetica"], icon: Scissors, color: "text-amber-600", bg: "bg-amber-500/15", label: "Banho" },
+  { keywords: ["taxi", "táxi", "transporte", "leva", "busca", "translado"], icon: Car, color: "text-sky-600", bg: "bg-sky-500/15", label: "TaxiPet" },
+];
+
+function getServiceVisual(tipoServico: string) {
+  const t = (tipoServico || "").toLowerCase();
+  for (const s of serviceTypeMap) {
+    if (s.keywords.some((k) => t.includes(k))) return s;
+  }
+  return { keywords: [], icon: HelpCircle, color: "text-muted-foreground", bg: "bg-muted", label: "Outros" };
+}
+
+function isHospedagem(tipoServico: string) {
+  const t = (tipoServico || "").toLowerCase();
+  return ["hotel", "hospedagem", "diaria", "diária", "pernoite"].some((k) => t.includes(k));
+}
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
@@ -188,6 +216,24 @@ export default function OperacionalDashboard() {
     { label: "Check-ins Pendentes", value: stats.checkinsHoje, icon: LogIn, color: "text-emerald-500", bg: "bg-emerald-500/10" },
     { label: "Pets em Daycare", value: stats.petsDaycare, icon: PawPrint, color: "text-violet-500", bg: "bg-violet-500/10" },
   ];
+
+  // Compute extras for both lists
+  const extrasFlags = useAgendamentoExtras([
+    ...pendingCheckins.map((p) => ({
+      id: p.id,
+      cliente_id: p.cliente?.id || "",
+      empresa_id: user?.empresa_id,
+      tipo_servico: p.tipo_servico,
+      pet: p.pet,
+    })),
+    ...petsNaEmpresa.map((p) => ({
+      id: p.id,
+      cliente_id: p.cliente?.id || "",
+      empresa_id: user?.empresa_id,
+      tipo_servico: p.tipo_servico,
+      pet: p.pet,
+    })),
+  ]);
 
   return (
     <div className="space-y-6 pb-24 md:pb-0">
