@@ -336,6 +336,16 @@ export default function CRMConversasPage() {
                         <Badge className="h-5 min-w-5 px-1.5 rounded-full bg-success text-success-foreground text-[10px]">{c.nao_lidas}</Badge>
                       )}
                     </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {c.atendente_id ? (
+                        <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4 gap-1">
+                          <UserCheck className="h-2.5 w-2.5" />
+                          {membros.find((m: any) => m.user_id === c.atendente_id)?.nome?.split(" ")[0] ?? "Atribuída"}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[9px] py-0 px-1.5 h-4">Sem responsável</Badge>
+                      )}
+                    </div>
                   </div>
                 </button>
               ))}
