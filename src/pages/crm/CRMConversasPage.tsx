@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare, ArrowLeft, Paperclip, FileText as FileIcon, Download, Clock, StickyNote, Zap } from "lucide-react";
+import { Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare, ArrowLeft, Paperclip, FileText as FileIcon, Download, Clock, StickyNote, Zap, UserCheck, UserPlus, Timer } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +34,35 @@ export default function CRMConversasPage() {
   const [scheduleDraft, setScheduleDraft] = useState("");
   const [scheduleAt, setScheduleAt] = useState("");
   const [notaDraft, setNotaDraft] = useState("");
+  const [meId, setMeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
+  }, []);
+
+  // Membros da empresa para transferir conversas
+  const { data: membros = [] } = useQuery({
+    queryKey: ["crm-membros", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, nome, email, cargo")
+        .eq("empresa_id", empresaId!)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const atribuir = async (conversaId: string, userId: string | null) => {
+    const patch: any = { atendente_id: userId };
+    if (userId) patch.assumida_em = new Date().toISOString();
+    const { error } = await supabase.from("crm_conversas").update(patch).eq("id", conversaId);
+    if (error) { toast.error(error.message); return; }
+    toast.success(userId ? "Conversa atribuída" : "Conversa liberada");
+    qc.invalidateQueries({ queryKey: ["crm-conversas"] });
+  };
 
   // Conversas list
   const { data: conversas = [], isLoading: loadingConversas } = useQuery({
@@ -306,6 +336,16 @@ export default function CRMConversasPage() {
                         <Badge className="h-5 min-w-5 px-1.5 rounded-full bg-success text-success-foreground text-[10px]">{c.nao_lidas}</Badge>
                       )}
                     </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {c.atendente_id ? (
+                        <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4 gap-1">
+                          <UserCheck className="h-2.5 w-2.5" />
+                          {membros.find((m: any) => m.user_id === c.atendente_id)?.nome?.split(" ")[0] ?? "Atribuída"}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[9px] py-0 px-1.5 h-4">Sem responsável</Badge>
+                      )}
+                    </div>
                   </div>
                 </button>
               ))}
@@ -345,6 +385,46 @@ export default function CRMConversasPage() {
                 {aiLoading === "summary" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                 <span className="hidden sm:inline">Resumir</span>
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    {selected.atendente_id ? <UserCheck className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}
+                    <span className="hidden sm:inline">
+                      {selected.atendente_id
+                        ? (membros.find((m: any) => m.user_id === selected.atendente_id)?.nome?.split(" ")[0] ?? "Atribuída")
+                        : "Atribuir"}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="text-xs">Responsável pela conversa</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {meId && selected.atendente_id !== meId && (
+                    <DropdownMenuItem onClick={() => atribuir(selected.id, meId)} className="gap-2 text-sm">
+                      <UserCheck className="h-3.5 w-3.5" /> Assumir para mim
+                    </DropdownMenuItem>
+                  )}
+                  {selected.atendente_id && (
+                    <DropdownMenuItem onClick={() => atribuir(selected.id, null)} className="gap-2 text-sm text-destructive">
+                      Liberar (sem responsável)
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] text-muted-foreground">Transferir para…</DropdownMenuLabel>
+                  <div className="max-h-48 overflow-y-auto">
+                    {membros.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">Nenhum membro</div>}
+                    {membros.map((m: any) => (
+                      <DropdownMenuItem key={m.user_id} onClick={() => atribuir(selected.id, m.user_id)} className="gap-2 text-sm">
+                        <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-semibold shrink-0">
+                          {(m.nome ?? "?").charAt(0).toUpperCase()}
+                        </span>
+                        <span className="truncate">{m.nome}</span>
+                        {selected.atendente_id === m.user_id && <UserCheck className="h-3 w-3 ml-auto text-success" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* Messages */}
@@ -515,6 +595,34 @@ export default function CRMConversasPage() {
                 <div>
                   <div className="text-xs font-semibold mb-1.5">Origem</div>
                   <div className="text-sm text-muted-foreground">{selected.contato?.origem ?? "—"}</div>
+                </div>
+                <div className="rounded-lg border p-3 space-y-1.5">
+                  <div className="text-xs font-semibold flex items-center gap-1.5">
+                    <Timer className="h-3 w-3 text-primary" /> Atendimento
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Responsável: <span className="text-foreground font-medium">
+                      {selected.atendente_id
+                        ? (membros.find((m: any) => m.user_id === selected.atendente_id)?.nome ?? "—")
+                        : "Sem responsável"}
+                    </span>
+                  </div>
+                  {selected.assumida_em && (
+                    <div className="text-xs text-muted-foreground">
+                      Assumida em: <span className="text-foreground">{format(new Date(selected.assumida_em), "dd/MM HH:mm")}</span>
+                    </div>
+                  )}
+                  {selected.tempo_primeira_resposta_seg != null && (
+                    <div className="text-xs text-muted-foreground">
+                      1ª resposta em: <span className="text-foreground font-medium">
+                        {selected.tempo_primeira_resposta_seg < 60
+                          ? `${selected.tempo_primeira_resposta_seg}s`
+                          : selected.tempo_primeira_resposta_seg < 3600
+                          ? `${Math.round(selected.tempo_primeira_resposta_seg / 60)} min`
+                          : `${(selected.tempo_primeira_resposta_seg / 3600).toFixed(1)} h`}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 

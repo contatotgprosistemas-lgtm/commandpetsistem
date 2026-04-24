@@ -1798,6 +1798,7 @@ export type Database = {
       crm_conversas: {
         Row: {
           arquivada: boolean
+          assumida_em: string | null
           atendente_id: string | null
           canal_id: string
           contato_id: string
@@ -1808,16 +1809,19 @@ export type Database = {
           identificador_externo: string | null
           intencao: string | null
           nao_lidas: number
+          primeira_resposta_em: string | null
           prioridade: Database["public"]["Enums"]["crm_conversa_prioridade"]
           resumo_ia: string | null
           sentimento: string | null
           status: Database["public"]["Enums"]["crm_conversa_status"]
+          tempo_primeira_resposta_seg: number | null
           ultima_mensagem: string | null
           ultima_mensagem_em: string | null
           updated_at: string
         }
         Insert: {
           arquivada?: boolean
+          assumida_em?: string | null
           atendente_id?: string | null
           canal_id: string
           contato_id: string
@@ -1828,16 +1832,19 @@ export type Database = {
           identificador_externo?: string | null
           intencao?: string | null
           nao_lidas?: number
+          primeira_resposta_em?: string | null
           prioridade?: Database["public"]["Enums"]["crm_conversa_prioridade"]
           resumo_ia?: string | null
           sentimento?: string | null
           status?: Database["public"]["Enums"]["crm_conversa_status"]
+          tempo_primeira_resposta_seg?: number | null
           ultima_mensagem?: string | null
           ultima_mensagem_em?: string | null
           updated_at?: string
         }
         Update: {
           arquivada?: boolean
+          assumida_em?: string | null
           atendente_id?: string | null
           canal_id?: string
           contato_id?: string
@@ -1848,10 +1855,12 @@ export type Database = {
           identificador_externo?: string | null
           intencao?: string | null
           nao_lidas?: number
+          primeira_resposta_em?: string | null
           prioridade?: Database["public"]["Enums"]["crm_conversa_prioridade"]
           resumo_ia?: string | null
           sentimento?: string | null
           status?: Database["public"]["Enums"]["crm_conversa_status"]
+          tempo_primeira_resposta_seg?: number | null
           ultima_mensagem?: string | null
           ultima_mensagem_em?: string | null
           updated_at?: string
