@@ -106,10 +106,30 @@ export default function CRMConfiguracoesPage() {
     queryKey: ["crm-membros-cfg", empresaId],
     enabled: !!empresaId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles")
-        .select("user_id, nome, cargo").eq("empresa_id", empresaId!).order("nome");
-      if (error) throw error;
-      return data ?? [];
+      const [{ data: profs, error: e1 }, { data: ops, error: e2 }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("user_id, nome, cargo")
+          .eq("empresa_id", empresaId!)
+          .eq("aprovado", true)
+          .in("cargo", ["admin", "gerente", "atendente", "financeiro", "operacional", "banhista"]),
+        supabase
+          .from("operational_users")
+          .select("user_id, nome")
+          .eq("empresa_id", empresaId!)
+          .eq("ativo", true)
+          .not("user_id", "is", null),
+      ]);
+      if (e1) throw e1;
+      if (e2) throw e2;
+      const map = new Map<string, any>();
+      (profs ?? []).forEach((p: any) => p.user_id && map.set(p.user_id, p));
+      (ops ?? []).forEach((o: any) => {
+        if (o.user_id && !map.has(o.user_id)) {
+          map.set(o.user_id, { user_id: o.user_id, nome: o.nome, cargo: "operacional" });
+        }
+      });
+      return Array.from(map.values()).sort((a, b) => (a.nome ?? "").localeCompare(b.nome ?? ""));
     },
   });
 
