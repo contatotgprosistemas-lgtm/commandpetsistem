@@ -78,6 +78,8 @@ import CRMContatosPage from "@/pages/crm/CRMContatosPage";
 import CRMPipelinePage from "@/pages/crm/CRMPipelinePage";
 import CRMTarefasPage from "@/pages/crm/CRMTarefasPage";
 import CRMAutomacaoPage from "@/pages/crm/CRMAutomacaoPage";
+import CRMCampanhasPage from "@/pages/crm/CRMCampanhasPage";
+import CRMAnalyticsPage from "@/pages/crm/CRMAnalyticsPage";
 
 const queryClient = new QueryClient();
 
@@ -357,9 +359,9 @@ const App = () => (
               <Route path="pipeline" element={<CRMPipelinePage />} />
               <Route path="tarefas" element={<CRMTarefasPage />} />
               <Route path="automacao" element={<CRMAutomacaoPage />} />
-              <Route path="campanhas" element={<CRMPlaceholder title="Campanhas" description="Disparos em massa por canal." />} />
+              <Route path="campanhas" element={<CRMCampanhasPage />} />
               <Route path="canais" element={<CRMCanaisPage />} />
-              <Route path="analytics" element={<CRMPlaceholder title="Analytics" description="BI interno e indicadores comerciais." />} />
+              <Route path="analytics" element={<CRMAnalyticsPage />} />
               <Route path="configuracoes" element={<CRMPlaceholder title="Configurações" description="Equipe, permissões, integrações e API." />} />
             </Route>
 
