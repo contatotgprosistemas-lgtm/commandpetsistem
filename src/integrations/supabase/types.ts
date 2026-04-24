@@ -1763,6 +1763,92 @@ export type Database = {
           },
         ]
       }
+      crm_flow_executions: {
+        Row: {
+          contato_id: string | null
+          conversa_id: string | null
+          created_at: string
+          empresa_id: string
+          erro: string | null
+          flow_id: string
+          id: string
+          payload: Json | null
+          status: string
+        }
+        Insert: {
+          contato_id?: string | null
+          conversa_id?: string | null
+          created_at?: string
+          empresa_id: string
+          erro?: string | null
+          flow_id: string
+          id?: string
+          payload?: Json | null
+          status?: string
+        }
+        Update: {
+          contato_id?: string | null
+          conversa_id?: string | null
+          created_at?: string
+          empresa_id?: string
+          erro?: string | null
+          flow_id?: string
+          id?: string
+          payload?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_flow_executions_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "crm_flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_flows: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          definicao: Json
+          descricao: string | null
+          empresa_id: string
+          gatilho: string
+          gatilho_config: Json
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          definicao?: Json
+          descricao?: string | null
+          empresa_id: string
+          gatilho?: string
+          gatilho_config?: Json
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          definicao?: Json
+          descricao?: string | null
+          empresa_id?: string
+          gatilho?: string
+          gatilho_config?: Json
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_leads: {
         Row: {
           contato_id: string
@@ -2059,11 +2145,13 @@ export type Database = {
           contato_id: string | null
           conversa_id: string | null
           created_at: string
+          created_by: string | null
           descricao: string | null
           empresa_id: string
           id: string
           lead_id: string | null
           prazo: string | null
+          prioridade: string
           responsavel_id: string | null
           status: Database["public"]["Enums"]["crm_tarefa_status"]
           tipo: string | null
@@ -2075,11 +2163,13 @@ export type Database = {
           contato_id?: string | null
           conversa_id?: string | null
           created_at?: string
+          created_by?: string | null
           descricao?: string | null
           empresa_id: string
           id?: string
           lead_id?: string | null
           prazo?: string | null
+          prioridade?: string
           responsavel_id?: string | null
           status?: Database["public"]["Enums"]["crm_tarefa_status"]
           tipo?: string | null
@@ -2091,11 +2181,13 @@ export type Database = {
           contato_id?: string | null
           conversa_id?: string | null
           created_at?: string
+          created_by?: string | null
           descricao?: string | null
           empresa_id?: string
           id?: string
           lead_id?: string | null
           prazo?: string | null
+          prioridade?: string
           responsavel_id?: string | null
           status?: Database["public"]["Enums"]["crm_tarefa_status"]
           tipo?: string | null
