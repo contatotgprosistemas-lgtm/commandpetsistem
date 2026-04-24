@@ -659,7 +659,7 @@ export default function CRMConversasPage() {
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-[hsl(var(--muted)/0.2)]">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-chat-bg">
               {loadingMsgs ? (
                 <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
               ) : mensagensExibidas.length === 0 ? (
@@ -683,8 +683,8 @@ export default function CRMConversasPage() {
                         <div
                           className={`max-w-[70%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
                             out
-                              ? "bg-primary text-primary-foreground rounded-br-md"
-                              : "bg-card border rounded-bl-md"
+                              ? "bg-chat-bubble-out text-foreground rounded-br-md"
+                              : "bg-chat-bubble-in text-foreground border border-border/40 rounded-bl-md"
                           }`}
                         >
                           {isImg && (
@@ -702,7 +702,7 @@ export default function CRMConversasPage() {
                             </a>
                           )}
                           {m.conteudo && <div className="whitespace-pre-wrap break-words">{m.conteudo}</div>}
-                          <div className={`text-[10px] mt-1 ${out ? "text-primary-foreground/70" : "text-muted-foreground"} text-right`}>
+                          <div className="text-[10px] mt-1 text-muted-foreground text-right">
                             {m.remetente_nome?.startsWith("🤖") && <span className="mr-1">{m.remetente_nome}</span>}
                             {m.enviada_em && format(new Date(m.enviada_em), "HH:mm")}
                           </div>
