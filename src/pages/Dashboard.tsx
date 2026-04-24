@@ -386,10 +386,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Chats Ativos" value="0" change="—" changeType="neutral" icon={<MessageSquare className="h-4 w-4" strokeWidth={1.5} />} accent="blue" />
-        <MetricCard title="Pets na Empresa" value={String(petsNaEmpresa.length)} change="—" changeType="neutral" icon={<PawPrint className="h-4 w-4" strokeWidth={1.5} />} accent="emerald" />
-        <MetricCard title="Pets Plano Escola" value={String(petsPlanoEscola)} change="—" changeType="neutral" icon={<TreePine className="h-4 w-4" strokeWidth={1.5} />} accent="violet" />
-        <MetricCard title="Pets Plano Banho" value={String(petsPlanoBanho)} change="—" changeType="neutral" icon={<ShowerHead className="h-4 w-4" strokeWidth={1.5} />} accent="amber" />
+        <MetricCard filled title="Chats Ativos" value="0" change="—" changeType="neutral" icon={<MessageSquare className="h-4 w-4" strokeWidth={1.5} />} accent="blue" />
+        <MetricCard filled title="Pets na Empresa" value={String(petsNaEmpresa.length)} change="—" changeType="neutral" icon={<PawPrint className="h-4 w-4" strokeWidth={1.5} />} accent="emerald" />
+        <MetricCard filled title="Pets Plano Escola" value={String(petsPlanoEscola)} change="—" changeType="neutral" icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />} accent="violet" />
+        <MetricCard filled title="Pets Plano Banho" value={String(petsPlanoBanho)} change="—" changeType="neutral" icon={<ShowerHead className="h-4 w-4" strokeWidth={1.5} />} accent="amber" />
       </div>
 
       {/* Agenda section */}
