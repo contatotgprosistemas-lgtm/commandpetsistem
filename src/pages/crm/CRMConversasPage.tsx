@@ -445,7 +445,7 @@ export default function CRMConversasPage() {
         </div>
 
         {/* Filtros (pills) */}
-        <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
+        <div className="px-2 pb-2 flex gap-1 w-full">
           {[
             { id: "todas" as FilterTab, label: "Todas", count: counts.todas },
             { id: "nao_lidas" as FilterTab, label: "Não lidas", count: counts.naoLidas },
@@ -455,13 +455,15 @@ export default function CRMConversasPage() {
             <button
               key={f.id}
               onClick={() => setFilterTab(f.id)}
-              className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+              className={`flex-1 min-w-0 text-[11px] font-medium px-1.5 py-1.5 rounded-full transition-colors truncate ${
                 filterTab === f.id
                   ? "bg-primary/10 text-primary"
                   : "bg-muted/50 text-muted-foreground hover:bg-muted"
               }`}
+              title={`${f.label} (${f.count})`}
             >
               {f.label}
+              {f.count > 0 && <span className="ml-1 opacity-70">{f.count}</span>}
             </button>
           ))}
         </div>
