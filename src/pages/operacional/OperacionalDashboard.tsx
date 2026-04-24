@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera, CheckSquare, Plus, Hotel, Scissors, TreePine, HelpCircle, Car } from "lucide-react";
+import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera, CheckSquare, Plus, Hotel, Scissors, GraduationCap, HelpCircle, Car } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,7 +29,7 @@ const serviceTypeMap: Array<{
   label: string;
 }> = [
   { keywords: ["hotel", "hospedagem", "diaria", "diária", "pernoite"], icon: Hotel, color: "text-lime-600", bg: "bg-lime-500/15", label: "Hotel" },
-  { keywords: ["escola", "daycare", "creche", "day_care"], icon: TreePine, color: "text-violet-600", bg: "bg-violet-500/15", label: "Daycare" },
+  { keywords: ["escola", "daycare", "creche", "day_care"], icon: GraduationCap, color: "text-violet-600", bg: "bg-violet-500/15", label: "Daycare" },
   { keywords: ["banho", "tosa", "grooming", "estética", "estetica"], icon: Scissors, color: "text-amber-600", bg: "bg-amber-500/15", label: "Banho" },
   { keywords: ["taxi", "táxi", "transporte", "leva", "busca", "translado"], icon: Car, color: "text-sky-600", bg: "bg-sky-500/15", label: "TaxiPet" },
 ];
