@@ -13,7 +13,11 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 function evoFetch(path: string, init: RequestInit = {}, baseUrl?: string, apiKey?: string) {
-  const url = (baseUrl || EVOLUTION_URL || "").replace(/\/$/, "");
+  let url = (baseUrl || EVOLUTION_URL || "").trim();
+  // Remove trailing slash and common UI suffixes (Evolution Manager URL pasted by mistake)
+  url = url.replace(/\/+$/, "");
+  url = url.replace(/\/manager(\/login)?$/i, "");
+  url = url.replace(/\/+$/, "");
   const key = apiKey || EVOLUTION_KEY;
   return fetch(`${url}${path}`, {
     ...init,
