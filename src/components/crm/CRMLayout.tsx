@@ -15,6 +15,7 @@ import {
   ListChecks,
   FileText,
   Timer,
+  Plug,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -28,6 +29,7 @@ const items = [
   { to: "/crm/automacao", label: "Automação", icon: Bot },
   { to: "/crm/campanhas", label: "Campanhas", icon: Megaphone },
   { to: "/crm/canais", label: "Canais", icon: Phone },
+  { to: "/crm/integracoes", label: "Integrações", icon: Plug },
   { to: "/crm/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/crm/sla", label: "SLA & Resposta", icon: Timer },
   { to: "/crm/configuracoes", label: "Configurações", icon: Settings },

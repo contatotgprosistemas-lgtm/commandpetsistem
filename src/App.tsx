@@ -83,6 +83,7 @@ import CRMAnalyticsPage from "@/pages/crm/CRMAnalyticsPage";
 import CRMTemplatesPage from "@/pages/crm/CRMTemplatesPage";
 import CRMSLAPage from "@/pages/crm/CRMSLAPage";
 import CRMConfiguracoesPage from "@/pages/crm/CRMConfiguracoesPage";
+import CRMIntegracoesPage from "@/pages/crm/CRMIntegracoesPage";
 
 const queryClient = new QueryClient();
 
@@ -364,6 +365,7 @@ const App = () => (
               <Route path="automacao" element={<CRMAutomacaoPage />} />
               <Route path="campanhas" element={<CRMCampanhasPage />} />
               <Route path="canais" element={<CRMCanaisPage />} />
+              <Route path="integracoes" element={<CRMIntegracoesPage />} />
               <Route path="analytics" element={<CRMAnalyticsPage />} />
               <Route path="sla" element={<CRMSLAPage />} />
               <Route path="templates" element={<CRMTemplatesPage />} />
