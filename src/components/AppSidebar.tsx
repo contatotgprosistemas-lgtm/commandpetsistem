@@ -98,14 +98,19 @@ export function AppSidebar() {
       to={item.path}
       end={item.path === "/"}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+        `relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
           isActive
-            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-            : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/70"
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/40"
         }`
       }
     >
-      <item.icon className="h-[17px] w-[17px] shrink-0" strokeWidth={1.6} />
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-sidebar-primary" />
+          )}
+          <item.icon className="h-[17px] w-[17px] shrink-0" strokeWidth={1.6} />
       <AnimatePresence>
         {!collapsed && (
           <motion.span
@@ -118,6 +123,8 @@ export function AppSidebar() {
           </motion.span>
         )}
       </AnimatePresence>
+        </>
+      )}
     </NavLink>
   );
 
