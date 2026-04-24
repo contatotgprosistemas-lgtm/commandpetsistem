@@ -159,6 +159,18 @@ export default function CRMAutomacaoPage() {
     update.mutate({ definicao: { steps: steps.filter((s) => s.id !== id) } as any });
   };
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = steps.findIndex((s) => s.id === active.id);
+    const newIdx = steps.findIndex((s) => s.id === over.id);
+    if (oldIdx < 0 || newIdx < 0) return;
+    const novos = arrayMove(steps, oldIdx, newIdx);
+    update.mutate({ definicao: { steps: novos } as any });
+  };
+
   return (
     <div className="h-full flex bg-background">
       {/* Lista de fluxos */}
