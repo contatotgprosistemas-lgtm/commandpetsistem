@@ -66,6 +66,11 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
           muted: "hsl(var(--sidebar-muted))",
         },
+        chat: {
+          bg: "hsl(var(--chat-bg))",
+          "bubble-out": "hsl(var(--chat-bubble-out))",
+          "bubble-in": "hsl(var(--chat-bubble-in))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
