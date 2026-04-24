@@ -130,6 +130,36 @@ Deno.serve(async (req) => {
           identificador_externo: remoteJid,
         }).select("id, nao_lidas, status").single();
         conv = ins.data!;
+
+        // ====== Roteamento automático de NOVAS conversas ======
+        try {
+          const pool: string[] = (canal.roteamento_atendentes ?? []) as string[];
+          if (canal.roteamento === "round_robin" && pool.length > 0) {
+            const idx = ((canal.roteamento_ultimo_idx ?? 0) + 1) % pool.length;
+            const userId = pool[idx];
+            await admin.from("crm_canais").update({ roteamento_ultimo_idx: idx }).eq("id", canal.id);
+            await admin.from("crm_conversas").update({
+              atendente_id: userId, assumida_em: new Date().toISOString(),
+            }).eq("id", conv.id);
+          } else if (canal.roteamento === "menos_carga" && pool.length > 0) {
+            // Conta conversas abertas por atendente do pool
+            const { data: open } = await admin.from("crm_conversas")
+              .select("atendente_id")
+              .eq("empresa_id", canal.empresa_id).neq("status", "fechada")
+              .in("atendente_id", pool);
+            const counts = new Map<string, number>(pool.map((u) => [u, 0]));
+            (open ?? []).forEach((r: any) => {
+              if (r.atendente_id) counts.set(r.atendente_id, (counts.get(r.atendente_id) ?? 0) + 1);
+            });
+            const sorted = [...counts.entries()].sort((a, b) => a[1] - b[1]);
+            const userId = sorted[0][0];
+            await admin.from("crm_conversas").update({
+              atendente_id: userId, assumida_em: new Date().toISOString(),
+            }).eq("id", conv.id);
+          }
+        } catch (e) {
+          console.error("roteamento error:", e);
+        }
       }
 
       // dedupe por externalId
