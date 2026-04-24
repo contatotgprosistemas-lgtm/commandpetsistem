@@ -300,13 +300,18 @@ export default function CRMConversasPage() {
     }
     setSending(true);
     const conteudo = draft.trim();
+    // Assinatura do atendente em negrito (formato WhatsApp)
+    const { data: { user: _u } } = await supabase.auth.getUser();
+    const { data: _prof } = await supabase.from("profiles").select("nome").eq("user_id", _u!.id).maybeSingle();
+    const assinatura = _prof?.nome ? `*${_prof.nome}*\n` : "";
+    const conteudoComAssinatura = `${assinatura}${conteudo}`;
     const tempId = `temp-${crypto.randomUUID()}`;
     const optimistic = {
       id: tempId,
       conversa_id: selectedId,
       direcao: "saida",
       tipo: "texto",
-      conteudo,
+      conteudo: conteudoComAssinatura,
       midia_url: null,
       midia_mimetype: null,
       midia_filename: null,
@@ -320,7 +325,7 @@ export default function CRMConversasPage() {
     qc.setQueryData(["crm-mensagens", selectedId], (old: any[] = []) => [...old, optimistic]);
     try {
       const { data, error } = await supabase.functions.invoke("evolution-send", {
-        body: { conversa_id: selectedId, conteudo },
+        body: { conversa_id: selectedId, conteudo: conteudoComAssinatura },
       });
       if (error || (data as any)?.error) throw new Error((data as any)?.error ?? error?.message);
       qc.invalidateQueries({ queryKey: ["crm-mensagens", selectedId] });
@@ -347,10 +352,18 @@ export default function CRMConversasPage() {
       const { data: signed } = await supabase.storage.from("chat-media").createSignedUrl(path, 60 * 60 * 24 * 365);
       const url = signed?.signedUrl;
       if (!url) throw new Error("Falha ao gerar URL");
+      // Assinatura para legenda (apenas se houver legenda digitada)
+      const legenda = draft.trim();
+      let conteudoFinal: string | null = legenda || null;
+      if (legenda) {
+        const { data: { user: _u2 } } = await supabase.auth.getUser();
+        const { data: _prof2 } = await supabase.from("profiles").select("nome").eq("user_id", _u2!.id).maybeSingle();
+        if (_prof2?.nome) conteudoFinal = `*${_prof2.nome}*\n${legenda}`;
+      }
       const { data, error } = await supabase.functions.invoke("evolution-send", {
         body: {
           conversa_id: selectedId,
-          conteudo: draft.trim() || null,
+          conteudo: conteudoFinal,
           midia_url: url,
           midia_mimetype: file.type,
           midia_filename: file.name,
