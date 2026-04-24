@@ -1624,6 +1624,9 @@ export type Database = {
           nome: string
           numero_telefone: string | null
           provedor: Database["public"]["Enums"]["crm_canal_provedor"]
+          roteamento: string
+          roteamento_atendentes: string[] | null
+          roteamento_ultimo_idx: number
           setor: string | null
           status: Database["public"]["Enums"]["crm_canal_status"]
           tipo: Database["public"]["Enums"]["crm_canal_tipo"]
@@ -1641,6 +1644,9 @@ export type Database = {
           nome: string
           numero_telefone?: string | null
           provedor?: Database["public"]["Enums"]["crm_canal_provedor"]
+          roteamento?: string
+          roteamento_atendentes?: string[] | null
+          roteamento_ultimo_idx?: number
           setor?: string | null
           status?: Database["public"]["Enums"]["crm_canal_status"]
           tipo?: Database["public"]["Enums"]["crm_canal_tipo"]
@@ -1658,6 +1664,9 @@ export type Database = {
           nome?: string
           numero_telefone?: string | null
           provedor?: Database["public"]["Enums"]["crm_canal_provedor"]
+          roteamento?: string
+          roteamento_atendentes?: string[] | null
+          roteamento_ultimo_idx?: number
           setor?: string | null
           status?: Database["public"]["Enums"]["crm_canal_status"]
           tipo?: Database["public"]["Enums"]["crm_canal_tipo"]
@@ -1800,6 +1809,7 @@ export type Database = {
           arquivada: boolean
           assumida_em: string | null
           atendente_id: string | null
+          aviso_ausencia_em: string | null
           canal_id: string
           contato_id: string
           created_at: string
@@ -1823,6 +1833,7 @@ export type Database = {
           arquivada?: boolean
           assumida_em?: string | null
           atendente_id?: string | null
+          aviso_ausencia_em?: string | null
           canal_id: string
           contato_id: string
           created_at?: string
@@ -1846,6 +1857,7 @@ export type Database = {
           arquivada?: boolean
           assumida_em?: string | null
           atendente_id?: string | null
+          aviso_ausencia_em?: string | null
           canal_id?: string
           contato_id?: string
           created_at?: string
@@ -1964,6 +1976,45 @@ export type Database = {
           gatilho_config?: Json
           id?: string
           nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_horario_comercial: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          empresa_id: string
+          enviar_apenas_uma_vez: boolean
+          feriados: Json
+          fuso: string
+          horarios: Json
+          id: string
+          mensagem_fora_expediente: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id: string
+          enviar_apenas_uma_vez?: boolean
+          feriados?: Json
+          fuso?: string
+          horarios?: Json
+          id?: string
+          mensagem_fora_expediente?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id?: string
+          enviar_apenas_uma_vez?: boolean
+          feriados?: Json
+          fuso?: string
+          horarios?: Json
+          id?: string
+          mensagem_fora_expediente?: string | null
           updated_at?: string
         }
         Relationships: []
