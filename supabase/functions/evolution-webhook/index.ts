@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
           status: "aberta",
           identificador_externo: remoteJid,
           setor_id: canal.setor_padrao_id ?? null,
-        }).select("id, nao_lidas, status").single();
+        }).select("id, nao_lidas, status, setor_id, aguardando_setor").single();
         conv = ins.data!;
 
         // ====== Roteamento automático de NOVAS conversas ======
