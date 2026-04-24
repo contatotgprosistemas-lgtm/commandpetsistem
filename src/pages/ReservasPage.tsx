@@ -5,7 +5,7 @@ import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { format, startOfDay, addDays, subDays, startOfWeek, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck, Search, Filter, PawPrint, User, Hotel, Scissors, TreePine, HelpCircle, Pencil, Trash2 } from "lucide-react";
+import { CalendarCheck, Search, Filter, PawPrint, User, Hotel, Scissors, TreePine, HelpCircle, Pencil, Trash2, Car } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { SignedImage } from "@/components/SignedImage";
 import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
+import { useAgendamentoExtras } from "@/hooks/useAgendamentoExtras";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -226,6 +227,8 @@ export default function ReservasPage() {
     );
   }, [filtered]);
 
+  const extrasFlags = useAgendamentoExtras(filtered as any);
+
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center gap-3">
@@ -302,7 +305,10 @@ export default function ReservasPage() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                  {items.map((r) => (
+                  {items.map((r) => {
+                    const flags = extrasFlags[r.id];
+                    const isHotel = label === "HOTEL";
+                    return (
                     <Card key={r.id} className="overflow-hidden hover:shadow-md transition-shadow group relative">
                       {/* Action buttons overlay */}
                       <div className="absolute top-1.5 left-1.5 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -343,6 +349,27 @@ export default function ReservasPage() {
                         >
                           {statusLabels[r.status] || r.status}
                         </Badge>
+                        {/* Extras visuais (apenas para hospedagem) */}
+                        {isHotel && (flags?.hasBanho || flags?.hasTaxiPet) && (
+                          <div className="absolute bottom-1.5 right-1.5 flex gap-1">
+                            {flags?.hasBanho && (
+                              <div
+                                className="h-6 w-6 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-sm ring-2 ring-card"
+                                title="Inclui Banho/Tosa"
+                              >
+                                <Scissors className="h-3 w-3" />
+                              </div>
+                            )}
+                            {flags?.hasTaxiPet && (
+                              <div
+                                className="h-6 w-6 rounded-full bg-sky-500 text-white flex items-center justify-center shadow-sm ring-2 ring-card"
+                                title="Inclui TaxiPet"
+                              >
+                                <Car className="h-3 w-3" />
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <CardContent className="p-2.5 text-center space-y-0.5">
                         <p className="font-semibold text-sm text-foreground truncate">
@@ -366,7 +393,8 @@ export default function ReservasPage() {
                         </p>
                       </CardContent>
                     </Card>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
             );

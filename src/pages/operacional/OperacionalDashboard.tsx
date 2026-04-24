@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera, CheckSquare, Plus } from "lucide-react";
+import { CalendarDays, PawPrint, LogIn, LogOut as LogOutIcon, XCircle, ClipboardList, Camera, CheckSquare, Plus, Hotel, Scissors, TreePine, HelpCircle, Car } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,6 +18,34 @@ import { OperacionalGaleriaDialog } from "@/components/operacional/OperacionalGa
 import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
+import { useAgendamentoExtras } from "@/hooks/useAgendamentoExtras";
+
+// Service type visuals (same palette used in ReservasPage)
+const serviceTypeMap: Array<{
+  keywords: string[];
+  icon: typeof Hotel;
+  color: string;
+  bg: string;
+  label: string;
+}> = [
+  { keywords: ["hotel", "hospedagem", "diaria", "diária", "pernoite"], icon: Hotel, color: "text-lime-600", bg: "bg-lime-500/15", label: "Hotel" },
+  { keywords: ["escola", "daycare", "creche", "day_care"], icon: TreePine, color: "text-violet-600", bg: "bg-violet-500/15", label: "Daycare" },
+  { keywords: ["banho", "tosa", "grooming", "estética", "estetica"], icon: Scissors, color: "text-amber-600", bg: "bg-amber-500/15", label: "Banho" },
+  { keywords: ["taxi", "táxi", "transporte", "leva", "busca", "translado"], icon: Car, color: "text-sky-600", bg: "bg-sky-500/15", label: "TaxiPet" },
+];
+
+function getServiceVisual(tipoServico: string) {
+  const t = (tipoServico || "").toLowerCase();
+  for (const s of serviceTypeMap) {
+    if (s.keywords.some((k) => t.includes(k))) return s;
+  }
+  return { keywords: [], icon: HelpCircle, color: "text-muted-foreground", bg: "bg-muted", label: "Outros" };
+}
+
+function isHospedagem(tipoServico: string) {
+  const t = (tipoServico || "").toLowerCase();
+  return ["hotel", "hospedagem", "diaria", "diária", "pernoite"].some((k) => t.includes(k));
+}
 
 export default function OperacionalDashboard() {
   const { user } = useOperationalAuth();
@@ -189,6 +217,24 @@ export default function OperacionalDashboard() {
     { label: "Pets em Daycare", value: stats.petsDaycare, icon: PawPrint, color: "text-violet-500", bg: "bg-violet-500/10" },
   ];
 
+  // Compute extras for both lists
+  const extrasFlags = useAgendamentoExtras([
+    ...pendingCheckins.map((p) => ({
+      id: p.id,
+      cliente_id: p.cliente?.id || "",
+      empresa_id: user?.empresa_id,
+      tipo_servico: p.tipo_servico,
+      pet: p.pet,
+    })),
+    ...petsNaEmpresa.map((p) => ({
+      id: p.id,
+      cliente_id: p.cliente?.id || "",
+      empresa_id: user?.empresa_id,
+      tipo_servico: p.tipo_servico,
+      pet: p.pet,
+    })),
+  ]);
+
   return (
     <div className="space-y-6 pb-24 md:pb-0">
       <div className="flex items-center justify-between">
@@ -254,16 +300,39 @@ export default function OperacionalDashboard() {
                         });
                       }}
                     />
-                    <Avatar className="h-10 w-10 shrink-0">
-                      {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                        {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                          {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {(() => {
+                        const sv = getServiceVisual(item.tipo_servico);
+                        const Icon = sv.icon;
+                        return (
+                          <div className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full ${sv.bg} flex items-center justify-center ring-2 ring-card`} title={sv.label}>
+                            <Icon className={`h-3 w-3 ${sv.color}`} />
+                          </div>
+                        );
+                      })()}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground text-sm">{item.pet?.nome ?? "Pet"}</p>
                       <p className="text-xs text-muted-foreground truncate">{item.cliente?.nome ?? "—"}</p>
-                      <Badge variant="outline" className="mt-1 text-[10px]">{item.tipo_servico}</Badge>
+                      <div className="mt-1 flex items-center gap-1 flex-wrap">
+                        <Badge variant="outline" className="text-[10px]">{item.tipo_servico}</Badge>
+                        {isHospedagem(item.tipo_servico) && extrasFlags[item.id]?.hasBanho && (
+                          <Badge className="text-[10px] bg-amber-500/15 text-amber-700 border-amber-500/30 gap-1" variant="outline" title="Inclui Banho/Tosa">
+                            <Scissors className="h-2.5 w-2.5" /> Banho
+                          </Badge>
+                        )}
+                        {isHospedagem(item.tipo_servico) && extrasFlags[item.id]?.hasTaxiPet && (
+                          <Badge className="text-[10px] bg-sky-500/15 text-sky-700 border-sky-500/30 gap-1" variant="outline" title="Inclui TaxiPet">
+                            <Car className="h-2.5 w-2.5" /> TaxiPet
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -314,16 +383,39 @@ export default function OperacionalDashboard() {
                         });
                       }}
                     />
-                    <Avatar className="h-10 w-10 shrink-0">
-                      {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                        {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} />}
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                          {(item.pet?.nome ?? "P").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {(() => {
+                        const sv = getServiceVisual(item.tipo_servico);
+                        const Icon = sv.icon;
+                        return (
+                          <div className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full ${sv.bg} flex items-center justify-center ring-2 ring-card`} title={sv.label}>
+                            <Icon className={`h-3 w-3 ${sv.color}`} />
+                          </div>
+                        );
+                      })()}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground text-sm">{item.pet?.nome ?? "Pet"}</p>
                       <p className="text-xs text-muted-foreground truncate">{item.cliente?.nome ?? "—"}</p>
-                      <Badge variant="outline" className="mt-1 text-[10px]">{item._serviceLabel || item.tipo_servico}</Badge>
+                      <div className="mt-1 flex items-center gap-1 flex-wrap">
+                        <Badge variant="outline" className="text-[10px]">{item._serviceLabel || item.tipo_servico}</Badge>
+                        {isHospedagem(item.tipo_servico) && extrasFlags[item.id]?.hasBanho && (
+                          <Badge className="text-[10px] bg-amber-500/15 text-amber-700 border-amber-500/30 gap-1" variant="outline" title="Inclui Banho/Tosa">
+                            <Scissors className="h-2.5 w-2.5" /> Banho
+                          </Badge>
+                        )}
+                        {isHospedagem(item.tipo_servico) && extrasFlags[item.id]?.hasTaxiPet && (
+                          <Badge className="text-[10px] bg-sky-500/15 text-sky-700 border-sky-500/30 gap-1" variant="outline" title="Inclui TaxiPet">
+                            <Car className="h-2.5 w-2.5" /> TaxiPet
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
