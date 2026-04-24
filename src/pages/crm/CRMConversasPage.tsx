@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare, ArrowLeft } from "lucide-react";
+import { Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare, ArrowLeft, Paperclip, Image as ImageIcon, FileText as FileIcon, Download } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,6 +22,8 @@ export default function CRMConversasPage() {
   const [aiLoading, setAiLoading] = useState<"suggest" | "summary" | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   // Conversas list
   const { data: conversas = [], isLoading: loadingConversas } = useQuery({
@@ -107,6 +109,39 @@ export default function CRMConversasPage() {
     } catch (e: any) {
       toast.error(e.message);
     } finally { setSending(false); }
+  };
+
+  const sendFile = async (file: File) => {
+    if (!selectedId || !empresaId) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "bin";
+      const path = `${empresaId}/${selectedId}/${crypto.randomUUID()}.${ext}`;
+      const up = await supabase.storage.from("chat-media").upload(path, file, {
+        contentType: file.type, upsert: false,
+      });
+      if (up.error) throw up.error;
+      const { data: signed } = await supabase.storage.from("chat-media").createSignedUrl(path, 60 * 60 * 24 * 365);
+      const url = signed?.signedUrl;
+      if (!url) throw new Error("Falha ao gerar URL");
+      const { data, error } = await supabase.functions.invoke("evolution-send", {
+        body: {
+          conversa_id: selectedId,
+          conteudo: draft.trim() || null,
+          midia_url: url,
+          midia_mimetype: file.type,
+          midia_filename: file.name,
+        },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error ?? error?.message);
+      setDraft("");
+      qc.invalidateQueries({ queryKey: ["crm-mensagens", selectedId] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   const aiAction = async (action: "suggest" | "summary") => {
@@ -213,11 +248,34 @@ export default function CRMConversasPage() {
                 <div className="text-center py-12 text-sm text-muted-foreground">Sem mensagens ainda.</div>
               ) : mensagens.map((m: any) => {
                 const out = m.direcao === "saida";
+                const isImg = m.midia_url && (m.midia_mimetype ?? "").startsWith("image/");
+                const isVideo = m.midia_url && (m.midia_mimetype ?? "").startsWith("video/");
+                const isAudio = m.midia_url && (m.midia_mimetype ?? "").startsWith("audio/");
+                const isFile = m.midia_url && !isImg && !isVideo && !isAudio;
                 return (
                   <div key={m.id} className={`flex ${out ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${out ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card border rounded-bl-sm"}`}>
-                      <div className="whitespace-pre-wrap break-words">{m.conteudo}</div>
+                      {isImg && (
+                        <a href={m.midia_url} target="_blank" rel="noreferrer">
+                          <img src={m.midia_url} alt="" className="rounded-lg max-h-64 mb-1" />
+                        </a>
+                      )}
+                      {isVideo && (
+                        <video src={m.midia_url} controls className="rounded-lg max-h-64 mb-1" />
+                      )}
+                      {isAudio && (
+                        <audio src={m.midia_url} controls className="mb-1 max-w-full" />
+                      )}
+                      {isFile && (
+                        <a href={m.midia_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 mb-1 underline">
+                          <FileIcon className="h-4 w-4" />
+                          <span className="truncate">{m.midia_filename ?? "arquivo"}</span>
+                          <Download className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                      {m.conteudo && <div className="whitespace-pre-wrap break-words">{m.conteudo}</div>}
                       <div className={`text-[10px] mt-1 ${out ? "text-primary-foreground/70" : "text-muted-foreground"} text-right`}>
+                        {m.remetente_nome?.startsWith("🤖") && <span className="mr-1">{m.remetente_nome}</span>}
                         {m.enviada_em && format(new Date(m.enviada_em), "HH:mm")}
                       </div>
                     </div>
@@ -231,6 +289,16 @@ export default function CRMConversasPage() {
               <div className="flex items-end gap-2">
                 <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => aiAction("suggest")} disabled={aiLoading === "suggest"} title="Sugerir resposta com IA">
                   {aiLoading === "suggest" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-primary" />}
+                </Button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) sendFile(f); }}
+                />
+                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => fileRef.current?.click()} disabled={uploading} title="Anexar arquivo">
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
                 </Button>
                 <Input
                   value={draft}

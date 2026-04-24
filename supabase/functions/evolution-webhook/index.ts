@@ -8,6 +8,8 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const EVOLUTION_URL = Deno.env.get("EVOLUTION_API_URL") ?? "";
+const EVOLUTION_KEY = Deno.env.get("EVOLUTION_API_KEY") ?? "";
 
 function onlyDigits(s: string) { return (s ?? "").replace(/\D/g, ""); }
 
@@ -68,6 +70,15 @@ Deno.serve(async (req) => {
       const externalId: string = msg?.key?.id ?? crypto.randomUUID();
       const ts = msg?.messageTimestamp ? new Date(Number(msg.messageTimestamp) * 1000).toISOString() : new Date().toISOString();
 
+      // Detecta mídia
+      const mm = msg?.message ?? {};
+      const mediaInfo =
+        mm.imageMessage ? { kind: "imagem", mimetype: mm.imageMessage.mimetype, filename: "image.jpg" } :
+        mm.videoMessage ? { kind: "video", mimetype: mm.videoMessage.mimetype, filename: "video.mp4" } :
+        mm.audioMessage ? { kind: "audio", mimetype: mm.audioMessage.mimetype, filename: "audio.ogg" } :
+        mm.documentMessage ? { kind: "documento", mimetype: mm.documentMessage.mimetype, filename: mm.documentMessage.fileName ?? "arquivo" } :
+        null;
+
       // contato (upsert por whatsapp)
       let { data: contato } = await admin.from("crm_contatos")
         .select("id, nome").eq("empresa_id", canal.empresa_id).eq("whatsapp", numero).maybeSingle();
@@ -105,12 +116,46 @@ Deno.serve(async (req) => {
         .select("id").eq("identificador_externo", externalId).maybeSingle();
       if (existing) return new Response(JSON.stringify({ ok: true, dedupe: true }), { headers: corsHeaders });
 
+      // Baixar mídia se houver
+      let mediaUrl: string | null = null;
+      let mediaSize: number | null = null;
+      if (mediaInfo && EVOLUTION_URL && EVOLUTION_KEY) {
+        try {
+          const dl = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/chat/getBase64FromMediaMessage/${instance}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+            body: JSON.stringify({ message: { key: msg.key }, convertToMp4: false }),
+          });
+          const dlData = await dl.json();
+          const b64: string = dlData?.base64 ?? dlData?.data?.base64 ?? "";
+          if (b64) {
+            const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+            mediaSize = bin.length;
+            const ext = (mediaInfo.mimetype?.split("/")[1] ?? "bin").split(";")[0];
+            const path = `${canal.empresa_id}/${conv.id}/${externalId}.${ext}`;
+            const up = await admin.storage.from("chat-media").upload(path, bin, {
+              contentType: mediaInfo.mimetype, upsert: true,
+            });
+            if (!up.error) {
+              const { data: signed } = await admin.storage.from("chat-media").createSignedUrl(path, 60 * 60 * 24 * 365);
+              mediaUrl = signed?.signedUrl ?? null;
+            }
+          }
+        } catch (e) {
+          console.error("media download error:", e);
+        }
+      }
+
       await admin.from("crm_mensagens").insert({
         empresa_id: canal.empresa_id,
         conversa_id: conv.id,
-        tipo: "texto",
+        tipo: (mediaInfo?.kind ?? "texto") as any,
         direcao: fromMe ? "saida" : "entrada",
         conteudo: text,
+        midia_url: mediaUrl,
+        midia_mimetype: mediaInfo?.mimetype ?? null,
+        midia_filename: mediaInfo?.filename ?? null,
+        midia_tamanho: mediaSize,
         status: "entregue",
         identificador_externo: externalId,
         enviada_em: ts,
@@ -118,13 +163,90 @@ Deno.serve(async (req) => {
       });
 
       await admin.from("crm_conversas").update({
-        ultima_mensagem: text,
+        ultima_mensagem: mediaInfo ? `[${mediaInfo.kind}] ${text === "[mídia]" ? "" : text}`.trim() : text,
         ultima_mensagem_em: ts,
         nao_lidas: fromMe ? (conv.nao_lidas ?? 0) : (conv.nao_lidas ?? 0) + 1,
         status: conv.status === "fechada" ? "aberta" : conv.status,
       }).eq("id", conv.id);
 
       await admin.from("crm_contatos").update({ ultima_interacao: ts }).eq("id", contato.id);
+
+      // ============ EXECUTOR DE FLUXOS ============
+      if (!fromMe) {
+        try {
+          const { data: flows } = await admin.from("crm_flows")
+            .select("*").eq("empresa_id", canal.empresa_id).eq("ativo", true);
+          for (const flow of flows ?? []) {
+            let match = false;
+            if (flow.gatilho === "mensagem_recebida") match = true;
+            else if (flow.gatilho === "palavra_chave") {
+              const palavras = (flow.gatilho_config?.palavras ?? "").toLowerCase().split(",").map((s: string) => s.trim()).filter(Boolean);
+              match = palavras.some((p: string) => text.toLowerCase().includes(p));
+            } else if (flow.gatilho === "nova_conversa") {
+              const { count } = await admin.from("crm_mensagens")
+                .select("*", { count: "exact", head: true }).eq("conversa_id", conv.id);
+              match = (count ?? 0) <= 1;
+            }
+            if (!match) continue;
+
+            const steps: any[] = flow.definicao?.steps ?? [];
+            const { data: exec } = await admin.from("crm_flow_executions").insert({
+              empresa_id: canal.empresa_id, flow_id: flow.id, conversa_id: conv.id,
+              contato_id: contato.id, status: "executando", iniciado_em: new Date().toISOString(),
+            }).select("id").single();
+
+            // executa em background
+            (async () => {
+              try {
+                for (const step of steps) {
+                  if (step.type === "espera") {
+                    await new Promise((r) => setTimeout(r, Math.min((step.config?.segundos ?? 1) * 1000, 30000)));
+                  } else if (step.type === "mensagem" && step.config?.texto) {
+                    const txt = String(step.config.texto)
+                      .replace(/\{\{nome\}\}/g, contato.nome ?? "")
+                      .replace(/\{\{primeiro_nome\}\}/g, (contato.nome ?? "").split(" ")[0]);
+                    await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${instance}`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+                      body: JSON.stringify({ number: numero, text: txt }),
+                    });
+                    const nowIso = new Date().toISOString();
+                    await admin.from("crm_mensagens").insert({
+                      empresa_id: canal.empresa_id, conversa_id: conv.id, tipo: "texto",
+                      direcao: "saida", conteudo: txt, status: "enviada",
+                      remetente_nome: `🤖 ${flow.nome}`, enviada_em: nowIso,
+                    });
+                    await admin.from("crm_conversas").update({
+                      ultima_mensagem: txt, ultima_mensagem_em: nowIso,
+                    }).eq("id", conv.id);
+                  } else if (step.type === "tag" && step.config?.tag) {
+                    let { data: tag } = await admin.from("crm_contato_tags")
+                      .select("id").eq("empresa_id", canal.empresa_id).eq("nome", step.config.tag).maybeSingle();
+                    if (!tag) {
+                      const ins = await admin.from("crm_contato_tags").insert({
+                        empresa_id: canal.empresa_id, nome: step.config.tag, cor: "#8B5CF6",
+                      }).select("id").single();
+                      tag = ins.data!;
+                    }
+                    await admin.from("crm_contato_tag_links").upsert({
+                      empresa_id: canal.empresa_id, contato_id: contato.id, tag_id: tag.id,
+                    }, { onConflict: "contato_id,tag_id" });
+                  }
+                }
+                await admin.from("crm_flow_executions").update({
+                  status: "concluido", finalizado_em: new Date().toISOString(),
+                }).eq("id", exec!.id);
+              } catch (err) {
+                await admin.from("crm_flow_executions").update({
+                  status: "erro", erro: String(err), finalizado_em: new Date().toISOString(),
+                }).eq("id", exec!.id);
+              }
+            })();
+          }
+        } catch (e) {
+          console.error("flow runner error:", e);
+        }
+      }
     }
 
     return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });

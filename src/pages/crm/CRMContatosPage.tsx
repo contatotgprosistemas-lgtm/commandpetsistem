@@ -19,9 +19,10 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Plus, Search, User, Phone, Mail, Tag, Loader2, Trash2, Edit, Filter, X,
+  Plus, Search, User, Phone, Mail, Tag, Loader2, Trash2, Edit, Filter, X, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ImportContatosCRMDialog } from "@/components/crm/ImportContatosCRMDialog";
 
 type Contato = {
   id: string;
@@ -52,6 +53,7 @@ export default function CRMContatosPage() {
   const [editing, setEditing] = useState<Contato | null>(null);
   const [openDetalhe, setOpenDetalhe] = useState<Contato | null>(null);
   const [openTags, setOpenTags] = useState(false);
+  const [openImport, setOpenImport] = useState(false);
 
   // Form
   const [form, setForm] = useState({
@@ -206,6 +208,9 @@ export default function CRMContatosPage() {
           </Popover>
           <Button variant="outline" size="sm" onClick={() => setOpenTags(true)} className="gap-1.5">
             <Tag className="h-3.5 w-3.5" /> Tags
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setOpenImport(true)} className="gap-1.5">
+            <Upload className="h-3.5 w-3.5" /> Importar
           </Button>
           <Button size="sm" onClick={() => { resetForm(); setEditing(null); setOpenNovo(true); }} className="gap-1.5">
             <Plus className="h-4 w-4" /> Novo contato
@@ -392,6 +397,7 @@ export default function CRMContatosPage() {
 
       {/* Tags manager */}
       <TagsManager open={openTags} onOpenChange={setOpenTags} empresaId={empresaId} tags={tags} />
+      <ImportContatosCRMDialog open={openImport} onOpenChange={setOpenImport} />
     </div>
   );
 }

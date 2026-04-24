@@ -27,9 +27,9 @@ Deno.serve(async (req) => {
     }
     const userId = claims.claims.sub;
 
-    const { conversa_id, conteudo } = await req.json();
-    if (!conversa_id || !conteudo) {
-      return new Response(JSON.stringify({ error: "conversa_id e conteudo obrigatórios" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { conversa_id, conteudo, midia_url, midia_mimetype, midia_filename } = await req.json();
+    if (!conversa_id || (!conteudo && !midia_url)) {
+      return new Response(JSON.stringify({ error: "conversa_id e conteudo/midia obrigatórios" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
@@ -44,11 +44,36 @@ Deno.serve(async (req) => {
     const numero = (contato.whatsapp ?? contato.telefone ?? "").replace(/\D/g, "");
     if (!numero) return new Response(JSON.stringify({ error: "Contato sem WhatsApp" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
-      body: JSON.stringify({ number: numero, text: conteudo }),
-    });
+    const evoBase = EVOLUTION_URL.replace(/\/$/, "");
+    let evoRes: Response;
+    let tipo: "texto" | "imagem" | "video" | "audio" | "documento" = "texto";
+
+    if (midia_url) {
+      const mt = (midia_mimetype || "").toLowerCase();
+      const mediatype = mt.startsWith("image/") ? "image"
+        : mt.startsWith("video/") ? "video"
+        : mt.startsWith("audio/") ? "audio"
+        : "document";
+      tipo = mediatype === "image" ? "imagem" : mediatype === "video" ? "video" : mediatype === "audio" ? "audio" : "documento";
+      evoRes = await fetch(`${evoBase}/message/sendMedia/${canal.identificador}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+        body: JSON.stringify({
+          number: numero,
+          mediatype,
+          mimetype: midia_mimetype,
+          media: midia_url,
+          fileName: midia_filename ?? "arquivo",
+          caption: conteudo ?? "",
+        }),
+      });
+    } else {
+      evoRes = await fetch(`${evoBase}/message/sendText/${canal.identificador}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+        body: JSON.stringify({ number: numero, text: conteudo }),
+      });
+    }
     const evoData = await evoRes.json();
     if (!evoRes.ok) {
       return new Response(JSON.stringify({ error: "Falha ao enviar", details: evoData }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -60,9 +85,12 @@ Deno.serve(async (req) => {
     await admin.from("crm_mensagens").insert({
       empresa_id: empresaId,
       conversa_id,
-      tipo: "texto",
+      tipo,
       direcao: "saida",
-      conteudo,
+      conteudo: conteudo ?? null,
+      midia_url: midia_url ?? null,
+      midia_mimetype: midia_mimetype ?? null,
+      midia_filename: midia_filename ?? null,
       status: "enviada",
       remetente_id: userId,
       remetente_nome: profile?.nome,
@@ -71,7 +99,7 @@ Deno.serve(async (req) => {
     });
 
     await admin.from("crm_conversas").update({
-      ultima_mensagem: conteudo,
+      ultima_mensagem: conteudo || `[${tipo}]`,
       ultima_mensagem_em: now,
       status: "em_atendimento",
       atendente_id: conv.atendente_id ?? userId,
