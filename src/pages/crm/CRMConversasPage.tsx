@@ -411,12 +411,6 @@ export default function CRMConversasPage() {
           ))}
         </div>
 
-        <div className="px-4 pb-2">
-          <div className="rounded-md bg-primary/5 border border-primary/10 px-3 py-2 text-[11px] text-primary/80">
-            Modo demonstração. Conecte um número WhatsApp para conversas reais.
-          </div>
-        </div>
-
         <ScrollArea className="flex-1">
           {loadingConversas ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
