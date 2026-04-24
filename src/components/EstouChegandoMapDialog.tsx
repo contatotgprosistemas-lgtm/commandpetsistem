@@ -171,6 +171,15 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
                       <div className="flex items-center gap-2">
                         <span className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
                         <span className="text-xs text-muted-foreground">{timeSince(entry.updated_at)}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          title="Remover do mapa (check-out manual)"
+                          onClick={() => removerDoMapa(entry.id, `${petName} • ${clienteNome}`)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   );
