@@ -291,67 +291,276 @@ export default function CRMConfiguracoesPage() {
   );
 }
 
-function CanalRoteamento({ canal, membros, onSave }: { canal: any; membros: any[]; onSave: (id: string, patch: any) => void }) {
-  const [modo, setModo] = useState<string>(canal.roteamento ?? "nenhum");
-  const [pool, setPool] = useState<string[]>((canal.roteamento_atendentes ?? []) as string[]);
+function CanalRoteamento({ canal, membros, setores, onSave }: { canal: any; membros: any[]; setores: any[]; onSave: (id: string, patch: any) => void }) {
+  const [modo, setModo] = useState<string>(canal.roteamento_modo ?? "nenhum");
+  const [setorPadrao, setSetorPadrao] = useState<string>(canal.setor_padrao_id ?? "__none__");
+  const [menuTexto, setMenuTexto] = useState<string>(canal.menu_config?.texto ?? "Olá! Para um melhor atendimento, escolha uma opção:");
+  const [menuOpcoes, setMenuOpcoes] = useState<{ tecla: string; setor_id: string; rotulo: string }[]>(
+    (canal.menu_config?.opcoes ?? []) as any,
+  );
+  const [palavras, setPalavras] = useState<{ setor_id: string; palavras: string }[]>(
+    (canal.palavras_chave_config?.regras ?? []) as any,
+  );
 
   useEffect(() => {
-    setModo(canal.roteamento ?? "nenhum");
-    setPool((canal.roteamento_atendentes ?? []) as string[]);
+    setModo(canal.roteamento_modo ?? "nenhum");
+    setSetorPadrao(canal.setor_padrao_id ?? "__none__");
+    setMenuTexto(canal.menu_config?.texto ?? "Olá! Para um melhor atendimento, escolha uma opção:");
+    setMenuOpcoes((canal.menu_config?.opcoes ?? []) as any);
+    setPalavras((canal.palavras_chave_config?.regras ?? []) as any);
   }, [canal.id]);
 
-  const dirty = useMemo(() =>
-    modo !== (canal.roteamento ?? "nenhum") ||
-    JSON.stringify(pool.sort()) !== JSON.stringify(((canal.roteamento_atendentes ?? []) as string[]).sort()),
-    [modo, pool, canal]);
+  const dirty = useMemo(() => {
+    return JSON.stringify({
+      modo,
+      setorPadrao: setorPadrao === "__none__" ? null : setorPadrao,
+      menu: { texto: menuTexto, opcoes: menuOpcoes },
+      palavras: { regras: palavras },
+    }) !== JSON.stringify({
+      modo: canal.roteamento_modo ?? "nenhum",
+      setorPadrao: canal.setor_padrao_id ?? null,
+      menu: { texto: canal.menu_config?.texto ?? "Olá! Para um melhor atendimento, escolha uma opção:", opcoes: canal.menu_config?.opcoes ?? [] },
+      palavras: { regras: canal.palavras_chave_config?.regras ?? [] },
+    });
+  }, [modo, setorPadrao, menuTexto, menuOpcoes, palavras, canal]);
+
+  const salvar = () => onSave(canal.id, {
+    roteamento_modo: modo,
+    setor_padrao_id: setorPadrao === "__none__" ? null : setorPadrao,
+    menu_config: { texto: menuTexto, opcoes: menuOpcoes },
+    palavras_chave_config: { regras: palavras },
+  });
 
   return (
-    <div className="rounded-lg border p-4 space-y-3">
+    <div className="rounded-lg border p-4 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-semibold">{canal.nome}</span>
           <Badge variant="outline" className="text-[10px]">{canal.tipo}</Badge>
           <Badge variant={canal.status === "conectado" ? "default" : "secondary"} className="text-[10px]">{canal.status}</Badge>
         </div>
-        <Select value={modo} onValueChange={setModo}>
-          <SelectTrigger className="w-56 h-9"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="nenhum">Sem roteamento</SelectItem>
-            <SelectItem value="round_robin">Round-robin (rodízio)</SelectItem>
-            <SelectItem value="menos_carga">Menos conversas abertas</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
-      {modo !== "nenhum" && (
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-xs">Atendentes elegíveis ({pool.length})</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {membros.map((m: any) => {
-              const on = pool.includes(m.user_id);
-              return (
-                <button key={m.user_id} type="button"
-                  onClick={() => setPool(on ? pool.filter((p) => p !== m.user_id) : [...pool, m.user_id])}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                    on ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"
-                  }`}>
-                  <span className="h-4 w-4 rounded-full bg-primary/20 text-[10px] flex items-center justify-center">
-                    {(m.nome ?? "?").charAt(0).toUpperCase()}
-                  </span>
-                  {m.nome}
-                </button>
-              );
-            })}
-            {membros.length === 0 && <span className="text-xs text-muted-foreground">Nenhum membro na empresa.</span>}
+          <Label className="text-xs">Modo de roteamento</Label>
+          <Select value={modo} onValueChange={setModo}>
+            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="nenhum">Sem roteamento (caixa única)</SelectItem>
+              <SelectItem value="manual">Manual — atendente escolhe o setor</SelectItem>
+              <SelectItem value="menu">Menu automático (URA por número)</SelectItem>
+              <SelectItem value="palavras_chave">Por palavras-chave</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Setor padrão (fallback)</Label>
+          <Select value={setorPadrao} onValueChange={setSetorPadrao}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Nenhum" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Nenhum</SelectItem>
+              {setores.map((s: any) => (
+                <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {modo === "menu" && (
+        <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+          <Label className="text-xs">Mensagem do menu</Label>
+          <Textarea rows={3} value={menuTexto} onChange={(e) => setMenuTexto(e.target.value)} />
+          <Label className="text-xs">Opções (cliente responde com a tecla)</Label>
+          <div className="space-y-1.5">
+            {menuOpcoes.map((op, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input value={op.tecla} maxLength={4} onChange={(e) => {
+                  const v = [...menuOpcoes]; v[i] = { ...op, tecla: e.target.value }; setMenuOpcoes(v);
+                }} className="h-8 w-14" placeholder="1" />
+                <Input value={op.rotulo} onChange={(e) => {
+                  const v = [...menuOpcoes]; v[i] = { ...op, rotulo: e.target.value }; setMenuOpcoes(v);
+                }} className="h-8 flex-1" placeholder="Rótulo (ex: Financeiro)" />
+                <Select value={op.setor_id || "__none__"} onValueChange={(val) => {
+                  const v = [...menuOpcoes]; v[i] = { ...op, setor_id: val === "__none__" ? "" : val }; setMenuOpcoes(v);
+                }}>
+                  <SelectTrigger className="h-8 w-44"><SelectValue placeholder="Setor" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">—</SelectItem>
+                    {setores.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"
+                  onClick={() => setMenuOpcoes(menuOpcoes.filter((_, j) => j !== i))}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+            <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]"
+              onClick={() => setMenuOpcoes([...menuOpcoes, { tecla: String(menuOpcoes.length + 1), rotulo: "", setor_id: "" }])}>
+              <Plus className="h-3 w-3" /> Adicionar opção
+            </Button>
           </div>
         </div>
       )}
+
+      {modo === "palavras_chave" && (
+        <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+          <Label className="text-xs">Regras (separe palavras por vírgula)</Label>
+          {palavras.map((r, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Select value={r.setor_id || "__none__"} onValueChange={(val) => {
+                const v = [...palavras]; v[i] = { ...r, setor_id: val === "__none__" ? "" : val }; setPalavras(v);
+              }}>
+                <SelectTrigger className="h-8 w-44"><SelectValue placeholder="Setor" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">—</SelectItem>
+                  {setores.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Input value={r.palavras} onChange={(e) => {
+                const v = [...palavras]; v[i] = { ...r, palavras: e.target.value }; setPalavras(v);
+              }} className="h-8 flex-1" placeholder="boleto, fatura, pagamento" />
+              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"
+                onClick={() => setPalavras(palavras.filter((_, j) => j !== i))}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+          <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]"
+            onClick={() => setPalavras([...palavras, { setor_id: "", palavras: "" }])}>
+            <Plus className="h-3 w-3" /> Adicionar regra
+          </Button>
+        </div>
+      )}
+
       {dirty && (
         <div className="flex justify-end pt-1">
-          <Button size="sm" onClick={() => onSave(canal.id, { roteamento: modo, roteamento_atendentes: pool, roteamento_ultimo_idx: 0 })}>
+          <Button size="sm" onClick={salvar}>
             <Save className="h-3.5 w-3.5 mr-1" /> Salvar
           </Button>
         </div>
       )}
+    </div>
+  );
+}
+
+function SetoresPanel({ empresaId, setores, membros }: { empresaId: string | null; setores: any[]; membros: any[] }) {
+  const qc = useQueryClient();
+  const [novoNome, setNovoNome] = useState("");
+  const [novaCor, setNovaCor] = useState("#3B82F6");
+
+  const criar = async () => {
+    if (!empresaId || !novoNome.trim()) return;
+    const { error } = await supabase.from("crm_setores").insert({
+      empresa_id: empresaId, nome: novoNome.trim(), cor: novaCor, ordem: setores.length,
+    });
+    if (error) { toast.error(error.message); return; }
+    setNovoNome(""); setNovaCor("#3B82F6");
+    toast.success("Setor criado");
+    qc.invalidateQueries({ queryKey: ["crm-setores"] });
+  };
+
+  const excluir = async (id: string) => {
+    if (!confirm("Excluir este setor?")) return;
+    const { error } = await supabase.from("crm_setores").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Setor removido");
+    qc.invalidateQueries({ queryKey: ["crm-setores"] });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Setores de atendimento</CardTitle>
+        <CardDescription className="text-xs">
+          Crie setores (Financeiro, Comercial, Operacional...) e vincule os atendentes que respondem cada setor.
+          Um mesmo número de WhatsApp pode atender vários setores ao mesmo tempo.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-end gap-2 flex-wrap">
+          <div className="flex-1 min-w-[180px] space-y-1">
+            <Label className="text-xs">Nome do setor</Label>
+            <Input value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Ex: Financeiro" className="h-9" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Cor</Label>
+            <Input type="color" value={novaCor} onChange={(e) => setNovaCor(e.target.value)} className="h-9 w-16 p-1" />
+          </div>
+          <Button onClick={criar} className="gap-1.5 h-9"><Plus className="h-4 w-4" /> Criar</Button>
+        </div>
+
+        {setores.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">Nenhum setor cadastrado.</p>
+        ) : (
+          <div className="space-y-2">
+            {setores.map((s: any) => (
+              <SetorRow key={s.id} setor={s} membros={membros} onDelete={() => excluir(s.id)} />
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SetorRow({ setor, membros, onDelete }: { setor: any; membros: any[]; onDelete: () => void }) {
+  const qc = useQueryClient();
+  const { data: vinculos = [] } = useQuery({
+    queryKey: ["crm-setor-atendentes", setor.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("crm_setor_atendentes")
+        .select("user_id").eq("setor_id", setor.id);
+      if (error) throw error;
+      return (data ?? []).map((r) => r.user_id);
+    },
+  });
+
+  const toggle = async (userId: string) => {
+    const isOn = vinculos.includes(userId);
+    if (isOn) {
+      const { error } = await supabase.from("crm_setor_atendentes")
+        .delete().eq("setor_id", setor.id).eq("user_id", userId);
+      if (error) { toast.error(error.message); return; }
+    } else {
+      const { error } = await supabase.from("crm_setor_atendentes")
+        .insert({ setor_id: setor.id, user_id: userId, empresa_id: setor.empresa_id });
+      if (error) { toast.error(error.message); return; }
+    }
+    qc.invalidateQueries({ queryKey: ["crm-setor-atendentes", setor.id] });
+  };
+
+  return (
+    <div className="rounded-lg border p-3 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="h-4 w-4 rounded-full border" style={{ backgroundColor: setor.cor }} />
+          <span className="text-sm font-semibold">{setor.nome}</span>
+          <Badge variant="secondary" className="text-[10px]">{vinculos.length} atendente(s)</Badge>
+        </div>
+        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {membros.map((m: any) => {
+          const on = vinculos.includes(m.user_id);
+          return (
+            <button key={m.user_id} type="button" onClick={() => toggle(m.user_id)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                on ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"
+              }`}>
+              <span className="h-4 w-4 rounded-full bg-primary/20 text-[10px] flex items-center justify-center">
+                {(m.nome ?? "?").charAt(0).toUpperCase()}
+              </span>
+              {m.nome}
+            </button>
+          );
+        })}
+        {membros.length === 0 && <span className="text-xs text-muted-foreground">Nenhum membro na empresa.</span>}
+      </div>
     </div>
   );
 }
