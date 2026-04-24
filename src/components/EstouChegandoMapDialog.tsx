@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, lazy, Suspense } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const ArrivalTrackingMap = lazy(() => import("@/components/estou-chegando/ArrivalTrackingMap").then(m => ({ default: m.ArrivalTrackingMap })));
 
@@ -88,6 +89,20 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
     return `${Math.floor(diff / 3600)}h atrás`;
   };
 
+  const removerDoMapa = async (id: string, nome: string) => {
+    const { error } = await supabase
+      .from("estou_chegando")
+      .update({ active: false })
+      .eq("id", id);
+    if (error) {
+      toast.error("Erro ao remover do mapa");
+      return;
+    }
+    toast.success(`${nome} removido do mapa`);
+    setEntries((prev) => prev.filter((e) => e.id !== id));
+    setCount((c) => Math.max(0, c - 1));
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -156,6 +171,15 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
                       <div className="flex items-center gap-2">
                         <span className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
                         <span className="text-xs text-muted-foreground">{timeSince(entry.updated_at)}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          title="Remover do mapa (check-out manual)"
+                          onClick={() => removerDoMapa(entry.id, `${petName} • ${clienteNome}`)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   );
