@@ -600,6 +600,26 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Resumo semanal por categoria — atualizado em tempo real */}
+      <WeeklyCategorySummary
+        title="Escola por semana"
+        icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />}
+        accent="emerald"
+        data={weeklyStats.escola}
+      />
+      <WeeklyCategorySummary
+        title="Hotel por semana"
+        icon={<Hotel className="h-4 w-4" strokeWidth={1.5} />}
+        accent="amber"
+        data={weeklyStats.hotel}
+      />
+      <WeeklyCategorySummary
+        title="Banho por semana"
+        icon={<ShowerHead className="h-4 w-4" strokeWidth={1.5} />}
+        accent="sky"
+        data={weeklyStats.banho}
+      />
+
       {/* Mass checkout confirmation */}
       <Dialog open={massCheckoutOpen} onOpenChange={setMassCheckoutOpen}>
         <DialogContent>
