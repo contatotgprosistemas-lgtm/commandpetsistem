@@ -95,7 +95,7 @@ export default function CRMConfiguracoesPage() {
     enabled: !!empresaId,
     queryFn: async () => {
       const { data, error } = await supabase.from("crm_canais")
-        .select("id, nome, tipo, status, roteamento, roteamento_atendentes")
+        .select("id, nome, tipo, status, roteamento, roteamento_atendentes, setor_padrao_id, roteamento_modo, menu_config, palavras_chave_config")
         .eq("empresa_id", empresaId!).order("nome");
       if (error) throw error;
       return data ?? [];
@@ -108,6 +108,17 @@ export default function CRMConfiguracoesPage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles")
         .select("user_id, nome, cargo").eq("empresa_id", empresaId!).order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: setores = [] } = useQuery({
+    queryKey: ["crm-setores", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("crm_setores")
+        .select("*").eq("empresa_id", empresaId!).order("ordem").order("nome");
       if (error) throw error;
       return data ?? [];
     },
