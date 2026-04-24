@@ -608,6 +608,36 @@ export default function CRMConversasPage() {
                   <DropdownMenuItem onClick={() => setContactOpen(true)} className="gap-2 text-sm lg:hidden">
                     <PanelRightOpen className="h-3.5 w-3.5" /> Painel do contato
                   </DropdownMenuItem>
+                  {setores.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-[10px] text-muted-foreground">Mover para setor</DropdownMenuLabel>
+                      <div className="max-h-40 overflow-y-auto">
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            const { error } = await supabase.from("crm_conversas")
+                              .update({ setor_id: null, atendente_id: null }).eq("id", selected.id);
+                            if (error) toast.error(error.message);
+                            else { toast.success("Sem setor"); qc.invalidateQueries({ queryKey: ["crm-conversas"] }); }
+                          }}
+                          className="gap-2 text-sm">
+                          <X className="h-3.5 w-3.5" /> Sem setor
+                        </DropdownMenuItem>
+                        {setores.map((s: any) => (
+                          <DropdownMenuItem key={s.id} onClick={async () => {
+                            const { error } = await supabase.from("crm_conversas")
+                              .update({ setor_id: s.id, atendente_id: null }).eq("id", selected.id);
+                            if (error) toast.error(error.message);
+                            else { toast.success(`Movida para ${s.nome}`); qc.invalidateQueries({ queryKey: ["crm-conversas"] }); }
+                          }} className="gap-2 text-sm">
+                            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: s.cor }} />
+                            <span className="truncate">{s.nome}</span>
+                            {selected.setor_id === s.id && <UserCheck className="h-3 w-3 ml-auto text-success" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
