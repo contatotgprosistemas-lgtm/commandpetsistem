@@ -199,6 +199,24 @@ export default function OperacionalDashboard() {
     window.location.reload();
   };
 
+  // Compute extras for both lists (must be called before any early return to keep hook order stable)
+  const extrasFlags = useAgendamentoExtras([
+    ...pendingCheckins.map((p) => ({
+      id: p.id,
+      cliente_id: p.cliente?.id || "",
+      empresa_id: user?.empresa_id,
+      tipo_servico: p.tipo_servico,
+      pet: p.pet,
+    })),
+    ...petsNaEmpresa.map((p) => ({
+      id: p.id,
+      cliente_id: p.cliente?.id || "",
+      empresa_id: user?.empresa_id,
+      tipo_servico: p.tipo_servico,
+      pet: p.pet,
+    })),
+  ]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -216,24 +234,6 @@ export default function OperacionalDashboard() {
     { label: "Check-ins Pendentes", value: stats.checkinsHoje, icon: LogIn, color: "text-emerald-500", bg: "bg-emerald-500/10" },
     { label: "Pets em Daycare", value: stats.petsDaycare, icon: PawPrint, color: "text-violet-500", bg: "bg-violet-500/10" },
   ];
-
-  // Compute extras for both lists
-  const extrasFlags = useAgendamentoExtras([
-    ...pendingCheckins.map((p) => ({
-      id: p.id,
-      cliente_id: p.cliente?.id || "",
-      empresa_id: user?.empresa_id,
-      tipo_servico: p.tipo_servico,
-      pet: p.pet,
-    })),
-    ...petsNaEmpresa.map((p) => ({
-      id: p.id,
-      cliente_id: p.cliente?.id || "",
-      empresa_id: user?.empresa_id,
-      tipo_servico: p.tipo_servico,
-      pet: p.pet,
-    })),
-  ]);
 
   return (
     <div className="space-y-6 pb-24 md:pb-0">
