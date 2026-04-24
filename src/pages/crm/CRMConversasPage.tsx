@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare, ArrowLeft, Paperclip, FileText as FileIcon, Download, Clock, StickyNote, Zap, UserCheck, UserPlus, Timer } from "lucide-react";
+import {
+  Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare,
+  ArrowLeft, Paperclip, FileText as FileIcon, Download, Clock, StickyNote,
+  UserCheck, UserPlus, Timer, Filter, Smile, Mic, MoreVertical, Video, Phone as PhoneIcon,
+  Building2, MapPin, Tag, ChevronDown, Star, PanelRightOpen,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -15,14 +20,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { formatDistanceToNow, format } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+type FilterTab = "todas" | "nao_lidas" | "atribuidas" | "aguardando";
+
+function timeShort(d: string | null) {
+  if (!d) return "";
+  const date = new Date(d);
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) return format(date, "HH:mm");
+  const diffDays = Math.floor((today.getTime() - date.getTime()) / 86400000);
+  if (diffDays < 7) return format(date, "EEE", { locale: ptBR });
+  return format(date, "dd/MM");
+}
 
 export default function CRMConversasPage() {
   const qc = useQueryClient();
   const { data: empresaId } = useCurrentEmpresa();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [filterTab, setFilterTab] = useState<FilterTab>("todas");
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [aiLoading, setAiLoading] = useState<"suggest" | "summary" | null>(null);
@@ -35,6 +53,7 @@ export default function CRMConversasPage() {
   const [scheduleAt, setScheduleAt] = useState("");
   const [notaDraft, setNotaDraft] = useState("");
   const [meId, setMeId] = useState<string | null>(null);
+  const [composerMode, setComposerMode] = useState<"mensagem" | "nota">("mensagem");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
@@ -80,17 +99,54 @@ export default function CRMConversasPage() {
     },
   });
 
+  // Tags do contato selecionado
+  const selected = conversas.find((c: any) => c.id === selectedId);
+  const { data: contatoTags = [] } = useQuery({
+    queryKey: ["crm-contato-tags-links", selected?.contato?.id],
+    enabled: !!selected?.contato?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("crm_contato_tag_links")
+        .select("tag:crm_contato_tags(id, nome, cor)")
+        .eq("contato_id", selected!.contato!.id);
+      if (error) throw error;
+      return (data ?? []).map((r: any) => r.tag).filter(Boolean);
+    },
+  });
+
+  // Pipeline / etapa do contato
+  const { data: leadInfo } = useQuery({
+    queryKey: ["crm-lead", selected?.contato?.id],
+    enabled: !!selected?.contato?.id,
+    queryFn: async () => {
+      const { data } = await supabase.from("crm_leads")
+        .select("id, valor_potencial, etapa:crm_pipeline_etapas(id, nome, cor)")
+        .eq("contato_id", selected!.contato!.id)
+        .order("created_at", { ascending: false })
+        .limit(1).maybeSingle();
+      return data;
+    },
+  });
+
+  const counts = useMemo(() => {
+    const naoLidas = conversas.filter((c: any) => (c.nao_lidas ?? 0) > 0).length;
+    const atribuidas = conversas.filter((c: any) => !!c.atendente_id).length;
+    const aguardando = conversas.filter((c: any) => !c.atendente_id).length;
+    return { todas: conversas.length, naoLidas, atribuidas, aguardando };
+  }, [conversas]);
+
   const filteredConversas = useMemo(() => {
+    let arr = conversas;
+    if (filterTab === "nao_lidas") arr = arr.filter((c: any) => (c.nao_lidas ?? 0) > 0);
+    else if (filterTab === "atribuidas") arr = arr.filter((c: any) => !!c.atendente_id);
+    else if (filterTab === "aguardando") arr = arr.filter((c: any) => !c.atendente_id);
     const s = search.trim().toLowerCase();
-    if (!s) return conversas;
-    return conversas.filter((c: any) =>
+    if (!s) return arr;
+    return arr.filter((c: any) =>
       c.contato?.nome?.toLowerCase().includes(s) ||
       c.contato?.whatsapp?.includes(s) ||
       c.ultima_mensagem?.toLowerCase().includes(s)
     );
-  }, [conversas, search]);
-
-  const selected = conversas.find((c: any) => c.id === selectedId);
+  }, [conversas, search, filterTab]);
 
   // Templates rápidos
   const { data: templates = [] } = useQuery({
@@ -138,7 +194,6 @@ export default function CRMConversasPage() {
     let conteudo = String(t.conteudo)
       .replace(/\{\{nome\}\}/g, nome)
       .replace(/\{\{primeiro_nome\}\}/g, nome.split(" ")[0]);
-    // remove o /atalho digitado
     setDraft(draft.replace(/(?:^|\s)\/\w*$/, (m) => (m.startsWith(" ") ? " " : "") + conteudo));
   };
 
@@ -155,7 +210,7 @@ export default function CRMConversasPage() {
     },
   });
 
-  // Realtime: novas mensagens + mudanças em conversas
+  // Realtime
   useEffect(() => {
     if (!empresaId) return;
     const ch = supabase
@@ -180,12 +235,10 @@ export default function CRMConversasPage() {
     return () => { supabase.removeChannel(ch); };
   }, [empresaId, qc]);
 
-  // Auto-scroll
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [mensagens.length, selectedId]);
 
-  // Marcar como lida ao abrir
   useEffect(() => {
     if (!selectedId) return;
     supabase.from("crm_conversas").update({ nao_lidas: 0 }).eq("id", selectedId).then(() => {
@@ -195,6 +248,22 @@ export default function CRMConversasPage() {
 
   const send = async () => {
     if (!selectedId || !draft.trim() || sending) return;
+    if (composerMode === "nota") {
+      // Salvar como nota interna
+      if (!empresaId) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: prof } = await supabase.from("profiles").select("nome").eq("user_id", user!.id).maybeSingle();
+      const { error } = await supabase.from("crm_notas_conversa").insert({
+        empresa_id: empresaId, conversa_id: selectedId,
+        autor_id: user?.id, autor_nome: prof?.nome ?? "—",
+        conteudo: draft.trim(),
+      });
+      if (error) { toast.error(error.message); return; }
+      setDraft("");
+      qc.invalidateQueries({ queryKey: ["crm-notas", selectedId] });
+      toast.success("Nota interna adicionada");
+      return;
+    }
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("evolution-send", {
@@ -293,69 +362,135 @@ export default function CRMConversasPage() {
     finally { setAiLoading(null); }
   };
 
+  const initial = (s?: string | null) => (s ?? "?").charAt(0).toUpperCase();
+  const responsavelNome = selected?.atendente_id
+    ? membros.find((m: any) => m.user_id === selected.atendente_id)?.nome
+    : null;
+
   return (
-    <div className="h-full flex bg-background">
-      {/* Lista */}
-      <div className={`${selectedId ? "hidden md:flex" : "flex"} w-full md:w-[340px] shrink-0 border-r flex-col`}>
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold mb-3">Conversas</h2>
+    <div className="h-full flex bg-muted/20">
+      {/* ===== Coluna 1: Lista de conversas ===== */}
+      <aside className={`${selectedId ? "hidden md:flex" : "flex"} w-full md:w-[320px] shrink-0 border-r bg-card flex-col`}>
+        <div className="px-4 pt-4 pb-3">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">Conversas</h2>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" title="Filtros">
+              <Filter className="h-4 w-4" />
+            </Button>
+          </div>
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-8 h-9" placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-9 h-10 rounded-full bg-muted/60 border-0 focus-visible:ring-1 focus-visible:ring-primary/40"
+              placeholder="Buscar ou começar nova conversa"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         </div>
+
+        {/* Filtros (pills) */}
+        <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
+          {[
+            { id: "todas" as FilterTab, label: "Todas", count: counts.todas },
+            { id: "nao_lidas" as FilterTab, label: "Não lidas", count: counts.naoLidas },
+            { id: "atribuidas" as FilterTab, label: "Atribuídas", count: counts.atribuidas },
+            { id: "aguardando" as FilterTab, label: "Aguardando", count: counts.aguardando },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilterTab(f.id)}
+              className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+                filterTab === f.id
+                  ? "bg-primary/10 text-primary"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="px-4 pb-2">
+          <div className="rounded-md bg-primary/5 border border-primary/10 px-3 py-2 text-[11px] text-primary/80">
+            Modo demonstração. Conecte um número WhatsApp para conversas reais.
+          </div>
+        </div>
+
         <ScrollArea className="flex-1">
           {loadingConversas ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : filteredConversas.length === 0 ? (
             <div className="text-center py-12 px-4">
               <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">Nenhuma conversa ainda.</p>
-              <p className="text-xs text-muted-foreground mt-1">Conecte um canal em Canais para começar a receber.</p>
+              <p className="text-sm text-muted-foreground">Nenhuma conversa.</p>
+              <p className="text-xs text-muted-foreground mt-1">Conecte um canal para começar.</p>
             </div>
           ) : (
-            <div className="divide-y">
-              {filteredConversas.map((c: any) => (
-                <button key={c.id} onClick={() => setSelectedId(c.id)}
-                  className={`w-full text-left p-3 hover:bg-muted/50 transition-colors flex gap-3 ${selectedId === c.id ? "bg-muted" : ""}`}>
-                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
-                    {(c.contato?.nome ?? "?").charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-sm truncate">{c.contato?.nome ?? "Sem nome"}</span>
-                      {c.ultima_mensagem_em && (
-                        <span className="text-[10px] text-muted-foreground shrink-0">
-                          {formatDistanceToNow(new Date(c.ultima_mensagem_em), { locale: ptBR, addSuffix: false })}
+            <div className="px-2 space-y-0.5">
+              {filteredConversas.map((c: any) => {
+                const ativo = selectedId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedId(c.id)}
+                    className={`w-full text-left p-2.5 rounded-lg flex gap-3 transition-colors ${
+                      ativo ? "bg-primary/10" : "hover:bg-muted/60"
+                    }`}
+                  >
+                    <div className="relative shrink-0">
+                      <div className="h-11 w-11 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
+                        {initial(c.contato?.nome)}
+                      </div>
+                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-success ring-2 ring-card" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-[13px] text-foreground truncate">
+                          {c.contato?.nome ?? "Sem nome"}
                         </span>
-                      )}
+                        {c.ultima_mensagem_em && (
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            {timeShort(c.ultima_mensagem_em)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-0.5">
+                        <span className="text-xs text-muted-foreground truncate">{c.ultima_mensagem ?? "—"}</span>
+                        {c.nao_lidas > 0 && (
+                          <Badge className="h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] hover:bg-primary">
+                            {c.nao_lidas}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                        {c.canal?.nome && (
+                          <span className="text-[9px] uppercase tracking-wide text-muted-foreground/70">
+                            {c.canal.nome}
+                          </span>
+                        )}
+                        {c.atendente_id ? (
+                          <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4 gap-1 border-success/30 text-success">
+                            <UserCheck className="h-2.5 w-2.5" />
+                            {membros.find((m: any) => m.user_id === c.atendente_id)?.nome?.split(" ")[0] ?? "Atribuída"}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[9px] py-0 px-1.5 h-4 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                            Aguardando
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between gap-2 mt-0.5">
-                      <span className="text-xs text-muted-foreground truncate">{c.ultima_mensagem ?? "—"}</span>
-                      {c.nao_lidas > 0 && (
-                        <Badge className="h-5 min-w-5 px-1.5 rounded-full bg-success text-success-foreground text-[10px]">{c.nao_lidas}</Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      {c.atendente_id ? (
-                        <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4 gap-1">
-                          <UserCheck className="h-2.5 w-2.5" />
-                          {membros.find((m: any) => m.user_id === c.atendente_id)?.nome?.split(" ")[0] ?? "Atribuída"}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-[9px] py-0 px-1.5 h-4">Sem responsável</Badge>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
         </ScrollArea>
-      </div>
+      </aside>
 
-      {/* Chat */}
-      <div className={`${selectedId ? "flex" : "hidden md:flex"} flex-1 flex-col min-w-0`}>
+      {/* ===== Coluna 2: Chat ===== */}
+      <section className={`${selectedId ? "flex" : "hidden md:flex"} flex-1 flex-col min-w-0 bg-background`}>
         {!selected ? (
           <div className="flex-1 flex items-center justify-center text-center px-6">
             <div>
@@ -366,34 +501,46 @@ export default function CRMConversasPage() {
         ) : (
           <>
             {/* Header */}
-            <div className="h-14 border-b flex items-center px-4 gap-3 shrink-0">
+            <div className="h-16 border-b flex items-center px-4 gap-3 shrink-0 bg-card">
               <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" onClick={() => setSelectedId(null)}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <button onClick={() => setContactOpen(true)} className="flex items-center gap-3 flex-1 text-left">
-                <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
-                  {(selected.contato?.nome ?? "?").charAt(0).toUpperCase()}
+              <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
+                {initial(selected.contato?.nome)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold truncate">{selected.contato?.nome}</div>
+                <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                  online · {selected.canal?.nome ?? "—"}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold truncate">{selected.contato?.nome}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {selected.contato?.whatsapp} · {selected.canal?.nome}
-                  </div>
-                </div>
-              </button>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => aiAction("summary")} disabled={aiLoading === "summary"}>
-                {aiLoading === "summary" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
-                <span className="hidden sm:inline">Resumir</span>
+              </div>
+
+              {/* Botão IA destacado */}
+              <Button
+                size="sm"
+                onClick={() => aiAction("suggest")}
+                disabled={aiLoading === "suggest"}
+                className="gap-1.5 bg-primary/10 text-primary hover:bg-primary/20 border-0"
+                variant="outline"
+                title="Sugerir resposta com IA"
+              >
+                {aiLoading === "suggest" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                IA
+              </Button>
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground" title="Vídeo">
+                <Video className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground" title="Ligar">
+                <PhoneIcon className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground" title="Buscar">
+                <Search className="h-4 w-4" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5">
-                    {selected.atendente_id ? <UserCheck className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}
-                    <span className="hidden sm:inline">
-                      {selected.atendente_id
-                        ? (membros.find((m: any) => m.user_id === selected.atendente_id)?.nome?.split(" ")[0] ?? "Atribuída")
-                        : "Atribuir"}
-                    </span>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+                    <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -416,114 +563,95 @@ export default function CRMConversasPage() {
                     {membros.map((m: any) => (
                       <DropdownMenuItem key={m.user_id} onClick={() => atribuir(selected.id, m.user_id)} className="gap-2 text-sm">
                         <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-semibold shrink-0">
-                          {(m.nome ?? "?").charAt(0).toUpperCase()}
+                          {initial(m.nome)}
                         </span>
                         <span className="truncate">{m.nome}</span>
                         {selected.atendente_id === m.user_id && <UserCheck className="h-3 w-3 ml-auto text-success" />}
                       </DropdownMenuItem>
                     ))}
                   </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => aiAction("summary")} className="gap-2 text-sm">
+                    <FileText className="h-3.5 w-3.5" /> Gerar resumo IA
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setContactOpen(true)} className="gap-2 text-sm lg:hidden">
+                    <PanelRightOpen className="h-3.5 w-3.5" /> Painel do contato
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2 bg-muted/30">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-[hsl(var(--muted)/0.2)]">
               {loadingMsgs ? (
                 <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
               ) : mensagens.length === 0 ? (
                 <div className="text-center py-12 text-sm text-muted-foreground">Sem mensagens ainda.</div>
-              ) : mensagens.map((m: any) => {
-                const out = m.direcao === "saida";
-                const isImg = m.midia_url && (m.midia_mimetype ?? "").startsWith("image/");
-                const isVideo = m.midia_url && (m.midia_mimetype ?? "").startsWith("video/");
-                const isAudio = m.midia_url && (m.midia_mimetype ?? "").startsWith("audio/");
-                const isFile = m.midia_url && !isImg && !isVideo && !isAudio;
-                return (
-                  <div key={m.id} className={`flex ${out ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${out ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card border rounded-bl-sm"}`}>
-                      {isImg && (
-                        <a href={m.midia_url} target="_blank" rel="noreferrer">
-                          <img src={m.midia_url} alt="" className="rounded-lg max-h-64 mb-1" />
-                        </a>
-                      )}
-                      {isVideo && (
-                        <video src={m.midia_url} controls className="rounded-lg max-h-64 mb-1" />
-                      )}
-                      {isAudio && (
-                        <audio src={m.midia_url} controls className="mb-1 max-w-full" />
-                      )}
-                      {isFile && (
-                        <a href={m.midia_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 mb-1 underline">
-                          <FileIcon className="h-4 w-4" />
-                          <span className="truncate">{m.midia_filename ?? "arquivo"}</span>
-                          <Download className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                      {m.conteudo && <div className="whitespace-pre-wrap break-words">{m.conteudo}</div>}
-                      <div className={`text-[10px] mt-1 ${out ? "text-primary-foreground/70" : "text-muted-foreground"} text-right`}>
-                        {m.remetente_nome?.startsWith("🤖") && <span className="mr-1">{m.remetente_nome}</span>}
-                        {m.enviada_em && format(new Date(m.enviada_em), "HH:mm")}
-                      </div>
-                    </div>
+              ) : (
+                <>
+                  {/* Pílula "Hoje" */}
+                  <div className="flex justify-center py-1">
+                    <span className="text-[10px] uppercase tracking-wider px-3 py-1 rounded-full bg-muted text-muted-foreground">
+                      Hoje
+                    </span>
                   </div>
-                );
-              })}
+                  {mensagens.map((m: any) => {
+                    const out = m.direcao === "saida";
+                    const isImg = m.midia_url && (m.midia_mimetype ?? "").startsWith("image/");
+                    const isVideo = m.midia_url && (m.midia_mimetype ?? "").startsWith("video/");
+                    const isAudio = m.midia_url && (m.midia_mimetype ?? "").startsWith("audio/");
+                    const isFile = m.midia_url && !isImg && !isVideo && !isAudio;
+                    return (
+                      <div key={m.id} className={`flex ${out ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className={`max-w-[70%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
+                            out
+                              ? "bg-primary text-primary-foreground rounded-br-md"
+                              : "bg-card border rounded-bl-md"
+                          }`}
+                        >
+                          {isImg && (
+                            <a href={m.midia_url} target="_blank" rel="noreferrer">
+                              <img src={m.midia_url} alt="" className="rounded-lg max-h-64 mb-1" />
+                            </a>
+                          )}
+                          {isVideo && <video src={m.midia_url} controls className="rounded-lg max-h-64 mb-1" />}
+                          {isAudio && <audio src={m.midia_url} controls className="mb-1 max-w-full" />}
+                          {isFile && (
+                            <a href={m.midia_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 mb-1 underline">
+                              <FileIcon className="h-4 w-4" />
+                              <span className="truncate">{m.midia_filename ?? "arquivo"}</span>
+                              <Download className="h-3.5 w-3.5" />
+                            </a>
+                          )}
+                          {m.conteudo && <div className="whitespace-pre-wrap break-words">{m.conteudo}</div>}
+                          <div className={`text-[10px] mt-1 ${out ? "text-primary-foreground/70" : "text-muted-foreground"} text-right`}>
+                            {m.remetente_nome?.startsWith("🤖") && <span className="mr-1">{m.remetente_nome}</span>}
+                            {m.enviada_em && format(new Date(m.enviada_em), "HH:mm")}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
             </div>
 
             {/* Composer */}
-            <div className="border-t p-3 shrink-0 bg-background">
-              {slashSuggestions.length > 0 && (
-                <div className="mb-2 rounded-lg border bg-popover shadow-md max-h-48 overflow-y-auto">
-                  {slashSuggestions.map((t: any) => (
-                    <button key={t.id} onClick={() => applyTemplate(t)}
-                      className="w-full text-left px-3 py-2 hover:bg-muted/60 border-b last:border-b-0">
-                      <div className="flex items-center gap-2 text-xs">
-                        <code className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">/{t.atalho}</code>
-                        <span className="font-medium">{t.nome}</span>
-                      </div>
-                      <div className="text-[11px] text-muted-foreground truncate mt-0.5">{t.conteudo}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {agendadas.filter((a: any) => a.status === "pendente").length > 0 && (
-                <div className="mb-2 px-3 py-1.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[11px] flex items-center gap-1.5">
-                  <Clock className="h-3 w-3" />
-                  {agendadas.filter((a: any) => a.status === "pendente").length} mensagem(ns) agendada(s) — veja no painel do contato.
-                </div>
-              )}
-              <div className="flex items-end gap-2">
-                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => aiAction("suggest")} disabled={aiLoading === "suggest"} title="Sugerir resposta com IA">
-                  {aiLoading === "suggest" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-primary" />}
-                </Button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  className="hidden"
-                  accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) sendFile(f); }}
-                />
-                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => fileRef.current?.click()} disabled={uploading} title="Anexar arquivo">
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-                </Button>
-                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0"
-                  onClick={() => { setScheduleDraft(draft); setScheduleOpen(true); }} title="Agendar mensagem">
-                  <Clock className="h-4 w-4" />
-                </Button>
+            <div className="border-t shrink-0 bg-card">
+              {/* Barra de ações IA / atalhos */}
+              <div className="px-3 pt-2.5 pb-1.5 flex items-center gap-2 flex-wrap">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" title="Modelos rápidos">
-                      <FileText className="h-4 w-4" />
-                    </Button>
+                    <button className="text-xs px-2.5 py-1.5 rounded-md border bg-background hover:bg-muted/60 inline-flex items-center gap-1.5 text-foreground">
+                      <Zap className="h-3.5 w-3.5 text-amber-500" /> Resposta rápida
+                    </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80 p-0" align="end">
+                  <PopoverContent className="w-80 p-0" align="start">
                     <div className="p-2 border-b text-xs font-medium text-muted-foreground">Modelos de mensagem</div>
                     <div className="max-h-64 overflow-y-auto">
                       {templates.length === 0 ? (
-                        <div className="p-4 text-center text-xs text-muted-foreground">
-                          Nenhum modelo. Crie em Modelos.
-                        </div>
+                        <div className="p-4 text-center text-xs text-muted-foreground">Nenhum modelo. Crie em Modelos.</div>
                       ) : (templates as any[]).map((t: any) => (
                         <button key={t.id} onClick={() => applyTemplate(t)}
                           className="w-full text-left px-3 py-2 hover:bg-muted/60 border-b last:border-b-0">
@@ -537,23 +665,285 @@ export default function CRMConversasPage() {
                     </div>
                   </PopoverContent>
                 </Popover>
-                <Input
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  placeholder="Escreva uma mensagem... (digite / para usar modelos)"
-                  className="h-10"
-                />
-                <Button onClick={send} disabled={!draft.trim() || sending} size="icon" className="h-10 w-10 shrink-0">
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
+
+                <button
+                  onClick={() => aiAction("suggest")}
+                  disabled={aiLoading === "suggest"}
+                  className="text-xs px-2.5 py-1.5 rounded-md inline-flex items-center gap-1.5 bg-primary/10 text-primary hover:bg-primary/15"
+                >
+                  {aiLoading === "suggest" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Sugestão IA
+                </button>
+
+                <button
+                  onClick={() => aiAction("summary")}
+                  disabled={aiLoading === "summary"}
+                  className="text-xs px-2.5 py-1.5 rounded-md border bg-background hover:bg-muted/60 inline-flex items-center gap-1.5 text-foreground"
+                >
+                  {aiLoading === "summary" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-primary" />}
+                  Painel IA
+                </button>
+
+                <button
+                  onClick={() => setComposerMode((m) => (m === "nota" ? "mensagem" : "nota"))}
+                  className={`text-xs px-2.5 py-1.5 rounded-md inline-flex items-center gap-1.5 border ${
+                    composerMode === "nota"
+                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                      : "bg-background hover:bg-muted/60"
+                  }`}
+                >
+                  <StickyNote className="h-3.5 w-3.5" /> Nota interna
+                </button>
+
+                <div className="flex-1" />
+
+                <button
+                  onClick={() => { setScheduleDraft(draft); setScheduleOpen(true); }}
+                  className="text-xs px-2.5 py-1.5 rounded-md border bg-background hover:bg-muted/60 inline-flex items-center gap-1.5 text-muted-foreground"
+                  title="Agendar mensagem"
+                >
+                  <Clock className="h-3.5 w-3.5" /> Agendar
+                </button>
+              </div>
+
+              {slashSuggestions.length > 0 && (
+                <div className="mx-3 mb-2 rounded-lg border bg-popover shadow-md max-h-48 overflow-y-auto">
+                  {slashSuggestions.map((t: any) => (
+                    <button key={t.id} onClick={() => applyTemplate(t)}
+                      className="w-full text-left px-3 py-2 hover:bg-muted/60 border-b last:border-b-0">
+                      <div className="flex items-center gap-2 text-xs">
+                        <code className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">/{t.atalho}</code>
+                        <span className="font-medium">{t.nome}</span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate mt-0.5">{t.conteudo}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {agendadas.filter((a: any) => a.status === "pendente").length > 0 && (
+                <div className="mx-3 mb-2 px-3 py-1.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[11px] flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" />
+                  {agendadas.filter((a: any) => a.status === "pendente").length} mensagem(ns) agendada(s).
+                </div>
+              )}
+
+              {/* Input principal */}
+              <div className="px-3 pb-3 pt-1">
+                <div className={`flex items-center gap-1.5 rounded-full border bg-background pr-1.5 pl-2 ${composerMode === "nota" ? "border-amber-500/40 bg-amber-500/5" : ""}`}>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground rounded-full" title="Emoji">
+                    <Smile className="h-4 w-4" />
+                  </Button>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    className="hidden"
+                    accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) sendFile(f); }}
+                  />
+                  <Button
+                    variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground rounded-full"
+                    onClick={() => fileRef.current?.click()} disabled={uploading} title="Anexar"
+                  >
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                  </Button>
+                  <Input
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+                    placeholder={composerMode === "nota" ? "Escreva uma nota interna (não é enviada ao cliente)..." : "Digite uma mensagem..."}
+                    className="h-10 border-0 bg-transparent shadow-none focus-visible:ring-0 px-1"
+                  />
+                  {draft.trim() ? (
+                    <Button onClick={send} disabled={sending} size="icon" className="h-9 w-9 shrink-0 rounded-full">
+                      {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  ) : (
+                    <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground rounded-full" title="Áudio">
+                      <Mic className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </>
         )}
-      </div>
+      </section>
 
-      {/* Drawer do contato */}
+      {/* ===== Coluna 3: Painel do contato (desktop) ===== */}
+      {selected && (
+        <aside className="hidden lg:flex w-[300px] shrink-0 border-l bg-card flex-col overflow-y-auto">
+          {/* Avatar grande */}
+          <div className="px-5 pt-6 pb-4 text-center">
+            <div className="h-20 w-20 rounded-full bg-primary/10 text-primary flex items-center justify-center text-2xl font-semibold mx-auto mb-3">
+              {initial(selected.contato?.nome)}
+            </div>
+            <div className="text-base font-semibold">{selected.contato?.nome ?? "—"}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{selected.contato?.whatsapp ?? "—"}</div>
+            {contatoTags.length > 0 && (
+              <div className="mt-2 flex justify-center">
+                <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/15 gap-1 text-[10px]">
+                  <Star className="h-3 w-3" /> {contatoTags[0]?.nome}
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          {/* Pipeline */}
+          <div className="px-5 py-3 border-t">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+              Pipeline
+            </div>
+            <div className="rounded-lg border bg-background px-3 py-2.5 flex items-center justify-between">
+              <div className="min-w-0">
+                <div className="text-[10px] text-muted-foreground">Etapa atual</div>
+                <div className="text-sm font-semibold truncate">{leadInfo?.etapa?.nome ?? "—"}</div>
+              </div>
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            </div>
+            {leadInfo?.valor_potencial != null && (
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Valor potencial</span>
+                <span className="font-semibold text-success">
+                  {Number(leadInfo.valor_potencial).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Informações */}
+          <div className="px-5 py-3 border-t">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+              Informações
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2 text-foreground">
+                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="truncate">{selected.contato?.email ?? "—"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-foreground">
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="truncate">{selected.contato?.empresa ?? "—"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-foreground">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="truncate">{selected.contato?.cidade ?? "—"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-foreground">
+                <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="truncate">Origem: {selected.contato?.origem ?? "—"}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="px-5 py-3 border-t">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+              Tags
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {contatoTags.length === 0 ? (
+                <span className="text-xs text-muted-foreground">Nenhuma tag</span>
+              ) : contatoTags.map((t: any) => (
+                <Badge
+                  key={t.id}
+                  variant="secondary"
+                  className="text-[10px] font-medium"
+                  style={{ backgroundColor: `${t.cor}20`, color: t.cor }}
+                >
+                  {t.nome}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          {/* Atendimento */}
+          <div className="px-5 py-3 border-t">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+              Atendimento
+            </div>
+            <div className="text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Responsável</span>
+                <span className="font-medium truncate ml-2">{responsavelNome ?? "Sem responsável"}</span>
+              </div>
+              {selected.tempo_primeira_resposta_seg != null && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">1ª resposta</span>
+                  <span className="font-medium">
+                    {selected.tempo_primeira_resposta_seg < 60
+                      ? `${selected.tempo_primeira_resposta_seg}s`
+                      : selected.tempo_primeira_resposta_seg < 3600
+                      ? `${Math.round(selected.tempo_primeira_resposta_seg / 60)} min`
+                      : `${(selected.tempo_primeira_resposta_seg / 3600).toFixed(1)} h`}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Resumo IA */}
+          {selected.resumo_ia && (
+            <div className="px-5 py-3 border-t">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3 text-primary" /> Resumo IA
+              </div>
+              <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{selected.resumo_ia}</p>
+            </div>
+          )}
+
+          {/* Notas */}
+          <div className="px-5 py-3 border-t">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 flex items-center justify-between">
+              <span>Notas internas {notas.length > 0 && <span className="text-muted-foreground">({notas.length})</span>}</span>
+            </div>
+            <Textarea rows={2} value={notaDraft} onChange={(e) => setNotaDraft(e.target.value)}
+              placeholder="Anote algo (visível só pra equipe)..." className="text-xs mb-1.5" />
+            <Button size="sm" variant="outline" onClick={addNota} disabled={!notaDraft.trim()} className="w-full gap-1.5 h-8">
+              <StickyNote className="h-3 w-3" /> Adicionar
+            </Button>
+            <div className="space-y-1.5 mt-2">
+              {notas.slice(0, 3).map((n: any) => (
+                <div key={n.id} className="rounded-md border bg-amber-500/5 border-amber-500/30 p-2">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] font-medium">{n.autor_nome ?? "—"}</span>
+                    <span className="text-[9px] text-muted-foreground">{format(new Date(n.created_at), "dd/MM HH:mm")}</span>
+                  </div>
+                  <p className="text-[11px] whitespace-pre-wrap">{n.conteudo}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Agendadas */}
+          {agendadas.length > 0 && (
+            <div className="px-5 py-3 border-t">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 flex items-center gap-1.5">
+                <Clock className="h-3 w-3" /> Agendadas ({agendadas.length})
+              </div>
+              <div className="space-y-1.5">
+                {agendadas.slice(0, 3).map((a: any) => (
+                  <div key={a.id} className="rounded-md border p-2">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <Badge variant={a.status === "pendente" ? "secondary" : a.status === "enviada" ? "default" : "destructive"} className="text-[9px]">
+                        {a.status}
+                      </Badge>
+                      <span className="text-[9px] text-muted-foreground">{format(new Date(a.agendada_para), "dd/MM HH:mm")}</span>
+                    </div>
+                    <p className="text-[11px] whitespace-pre-wrap line-clamp-2">{a.conteudo}</p>
+                    {a.status === "pendente" && (
+                      <Button size="sm" variant="ghost" className="h-6 text-[10px] text-destructive p-1 mt-1"
+                        onClick={() => cancelarAgendada(a.id)}>Cancelar</Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </aside>
+      )}
+
+      {/* ===== Drawer mobile do contato ===== */}
       <Sheet open={contactOpen} onOpenChange={setContactOpen}>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader><SheetTitle>Painel da conversa</SheetTitle></SheetHeader>
@@ -568,7 +958,7 @@ export default function CRMConversasPage() {
               <TabsContent value="contato" className="space-y-4 mt-4">
                 <div className="flex items-center gap-3">
                   <div className="h-14 w-14 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-semibold">
-                    {(selected.contato?.nome ?? "?").charAt(0).toUpperCase()}
+                    {initial(selected.contato?.nome)}
                   </div>
                   <div>
                     <div className="font-semibold">{selected.contato?.nome}</div>
@@ -588,39 +978,18 @@ export default function CRMConversasPage() {
                     <p className="text-xs whitespace-pre-wrap text-muted-foreground">{selected.resumo_ia}</p>
                   </div>
                 )}
-                <div>
-                  <div className="text-xs font-semibold mb-1.5">Canal</div>
-                  <Badge variant="outline">{selected.canal?.nome}</Badge>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold mb-1.5">Origem</div>
-                  <div className="text-sm text-muted-foreground">{selected.contato?.origem ?? "—"}</div>
-                </div>
                 <div className="rounded-lg border p-3 space-y-1.5">
                   <div className="text-xs font-semibold flex items-center gap-1.5">
                     <Timer className="h-3 w-3 text-primary" /> Atendimento
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Responsável: <span className="text-foreground font-medium">
-                      {selected.atendente_id
-                        ? (membros.find((m: any) => m.user_id === selected.atendente_id)?.nome ?? "—")
-                        : "Sem responsável"}
+                      {responsavelNome ?? "Sem responsável"}
                     </span>
                   </div>
                   {selected.assumida_em && (
                     <div className="text-xs text-muted-foreground">
                       Assumida em: <span className="text-foreground">{format(new Date(selected.assumida_em), "dd/MM HH:mm")}</span>
-                    </div>
-                  )}
-                  {selected.tempo_primeira_resposta_seg != null && (
-                    <div className="text-xs text-muted-foreground">
-                      1ª resposta em: <span className="text-foreground font-medium">
-                        {selected.tempo_primeira_resposta_seg < 60
-                          ? `${selected.tempo_primeira_resposta_seg}s`
-                          : selected.tempo_primeira_resposta_seg < 3600
-                          ? `${Math.round(selected.tempo_primeira_resposta_seg / 60)} min`
-                          : `${(selected.tempo_primeira_resposta_seg / 3600).toFixed(1)} h`}
-                      </span>
                     </div>
                   )}
                 </div>
