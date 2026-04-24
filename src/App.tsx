@@ -82,6 +82,7 @@ import CRMCampanhasPage from "@/pages/crm/CRMCampanhasPage";
 import CRMAnalyticsPage from "@/pages/crm/CRMAnalyticsPage";
 import CRMTemplatesPage from "@/pages/crm/CRMTemplatesPage";
 import CRMSLAPage from "@/pages/crm/CRMSLAPage";
+import CRMConfiguracoesPage from "@/pages/crm/CRMConfiguracoesPage";
 
 const queryClient = new QueryClient();
 
@@ -366,7 +367,7 @@ const App = () => (
               <Route path="analytics" element={<CRMAnalyticsPage />} />
               <Route path="sla" element={<CRMSLAPage />} />
               <Route path="templates" element={<CRMTemplatesPage />} />
-              <Route path="configuracoes" element={<CRMPlaceholder title="Configurações" description="Equipe, permissões, integrações e API." />} />
+              <Route path="configuracoes" element={<CRMConfiguracoesPage />} />
             </Route>
 
             {/* Operacional portal (protected) */}

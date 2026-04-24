@@ -23,6 +23,10 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
 type FlowStep = {
   id: string;
@@ -155,6 +159,18 @@ export default function CRMAutomacaoPage() {
     update.mutate({ definicao: { steps: steps.filter((s) => s.id !== id) } as any });
   };
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = steps.findIndex((s) => s.id === active.id);
+    const newIdx = steps.findIndex((s) => s.id === over.id);
+    if (oldIdx < 0 || newIdx < 0) return;
+    const novos = arrayMove(steps, oldIdx, newIdx);
+    update.mutate({ definicao: { steps: novos } as any });
+  };
+
   return (
     <div className="h-full flex bg-background">
       {/* Lista de fluxos */}
@@ -285,37 +301,19 @@ export default function CRMAutomacaoPage() {
               </Card>
 
               {/* Steps */}
-              {steps.map((step, idx) => {
-                const meta = tiposPasso[step.type];
-                const Icon = meta.icon;
-                return (
-                  <div key={step.id}>
-                    <div className="flex justify-center py-1">
-                      <ArrowDown className="h-4 w-4 text-muted-foreground/40" />
-                    </div>
-                    <Card className="p-4 group hover:shadow-card-hover transition-shadow">
-                      <div className="flex items-start gap-3">
-                        <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${meta.color} flex items-center justify-center shrink-0`}>
-                          <Icon className="h-5 w-5 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Passo {idx + 1}</div>
-                              <div className="font-semibold text-sm">{meta.label}</div>
-                            </div>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-rose-500"
-                              onClick={() => removeStep(step.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                          <StepEditor step={step} onChange={(c) => updateStep(step.id, c)} />
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                );
-              })}
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                <SortableContext items={steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                  {steps.map((step, idx) => (
+                    <SortableStep
+                      key={step.id}
+                      step={step}
+                      idx={idx}
+                      onRemove={() => removeStep(step.id)}
+                      onChange={(c) => updateStep(step.id, c)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
 
               {/* Add step */}
               <div className="flex justify-center py-1">
@@ -421,6 +419,46 @@ export default function CRMAutomacaoPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function SortableStep({ step, idx, onRemove, onChange }: {
+  step: FlowStep; idx: number; onRemove: () => void; onChange: (c: any) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const meta = tiposPasso[step.type];
+  const Icon = meta.icon;
+  return (
+    <div ref={setNodeRef} style={style}>
+      <div className="flex justify-center py-1">
+        <ArrowDown className="h-4 w-4 text-muted-foreground/40" />
+      </div>
+      <Card className={`p-4 group hover:shadow-card-hover transition-shadow ${isDragging ? "ring-2 ring-primary" : ""}`}>
+        <div className="flex items-start gap-3">
+          <button {...attributes} {...listeners}
+            className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground p-1 -ml-1"
+            title="Arraste para reordenar">
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${meta.color} flex items-center justify-center shrink-0`}>
+            <Icon className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Passo {idx + 1}</div>
+                <div className="font-semibold text-sm">{meta.label}</div>
+              </div>
+              <Button size="icon" variant="ghost" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-rose-500" onClick={onRemove}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <StepEditor step={step} onChange={onChange} />
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -13,6 +13,27 @@ const EVOLUTION_KEY = Deno.env.get("EVOLUTION_API_KEY") ?? "";
 
 function onlyDigits(s: string) { return (s ?? "").replace(/\D/g, ""); }
 
+function dentroDoExpediente(cfg: any): boolean {
+  if (!cfg?.ativo) return true; // sem horário = sempre dentro
+  try {
+    const tz = cfg.fuso ?? "America/Sao_Paulo";
+    const now = new Date();
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hour12: false, weekday: "short",
+      hour: "2-digit", minute: "2-digit", year: "numeric", month: "2-digit", day: "2-digit",
+    });
+    const parts = Object.fromEntries(fmt.formatToParts(now).map((p) => [p.type, p.value]));
+    const wdMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const wd = wdMap[parts.weekday] ?? 0;
+    const ymd = `${parts.year}-${parts.month}-${parts.day}`;
+    const feriados: string[] = Array.isArray(cfg.feriados) ? cfg.feriados : [];
+    if (feriados.includes(ymd)) return false;
+    const hhmm = `${parts.hour}:${parts.minute}`;
+    const slots: { inicio: string; fim: string }[] = (cfg.horarios?.[String(wd)] ?? []);
+    return slots.some((s) => hhmm >= s.inicio && hhmm <= s.fim);
+  } catch { return true; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -109,6 +130,36 @@ Deno.serve(async (req) => {
           identificador_externo: remoteJid,
         }).select("id, nao_lidas, status").single();
         conv = ins.data!;
+
+        // ====== Roteamento automático de NOVAS conversas ======
+        try {
+          const pool: string[] = (canal.roteamento_atendentes ?? []) as string[];
+          if (canal.roteamento === "round_robin" && pool.length > 0) {
+            const idx = ((canal.roteamento_ultimo_idx ?? 0) + 1) % pool.length;
+            const userId = pool[idx];
+            await admin.from("crm_canais").update({ roteamento_ultimo_idx: idx }).eq("id", canal.id);
+            await admin.from("crm_conversas").update({
+              atendente_id: userId, assumida_em: new Date().toISOString(),
+            }).eq("id", conv.id);
+          } else if (canal.roteamento === "menos_carga" && pool.length > 0) {
+            // Conta conversas abertas por atendente do pool
+            const { data: open } = await admin.from("crm_conversas")
+              .select("atendente_id")
+              .eq("empresa_id", canal.empresa_id).neq("status", "fechada")
+              .in("atendente_id", pool);
+            const counts = new Map<string, number>(pool.map((u) => [u, 0]));
+            (open ?? []).forEach((r: any) => {
+              if (r.atendente_id) counts.set(r.atendente_id, (counts.get(r.atendente_id) ?? 0) + 1);
+            });
+            const sorted = [...counts.entries()].sort((a, b) => a[1] - b[1]);
+            const userId = sorted[0][0];
+            await admin.from("crm_conversas").update({
+              atendente_id: userId, assumida_em: new Date().toISOString(),
+            }).eq("id", conv.id);
+          }
+        } catch (e) {
+          console.error("roteamento error:", e);
+        }
       }
 
       // dedupe por externalId
@@ -170,6 +221,44 @@ Deno.serve(async (req) => {
       }).eq("id", conv.id);
 
       await admin.from("crm_contatos").update({ ultima_interacao: ts }).eq("id", contato.id);
+
+      // ====== Auto-resposta fora do expediente ======
+      if (!fromMe) {
+        try {
+          const { data: hc } = await admin.from("crm_horario_comercial")
+            .select("*").eq("empresa_id", canal.empresa_id).maybeSingle();
+          if (hc?.ativo && !dentroDoExpediente(hc) && hc.mensagem_fora_expediente) {
+            // Busca conv atualizada para checar se já enviamos aviso recente
+            const { data: convFull } = await admin.from("crm_conversas")
+              .select("aviso_ausencia_em").eq("id", conv.id).maybeSingle();
+            const ja = convFull?.aviso_ausencia_em;
+            const ultimoMs = ja ? new Date(ja).getTime() : 0;
+            const horasDesde = (Date.now() - ultimoMs) / 36e5;
+            const podeEnviar = !ja || (!hc.enviar_apenas_uma_vez && horasDesde > 6);
+            if (podeEnviar && EVOLUTION_URL && EVOLUTION_KEY) {
+              const txt = String(hc.mensagem_fora_expediente)
+                .replace(/\{\{nome\}\}/g, contato.nome ?? "")
+                .replace(/\{\{primeiro_nome\}\}/g, (contato.nome ?? "").split(" ")[0]);
+              await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${instance}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+                body: JSON.stringify({ number: numero, text: txt }),
+              });
+              const nowIso = new Date().toISOString();
+              await admin.from("crm_mensagens").insert({
+                empresa_id: canal.empresa_id, conversa_id: conv.id, tipo: "texto",
+                direcao: "saida", conteudo: txt, status: "enviada",
+                remetente_nome: "🌙 Auto (fora do expediente)", enviada_em: nowIso,
+              });
+              await admin.from("crm_conversas").update({
+                aviso_ausencia_em: nowIso, ultima_mensagem: txt, ultima_mensagem_em: nowIso,
+              }).eq("id", conv.id);
+            }
+          }
+        } catch (e) {
+          console.error("ausencia error:", e);
+        }
+      }
 
       // ============ EXECUTOR DE FLUXOS ============
       if (!fromMe) {
