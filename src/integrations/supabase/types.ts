@@ -523,6 +523,109 @@ export type Database = {
           },
         ]
       }
+      birthday_config: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          enabled: boolean
+          mensagem_cliente: string
+          mensagem_pet: string
+          send_to_cliente: boolean
+          send_to_pet: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          enabled?: boolean
+          mensagem_cliente?: string
+          mensagem_pet?: string
+          send_to_cliente?: boolean
+          send_to_pet?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          enabled?: boolean
+          mensagem_cliente?: string
+          mensagem_pet?: string
+          send_to_cliente?: boolean
+          send_to_pet?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birthday_config_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birthday_log: {
+        Row: {
+          ano: number
+          cliente_id: string | null
+          empresa_id: string
+          enviado_em: string
+          id: string
+          notificacao_id: string | null
+          pet_id: string | null
+          tipo: string
+        }
+        Insert: {
+          ano: number
+          cliente_id?: string | null
+          empresa_id: string
+          enviado_em?: string
+          id?: string
+          notificacao_id?: string | null
+          pet_id?: string | null
+          tipo: string
+        }
+        Update: {
+          ano?: number
+          cliente_id?: string | null
+          empresa_id?: string
+          enviado_em?: string
+          id?: string
+          notificacao_id?: string | null
+          pet_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birthday_log_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birthday_log_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birthday_log_notificacao_id_fkey"
+            columns: ["notificacao_id"]
+            isOneToOne: false
+            referencedRelation: "customer_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birthday_log_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_registros: {
         Row: {
           agendamento_id: string
