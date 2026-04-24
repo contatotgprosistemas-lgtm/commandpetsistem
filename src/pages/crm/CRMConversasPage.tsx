@@ -297,14 +297,37 @@ export default function CRMConversasPage() {
       return;
     }
     setSending(true);
+    const conteudo = draft.trim();
+    const tempId = `temp-${crypto.randomUUID()}`;
+    const optimistic = {
+      id: tempId,
+      conversa_id: selectedId,
+      direcao: "saida",
+      tipo: "texto",
+      conteudo,
+      midia_url: null,
+      midia_mimetype: null,
+      midia_filename: null,
+      status: "enviando",
+      enviada_em: new Date().toISOString(),
+      remetente_nome: null,
+      _optimistic: true,
+    };
+    // Limpa input e injeta a mensagem otimista imediatamente
+    setDraft("");
+    qc.setQueryData(["crm-mensagens", selectedId], (old: any[] = []) => [...old, optimistic]);
     try {
       const { data, error } = await supabase.functions.invoke("evolution-send", {
-        body: { conversa_id: selectedId, conteudo: draft.trim() },
+        body: { conversa_id: selectedId, conteudo },
       });
       if (error || (data as any)?.error) throw new Error((data as any)?.error ?? error?.message);
-      setDraft("");
       qc.invalidateQueries({ queryKey: ["crm-mensagens", selectedId] });
     } catch (e: any) {
+      // Remove a mensagem otimista em caso de falha e devolve o texto ao input
+      qc.setQueryData(["crm-mensagens", selectedId], (old: any[] = []) =>
+        old.filter((m) => m.id !== tempId)
+      );
+      setDraft(conteudo);
       toast.error(e.message);
     } finally { setSending(false); }
   };
