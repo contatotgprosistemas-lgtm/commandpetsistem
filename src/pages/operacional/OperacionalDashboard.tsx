@@ -442,7 +442,7 @@ export default function OperacionalDashboard() {
                     <Button size="sm" variant="outline" onClick={() => setGaleriaTarget(item)} className="gap-1 h-9 text-xs relative">
                       <Camera className="h-3.5 w-3.5" /> Galeria
                       {mediaCounts[item.pet?.id] > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-sm border border-background">
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shadow-sm border border-background">
                           {mediaCounts[item.pet?.id] > 99 ? "99+" : mediaCounts[item.pet?.id]}
                         </span>
                       )}
