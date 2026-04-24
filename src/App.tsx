@@ -76,6 +76,8 @@ import CRMConversasPage from "@/pages/crm/CRMConversasPage";
 import CRMCanaisPage from "@/pages/crm/CRMCanaisPage";
 import CRMContatosPage from "@/pages/crm/CRMContatosPage";
 import CRMPipelinePage from "@/pages/crm/CRMPipelinePage";
+import CRMTarefasPage from "@/pages/crm/CRMTarefasPage";
+import CRMAutomacaoPage from "@/pages/crm/CRMAutomacaoPage";
 
 const queryClient = new QueryClient();
 
@@ -353,8 +355,8 @@ const App = () => (
               <Route path="conversas" element={<CRMConversasPage />} />
               <Route path="contatos" element={<CRMContatosPage />} />
               <Route path="pipeline" element={<CRMPipelinePage />} />
-              <Route path="tarefas" element={<CRMPlaceholder title="Tarefas" description="Follow-ups e atividades comerciais." />} />
-              <Route path="automacao" element={<CRMPlaceholder title="Automação" description="Construtor visual de chatbot e fluxos." />} />
+              <Route path="tarefas" element={<CRMTarefasPage />} />
+              <Route path="automacao" element={<CRMAutomacaoPage />} />
               <Route path="campanhas" element={<CRMPlaceholder title="Campanhas" description="Disparos em massa por canal." />} />
               <Route path="canais" element={<CRMCanaisPage />} />
               <Route path="analytics" element={<CRMPlaceholder title="Analytics" description="BI interno e indicadores comerciais." />} />
