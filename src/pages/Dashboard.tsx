@@ -604,7 +604,7 @@ export default function Dashboard() {
         </div>
         <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Contratos a vencer</h3>
               {expiringContracts.length > 0 ? (
