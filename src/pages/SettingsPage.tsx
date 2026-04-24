@@ -499,7 +499,9 @@ function NotificacoesTab() {
   });
 
   return (
-    <Card>
+    <div className="space-y-4">
+      <AniversariosCard />
+      <Card>
       <CardHeader>
         <CardTitle className="text-base">Notificações</CardTitle>
         <CardDescription>Configure quais alertas você deseja receber</CardDescription>
@@ -525,7 +527,8 @@ function NotificacoesTab() {
         ))}
         <p className="text-xs text-muted-foreground pt-2">As preferências são salvas automaticamente.</p>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }
 
