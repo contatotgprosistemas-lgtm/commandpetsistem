@@ -12,12 +12,14 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-function evoFetch(path: string, init: RequestInit = {}) {
-  return fetch(`${EVOLUTION_URL.replace(/\/$/, "")}${path}`, {
+function evoFetch(path: string, init: RequestInit = {}, baseUrl?: string, apiKey?: string) {
+  const url = (baseUrl || EVOLUTION_URL || "").replace(/\/$/, "");
+  const key = apiKey || EVOLUTION_KEY;
+  return fetch(`${url}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      apikey: EVOLUTION_KEY,
+      apikey: key,
       ...(init.headers || {}),
     },
   });
@@ -51,10 +53,21 @@ Deno.serve(async (req) => {
     if (action === "create") {
       const nome = (body.nome as string)?.trim();
       const setor = (body.setor as string) ?? null;
+      const serverUrl = (body.server_url as string)?.trim();
+      const apiKey = (body.api_key as string)?.trim();
+      const customInstance = (body.instance_name as string)?.trim();
       if (!nome) {
         return new Response(JSON.stringify({ error: "Nome obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      const instanceName = `crm_${empresaId.slice(0, 8)}_${crypto.randomUUID().slice(0, 8)}`;
+      if (!serverUrl) {
+        return new Response(JSON.stringify({ error: "URL do servidor Evolution obrigatória" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: "API Key obrigatória" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const instanceName = customInstance && customInstance.length > 0
+        ? customInstance.toLowerCase().replace(/[^a-z0-9_-]/g, "_")
+        : `crm_${empresaId.slice(0, 8)}_${crypto.randomUUID().slice(0, 8)}`;
       const webhookUrl = `${SUPABASE_URL}/functions/v1/evolution-webhook`;
 
       const evoRes = await evoFetch("/instance/create", {
@@ -70,7 +83,7 @@ Deno.serve(async (req) => {
             events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "QRCODE_UPDATED"],
           },
         }),
-      });
+      }, serverUrl, apiKey);
       const evoData = await evoRes.json();
       if (!evoRes.ok) {
         return new Response(JSON.stringify({ error: "Evolution falhou", details: evoData }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -86,7 +99,7 @@ Deno.serve(async (req) => {
         provedor: "evolution",
         identificador: instanceName,
         status: "conectando",
-        config: { qr, instance: instanceName },
+        config: { qr, instance: instanceName, server_url: serverUrl, api_key: apiKey },
       }).select().single();
       if (error) throw error;
 
@@ -100,8 +113,11 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: "Canal não encontrado" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const inst = canal.identificador;
+      const cfg = (canal.config as any) || {};
+      const baseUrl = cfg.server_url as string | undefined;
+      const apiKey = cfg.api_key as string | undefined;
 
-      const stateRes = await evoFetch(`/instance/connectionState/${inst}`);
+      const stateRes = await evoFetch(`/instance/connectionState/${inst}`, {}, baseUrl, apiKey);
       const stateData = await stateRes.json();
       const state = stateData?.instance?.state ?? stateData?.state;
 
@@ -111,13 +127,13 @@ Deno.serve(async (req) => {
 
       if (state === "open") {
         novoStatus = "conectado";
-        const infoRes = await evoFetch(`/instance/fetchInstances?instanceName=${inst}`);
+        const infoRes = await evoFetch(`/instance/fetchInstances?instanceName=${inst}`, {}, baseUrl, apiKey);
         const infoData = await infoRes.json();
         const info = Array.isArray(infoData) ? infoData[0] : infoData;
         numero = info?.instance?.owner?.split("@")[0] ?? info?.owner?.split("@")[0] ?? numero;
       } else if (state === "connecting" || state === "close") {
         novoStatus = "conectando";
-        const qrRes = await evoFetch(`/instance/connect/${inst}`);
+        const qrRes = await evoFetch(`/instance/connect/${inst}`, {}, baseUrl, apiKey);
         const qrData = await qrRes.json();
         qr = qrData?.base64 ?? qrData?.qrcode?.base64 ?? qrData?.code ?? null;
       }
@@ -125,7 +141,7 @@ Deno.serve(async (req) => {
       await admin.from("crm_canais").update({
         status: novoStatus,
         numero_telefone: numero,
-        config: { ...(canal.config as any), qr, instance: inst },
+        config: { ...cfg, qr, instance: inst },
         ultima_conexao: novoStatus === "conectado" ? new Date().toISOString() : canal.ultima_conexao,
       }).eq("id", canalId);
 
@@ -134,9 +150,10 @@ Deno.serve(async (req) => {
 
     if (action === "disconnect") {
       const canalId = body.canal_id as string;
-      const { data: canal } = await admin.from("crm_canais").select("identificador").eq("id", canalId).eq("empresa_id", empresaId).maybeSingle();
+      const { data: canal } = await admin.from("crm_canais").select("identificador, config").eq("id", canalId).eq("empresa_id", empresaId).maybeSingle();
       if (canal) {
-        await evoFetch(`/instance/logout/${canal.identificador}`, { method: "DELETE" });
+        const cfg = (canal.config as any) || {};
+        await evoFetch(`/instance/logout/${canal.identificador}`, { method: "DELETE" }, cfg.server_url, cfg.api_key);
         await admin.from("crm_canais").update({ status: "desconectado" }).eq("id", canalId);
       }
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -144,9 +161,10 @@ Deno.serve(async (req) => {
 
     if (action === "delete") {
       const canalId = body.canal_id as string;
-      const { data: canal } = await admin.from("crm_canais").select("identificador").eq("id", canalId).eq("empresa_id", empresaId).maybeSingle();
+      const { data: canal } = await admin.from("crm_canais").select("identificador, config").eq("id", canalId).eq("empresa_id", empresaId).maybeSingle();
       if (canal) {
-        await evoFetch(`/instance/delete/${canal.identificador}`, { method: "DELETE" });
+        const cfg = (canal.config as any) || {};
+        await evoFetch(`/instance/delete/${canal.identificador}`, { method: "DELETE" }, cfg.server_url, cfg.api_key);
         await admin.from("crm_canais").delete().eq("id", canalId);
       }
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
