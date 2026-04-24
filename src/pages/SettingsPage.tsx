@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff, Trash2, Camera, X, Upload } from "lucide-react";
 import { PermissoesCargoPanel } from "@/components/PermissoesCargoPanel";
 import { translateAuthError } from "@/lib/authErrors";
+import { AniversariosCard } from "@/components/AniversariosCard";
 
 // ─── Dados da Empresa ───────────────────────────────────────────────
 function EmpresaTab() {
