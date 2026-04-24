@@ -301,37 +301,19 @@ export default function CRMAutomacaoPage() {
               </Card>
 
               {/* Steps */}
-              {steps.map((step, idx) => {
-                const meta = tiposPasso[step.type];
-                const Icon = meta.icon;
-                return (
-                  <div key={step.id}>
-                    <div className="flex justify-center py-1">
-                      <ArrowDown className="h-4 w-4 text-muted-foreground/40" />
-                    </div>
-                    <Card className="p-4 group hover:shadow-card-hover transition-shadow">
-                      <div className="flex items-start gap-3">
-                        <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${meta.color} flex items-center justify-center shrink-0`}>
-                          <Icon className="h-5 w-5 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Passo {idx + 1}</div>
-                              <div className="font-semibold text-sm">{meta.label}</div>
-                            </div>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-rose-500"
-                              onClick={() => removeStep(step.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                          <StepEditor step={step} onChange={(c) => updateStep(step.id, c)} />
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                );
-              })}
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                <SortableContext items={steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                  {steps.map((step, idx) => (
+                    <SortableStep
+                      key={step.id}
+                      step={step}
+                      idx={idx}
+                      onRemove={() => removeStep(step.id)}
+                      onChange={(c) => updateStep(step.id, c)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
 
               {/* Add step */}
               <div className="flex justify-center py-1">
