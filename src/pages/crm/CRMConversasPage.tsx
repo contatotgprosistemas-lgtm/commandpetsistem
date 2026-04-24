@@ -427,6 +427,20 @@ export default function CRMConversasPage() {
           ))}
         </div>
 
+        {setores.length > 0 && (
+          <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide border-b">
+            {[{ id: "todos", nome: "Todos setores", cor: "" }, { id: "sem", nome: "Sem setor", cor: "" }, ...setores].map((s: any) => (
+              <button key={s.id} onClick={() => setSetorFiltro(s.id)}
+                className={`shrink-0 text-[11px] font-medium px-2.5 py-1 rounded-full transition-colors flex items-center gap-1.5 ${
+                  setorFiltro === s.id ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                }`}>
+                {s.cor && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.cor }} />}
+                {s.nome}
+              </button>
+            ))}
+          </div>
+        )}
+
         <ScrollArea className="flex-1">
           {loadingConversas ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
