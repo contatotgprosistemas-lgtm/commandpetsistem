@@ -92,6 +92,7 @@ export default function Dashboard() {
   const [massCheckinLoading, setMassCheckinLoading] = useState(false);
   const [faturamentoData, setFaturamentoData] = useState<{ dia: string; pendente: number; pago: number }[]>([]);
   const [faturamentoTotal, setFaturamentoTotal] = useState({ pendente: 0, pago: 0 });
+  const [aniversariantes, setAniversariantes] = useState<{ tipo: "cliente" | "pet"; id: string; nome: string; dia: number; extra?: string }[]>([]);
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
@@ -205,6 +206,34 @@ export default function Dashboard() {
         setFaturamentoData(chartData);
         setFaturamentoTotal({ pendente: totalPendente, pago: totalPago });
       });
+    // Fetch aniversariantes do mês (clientes e pets)
+    (async () => {
+      const mesAtual = new Date().getMonth() + 1; // 1-12
+      const mm = String(mesAtual).padStart(2, "0");
+      const [{ data: cli }, { data: pets }] = await Promise.all([
+        supabase
+          .from("clientes")
+          .select("id, nome, data_nascimento")
+          .not("data_nascimento", "is", null),
+        supabase
+          .from("pets")
+          .select("id, nome, data_nascimento, cliente:clientes(nome)")
+          .not("data_nascimento", "is", null),
+      ]);
+      const lista: { tipo: "cliente" | "pet"; id: string; nome: string; dia: number; extra?: string }[] = [];
+      for (const c of (cli ?? []) as any[]) {
+        if (!c.data_nascimento) continue;
+        const [, m, d] = String(c.data_nascimento).split("-");
+        if (m === mm) lista.push({ tipo: "cliente", id: c.id, nome: c.nome, dia: Number(d) });
+      }
+      for (const p of (pets ?? []) as any[]) {
+        if (!p.data_nascimento) continue;
+        const [, m, d] = String(p.data_nascimento).split("-");
+        if (m === mm) lista.push({ tipo: "pet", id: p.id, nome: p.nome, dia: Number(d), extra: p.cliente?.nome });
+      }
+      lista.sort((a, b) => a.dia - b.dia);
+      setAniversariantes(lista);
+    })();
   }, []);
 
   // Auto-refresh at midnight
@@ -547,7 +576,7 @@ export default function Dashboard() {
         </Tabs>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-2 bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -573,30 +602,53 @@ export default function Dashboard() {
             <div className="flex items-center justify-center h-[220px] text-[13px] text-muted-foreground">Sem dados para exibir</div>
           )}
         </div>
-        <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
+        <div className="lg:col-span-3 bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
-          {expiringContracts.length > 0 ? (
-            <div className="space-y-3 max-h-[220px] overflow-y-auto">
-              {expiringContracts.map((c: any) => (
-                <div key={c.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                  <div className="text-xs">
-                    <p className="font-medium text-foreground">
-                      Contrato vence em {c.daysLeft} dia{c.daysLeft !== 1 ? "s" : ""}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {c.cliente?.nome} — {c.pet?.nome} — {c.plan?.name || "Pacote"}
-                    </p>
-                    <p className="text-muted-foreground">
-                      Vencimento: {format(new Date(c.contract_end_date), "dd/MM/yyyy")}
-                    </p>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Contratos a vencer</h3>
+              {expiringContracts.length > 0 ? (
+                <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                  {expiringContracts.map((c: any) => (
+                    <div key={c.id} className="flex items-start gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                      <div className="text-xs leading-tight">
+                        <p className="font-medium text-foreground">Vence em {c.daysLeft} dia{c.daysLeft !== 1 ? "s" : ""}</p>
+                        <p className="text-muted-foreground truncate">{c.cliente?.nome} — {c.pet?.nome}</p>
+                        <p className="text-muted-foreground">{format(new Date(c.contract_end_date), "dd/MM/yyyy")}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="flex items-center justify-center h-[120px] text-[13px] text-muted-foreground">Nenhum contrato a vencer</div>
+              )}
             </div>
-          ) : (
-            <div className="flex items-center justify-center h-[160px] text-[13px] text-muted-foreground">Nenhuma atividade recente</div>
-          )}
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                🎂 Aniversariantes do mês
+              </h3>
+              {aniversariantes.length > 0 ? (
+                <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                  {aniversariantes.map((a) => (
+                    <div key={`${a.tipo}-${a.id}`} className="flex items-start gap-2 p-2 rounded-lg bg-pink-50 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-800">
+                      <span className="text-base leading-none mt-0.5 shrink-0">{a.tipo === "pet" ? "🐾" : "🎉"}</span>
+                      <div className="text-xs leading-tight min-w-0 flex-1">
+                        <p className="font-medium text-foreground truncate">
+                          {a.nome} <span className="text-muted-foreground font-normal">· dia {String(a.dia).padStart(2, "0")}</span>
+                        </p>
+                        <p className="text-muted-foreground truncate">
+                          {a.tipo === "pet" ? `Pet${a.extra ? ` • Tutor: ${a.extra}` : ""}` : "Cliente"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[120px] text-[13px] text-muted-foreground">Nenhum aniversariante este mês</div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
