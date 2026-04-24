@@ -19,6 +19,7 @@ import {
   Bot, Plus, Loader2, Zap, MessageSquare, Tag, Clock, GitBranch,
   Trash2, ArrowDown, Pencil, Power, Play, History, CheckCircle2, XCircle,
 } from "lucide-react";
+import { FileText, Users2, RefreshCw, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
@@ -51,6 +52,87 @@ const gatilhos: Record<string, { label: string; icon: any; desc: string }> = {
   palavra_chave: { label: "Palavra-chave", icon: Tag, desc: "Mensagem contém palavras específicas" },
   manual: { label: "Disparo manual", icon: Play, desc: "Executado sob demanda" },
 };
+
+type FlowTemplate = {
+  id: string;
+  nome: string;
+  desc: string;
+  icon: any;
+  iconBg: string;
+  iconFg: string;
+  etapas: number;
+  gatilho: string;
+  steps: FlowStep[];
+};
+
+const flowTemplates: FlowTemplate[] = [
+  {
+    id: "boas-vindas",
+    nome: "Boas-vindas",
+    desc: "Mensagem automática para novos contatos",
+    icon: MessageSquare,
+    iconBg: "bg-emerald-50",
+    iconFg: "text-emerald-600",
+    etapas: 3,
+    gatilho: "nova_conversa",
+    steps: [
+      { id: crypto.randomUUID(), type: "mensagem", config: { texto: "Olá {{primeiro_nome}}! 👋 Seja bem-vindo(a). Como podemos ajudar hoje?" } },
+      { id: crypto.randomUUID(), type: "espera", config: { segundos: 30 } },
+      { id: crypto.randomUUID(), type: "tag", config: { tag: "novo-lead" } },
+    ],
+  },
+  {
+    id: "sdr",
+    nome: "Qualificação SDR",
+    desc: "Bot qualifica lead antes do atendente",
+    icon: Users2,
+    iconBg: "bg-violet-50",
+    iconFg: "text-violet-600",
+    etapas: 6,
+    gatilho: "nova_conversa",
+    steps: [
+      { id: crypto.randomUUID(), type: "mensagem", config: { texto: "Oi {{primeiro_nome}}! Para te direcionar melhor, posso te fazer 3 perguntas rápidas?" } },
+      { id: crypto.randomUUID(), type: "espera", config: { segundos: 60 } },
+      { id: crypto.randomUUID(), type: "mensagem", config: { texto: "1) Qual serviço você procura? (banho, tosa, hotel, daycare)" } },
+      { id: crypto.randomUUID(), type: "mensagem", config: { texto: "2) Qual o porte/raça do pet?" } },
+      { id: crypto.randomUUID(), type: "mensagem", config: { texto: "3) Qual a urgência? (hoje, esta semana, planejando)" } },
+      { id: crypto.randomUUID(), type: "tag", config: { tag: "qualificado" } },
+    ],
+  },
+  {
+    id: "followup",
+    nome: "Follow-up automático",
+    desc: "Reativa leads parados há 3+ dias",
+    icon: RefreshCw,
+    iconBg: "bg-amber-50",
+    iconFg: "text-amber-600",
+    etapas: 4,
+    gatilho: "manual",
+    steps: [
+      { id: crypto.randomUUID(), type: "espera", config: { segundos: 259200 } },
+      { id: crypto.randomUUID(), type: "mensagem", config: { texto: "Oi {{primeiro_nome}}, ainda quer agendar para o seu pet? Posso te ajudar agora 😊" } },
+      { id: crypto.randomUUID(), type: "espera", config: { segundos: 86400 } },
+      { id: crypto.randomUUID(), type: "tag", config: { tag: "follow-up-enviado" } },
+    ],
+  },
+  {
+    id: "nps",
+    nome: "Pesquisa NPS",
+    desc: "Envia pesquisa após fechamento",
+    icon: Star,
+    iconBg: "bg-sky-50",
+    iconFg: "text-sky-600",
+    etapas: 5,
+    gatilho: "manual",
+    steps: [
+      { id: crypto.randomUUID(), type: "espera", config: { segundos: 3600 } },
+      { id: crypto.randomUUID(), type: "mensagem", config: { texto: "Olá {{primeiro_nome}}! Em uma escala de 0 a 10, o quanto você recomendaria nossos serviços?" } },
+      { id: crypto.randomUUID(), type: "espera", config: { segundos: 86400 } },
+      { id: crypto.randomUUID(), type: "mensagem", config: { texto: "Obrigado pelo seu feedback! Isso nos ajuda a melhorar 💜" } },
+      { id: crypto.randomUUID(), type: "tag", config: { tag: "nps-respondeu" } },
+    ],
+  },
+];
 
 const tiposPasso: Record<string, { label: string; icon: any; color: string }> = {
   mensagem: { label: "Enviar mensagem", icon: MessageSquare, color: "from-blue-500 to-cyan-500" },
