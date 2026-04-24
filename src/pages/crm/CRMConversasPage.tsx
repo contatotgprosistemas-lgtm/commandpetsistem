@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare, ArrowLeft, Paperclip, FileText as FileIcon, Download, Clock, StickyNote, Zap } from "lucide-react";
+import { Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare, ArrowLeft, Paperclip, FileText as FileIcon, Download, Clock, StickyNote, Zap, UserCheck, UserPlus, Timer } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -33,6 +33,35 @@ export default function CRMConversasPage() {
   const [scheduleDraft, setScheduleDraft] = useState("");
   const [scheduleAt, setScheduleAt] = useState("");
   const [notaDraft, setNotaDraft] = useState("");
+  const [meId, setMeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
+  }, []);
+
+  // Membros da empresa para transferir conversas
+  const { data: membros = [] } = useQuery({
+    queryKey: ["crm-membros", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, nome, email, cargo")
+        .eq("empresa_id", empresaId!)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const atribuir = async (conversaId: string, userId: string | null) => {
+    const patch: any = { atendente_id: userId };
+    if (userId) patch.assumida_em = new Date().toISOString();
+    const { error } = await supabase.from("crm_conversas").update(patch).eq("id", conversaId);
+    if (error) { toast.error(error.message); return; }
+    toast.success(userId ? "Conversa atribuída" : "Conversa liberada");
+    qc.invalidateQueries({ queryKey: ["crm-conversas"] });
+  };
 
   // Conversas list
   const { data: conversas = [], isLoading: loadingConversas } = useQuery({
