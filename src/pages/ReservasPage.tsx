@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { format, startOfDay, addDays, subDays, startOfWeek, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -105,6 +106,8 @@ function getGroup(tipoServico: string): ServiceGroup {
 
 export default function ReservasPage() {
   const { profile } = useAuth();
+  const { user: opUser } = useOperationalAuth();
+  const empresaId = profile?.empresa_id ?? opUser?.empresa_id ?? null;
   const { logoUrl } = useEmpresaLogo();
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,11 +118,11 @@ export default function ReservasPage() {
   const [deletingReserva, setDeletingReserva] = useState<Reserva | null>(null);
 
   useEffect(() => {
-    if (profile?.empresa_id) fetchReservas();
-  }, [profile?.empresa_id, periodoFilter]);
+    if (empresaId) fetchReservas();
+  }, [empresaId, periodoFilter]);
 
   async function fetchReservas() {
-    if (!profile?.empresa_id) return;
+    if (!empresaId) return;
     setLoading(true);
 
     const today = startOfDay(new Date());
@@ -146,7 +149,7 @@ export default function ReservasPage() {
     const rangeQuery = supabase
       .from("agendamentos")
       .select("id, data_hora, tipo_servico, status, baia, notas, valor, desconto, duracao_min, data_saida_provavel, hora_saida_provavel, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, cliente:clientes(id, nome, whatsapp, foto_url), pet:pets(id, nome, raca, especie, foto_url)")
-      .eq("empresa_id", profile.empresa_id)
+      .eq("empresa_id", empresaId)
       .gte("data_hora", fromDate.toISOString())
       .lt("data_hora", toDate.toISOString())
       .order("data_hora", { ascending: true });
@@ -155,7 +158,7 @@ export default function ReservasPage() {
     const naEmpresaQuery = supabase
       .from("agendamentos")
       .select("id, data_hora, tipo_servico, status, baia, notas, valor, desconto, duracao_min, data_saida_provavel, hora_saida_provavel, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, cliente:clientes(id, nome, whatsapp, foto_url), pet:pets(id, nome, raca, especie, foto_url)")
-      .eq("empresa_id", profile.empresa_id)
+      .eq("empresa_id", empresaId)
       .eq("status", "na_empresa")
       .order("data_hora", { ascending: true });
 
