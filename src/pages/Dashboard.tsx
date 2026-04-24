@@ -576,8 +576,8 @@ export default function Dashboard() {
         </Tabs>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-2 bg-card rounded-xl border border-border/60 p-5 shadow-card">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-medium text-foreground">Faturamento Mensal</h2>
@@ -602,9 +602,9 @@ export default function Dashboard() {
             <div className="flex items-center justify-center h-[220px] text-[13px] text-muted-foreground">Sem dados para exibir</div>
           )}
         </div>
-        <div className="lg:col-span-3 bg-card rounded-xl border border-border/60 p-5 shadow-card">
+        <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
           <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Contratos a vencer</h3>
               {expiringContracts.length > 0 ? (
