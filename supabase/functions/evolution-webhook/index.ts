@@ -87,7 +87,11 @@ Deno.serve(async (req) => {
 
     if (event === "messages.upsert" || event === "MESSAGES_UPSERT") {
       const msg = Array.isArray(data?.messages) ? data.messages[0] : (data?.key ? data : data?.message);
-      if (!msg) return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+      if (!msg) {
+        console.warn("messages.upsert sem msg. data keys:", Object.keys(data ?? {}));
+        return new Response(JSON.stringify({ ok: true, skip: "no-msg" }), { headers: corsHeaders });
+      }
+      console.log("msg keys:", Object.keys(msg ?? {}), "key:", JSON.stringify(msg?.key));
 
       const fromMe = !!msg?.key?.fromMe;
       const remoteJid: string = msg?.key?.remoteJid ?? "";
