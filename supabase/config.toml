@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.crm-process-scheduled]
 verify_jwt = false
+
+[functions.asaas-webhook]
+verify_jwt = false
