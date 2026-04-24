@@ -5788,6 +5788,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_crm_conversa: {
+        Args: { _conversa_id: string }
+        Returns: boolean
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
