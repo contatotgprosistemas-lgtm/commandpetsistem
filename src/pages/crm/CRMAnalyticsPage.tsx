@@ -24,7 +24,7 @@ export default function CRMAnalyticsPage() {
         supabase.from("crm_leads").select("id,valor,etapa_id,created_at").eq("empresa_id", empresaId!),
         supabase.from("crm_campanhas").select("id,status,total_enviados,total_falhas").eq("empresa_id", empresaId!),
         supabase.from("crm_tarefas").select("id,concluida").eq("empresa_id", empresaId!),
-        supabase.from("crm_etapas").select("id,nome,cor,ordem").eq("empresa_id", empresaId!).order("ordem"),
+        supabase.from("crm_pipeline_etapas").select("id,nome,cor,ordem").eq("empresa_id", empresaId!).order("ordem"),
       ]);
 
       // Mensagens por dia (30d)
