@@ -101,12 +101,10 @@ Deno.serve(async (req) => {
 
       // Nome do contato: nunca usar pushName quando a mensagem é nossa (fromMe),
       // pois aí ele representa o nome da própria empresa no WhatsApp.
-      const contactNameFromPayload: string =
-        msg?.verifiedBizName ??
-        msg?.notifyName ??
-        msg?.pushname ??
-        (!fromMe ? (msg?.pushName ?? "") : "") ??
-        "";
+      const rawName: string = !fromMe
+        ? (msg?.pushName ?? msg?.pushname ?? msg?.notifyName ?? msg?.verifiedBizName ?? "")
+        : "";
+      const contactNameFromPayload: string = (rawName ?? "").toString().trim();
       const pushName: string = (contactNameFromPayload || numero).toString().trim() || numero;
       const text: string =
         msg?.message?.conversation ??
