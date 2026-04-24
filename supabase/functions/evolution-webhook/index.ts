@@ -123,6 +123,7 @@ Deno.serve(async (req) => {
         mm.imageMessage ? { kind: "imagem", mimetype: mm.imageMessage.mimetype, filename: "image.jpg" } :
         mm.videoMessage ? { kind: "video", mimetype: mm.videoMessage.mimetype, filename: "video.mp4" } :
         mm.audioMessage ? { kind: "audio", mimetype: mm.audioMessage.mimetype, filename: "audio.ogg" } :
+        mm.stickerMessage ? { kind: "imagem", mimetype: mm.stickerMessage.mimetype ?? "image/webp", filename: "sticker.webp" } :
         mm.documentMessage ? { kind: "documento", mimetype: mm.documentMessage.mimetype, filename: mm.documentMessage.fileName ?? "arquivo" } :
         null;
 
