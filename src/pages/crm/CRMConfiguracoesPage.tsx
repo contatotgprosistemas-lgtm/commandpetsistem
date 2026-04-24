@@ -266,19 +266,24 @@ export default function CRMConfiguracoesPage() {
           <TabsContent value="roteamento" className="space-y-3">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Roteamento automático de novas conversas</CardTitle>
+                <CardTitle className="text-base">Roteamento de novas conversas por canal</CardTitle>
                 <CardDescription className="text-xs">
-                  Configure como cada canal distribui novas conversas entre atendentes.
+                  Defina como cada canal direciona novas conversas para os setores e atendentes.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {canais.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-6">Nenhum canal cadastrado.</p>
                 ) : canais.map((c: any) => (
-                  <CanalRoteamento key={c.id} canal={c} membros={membros} onSave={updRoteamento} />
+                  <CanalRoteamento key={c.id} canal={c} membros={membros} setores={setores} onSave={updRoteamento} />
                 ))}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* SETORES */}
+          <TabsContent value="setores" className="space-y-3">
+            <SetoresPanel empresaId={empresaId ?? null} setores={setores} membros={membros} />
           </TabsContent>
         </Tabs>
       </div>
