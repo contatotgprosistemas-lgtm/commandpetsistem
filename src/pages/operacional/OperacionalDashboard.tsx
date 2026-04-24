@@ -138,14 +138,16 @@ export default function OperacionalDashboard() {
         setManejoFilledIds(new Set((manejoData ?? []).map((m: any) => m.agendamento_id)));
       }
 
-      // Fetch media counts per pet for pets currently in the company
+      // Fetch media counts per pet for pets currently in the company (only today's uploads)
       const petIds = [...new Set(naEmpresa.map((a: any) => a.pet?.id).filter(Boolean))];
       if (petIds.length > 0) {
         const { data: mediaData } = await supabase
           .from("pet_media")
           .select("pet_id")
           .eq("empresa_id", user.empresa_id)
-          .in("pet_id", petIds);
+          .in("pet_id", petIds)
+          .gte("created_at", today.toISOString())
+          .lt("created_at", tomorrow.toISOString());
         const counts: Record<string, number> = {};
         for (const m of mediaData ?? []) {
           counts[(m as any).pet_id] = (counts[(m as any).pet_id] || 0) + 1;
