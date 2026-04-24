@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare, ArrowLeft, Paperclip, Image as ImageIcon, FileText as FileIcon, Download } from "lucide-react";
+import { Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare, ArrowLeft, Paperclip, FileText as FileIcon, Download, Clock, StickyNote, Zap } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -24,6 +29,10 @@ export default function CRMConversasPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleDraft, setScheduleDraft] = useState("");
+  const [scheduleAt, setScheduleAt] = useState("");
+  const [notaDraft, setNotaDraft] = useState("");
 
   // Conversas list
   const { data: conversas = [], isLoading: loadingConversas } = useQuery({
@@ -53,6 +62,56 @@ export default function CRMConversasPage() {
 
   const selected = conversas.find((c: any) => c.id === selectedId);
 
+  // Templates rápidos
+  const { data: templates = [] } = useQuery({
+    queryKey: ["crm-templates", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("crm_templates").select("*").eq("empresa_id", empresaId!).order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Notas internas
+  const { data: notas = [] } = useQuery({
+    queryKey: ["crm-notas", selectedId],
+    enabled: !!selectedId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("crm_notas_conversa").select("*")
+        .eq("conversa_id", selectedId!).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Agendadas pendentes da conversa
+  const { data: agendadas = [] } = useQuery({
+    queryKey: ["crm-agendadas", selectedId],
+    enabled: !!selectedId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("crm_mensagens_agendadas").select("*")
+        .eq("conversa_id", selectedId!).order("agendada_para");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Detecta atalho /xxx no draft
+  const slashMatch = draft.match(/(?:^|\s)\/(\w*)$/);
+  const slashSuggestions = slashMatch
+    ? templates.filter((t: any) => !slashMatch[1] || t.atalho?.toLowerCase().startsWith(slashMatch[1].toLowerCase())).slice(0, 6)
+    : [];
+
+  const applyTemplate = (t: any) => {
+    const nome = selected?.contato?.nome ?? "";
+    let conteudo = String(t.conteudo)
+      .replace(/\{\{nome\}\}/g, nome)
+      .replace(/\{\{primeiro_nome\}\}/g, nome.split(" ")[0]);
+    // remove o /atalho digitado
+    setDraft(draft.replace(/(?:^|\s)\/\w*$/, (m) => (m.startsWith(" ") ? " " : "") + conteudo));
+  };
+
   // Mensagens da conversa selecionada
   const { data: mensagens = [], isLoading: loadingMsgs } = useQuery({
     queryKey: ["crm-mensagens", selectedId],
@@ -78,6 +137,14 @@ export default function CRMConversasPage() {
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "crm_conversas" }, () => {
         qc.invalidateQueries({ queryKey: ["crm-conversas"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "crm_notas_conversa" }, (payload: any) => {
+        const cid = payload.new?.conversa_id ?? payload.old?.conversa_id;
+        if (cid) qc.invalidateQueries({ queryKey: ["crm-notas", cid] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "crm_mensagens_agendadas" }, (payload: any) => {
+        const cid = payload.new?.conversa_id ?? payload.old?.conversa_id;
+        if (cid) qc.invalidateQueries({ queryKey: ["crm-agendadas", cid] });
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
