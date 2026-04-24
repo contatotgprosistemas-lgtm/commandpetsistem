@@ -37,6 +37,7 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import CadastroPublicoPage from "@/pages/CadastroPublicoPage";
 import NotFound from "@/pages/NotFound";
 import UnsubscribePage from "@/pages/UnsubscribePage";
+import InstallAppPage from "@/pages/InstallAppPage";
 
 // Operacional pages
 import OperacionalLoginPage from "@/pages/operacional/OperacionalLoginPage";
@@ -105,6 +106,7 @@ const App = () => (
             <Route path="/cadastro/:empresaId" element={<CadastroPublicoPage />} />
             <Route path="/assinar/:token" element={<ContractSignPage />} />
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
+            <Route path="/install" element={<InstallAppPage />} />
 
             {/* Portal do Cliente auth */}
             <Route path="/portal/login" element={<PortalLoginPage />} />
