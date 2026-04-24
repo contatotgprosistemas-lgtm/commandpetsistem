@@ -1035,3 +1035,40 @@ function FaturamentoChart({ data }: { data: { dia: string; pendente: number; pag
     </div>
   );
 }
+
+/* Resumo semanal por categoria (Escola / Hotel / Banho) */
+function WeeklyCategorySummary({
+  title,
+  icon,
+  accent,
+  data,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  accent: "emerald" | "amber" | "sky";
+  data: { dias: { label: string; count: number }[]; total: number };
+}) {
+  const accentClasses: Record<string, { ring: string; text: string; bg: string }> = {
+    emerald: { ring: "border-emerald-200 dark:border-emerald-900/50", text: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
+    amber: { ring: "border-amber-200 dark:border-amber-900/50", text: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30" },
+    sky: { ring: "border-sky-200 dark:border-sky-900/50", text: "text-sky-600 dark:text-sky-400", bg: "bg-sky-50 dark:bg-sky-950/30" },
+  };
+  const a = accentClasses[accent];
+  return (
+    <div className="bg-card rounded-xl border border-border/60 p-4 shadow-card">
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`inline-flex items-center justify-center h-7 w-7 rounded-md ${a.bg} ${a.text}`}>{icon}</span>
+        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">{title}</h2>
+        <span className={`ml-1 text-sm font-semibold ${a.text}`}>— {data.total}</span>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        {data.dias.map((d) => (
+          <div key={d.label} className={`rounded-lg border ${a.ring} p-3 text-center bg-background/50`}>
+            <div className="text-2xl font-bold text-foreground leading-none">{d.count}</div>
+            <div className="text-xs text-muted-foreground mt-1.5">{d.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
