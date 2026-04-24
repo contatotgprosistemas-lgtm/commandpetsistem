@@ -5,7 +5,7 @@ import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { format, startOfDay, addDays, subDays, startOfWeek, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarCheck, Search, Filter, PawPrint, User, Hotel, Scissors, TreePine, HelpCircle, Pencil, Trash2, Car } from "lucide-react";
+import { CalendarCheck, Search, Filter, PawPrint, User, Hotel, Scissors, GraduationCap, HelpCircle, Pencil, Trash2, Car } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,7 +77,7 @@ const serviceGroups: ServiceGroup[] = [
   },
   {
     label: "ESCOLA / DAYCARE",
-    icon: TreePine,
+    icon: GraduationCap,
     color: "text-violet-600",
     borderColor: "border-violet-500",
     keywords: ["escola", "daycare", "creche", "day_care"],
