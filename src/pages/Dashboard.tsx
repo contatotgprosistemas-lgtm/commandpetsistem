@@ -220,6 +220,19 @@ export default function Dashboard() {
     return () => clearTimeout(timerId);
   }, []);
 
+  // Realtime: refetch agendamentos when any change occurs
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-agendamentos-rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "agendamentos" },
+        () => { fetchAgendamentos(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   async function handleCheckin(item: Agendamento) {
     const now = new Date();
     const horaEntrada = format(now, "HH:mm");
@@ -377,6 +390,43 @@ export default function Dashboard() {
     pet_nome: a.pet?.nome || "—", driver_nome: null, type_nome: a.tipo_servico, source: "agendamento",
   }))];
   const todayFormatted = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+
+  // ===== Resumo semanal por categoria (Escola, Hotel, Banho) =====
+  const weeklyStats = useMemo(() => {
+    // Semana atual (segunda a domingo)
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=dom..6=sab
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const weekStart = startOfDay(new Date(now));
+    weekStart.setDate(weekStart.getDate() + diffToMonday);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const labels = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+    const empty = () => labels.map((l) => ({ label: l, count: 0 }));
+    const escola = empty();
+    const hotel = empty();
+    const banho = empty();
+
+    for (const a of agendamentos) {
+      if (a.status === "cancelado" || a.status === "falta" || a.status === "troca") continue;
+      const d = new Date(a.data_hora);
+      if (d < weekStart || d >= weekEnd) continue;
+      const dow = d.getDay();
+      const idx = dow === 0 ? 6 : dow - 1; // 0=segunda..6=domingo
+      const t = (a.tipo_servico || "").toLowerCase();
+      if (/escola|daycare|creche|adestr/.test(t)) escola[idx].count++;
+      else if (/hotel|hosped|pernoit|diár|diari/.test(t)) hotel[idx].count++;
+      else if (/banho|tosa|estét|estetic/.test(t)) banho[idx].count++;
+    }
+
+    const sum = (arr: { count: number }[]) => arr.reduce((acc, x) => acc + x.count, 0);
+    return {
+      escola: { dias: escola, total: sum(escola) },
+      hotel: { dias: hotel, total: sum(hotel) },
+      banho: { dias: banho, total: sum(banho) },
+    };
+  }, [agendamentos]);
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[1400px]">
