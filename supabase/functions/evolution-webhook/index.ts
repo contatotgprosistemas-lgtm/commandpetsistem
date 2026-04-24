@@ -13,6 +13,27 @@ const EVOLUTION_KEY = Deno.env.get("EVOLUTION_API_KEY") ?? "";
 
 function onlyDigits(s: string) { return (s ?? "").replace(/\D/g, ""); }
 
+function dentroDoExpediente(cfg: any): boolean {
+  if (!cfg?.ativo) return true; // sem horário = sempre dentro
+  try {
+    const tz = cfg.fuso ?? "America/Sao_Paulo";
+    const now = new Date();
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hour12: false, weekday: "short",
+      hour: "2-digit", minute: "2-digit", year: "numeric", month: "2-digit", day: "2-digit",
+    });
+    const parts = Object.fromEntries(fmt.formatToParts(now).map((p) => [p.type, p.value]));
+    const wdMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const wd = wdMap[parts.weekday] ?? 0;
+    const ymd = `${parts.year}-${parts.month}-${parts.day}`;
+    const feriados: string[] = Array.isArray(cfg.feriados) ? cfg.feriados : [];
+    if (feriados.includes(ymd)) return false;
+    const hhmm = `${parts.hour}:${parts.minute}`;
+    const slots: { inicio: string; fim: string }[] = (cfg.horarios?.[String(wd)] ?? []);
+    return slots.some((s) => hhmm >= s.inicio && hhmm <= s.fim);
+  } catch { return true; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
