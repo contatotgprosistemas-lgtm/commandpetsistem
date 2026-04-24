@@ -81,6 +81,8 @@ export default function CRMConversasPage() {
         .from("profiles")
         .select("user_id, nome, email, cargo")
         .eq("empresa_id", empresaId!)
+        .eq("aprovado", true)
+        .in("cargo", ["admin", "gerente", "atendente", "financeiro", "operacional", "banhista"])
         .order("nome");
       if (error) throw error;
       return data ?? [];
