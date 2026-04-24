@@ -2124,6 +2124,91 @@ export type Database = {
           },
         ]
       }
+      crm_mensagens_agendadas: {
+        Row: {
+          agendada_para: string
+          conteudo: string
+          conversa_id: string
+          created_at: string
+          created_by: string | null
+          empresa_id: string
+          enviada_em: string | null
+          erro: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          agendada_para: string
+          conteudo: string
+          conversa_id: string
+          created_at?: string
+          created_by?: string | null
+          empresa_id: string
+          enviada_em?: string | null
+          erro?: string | null
+          id?: string
+          status?: string
+        }
+        Update: {
+          agendada_para?: string
+          conteudo?: string
+          conversa_id?: string
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string
+          enviada_em?: string | null
+          erro?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_mensagens_agendadas_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "crm_conversas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_notas_conversa: {
+        Row: {
+          autor_id: string | null
+          autor_nome: string | null
+          conteudo: string
+          conversa_id: string
+          created_at: string
+          empresa_id: string
+          id: string
+        }
+        Insert: {
+          autor_id?: string | null
+          autor_nome?: string | null
+          conteudo: string
+          conversa_id: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+        }
+        Update: {
+          autor_id?: string | null
+          autor_nome?: string | null
+          conteudo?: string
+          conversa_id?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_notas_conversa_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "crm_conversas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_pipeline_etapas: {
         Row: {
           cor: string
@@ -2327,6 +2412,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crm_templates: {
+        Row: {
+          atalho: string | null
+          categoria: string | null
+          conteudo: string
+          created_at: string
+          created_by: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          atalho?: string | null
+          categoria?: string | null
+          conteudo: string
+          created_at?: string
+          created_by?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          atalho?: string | null
+          categoria?: string | null
+          conteudo?: string
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       customer_addresses: {
         Row: {
