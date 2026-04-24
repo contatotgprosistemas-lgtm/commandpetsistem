@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
     const now = new Date().toISOString();
 
-    await admin.from("crm_mensagens").insert({
+    const { error: messageInsertError } = await admin.from("crm_mensagens").insert({
       empresa_id: empresaId,
       conversa_id,
       tipo,
@@ -91,12 +91,15 @@ Deno.serve(async (req) => {
       midia_url: midia_url ?? null,
       midia_mimetype: midia_mimetype ?? null,
       midia_filename: midia_filename ?? null,
-      status: "enviada",
+      status: "enviado",
       remetente_id: userId,
       remetente_nome: profile?.nome,
       identificador_externo: externalId,
       enviada_em: now,
     });
+    if (messageInsertError) {
+      throw new Error(`Falha ao salvar mensagem no CRM: ${messageInsertError.message}`);
+    }
 
     await admin.from("crm_conversas").update({
       ultima_mensagem: conteudo || `[${tipo}]`,

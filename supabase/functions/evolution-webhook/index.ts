@@ -184,11 +184,14 @@ Deno.serve(async (req) => {
               body: JSON.stringify({ number: numero, text: txt }),
             });
             const nowIso = new Date().toISOString();
-            await admin.from("crm_mensagens").insert({
+            const { error: menuMessageError } = await admin.from("crm_mensagens").insert({
               empresa_id: canal.empresa_id, conversa_id: conv.id, tipo: "texto",
-              direcao: "saida", conteudo: txt, status: "enviada",
+              direcao: "saida", conteudo: txt, status: "enviado",
               remetente_nome: "🤖 Menu", enviada_em: nowIso,
             });
+            if (menuMessageError) {
+              console.error("crm_mensagens insert error (menu):", menuMessageError);
+            }
             await admin.from("crm_conversas").update({
               aguardando_setor: true, ultima_mensagem: txt, ultima_mensagem_em: nowIso,
             }).eq("id", conv.id);
@@ -262,7 +265,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      await admin.from("crm_mensagens").insert({
+      const { error: messageInsertError } = await admin.from("crm_mensagens").insert({
         empresa_id: canal.empresa_id,
         conversa_id: conv.id,
         tipo: (mediaInfo?.kind ?? "texto") as any,
@@ -277,6 +280,9 @@ Deno.serve(async (req) => {
         enviada_em: ts,
         remetente_nome: fromMe ? null : pushName,
       });
+      if (messageInsertError) {
+        console.error("crm_mensagens insert error (webhook):", messageInsertError);
+      }
 
       await admin.from("crm_conversas").update({
         ultima_mensagem: mediaInfo ? `[${mediaInfo.kind}] ${text === "[mídia]" ? "" : text}`.trim() : text,
@@ -310,11 +316,14 @@ Deno.serve(async (req) => {
                 body: JSON.stringify({ number: numero, text: txt }),
               });
               const nowIso = new Date().toISOString();
-              await admin.from("crm_mensagens").insert({
+              const { error: awayMessageError } = await admin.from("crm_mensagens").insert({
                 empresa_id: canal.empresa_id, conversa_id: conv.id, tipo: "texto",
-                direcao: "saida", conteudo: txt, status: "enviada",
+                direcao: "saida", conteudo: txt, status: "enviado",
                 remetente_nome: "🌙 Auto (fora do expediente)", enviada_em: nowIso,
               });
+              if (awayMessageError) {
+                console.error("crm_mensagens insert error (away):", awayMessageError);
+              }
               await admin.from("crm_conversas").update({
                 aviso_ausencia_em: nowIso, ultima_mensagem: txt, ultima_mensagem_em: nowIso,
               }).eq("id", conv.id);
@@ -365,11 +374,14 @@ Deno.serve(async (req) => {
                       body: JSON.stringify({ number: numero, text: txt }),
                     });
                     const nowIso = new Date().toISOString();
-                    await admin.from("crm_mensagens").insert({
+                    const { error: flowMessageError } = await admin.from("crm_mensagens").insert({
                       empresa_id: canal.empresa_id, conversa_id: conv.id, tipo: "texto",
-                      direcao: "saida", conteudo: txt, status: "enviada",
+                      direcao: "saida", conteudo: txt, status: "enviado",
                       remetente_nome: `🤖 ${flow.nome}`, enviada_em: nowIso,
                     });
+                    if (flowMessageError) {
+                      console.error("crm_mensagens insert error (flow):", flowMessageError);
+                    }
                     await admin.from("crm_conversas").update({
                       ultima_mensagem: txt, ultima_mensagem_em: nowIso,
                     }).eq("id", conv.id);

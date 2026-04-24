@@ -226,6 +226,22 @@ export default function CRMConversasPage() {
     },
   });
 
+  const mensagensExibidas = useMemo(() => {
+    if (mensagens.length > 0) return mensagens;
+    if (!selected?.ultima_mensagem) return [];
+
+    return [{
+      id: `fallback-${selected.id}`,
+      direcao: "entrada",
+      conteudo: selected.ultima_mensagem,
+      enviada_em: selected.ultima_mensagem_em,
+      remetente_nome: selected.contato?.nome ?? null,
+      midia_url: null,
+      midia_mimetype: null,
+      midia_filename: null,
+    }];
+  }, [mensagens, selected]);
+
   // Realtime
   useEffect(() => {
     if (!empresaId) return;
@@ -646,7 +662,7 @@ export default function CRMConversasPage() {
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-[hsl(var(--muted)/0.2)]">
               {loadingMsgs ? (
                 <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-              ) : mensagens.length === 0 ? (
+              ) : mensagensExibidas.length === 0 ? (
                 <div className="text-center py-12 text-sm text-muted-foreground">Sem mensagens ainda.</div>
               ) : (
                 <>
@@ -656,7 +672,7 @@ export default function CRMConversasPage() {
                       Hoje
                     </span>
                   </div>
-                  {mensagens.map((m: any) => {
+                  {mensagensExibidas.map((m: any) => {
                     const out = m.direcao === "saida";
                     const isImg = m.midia_url && (m.midia_mimetype ?? "").startsWith("image/");
                     const isVideo = m.midia_url && (m.midia_mimetype ?? "").startsWith("video/");
