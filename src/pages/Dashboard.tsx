@@ -600,25 +600,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Resumo semanal por categoria — atualizado em tempo real */}
-      <WeeklyCategorySummary
-        title="Escola por semana"
-        icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />}
-        accent="emerald"
-        data={weeklyStats.escola}
-      />
-      <WeeklyCategorySummary
-        title="Hotel por semana"
-        icon={<Hotel className="h-4 w-4" strokeWidth={1.5} />}
-        accent="amber"
-        data={weeklyStats.hotel}
-      />
-      <WeeklyCategorySummary
-        title="Banho por semana"
-        icon={<ShowerHead className="h-4 w-4" strokeWidth={1.5} />}
-        accent="sky"
-        data={weeklyStats.banho}
-      />
+      {/* Resumo semanal — 1 card por dia, com totais por serviço (tempo real) */}
+      <WeeklyDaysSummary weeklyStats={weeklyStats} />
 
       {/* Mass checkout confirmation */}
       <Dialog open={massCheckoutOpen} onOpenChange={setMassCheckoutOpen}>
@@ -1036,38 +1019,74 @@ function FaturamentoChart({ data }: { data: { dia: string; pendente: number; pag
   );
 }
 
-/* Resumo semanal por categoria (Escola / Hotel / Banho) */
-function WeeklyCategorySummary({
-  title,
-  icon,
-  accent,
-  data,
+/* Resumo semanal — um card por dia da semana, com totais por serviço */
+function WeeklyDaysSummary({
+  weeklyStats,
 }: {
-  title: string;
-  icon: React.ReactNode;
-  accent: "emerald" | "amber" | "sky";
-  data: { dias: { label: string; count: number }[]; total: number };
-}) {
-  const accentClasses: Record<string, { ring: string; text: string; bg: string }> = {
-    emerald: { ring: "border-emerald-200 dark:border-emerald-900/50", text: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
-    amber: { ring: "border-amber-200 dark:border-amber-900/50", text: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30" },
-    sky: { ring: "border-sky-200 dark:border-sky-900/50", text: "text-sky-600 dark:text-sky-400", bg: "bg-sky-50 dark:bg-sky-950/30" },
+  weeklyStats: {
+    escola: { dias: { label: string; count: number }[]; total: number };
+    hotel: { dias: { label: string; count: number }[]; total: number };
+    banho: { dias: { label: string; count: number }[]; total: number };
   };
-  const a = accentClasses[accent];
+}) {
+  const labels = weeklyStats.escola.dias.map((d) => d.label);
+  const todayIdx = (() => {
+    const dow = new Date().getDay();
+    return dow === 0 ? 6 : dow - 1;
+  })();
+
   return (
     <div className="bg-card rounded-xl border border-border/60 p-4 shadow-card">
-      <div className="flex items-center gap-2 mb-3">
-        <span className={`inline-flex items-center justify-center h-7 w-7 rounded-md ${a.bg} ${a.text}`}>{icon}</span>
-        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">{title}</h2>
-        <span className={`ml-1 text-sm font-semibold ${a.text}`}>— {data.total}</span>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Resumo da Semana</h2>
+        <span className="text-xs text-muted-foreground">atualizado em tempo real</span>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-        {data.dias.map((d) => (
-          <div key={d.label} className={`rounded-lg border ${a.ring} p-3 text-center bg-background/50`}>
-            <div className="text-2xl font-bold text-foreground leading-none">{d.count}</div>
-            <div className="text-xs text-muted-foreground mt-1.5">{d.label}</div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        {labels.map((label, idx) => {
+          const escola = weeklyStats.escola.dias[idx].count;
+          const hotel = weeklyStats.hotel.dias[idx].count;
+          const banho = weeklyStats.banho.dias[idx].count;
+          const total = escola + hotel + banho;
+          const isToday = idx === todayIdx;
+          return (
+            <div
+              key={label}
+              className={`rounded-lg border p-3 bg-background/50 ${
+                isToday ? "border-primary/60 ring-1 ring-primary/30" : "border-border/60"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-xs font-semibold uppercase tracking-wide ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                  {label}
+                </span>
+                <span className="text-xs font-semibold text-foreground">{total}</span>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[12px]">
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    <GraduationCap className="h-3.5 w-3.5 text-emerald-600" strokeWidth={1.75} />
+                    Escola
+                  </span>
+                  <span className="font-semibold text-foreground tabular-nums">{escola}</span>
+                </div>
+                <div className="flex items-center justify-between text-[12px]">
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    <Hotel className="h-3.5 w-3.5 text-amber-600" strokeWidth={1.75} />
+                    Hotel
+                  </span>
+                  <span className="font-semibold text-foreground tabular-nums">{hotel}</span>
+                </div>
+                <div className="flex items-center justify-between text-[12px]">
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    <ShowerHead className="h-3.5 w-3.5 text-sky-600" strokeWidth={1.75} />
+                    Banho
+                  </span>
+                  <span className="font-semibold text-foreground tabular-nums">{banho}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
