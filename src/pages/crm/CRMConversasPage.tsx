@@ -596,6 +596,34 @@ export default function CRMConversasPage() {
                   <div className="text-xs font-semibold mb-1.5">Origem</div>
                   <div className="text-sm text-muted-foreground">{selected.contato?.origem ?? "—"}</div>
                 </div>
+                <div className="rounded-lg border p-3 space-y-1.5">
+                  <div className="text-xs font-semibold flex items-center gap-1.5">
+                    <Timer className="h-3 w-3 text-primary" /> Atendimento
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Responsável: <span className="text-foreground font-medium">
+                      {selected.atendente_id
+                        ? (membros.find((m: any) => m.user_id === selected.atendente_id)?.nome ?? "—")
+                        : "Sem responsável"}
+                    </span>
+                  </div>
+                  {selected.assumida_em && (
+                    <div className="text-xs text-muted-foreground">
+                      Assumida em: <span className="text-foreground">{format(new Date(selected.assumida_em), "dd/MM HH:mm")}</span>
+                    </div>
+                  )}
+                  {selected.tempo_primeira_resposta_seg != null && (
+                    <div className="text-xs text-muted-foreground">
+                      1ª resposta em: <span className="text-foreground font-medium">
+                        {selected.tempo_primeira_resposta_seg < 60
+                          ? `${selected.tempo_primeira_resposta_seg}s`
+                          : selected.tempo_primeira_resposta_seg < 3600
+                          ? `${Math.round(selected.tempo_primeira_resposta_seg / 60)} min`
+                          : `${(selected.tempo_primeira_resposta_seg / 3600).toFixed(1)} h`}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="notas" className="space-y-3 mt-4">
