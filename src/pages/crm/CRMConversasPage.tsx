@@ -54,10 +54,23 @@ export default function CRMConversasPage() {
   const [notaDraft, setNotaDraft] = useState("");
   const [meId, setMeId] = useState<string | null>(null);
   const [composerMode, setComposerMode] = useState<"mensagem" | "nota">("mensagem");
+  const [setorFiltro, setSetorFiltro] = useState<string>("todos");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
   }, []);
+
+  // Setores da empresa
+  const { data: setores = [] } = useQuery({
+    queryKey: ["crm-setores", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("crm_setores")
+        .select("id, nome, cor").eq("empresa_id", empresaId!).order("ordem").order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   // Membros da empresa para transferir conversas
   const { data: membros = [] } = useQuery({
@@ -139,6 +152,9 @@ export default function CRMConversasPage() {
     if (filterTab === "nao_lidas") arr = arr.filter((c: any) => (c.nao_lidas ?? 0) > 0);
     else if (filterTab === "atribuidas") arr = arr.filter((c: any) => !!c.atendente_id);
     else if (filterTab === "aguardando") arr = arr.filter((c: any) => !c.atendente_id);
+    if (setorFiltro !== "todos") {
+      arr = arr.filter((c: any) => (setorFiltro === "sem" ? !c.setor_id : c.setor_id === setorFiltro));
+    }
     const s = search.trim().toLowerCase();
     if (!s) return arr;
     return arr.filter((c: any) =>
@@ -146,7 +162,7 @@ export default function CRMConversasPage() {
       c.contato?.whatsapp?.includes(s) ||
       c.ultima_mensagem?.toLowerCase().includes(s)
     );
-  }, [conversas, search, filterTab]);
+  }, [conversas, search, filterTab, setorFiltro]);
 
   // Templates rápidos
   const { data: templates = [] } = useQuery({
