@@ -393,6 +393,26 @@ export default function CRMConversasPage() {
 
             {/* Composer */}
             <div className="border-t p-3 shrink-0 bg-background">
+              {slashSuggestions.length > 0 && (
+                <div className="mb-2 rounded-lg border bg-popover shadow-md max-h-48 overflow-y-auto">
+                  {slashSuggestions.map((t: any) => (
+                    <button key={t.id} onClick={() => applyTemplate(t)}
+                      className="w-full text-left px-3 py-2 hover:bg-muted/60 border-b last:border-b-0">
+                      <div className="flex items-center gap-2 text-xs">
+                        <code className="px-1.5 py-0.5 rounded bg-primary/10 text-primary">/{t.atalho}</code>
+                        <span className="font-medium">{t.nome}</span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground truncate mt-0.5">{t.conteudo}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {agendadas.filter((a: any) => a.status === "pendente").length > 0 && (
+                <div className="mb-2 px-3 py-1.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[11px] flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" />
+                  {agendadas.filter((a: any) => a.status === "pendente").length} mensagem(ns) agendada(s) — veja no painel do contato.
+                </div>
+              )}
               <div className="flex items-end gap-2">
                 <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => aiAction("suggest")} disabled={aiLoading === "suggest"} title="Sugerir resposta com IA">
                   {aiLoading === "suggest" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-primary" />}
@@ -407,11 +427,41 @@ export default function CRMConversasPage() {
                 <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => fileRef.current?.click()} disabled={uploading} title="Anexar arquivo">
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
                 </Button>
+                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0"
+                  onClick={() => { setScheduleDraft(draft); setScheduleOpen(true); }} title="Agendar mensagem">
+                  <Clock className="h-4 w-4" />
+                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" title="Modelos rápidos">
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0" align="end">
+                    <div className="p-2 border-b text-xs font-medium text-muted-foreground">Modelos de mensagem</div>
+                    <div className="max-h-64 overflow-y-auto">
+                      {templates.length === 0 ? (
+                        <div className="p-4 text-center text-xs text-muted-foreground">
+                          Nenhum modelo. Crie em Modelos.
+                        </div>
+                      ) : (templates as any[]).map((t: any) => (
+                        <button key={t.id} onClick={() => applyTemplate(t)}
+                          className="w-full text-left px-3 py-2 hover:bg-muted/60 border-b last:border-b-0">
+                          <div className="flex items-center gap-2 text-xs font-medium">
+                            {t.nome}
+                            {t.atalho && <code className="px-1 py-0.5 rounded bg-primary/10 text-primary text-[10px]">/{t.atalho}</code>}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground truncate">{t.conteudo}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  placeholder="Escreva uma mensagem..."
+                  placeholder="Escreva uma mensagem... (digite / para usar modelos)"
                   className="h-10"
                 />
                 <Button onClick={send} disabled={!draft.trim() || sending} size="icon" className="h-10 w-10 shrink-0">
@@ -426,43 +476,130 @@ export default function CRMConversasPage() {
       {/* Drawer do contato */}
       <Sheet open={contactOpen} onOpenChange={setContactOpen}>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-          <SheetHeader><SheetTitle>Detalhes do contato</SheetTitle></SheetHeader>
+          <SheetHeader><SheetTitle>Painel da conversa</SheetTitle></SheetHeader>
           {selected && (
-            <div className="mt-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-14 w-14 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-semibold">
-                  {(selected.contato?.nome ?? "?").charAt(0).toUpperCase()}
+            <Tabs defaultValue="contato" className="mt-4">
+              <TabsList className="w-full grid grid-cols-3">
+                <TabsTrigger value="contato" className="gap-1.5"><User className="h-3.5 w-3.5" />Contato</TabsTrigger>
+                <TabsTrigger value="notas" className="gap-1.5"><StickyNote className="h-3.5 w-3.5" />Notas {notas.length > 0 && <span className="text-[10px]">({notas.length})</span>}</TabsTrigger>
+                <TabsTrigger value="agendadas" className="gap-1.5"><Clock className="h-3.5 w-3.5" />Agendadas {agendadas.length > 0 && <span className="text-[10px]">({agendadas.length})</span>}</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="contato" className="space-y-4 mt-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-14 w-14 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-semibold">
+                    {(selected.contato?.nome ?? "?").charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-semibold">{selected.contato?.nome}</div>
+                    <div className="text-xs text-muted-foreground">Cliente · score {selected.contato?.score ?? 0}</div>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-muted-foreground" />{selected.contato?.whatsapp ?? "—"}</div>
+                  <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" />{selected.contato?.email ?? "—"}</div>
+                  <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" />{selected.contato?.empresa ?? "—"}</div>
+                </div>
+                {selected.resumo_ia && (
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <div className="text-xs font-semibold flex items-center gap-1.5 mb-1.5">
+                      <Sparkles className="h-3 w-3 text-primary" /> Resumo IA
+                    </div>
+                    <p className="text-xs whitespace-pre-wrap text-muted-foreground">{selected.resumo_ia}</p>
+                  </div>
+                )}
+                <div>
+                  <div className="text-xs font-semibold mb-1.5">Canal</div>
+                  <Badge variant="outline">{selected.canal?.nome}</Badge>
                 </div>
                 <div>
-                  <div className="font-semibold">{selected.contato?.nome}</div>
-                  <div className="text-xs text-muted-foreground">Cliente · score {selected.contato?.score ?? 0}</div>
+                  <div className="text-xs font-semibold mb-1.5">Origem</div>
+                  <div className="text-sm text-muted-foreground">{selected.contato?.origem ?? "—"}</div>
                 </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-muted-foreground" />{selected.contato?.whatsapp ?? "—"}</div>
-                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" />{selected.contato?.email ?? "—"}</div>
-                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" />{selected.contato?.empresa ?? "—"}</div>
-              </div>
-              {selected.resumo_ia && (
-                <div className="rounded-lg border bg-muted/30 p-3">
-                  <div className="text-xs font-semibold flex items-center gap-1.5 mb-1.5">
-                    <Sparkles className="h-3 w-3 text-primary" /> Resumo IA
-                  </div>
-                  <p className="text-xs whitespace-pre-wrap text-muted-foreground">{selected.resumo_ia}</p>
+              </TabsContent>
+
+              <TabsContent value="notas" className="space-y-3 mt-4">
+                <div className="space-y-1.5">
+                  <Textarea rows={3} value={notaDraft} onChange={(e) => setNotaDraft(e.target.value)}
+                    placeholder="Anote algo (visível só pra equipe)..." />
+                  <Button size="sm" onClick={addNota} disabled={!notaDraft.trim()} className="w-full gap-1.5">
+                    <StickyNote className="h-3.5 w-3.5" /> Adicionar nota
+                  </Button>
                 </div>
-              )}
-              <div>
-                <div className="text-xs font-semibold mb-1.5">Canal</div>
-                <Badge variant="outline">{selected.canal?.nome}</Badge>
-              </div>
-              <div>
-                <div className="text-xs font-semibold mb-1.5">Origem</div>
-                <div className="text-sm text-muted-foreground">{selected.contato?.origem ?? "—"}</div>
-              </div>
-            </div>
+                <div className="space-y-2">
+                  {notas.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-6">Nenhuma nota ainda.</p>
+                  ) : notas.map((n: any) => (
+                    <div key={n.id} className="rounded-lg border bg-amber-500/5 border-amber-500/30 p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium">{n.autor_nome ?? "—"}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {format(new Date(n.created_at), "dd/MM HH:mm")}
+                        </span>
+                      </div>
+                      <p className="text-xs whitespace-pre-wrap">{n.conteudo}</p>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="agendadas" className="space-y-3 mt-4">
+                <Button size="sm" className="w-full gap-1.5" onClick={() => { setScheduleDraft(""); setScheduleOpen(true); }}>
+                  <Clock className="h-3.5 w-3.5" /> Nova mensagem agendada
+                </Button>
+                <div className="space-y-2">
+                  {agendadas.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-6">Nenhuma agendada.</p>
+                  ) : agendadas.map((a: any) => (
+                    <div key={a.id} className="rounded-lg border p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <Badge variant={a.status === "pendente" ? "secondary" : a.status === "enviada" ? "default" : "destructive"} className="text-[10px]">
+                          {a.status}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">
+                          {format(new Date(a.agendada_para), "dd/MM 'às' HH:mm")}
+                        </span>
+                      </div>
+                      <p className="text-xs whitespace-pre-wrap mb-2">{a.conteudo}</p>
+                      {a.erro && <p className="text-[10px] text-destructive mb-1">{a.erro}</p>}
+                      {a.status === "pendente" && (
+                        <Button size="sm" variant="ghost" className="h-7 text-[11px] text-destructive"
+                          onClick={() => cancelarAgendada(a.id)}>Cancelar</Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Dialog Agendar mensagem */}
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Agendar mensagem</DialogTitle>
+            <DialogDescription>A mensagem será enviada automaticamente no horário escolhido.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label>Mensagem</Label>
+              <Textarea rows={4} value={scheduleDraft} onChange={(e) => setScheduleDraft(e.target.value)} placeholder="Olá {{primeiro_nome}}, ..." />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Enviar em</Label>
+              <Input type="datetime-local" value={scheduleAt} onChange={(e) => setScheduleAt(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleOpen(false)}>Cancelar</Button>
+            <Button onClick={agendar} disabled={!scheduleDraft.trim() || !scheduleAt}>
+              <Clock className="h-4 w-4 mr-1.5" /> Agendar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
