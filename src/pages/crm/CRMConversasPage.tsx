@@ -11,7 +11,7 @@ import {
   Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare,
   ArrowLeft, Paperclip, FileText as FileIcon, Download, Clock, StickyNote,
   UserCheck, UserPlus, Timer, Filter, Smile, Mic, MoreVertical, Video, Phone as PhoneIcon,
-  Building2, MapPin, Tag, ChevronDown, Star, PanelRightOpen, Zap,
+  Building2, MapPin, Tag, ChevronDown, Star, PanelRightOpen, Zap, X,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -54,10 +54,23 @@ export default function CRMConversasPage() {
   const [notaDraft, setNotaDraft] = useState("");
   const [meId, setMeId] = useState<string | null>(null);
   const [composerMode, setComposerMode] = useState<"mensagem" | "nota">("mensagem");
+  const [setorFiltro, setSetorFiltro] = useState<string>("todos");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id ?? null));
   }, []);
+
+  // Setores da empresa
+  const { data: setores = [] } = useQuery({
+    queryKey: ["crm-setores", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("crm_setores")
+        .select("id, nome, cor").eq("empresa_id", empresaId!).order("ordem").order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   // Membros da empresa para transferir conversas
   const { data: membros = [] } = useQuery({
@@ -89,7 +102,7 @@ export default function CRMConversasPage() {
     enabled: !!empresaId,
     queryFn: async () => {
       const { data, error } = await supabase.from("crm_conversas")
-        .select("*, contato:crm_contatos(*), canal:crm_canais(nome, cor)")
+        .select("*, contato:crm_contatos(*), canal:crm_canais(nome, cor), setor:crm_setores(id, nome, cor)")
         .eq("empresa_id", empresaId!)
         .eq("arquivada", false)
         .order("ultima_mensagem_em", { ascending: false, nullsFirst: false })
@@ -139,6 +152,9 @@ export default function CRMConversasPage() {
     if (filterTab === "nao_lidas") arr = arr.filter((c: any) => (c.nao_lidas ?? 0) > 0);
     else if (filterTab === "atribuidas") arr = arr.filter((c: any) => !!c.atendente_id);
     else if (filterTab === "aguardando") arr = arr.filter((c: any) => !c.atendente_id);
+    if (setorFiltro !== "todos") {
+      arr = arr.filter((c: any) => (setorFiltro === "sem" ? !c.setor_id : c.setor_id === setorFiltro));
+    }
     const s = search.trim().toLowerCase();
     if (!s) return arr;
     return arr.filter((c: any) =>
@@ -146,7 +162,7 @@ export default function CRMConversasPage() {
       c.contato?.whatsapp?.includes(s) ||
       c.ultima_mensagem?.toLowerCase().includes(s)
     );
-  }, [conversas, search, filterTab]);
+  }, [conversas, search, filterTab, setorFiltro]);
 
   // Templates rápidos
   const { data: templates = [] } = useQuery({
@@ -411,6 +427,20 @@ export default function CRMConversasPage() {
           ))}
         </div>
 
+        {setores.length > 0 && (
+          <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide border-b">
+            {[{ id: "todos", nome: "Todos setores", cor: "" }, { id: "sem", nome: "Sem setor", cor: "" }, ...setores].map((s: any) => (
+              <button key={s.id} onClick={() => setSetorFiltro(s.id)}
+                className={`shrink-0 text-[11px] font-medium px-2.5 py-1 rounded-full transition-colors flex items-center gap-1.5 ${
+                  setorFiltro === s.id ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                }`}>
+                {s.cor && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.cor }} />}
+                {s.nome}
+              </button>
+            ))}
+          </div>
+        )}
+
         <ScrollArea className="flex-1">
           {loadingConversas ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
@@ -462,6 +492,13 @@ export default function CRMConversasPage() {
                           <span className="text-[9px] uppercase tracking-wide text-muted-foreground/70">
                             {c.canal.nome}
                           </span>
+                        )}
+                        {c.setor && (
+                          <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4 gap-1"
+                            style={{ borderColor: c.setor.cor, color: c.setor.cor }}>
+                            <Building2 className="h-2.5 w-2.5" />
+                            {c.setor.nome}
+                          </Badge>
                         )}
                         {c.atendente_id ? (
                           <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4 gap-1 border-success/30 text-success">
@@ -571,6 +608,36 @@ export default function CRMConversasPage() {
                   <DropdownMenuItem onClick={() => setContactOpen(true)} className="gap-2 text-sm lg:hidden">
                     <PanelRightOpen className="h-3.5 w-3.5" /> Painel do contato
                   </DropdownMenuItem>
+                  {setores.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-[10px] text-muted-foreground">Mover para setor</DropdownMenuLabel>
+                      <div className="max-h-40 overflow-y-auto">
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            const { error } = await supabase.from("crm_conversas")
+                              .update({ setor_id: null, atendente_id: null }).eq("id", selected.id);
+                            if (error) toast.error(error.message);
+                            else { toast.success("Sem setor"); qc.invalidateQueries({ queryKey: ["crm-conversas"] }); }
+                          }}
+                          className="gap-2 text-sm">
+                          <X className="h-3.5 w-3.5" /> Sem setor
+                        </DropdownMenuItem>
+                        {setores.map((s: any) => (
+                          <DropdownMenuItem key={s.id} onClick={async () => {
+                            const { error } = await supabase.from("crm_conversas")
+                              .update({ setor_id: s.id, atendente_id: null }).eq("id", selected.id);
+                            if (error) toast.error(error.message);
+                            else { toast.success(`Movida para ${s.nome}`); qc.invalidateQueries({ queryKey: ["crm-conversas"] }); }
+                          }} className="gap-2 text-sm">
+                            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: s.cor }} />
+                            <span className="truncate">{s.nome}</span>
+                            {selected.setor_id === s.id && <UserCheck className="h-3 w-3 ml-auto text-success" />}
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
