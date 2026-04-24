@@ -46,7 +46,21 @@ Deno.serve(async (req) => {
     console.log("webhook:", event, "instance:", instance);
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-    const { data: canal } = await admin.from("crm_canais").select("*").eq("identificador", instance).maybeSingle();
+    // Procura o canal: primeiro pelo identificador exato; se não achar,
+    // tenta encontrar pelo nome da instância armazenado em config->>'instance'.
+    let { data: canal } = await admin
+      .from("crm_canais")
+      .select("*")
+      .eq("identificador", instance)
+      .maybeSingle();
+    if (!canal) {
+      const { data: byCfg } = await admin
+        .from("crm_canais")
+        .select("*")
+        .filter("config->>instance", "eq", instance)
+        .maybeSingle();
+      canal = byCfg ?? null;
+    }
     if (!canal) {
       console.warn("canal não encontrado:", instance);
       return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
