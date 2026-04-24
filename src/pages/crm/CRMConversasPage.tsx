@@ -493,6 +493,13 @@ export default function CRMConversasPage() {
                             {c.canal.nome}
                           </span>
                         )}
+                        {c.setor && (
+                          <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4 gap-1"
+                            style={{ borderColor: c.setor.cor, color: c.setor.cor }}>
+                            <Building2 className="h-2.5 w-2.5" />
+                            {c.setor.nome}
+                          </Badge>
+                        )}
                         {c.atendente_id ? (
                           <Badge variant="outline" className="text-[9px] py-0 px-1.5 h-4 gap-1 border-success/30 text-success">
                             <UserCheck className="h-2.5 w-2.5" />
