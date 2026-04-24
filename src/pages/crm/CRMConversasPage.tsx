@@ -211,6 +211,46 @@ export default function CRMConversasPage() {
     }
   };
 
+  const agendar = async () => {
+    if (!selectedId || !empresaId || !scheduleDraft.trim() || !scheduleAt) return;
+    const dt = new Date(scheduleAt);
+    if (isNaN(dt.getTime()) || dt.getTime() < Date.now()) {
+      toast.error("Escolha uma data/hora futura");
+      return;
+    }
+    const { error } = await supabase.from("crm_mensagens_agendadas").insert({
+      empresa_id: empresaId,
+      conversa_id: selectedId,
+      conteudo: scheduleDraft.trim(),
+      agendada_para: dt.toISOString(),
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Mensagem agendada");
+    setScheduleOpen(false); setScheduleDraft(""); setScheduleAt("");
+    qc.invalidateQueries({ queryKey: ["crm-agendadas", selectedId] });
+  };
+
+  const cancelarAgendada = async (id: string) => {
+    const { error } = await supabase.from("crm_mensagens_agendadas").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["crm-agendadas", selectedId] });
+    toast.success("Agendamento cancelado");
+  };
+
+  const addNota = async () => {
+    if (!selectedId || !empresaId || !notaDraft.trim()) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: prof } = await supabase.from("profiles").select("nome").eq("user_id", user!.id).maybeSingle();
+    const { error } = await supabase.from("crm_notas_conversa").insert({
+      empresa_id: empresaId, conversa_id: selectedId,
+      autor_id: user?.id, autor_nome: prof?.nome ?? "—",
+      conteudo: notaDraft.trim(),
+    });
+    if (error) { toast.error(error.message); return; }
+    setNotaDraft("");
+    qc.invalidateQueries({ queryKey: ["crm-notas", selectedId] });
+  };
+
   const aiAction = async (action: "suggest" | "summary") => {
     if (!selectedId) return;
     setAiLoading(action);
