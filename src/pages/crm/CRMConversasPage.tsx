@@ -385,6 +385,46 @@ export default function CRMConversasPage() {
                 {aiLoading === "summary" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                 <span className="hidden sm:inline">Resumir</span>
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    {selected.atendente_id ? <UserCheck className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}
+                    <span className="hidden sm:inline">
+                      {selected.atendente_id
+                        ? (membros.find((m: any) => m.user_id === selected.atendente_id)?.nome?.split(" ")[0] ?? "Atribuída")
+                        : "Atribuir"}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="text-xs">Responsável pela conversa</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {meId && selected.atendente_id !== meId && (
+                    <DropdownMenuItem onClick={() => atribuir(selected.id, meId)} className="gap-2 text-sm">
+                      <UserCheck className="h-3.5 w-3.5" /> Assumir para mim
+                    </DropdownMenuItem>
+                  )}
+                  {selected.atendente_id && (
+                    <DropdownMenuItem onClick={() => atribuir(selected.id, null)} className="gap-2 text-sm text-destructive">
+                      Liberar (sem responsável)
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] text-muted-foreground">Transferir para…</DropdownMenuLabel>
+                  <div className="max-h-48 overflow-y-auto">
+                    {membros.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">Nenhum membro</div>}
+                    {membros.map((m: any) => (
+                      <DropdownMenuItem key={m.user_id} onClick={() => atribuir(selected.id, m.user_id)} className="gap-2 text-sm">
+                        <span className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-semibold shrink-0">
+                          {(m.nome ?? "?").charAt(0).toUpperCase()}
+                        </span>
+                        <span className="truncate">{m.nome}</span>
+                        {selected.atendente_id === m.user_id && <UserCheck className="h-3 w-3 ml-auto text-success" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* Messages */}
