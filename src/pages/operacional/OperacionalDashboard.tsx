@@ -255,7 +255,7 @@ export default function OperacionalDashboard() {
 
   return (
     <div className="space-y-6 pb-24 md:pb-0">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
             Olá, {user?.nome?.split(" ")[0]}! 👋
@@ -264,7 +264,7 @@ export default function OperacionalDashboard() {
             {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <EstouChegandoMapDialog empresaId={user?.empresa_id} />
           <NovoAgendamentoDialog onSuccess={() => window.location.reload()} />
         </div>
