@@ -1621,13 +1621,17 @@ export type Database = {
           empresa_id: string
           id: string
           identificador: string | null
+          menu_config: Json
           nome: string
           numero_telefone: string | null
+          palavras_chave_config: Json
           provedor: Database["public"]["Enums"]["crm_canal_provedor"]
           roteamento: string
           roteamento_atendentes: string[] | null
+          roteamento_modo: string
           roteamento_ultimo_idx: number
           setor: string | null
+          setor_padrao_id: string | null
           status: Database["public"]["Enums"]["crm_canal_status"]
           tipo: Database["public"]["Enums"]["crm_canal_tipo"]
           ultima_conexao: string | null
@@ -1641,13 +1645,17 @@ export type Database = {
           empresa_id: string
           id?: string
           identificador?: string | null
+          menu_config?: Json
           nome: string
           numero_telefone?: string | null
+          palavras_chave_config?: Json
           provedor?: Database["public"]["Enums"]["crm_canal_provedor"]
           roteamento?: string
           roteamento_atendentes?: string[] | null
+          roteamento_modo?: string
           roteamento_ultimo_idx?: number
           setor?: string | null
+          setor_padrao_id?: string | null
           status?: Database["public"]["Enums"]["crm_canal_status"]
           tipo?: Database["public"]["Enums"]["crm_canal_tipo"]
           ultima_conexao?: string | null
@@ -1661,19 +1669,31 @@ export type Database = {
           empresa_id?: string
           id?: string
           identificador?: string | null
+          menu_config?: Json
           nome?: string
           numero_telefone?: string | null
+          palavras_chave_config?: Json
           provedor?: Database["public"]["Enums"]["crm_canal_provedor"]
           roteamento?: string
           roteamento_atendentes?: string[] | null
+          roteamento_modo?: string
           roteamento_ultimo_idx?: number
           setor?: string | null
+          setor_padrao_id?: string | null
           status?: Database["public"]["Enums"]["crm_canal_status"]
           tipo?: Database["public"]["Enums"]["crm_canal_tipo"]
           ultima_conexao?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_canais_setor_padrao_id_fkey"
+            columns: ["setor_padrao_id"]
+            isOneToOne: false
+            referencedRelation: "crm_setores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_contato_tag_links: {
         Row: {
@@ -1806,6 +1826,7 @@ export type Database = {
       }
       crm_conversas: {
         Row: {
+          aguardando_setor: boolean
           arquivada: boolean
           assumida_em: string | null
           atendente_id: string | null
@@ -1823,6 +1844,7 @@ export type Database = {
           prioridade: Database["public"]["Enums"]["crm_conversa_prioridade"]
           resumo_ia: string | null
           sentimento: string | null
+          setor_id: string | null
           status: Database["public"]["Enums"]["crm_conversa_status"]
           tempo_primeira_resposta_seg: number | null
           ultima_mensagem: string | null
@@ -1830,6 +1852,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aguardando_setor?: boolean
           arquivada?: boolean
           assumida_em?: string | null
           atendente_id?: string | null
@@ -1847,6 +1870,7 @@ export type Database = {
           prioridade?: Database["public"]["Enums"]["crm_conversa_prioridade"]
           resumo_ia?: string | null
           sentimento?: string | null
+          setor_id?: string | null
           status?: Database["public"]["Enums"]["crm_conversa_status"]
           tempo_primeira_resposta_seg?: number | null
           ultima_mensagem?: string | null
@@ -1854,6 +1878,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aguardando_setor?: boolean
           arquivada?: boolean
           assumida_em?: string | null
           atendente_id?: string | null
@@ -1871,6 +1896,7 @@ export type Database = {
           prioridade?: Database["public"]["Enums"]["crm_conversa_prioridade"]
           resumo_ia?: string | null
           sentimento?: string | null
+          setor_id?: string | null
           status?: Database["public"]["Enums"]["crm_conversa_status"]
           tempo_primeira_resposta_seg?: number | null
           ultima_mensagem?: string | null
@@ -1890,6 +1916,13 @@ export type Database = {
             columns: ["contato_id"]
             isOneToOne: false
             referencedRelation: "crm_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_conversas_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "crm_setores"
             referencedColumns: ["id"]
           },
         ]
@@ -2390,6 +2423,65 @@ export type Database = {
           created_at?: string
           empresa_id?: string
           id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_setor_atendentes: {
+        Row: {
+          empresa_id: string
+          setor_id: string
+          user_id: string
+        }
+        Insert: {
+          empresa_id: string
+          setor_id: string
+          user_id: string
+        }
+        Update: {
+          empresa_id?: string
+          setor_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_setor_atendentes_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "crm_setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_setores: {
+        Row: {
+          ativo: boolean
+          cor: string | null
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
           updated_at?: string
         }
         Relationships: []
@@ -5728,6 +5820,7 @@ export type Database = {
       get_own_cargo: { Args: never; Returns: string }
       get_user_cliente_id: { Args: never; Returns: string }
       get_user_empresa_id: { Args: never; Returns: string }
+      get_user_setor_ids: { Args: never; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
