@@ -11,7 +11,7 @@ import {
   Search, Send, Sparkles, FileText, User, Phone, Mail, Loader2, MessageSquare,
   ArrowLeft, Paperclip, FileText as FileIcon, Download, Clock, StickyNote,
   UserCheck, UserPlus, Timer, Filter, Smile, Mic, MoreVertical, Video, Phone as PhoneIcon,
-  Building2, MapPin, Tag, ChevronDown, Star, PanelRightOpen, Zap,
+  Building2, MapPin, Tag, ChevronDown, Star, PanelRightOpen, Zap, X,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
