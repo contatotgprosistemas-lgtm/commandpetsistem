@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { format, startOfDay, addDays, subDays, startOfWeek, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
