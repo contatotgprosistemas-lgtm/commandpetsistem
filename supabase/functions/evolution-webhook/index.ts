@@ -95,7 +95,15 @@ Deno.serve(async (req) => {
       const numero = onlyDigits(remoteJid.split("@")[0]);
       if (!numero) return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
 
-      const pushName: string = msg?.pushName ?? numero;
+      // Nome do contato: nunca usar pushName quando a mensagem é nossa (fromMe),
+      // pois aí ele representa o nome da própria empresa no WhatsApp.
+      const contactNameFromPayload: string =
+        msg?.verifiedBizName ??
+        msg?.notifyName ??
+        msg?.pushname ??
+        (!fromMe ? (msg?.pushName ?? "") : "") ??
+        "";
+      const pushName: string = (contactNameFromPayload || numero).toString().trim() || numero;
       const text: string =
         msg?.message?.conversation ??
         msg?.message?.extendedTextMessage?.text ??
@@ -126,6 +134,16 @@ Deno.serve(async (req) => {
           origem: "whatsapp",
         }).select("id, nome").single();
         contato = ins.data!;
+      } else if (
+        !fromMe &&
+        contactNameFromPayload &&
+        (contato.nome === numero || !contato.nome || contato.nome === canal.nome)
+      ) {
+        // Atualiza nome quando o contato existente está com placeholder (número/canal)
+        await admin.from("crm_contatos")
+          .update({ nome: contactNameFromPayload })
+          .eq("id", contato.id);
+        contato.nome = contactNameFromPayload;
       }
 
       // conversa
