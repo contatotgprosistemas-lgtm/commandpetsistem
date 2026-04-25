@@ -43,13 +43,26 @@ interface ContaReceber {
 }
 
 function statusBadge(status: string, vencimento: string) {
-  if (status === "pago") return <Badge className="bg-emerald-500/15 text-emerald-600 border-0 text-xs">Pago</Badge>;
+  if (status === "pago")
+    return (
+      <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-medium px-2 py-0.5 rounded-full">
+        ● Pago
+      </Badge>
+    );
   const vencDate = new Date(vencimento + "T00:00:00");
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   if (vencDate < today)
-    return <Badge variant="destructive" className="text-xs">Vencida</Badge>;
-  return <Badge className="bg-amber-500/15 text-amber-600 border-0 text-xs">Em Aberto</Badge>;
+    return (
+      <Badge className="bg-destructive/10 text-destructive border border-destructive/20 text-[11px] font-medium px-2 py-0.5 rounded-full">
+        ● Vencida
+      </Badge>
+    );
+  return (
+    <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 text-[11px] font-medium px-2 py-0.5 rounded-full">
+      ● Em Aberto
+    </Badge>
+  );
 }
 
 export default function FinancePage() {
