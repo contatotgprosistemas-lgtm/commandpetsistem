@@ -8,6 +8,7 @@ import { MoreVertical, Trash2, Search, Pencil, Plus } from "lucide-react";
 import { NovaMovimentacaoDialog } from "@/components/NovaMovimentacaoDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 interface Movimentacao {
   id: string;
@@ -47,10 +48,13 @@ export default function MovimentacaoPage() {
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-card mt-4 overflow-hidden">
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{movs.length} movimentação(ões)</span>
-        <Button size="sm" className="gap-1" onClick={() => setNovaMovOpen(true)}>
+    <div className="bg-card rounded-xl border border-border/60 shadow-sm mt-4 overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-border flex items-center justify-between bg-muted/20">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground">Movimentações</h2>
+          <Badge variant="secondary" className="text-[10px] font-medium rounded-full px-2 py-0">{movs.length}</Badge>
+        </div>
+        <Button size="sm" className="gap-1 h-8" onClick={() => setNovaMovOpen(true)}>
           <Plus className="h-4 w-4" />
           Nova Movimentação
         </Button>
@@ -67,41 +71,47 @@ export default function MovimentacaoPage() {
       ) : (
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Código</TableHead>
-              <TableHead>Data Movimentação</TableHead>
-              <TableHead>Plano de Contas</TableHead>
-              <TableHead>Pessoa/Complemento</TableHead>
-              <TableHead>Banco</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+            <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border">
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Código</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Data</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Plano de Contas</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Pessoa / Complemento</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Banco</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Valor</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {movs.map((m, idx) => (
-              <TableRow key={m.id}>
-                <TableCell>
-                  <p className="text-sm font-medium">{movs.length - idx}</p>
-                  <p className="text-xs text-muted-foreground capitalize">
+              <TableRow key={m.id} className="group transition-colors hover:bg-muted/30">
+                <TableCell className="py-3">
+                  <p className="text-sm font-semibold text-foreground tabular-nums">#{movs.length - idx}</p>
+                  <Badge variant="outline" className="text-[9px] font-medium mt-0.5 px-1.5 py-0">
                     {m.tipo === "contas_a_receber" ? "Contas a receber" : "Mov. Avulso"}
-                  </p>
+                  </Badge>
                 </TableCell>
-                <TableCell className="text-sm">
+                <TableCell className="text-sm py-3 tabular-nums text-muted-foreground">
                   {format(new Date(m.data_movimentacao + "T00:00:00"), "dd/MM/yyyy")}
                 </TableCell>
-                <TableCell className="text-sm">{m.plano_contas || "—"}</TableCell>
-                <TableCell>
-                  <p className="text-sm">{m.pessoa || "—"}</p>
-                  {m.complemento && <p className="text-xs text-muted-foreground">{m.complemento}</p>}
+                <TableCell className="text-sm py-3">
+                  {m.plano_contas ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-foreground text-xs font-medium">{m.plano_contas}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
-                <TableCell className="text-sm">{m.banco || "—"}</TableCell>
-                <TableCell className={`text-sm text-right tabular-nums font-semibold ${m.valor >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-                  {m.valor < 0 ? "-" : ""}R$ {Math.abs(m.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                <TableCell className="py-3">
+                  <p className="text-sm font-medium text-foreground">{m.pessoa || "—"}</p>
+                  {m.complemento && <p className="text-xs text-muted-foreground truncate max-w-[240px]">{m.complemento}</p>}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-sm py-3 text-muted-foreground">{m.banco || "—"}</TableCell>
+                <TableCell className={`text-sm py-3 text-right tabular-nums font-semibold ${m.valor >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
+                  {m.valor < 0 ? "−" : "+"} R$ {Math.abs(m.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </TableCell>
+                <TableCell className="text-right py-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-7 w-7">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-60 group-hover:opacity-100 transition-opacity">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

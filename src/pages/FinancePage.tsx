@@ -43,13 +43,26 @@ interface ContaReceber {
 }
 
 function statusBadge(status: string, vencimento: string) {
-  if (status === "pago") return <Badge className="bg-emerald-500/15 text-emerald-600 border-0 text-xs">Pago</Badge>;
+  if (status === "pago")
+    return (
+      <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-medium px-2 py-0.5 rounded-full">
+        ● Pago
+      </Badge>
+    );
   const vencDate = new Date(vencimento + "T00:00:00");
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   if (vencDate < today)
-    return <Badge variant="destructive" className="text-xs">Vencida</Badge>;
-  return <Badge className="bg-amber-500/15 text-amber-600 border-0 text-xs">Em Aberto</Badge>;
+    return (
+      <Badge className="bg-destructive/10 text-destructive border border-destructive/20 text-[11px] font-medium px-2 py-0.5 rounded-full">
+        ● Vencida
+      </Badge>
+    );
+  return (
+    <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 text-[11px] font-medium px-2 py-0.5 rounded-full">
+      ● Em Aberto
+    </Badge>
+  );
 }
 
 export default function FinancePage() {
@@ -333,8 +346,8 @@ type SortKey = string;
 function SortableHead({ label, sortKey, currentSort, currentDir, onSort, className }: { label: string; sortKey: SortKey; currentSort: SortKey | null; currentDir: SortDir; onSort: (key: SortKey) => void; className?: string }) {
   const active = currentSort === sortKey;
   return (
-    <TableHead className={className}>
-      <button onClick={() => onSort(sortKey)} className="flex items-center gap-1 hover:text-foreground transition-colors w-full">
+    <TableHead className={`h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${className || ""}`}>
+      <button onClick={() => onSort(sortKey)} className={`flex items-center gap-1 hover:text-foreground transition-colors ${className?.includes("text-right") ? "ml-auto" : ""}`}>
         {label}
         {active && currentDir === "asc" ? <ArrowUp className="h-3 w-3" /> : active && currentDir === "desc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUpDown className="h-3 w-3 opacity-40" />}
       </button>
@@ -434,26 +447,30 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-card mt-4 overflow-hidden">
+    <div className="bg-card rounded-xl border border-border/60 shadow-sm mt-4 overflow-hidden">
       {selected.length > 0 && (
-        <div className="px-5 py-3 border-b border-border flex items-center gap-3 bg-muted/30">
-          <Button size="sm" onClick={handleBulkBaixar} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1">
+        <div className="px-5 py-3 border-b border-border flex items-center gap-3 bg-primary/5">
+          <span className="text-xs font-medium text-foreground mr-1">{selected.length} selecionada(s)</span>
+          <Button size="sm" onClick={handleBulkBaixar} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 h-8">
             <ArrowDownCircle className="h-4 w-4" /> Baixar Selecionados
           </Button>
-          <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="gap-1">
+          <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="gap-1 h-8">
             <XCircle className="h-4 w-4" /> Cancelar Selecionados
           </Button>
         </div>
       )}
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground shrink-0">{filtered.length} fatura(s)</span>
+      <div className="px-5 py-3.5 border-b border-border flex items-center justify-between gap-2 bg-muted/20">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-foreground">Faturas</span>
+          <Badge variant="secondary" className="text-[10px] font-medium rounded-full px-2 py-0">{filtered.length}</Badge>
+        </div>
         <div className="relative w-full max-w-xs">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar fatura..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="pl-9 h-9"
+            className="pl-9 h-9 bg-card"
           />
         </div>
       </div>
@@ -469,19 +486,19 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
       ) : (
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
+            <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border">
+              <TableHead className="w-10 h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
               </TableHead>
-              <TableHead>Documento</TableHead>
-              <TableHead>Emissão</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Documento</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Emissão</TableHead>
               <SortableHead label="Plano de Contas" sortKey="categoria" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
               <SortableHead label="Pessoa" sortKey="pessoa" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
               <SortableHead label="Vencimento" sortKey="vencimento" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
               <SortableHead label="Valor" sortKey="valor" currentSort={sortKey} currentDir={sortDir} onSort={onSort} className="text-right" />
-              <TableHead className="text-right">Valor Pago</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Valor Pago</TableHead>
               <SortableHead label="Status" sortKey="status" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
-              <TableHead className="text-right">Ações</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -490,38 +507,46 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
               const items = itemsCache[c.id] || [];
               return (
                 <>
-                  <TableRow key={c.id} className={selected.includes(c.id) ? "bg-primary/5" : ""}>
-                    <TableCell>
+                  <TableRow key={c.id} className={`group transition-colors ${selected.includes(c.id) ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30"}`}>
+                    <TableCell className="py-3">
                       <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3">
                       <button onClick={() => toggleExpand(c.id)} className="flex items-center gap-1 text-sm font-medium hover:text-primary transition-colors">
                         {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                         Fatura
                       </button>
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-sm py-3 text-muted-foreground tabular-nums">
                       {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}
                     </TableCell>
-                    <TableCell className="text-sm">{c.categoria || "—"}</TableCell>
-                    <TableCell>
-                      <p className="text-sm">{c.cliente?.nome || "—"}</p>
-                      <p className="text-xs text-muted-foreground">{c.descricao}</p>
+                    <TableCell className="text-sm py-3">
+                      {c.categoria ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-foreground text-xs font-medium">
+                          {c.categoria}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="py-3">
+                      <p className="text-sm font-medium text-foreground">{c.cliente?.nome || "—"}</p>
+                      <p className="text-xs text-muted-foreground truncate max-w-[240px]">{c.descricao}</p>
+                    </TableCell>
+                    <TableCell className="text-sm py-3 tabular-nums">
                       {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}
                     </TableCell>
-                    <TableCell className="text-sm text-right tabular-nums font-medium">
-                      {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    <TableCell className="text-sm py-3 text-right tabular-nums font-semibold text-foreground">
+                      R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </TableCell>
-                    <TableCell className="text-sm text-right tabular-nums">0,00</TableCell>
-                    <TableCell>
+                    <TableCell className="text-sm py-3 text-right tabular-nums text-muted-foreground">R$ 0,00</TableCell>
+                    <TableCell className="py-3">
                       {statusBadge(c.status, c.vencimento)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right py-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-7 w-7">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-60 group-hover:opacity-100 transition-opacity">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -587,22 +612,22 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
         const totalPago = filtered.filter(c => c.status === "pago").reduce((s, c) => s + c.valor, 0);
         const totalAberto = filtered.filter(c => c.status !== "pago").reduce((s, c) => s + c.valor, 0);
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 border-t border-border">
-            <div className="rounded-lg border border-border p-4 text-center">
-              <p className="text-sm text-muted-foreground">Total de Títulos</p>
-              <p className="text-xl font-bold text-foreground mt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-5 bg-muted/20 border-t border-border">
+            <div className="rounded-lg border border-border bg-card p-4">
+              <p className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Total de Títulos</p>
+              <p className="text-lg font-semibold text-foreground mt-1.5 tabular-nums">
                 R$ {totalTitulos.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </p>
             </div>
-            <div className="rounded-lg border border-border p-4 text-center">
-              <p className="text-sm text-muted-foreground">Total Pago</p>
-              <p className="text-xl font-bold text-foreground mt-1">
+            <div className="rounded-lg border border-border bg-card p-4">
+              <p className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Total Pago</p>
+              <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400 mt-1.5 tabular-nums">
                 R$ {totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </p>
             </div>
-            <div className="rounded-lg bg-emerald-500 p-4 text-center">
-              <p className="text-sm text-white/90">Total em Aberto</p>
-              <p className="text-xl font-bold text-white mt-1">
+            <div className="rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 shadow-sm">
+              <p className="text-[11px] uppercase tracking-wider font-medium text-white/90">Total em Aberto</p>
+              <p className="text-lg font-semibold text-white mt-1.5 tabular-nums">
                 R$ {totalAberto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </p>
             </div>
@@ -659,17 +684,20 @@ function ContasPagarContent() {
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-card mt-4 overflow-hidden">
+    <div className="bg-card rounded-xl border border-border/60 shadow-sm mt-4 overflow-hidden">
       {selected.length > 0 && (
-        <div className="px-5 py-3 border-b border-border flex items-center gap-3 bg-muted/30">
-          <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="gap-1">
+        <div className="px-5 py-3 border-b border-border flex items-center gap-3 bg-primary/5">
+          <span className="text-xs font-medium text-foreground mr-1">{selected.length} selecionada(s)</span>
+          <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="gap-1 h-8">
             <XCircle className="h-4 w-4" /> Cancelar Selecionados
           </Button>
         </div>
       )}
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-        <h2 className="text-sm font-medium text-foreground">Contas a Pagar</h2>
-        <span className="text-xs text-muted-foreground">{sorted.length} conta(s)</span>
+      <div className="px-5 py-3.5 border-b border-border flex items-center justify-between bg-muted/20">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground">Contas a Pagar</h2>
+          <Badge variant="secondary" className="text-[10px] font-medium rounded-full px-2 py-0">{sorted.length}</Badge>
+        </div>
       </div>
       {loading ? (
         <div className="p-5 space-y-3">
@@ -682,8 +710,8 @@ function ContasPagarContent() {
       ) : (
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
+            <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border">
+              <TableHead className="w-10 h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
               </TableHead>
               <SortableHead label="Descrição" sortKey="descricao" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
@@ -696,18 +724,24 @@ function ContasPagarContent() {
           </TableHeader>
           <TableBody>
             {sorted.map((c: any) => (
-              <TableRow key={c.id} className={selected.includes(c.id) ? "bg-primary/5" : ""}>
-                <TableCell>
+              <TableRow key={c.id} className={`group transition-colors ${selected.includes(c.id) ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30"}`}>
+                <TableCell className="py-3">
                   <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
                 </TableCell>
-                <TableCell className="text-sm font-medium">{c.descricao}</TableCell>
-                <TableCell className="text-sm">{c.fornecedor}</TableCell>
-                <TableCell className="text-sm">{c.categoria || "—"}</TableCell>
-                <TableCell className="text-sm">{format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}</TableCell>
-                <TableCell className="text-sm text-right tabular-nums font-medium">
+                <TableCell className="text-sm py-3 font-medium text-foreground">{c.descricao}</TableCell>
+                <TableCell className="text-sm py-3 text-muted-foreground">{c.fornecedor}</TableCell>
+                <TableCell className="text-sm py-3">
+                  {c.categoria ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-foreground text-xs font-medium">{c.categoria}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-sm py-3 tabular-nums">{format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}</TableCell>
+                <TableCell className="text-sm py-3 text-right tabular-nums font-semibold text-foreground">
                   R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </TableCell>
-                <TableCell>{statusBadge(c.status, c.vencimento)}</TableCell>
+                <TableCell className="py-3">{statusBadge(c.status, c.vencimento)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
