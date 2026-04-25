@@ -346,8 +346,8 @@ type SortKey = string;
 function SortableHead({ label, sortKey, currentSort, currentDir, onSort, className }: { label: string; sortKey: SortKey; currentSort: SortKey | null; currentDir: SortDir; onSort: (key: SortKey) => void; className?: string }) {
   const active = currentSort === sortKey;
   return (
-    <TableHead className={className}>
-      <button onClick={() => onSort(sortKey)} className="flex items-center gap-1 hover:text-foreground transition-colors w-full">
+    <TableHead className={`h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground ${className || ""}`}>
+      <button onClick={() => onSort(sortKey)} className={`flex items-center gap-1 hover:text-foreground transition-colors ${className?.includes("text-right") ? "ml-auto" : ""}`}>
         {label}
         {active && currentDir === "asc" ? <ArrowUp className="h-3 w-3" /> : active && currentDir === "desc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUpDown className="h-3 w-3 opacity-40" />}
       </button>
