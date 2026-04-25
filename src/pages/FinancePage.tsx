@@ -447,26 +447,30 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-card mt-4 overflow-hidden">
+    <div className="bg-card rounded-xl border border-border/60 shadow-sm mt-4 overflow-hidden">
       {selected.length > 0 && (
-        <div className="px-5 py-3 border-b border-border flex items-center gap-3 bg-muted/30">
-          <Button size="sm" onClick={handleBulkBaixar} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1">
+        <div className="px-5 py-3 border-b border-border flex items-center gap-3 bg-primary/5">
+          <span className="text-xs font-medium text-foreground mr-1">{selected.length} selecionada(s)</span>
+          <Button size="sm" onClick={handleBulkBaixar} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 h-8">
             <ArrowDownCircle className="h-4 w-4" /> Baixar Selecionados
           </Button>
-          <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="gap-1">
+          <Button size="sm" variant="destructive" onClick={handleBulkDelete} className="gap-1 h-8">
             <XCircle className="h-4 w-4" /> Cancelar Selecionados
           </Button>
         </div>
       )}
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground shrink-0">{filtered.length} fatura(s)</span>
+      <div className="px-5 py-3.5 border-b border-border flex items-center justify-between gap-2 bg-muted/20">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-foreground">Faturas</span>
+          <Badge variant="secondary" className="text-[10px] font-medium rounded-full px-2 py-0">{filtered.length}</Badge>
+        </div>
         <div className="relative w-full max-w-xs">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar fatura..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="pl-9 h-9"
+            className="pl-9 h-9 bg-card"
           />
         </div>
       </div>
@@ -482,19 +486,19 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
       ) : (
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
+            <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border">
+              <TableHead className="w-10 h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
               </TableHead>
-              <TableHead>Documento</TableHead>
-              <TableHead>Emissão</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Documento</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Emissão</TableHead>
               <SortableHead label="Plano de Contas" sortKey="categoria" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
               <SortableHead label="Pessoa" sortKey="pessoa" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
               <SortableHead label="Vencimento" sortKey="vencimento" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
               <SortableHead label="Valor" sortKey="valor" currentSort={sortKey} currentDir={sortDir} onSort={onSort} className="text-right" />
-              <TableHead className="text-right">Valor Pago</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Valor Pago</TableHead>
               <SortableHead label="Status" sortKey="status" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
-              <TableHead className="text-right">Ações</TableHead>
+              <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -503,38 +507,46 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
               const items = itemsCache[c.id] || [];
               return (
                 <>
-                  <TableRow key={c.id} className={selected.includes(c.id) ? "bg-primary/5" : ""}>
-                    <TableCell>
+                  <TableRow key={c.id} className={`group transition-colors ${selected.includes(c.id) ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30"}`}>
+                    <TableCell className="py-3">
                       <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-3">
                       <button onClick={() => toggleExpand(c.id)} className="flex items-center gap-1 text-sm font-medium hover:text-primary transition-colors">
                         {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                         Fatura
                       </button>
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-sm py-3 text-muted-foreground tabular-nums">
                       {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}
                     </TableCell>
-                    <TableCell className="text-sm">{c.categoria || "—"}</TableCell>
-                    <TableCell>
-                      <p className="text-sm">{c.cliente?.nome || "—"}</p>
-                      <p className="text-xs text-muted-foreground">{c.descricao}</p>
+                    <TableCell className="text-sm py-3">
+                      {c.categoria ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-foreground text-xs font-medium">
+                          {c.categoria}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="py-3">
+                      <p className="text-sm font-medium text-foreground">{c.cliente?.nome || "—"}</p>
+                      <p className="text-xs text-muted-foreground truncate max-w-[240px]">{c.descricao}</p>
+                    </TableCell>
+                    <TableCell className="text-sm py-3 tabular-nums">
                       {format(new Date(c.vencimento + "T00:00:00"), "dd/MM/yy")}
                     </TableCell>
-                    <TableCell className="text-sm text-right tabular-nums font-medium">
-                      {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    <TableCell className="text-sm py-3 text-right tabular-nums font-semibold text-foreground">
+                      R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </TableCell>
-                    <TableCell className="text-sm text-right tabular-nums">0,00</TableCell>
-                    <TableCell>
+                    <TableCell className="text-sm py-3 text-right tabular-nums text-muted-foreground">R$ 0,00</TableCell>
+                    <TableCell className="py-3">
                       {statusBadge(c.status, c.vencimento)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right py-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-7 w-7">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-60 group-hover:opacity-100 transition-opacity">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
