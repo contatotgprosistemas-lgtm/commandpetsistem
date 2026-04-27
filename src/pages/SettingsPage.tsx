@@ -619,20 +619,6 @@ function SegurancaTab() {
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [saving, setSaving] = useState(false);
-  const [logs, setLogs] = useState<any[]>([]);
-  const [loadingLogs, setLoadingLogs] = useState(true);
-
-  useEffect(() => {
-    supabase
-      .from("audit_log")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(20)
-      .then(({ data }) => {
-        setLogs(data || []);
-        setLoadingLogs(false);
-      });
-  }, []);
 
   const handleChangePassword = async () => {
     if (!newPw || !confirmPw) {
@@ -688,45 +674,6 @@ function SegurancaTab() {
       </Card>
 
       <RetencaoDadosCard />
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Logs de Auditoria</CardTitle>
-          <CardDescription>Últimas atividades registradas no sistema</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loadingLogs ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-          ) : logs.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8 text-sm">Nenhum log registrado ainda</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ação</TableHead>
-                    <TableHead>Tabela</TableHead>
-                    <TableHead>Data</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell>
-                        <Badge variant="outline">{log.acao}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{log.tabela}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {new Date(log.created_at).toLocaleString("pt-BR")}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

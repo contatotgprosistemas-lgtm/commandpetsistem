@@ -77,7 +77,6 @@ export function AppSidebar() {
   ];
 
   const bottomItems = [
-    { icon: ClipboardList, label: "Logs de Auditoria", path: "/audit-log" },
     ...(isSuperAdmin
       ? [
           { icon: Users, label: "Leads do Site", path: "/leads" },

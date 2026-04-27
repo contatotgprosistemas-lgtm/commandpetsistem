@@ -18,7 +18,6 @@ import SuperAdminPage from "@/pages/SuperAdminPage";
 import LeadsPage from "@/pages/LeadsPage";
 import ServicosPage from "@/pages/ServicosPage";
 import ProdutosPage from "@/pages/ProdutosPage";
-import AuditLogPage from "@/pages/AuditLogPage";
 import PlanosPacotesPage from "@/pages/PlanosPacotesPage";
 import TaxiPetPage from "@/pages/TaxiPetPage";
 import ContratosPage from "@/pages/ContratosPage";
@@ -297,17 +296,6 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <PontoPage />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/audit-log"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <AuditLogPage />
                   </AppLayout>
                 </ProtectedRoute>
               }
