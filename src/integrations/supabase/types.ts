@@ -3273,6 +3273,8 @@ export type Database = {
       }
       empresas: {
         Row: {
+          assinatura_responsavel: string | null
+          assinatura_url: string | null
           cep: string | null
           cnpj: string | null
           created_at: string
@@ -3297,6 +3299,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assinatura_responsavel?: string | null
+          assinatura_url?: string | null
           cep?: string | null
           cnpj?: string | null
           created_at?: string
@@ -3321,6 +3325,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assinatura_responsavel?: string | null
+          assinatura_url?: string | null
           cep?: string | null
           cnpj?: string | null
           created_at?: string
