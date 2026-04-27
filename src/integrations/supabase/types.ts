@@ -686,6 +686,7 @@ export type Database = {
           deleted_at: string | null
           dia_vencimento_fatura: number | null
           dias_gerar_fatura: number
+          edit_token: string | null
           email: string | null
           empresa_id: string
           endereco: string | null
@@ -712,6 +713,7 @@ export type Database = {
           deleted_at?: string | null
           dia_vencimento_fatura?: number | null
           dias_gerar_fatura?: number
+          edit_token?: string | null
           email?: string | null
           empresa_id: string
           endereco?: string | null
@@ -738,6 +740,7 @@ export type Database = {
           deleted_at?: string | null
           dia_vencimento_fatura?: number | null
           dias_gerar_fatura?: number
+          edit_token?: string | null
           email?: string | null
           empresa_id?: string
           endereco?: string | null
