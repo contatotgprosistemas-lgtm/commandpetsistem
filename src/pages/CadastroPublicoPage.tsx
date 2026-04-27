@@ -1,10 +1,10 @@
-import { useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useCallback, useEffect } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { differenceInYears, differenceInMonths } from "date-fns";
-import { PawPrint, Plus, Trash2, CheckCircle2, Building2, Loader2, Camera, X } from "lucide-react";
+import { PawPrint, Plus, Trash2, CheckCircle2, Building2, Loader2, Camera, X, Copy, Pencil } from "lucide-react";
 import { useEmpresaLogoById } from "@/hooks/useEmpresaLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,12 +133,17 @@ const defaultPet = {
 
 export default function CadastroPublicoPage() {
   const { empresaId } = useParams<{ empresaId: string }>();
+  const [searchParams] = useSearchParams();
+  const editTokenParam = searchParams.get("edit");
   const empresaLogo = useEmpresaLogoById(empresaId);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [clienteFotoUrl, setClienteFotoUrl] = useState<string | null>(null);
   const [petFotos, setPetFotos] = useState<Record<number, string | null>>({});
+  const [editLink, setEditLink] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false);
 
   async function buscarCep(cep: string) {
     const clean = cep.replace(/\D/g, "");
@@ -170,6 +175,59 @@ export default function CadastroPublicoPage() {
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "pets" });
 
+  // Carrega dados existentes quando há ?edit=<token>
+  useEffect(() => {
+    if (!editTokenParam) return;
+    setLoadingEdit(true);
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    fetch(`https://${projectId}.supabase.co/functions/v1/cadastro-publico?token=${editTokenParam}`)
+      .then(r => r.json())
+      .then(({ cliente, pets, error }) => {
+        if (error) { toast.error(error); return; }
+        if (!cliente) return;
+        setIsEditMode(true);
+        setClienteFotoUrl(cliente.foto_url || null);
+        // Separar endereço/numero/complemento de forma simples (mantém em endereco)
+        form.reset({
+          nome: cliente.nome || "",
+          cpf: cliente.cpf || "",
+          data_nascimento: cliente.data_nascimento || "",
+          whatsapp: cliente.whatsapp || "",
+          email: cliente.email || "",
+          cep: "",
+          endereco: cliente.endereco || "",
+          numero: "",
+          complemento: "",
+          como_conheceu: cliente.como_conheceu || "",
+          pets: (pets && pets.length > 0) ? pets.map((p: any) => ({
+            nome: p.nome || "",
+            especie: p.especie || "Cachorro",
+            raca: p.raca || "",
+            cor: p.cor || "",
+            porte: p.porte || "",
+            sexo: p.sexo || "",
+            peso: p.peso != null ? String(p.peso) : "",
+            data_nascimento: p.data_nascimento || "",
+            pelagem: p.pelagem || "",
+            comportamento: p.comportamento || "",
+            restricoes_alimentares: p.restricoes_alimentares || "",
+            medicacoes: p.medicacoes || "",
+            antiparasitario: "", v10: "", raiva: "", gripe: "", giardia: "",
+            antiparasitario_data: p.antiparasitario_data || "",
+            v10_data: p.v10_data || "",
+            raiva_data: p.raiva_data || "",
+            gripe_data: p.gripe_data || "",
+            giardia_data: p.giardia_data || "",
+          })) : [{ ...defaultPet }],
+        });
+        const fotos: Record<number, string | null> = {};
+        (pets || []).forEach((p: any, i: number) => { fotos[i] = p.foto_url || null; });
+        setPetFotos(fotos);
+      })
+      .catch(() => toast.error("Erro ao carregar cadastro para edição"))
+      .finally(() => setLoadingEdit(false));
+  }, [editTokenParam]);
+
   async function onSubmit(data: FormValues) {
     if (!empresaId) return;
     setLoading(true);
@@ -195,6 +253,7 @@ export default function CadastroPublicoPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             empresa_id: empresaId,
+            edit_token: editTokenParam || undefined,
             cliente: {
               nome: data.nome,
               data_nascimento: data.data_nascimento || null,
@@ -213,6 +272,9 @@ export default function CadastroPublicoPage() {
       );
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Erro ao enviar cadastro");
+      if (result.edit_token) {
+        setEditLink(`${window.location.origin}/cadastro/${empresaId}?edit=${result.edit_token}`);
+      }
       setSubmitted(true);
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar cadastro");
@@ -224,11 +286,58 @@ export default function CadastroPublicoPage() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="bg-card rounded-lg shadow-card p-8 max-w-md w-full text-center space-y-4">
+        <div className="bg-card rounded-lg shadow-card p-8 max-w-md w-full text-center space-y-5">
           <CheckCircle2 className="h-16 w-16 text-success mx-auto" />
-          <h1 className="text-xl font-semibold text-foreground">Cadastro enviado!</h1>
-          <p className="text-sm text-muted-foreground">Seus dados e dos seus pets foram cadastrados com sucesso. Obrigado!</p>
+          <h1 className="text-xl font-semibold text-foreground">
+            {isEditMode ? "Cadastro atualizado!" : "Cadastro enviado!"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {isEditMode
+              ? "Suas informações foram atualizadas com sucesso."
+              : "Seus dados e dos seus pets foram cadastrados com sucesso. Obrigado!"}
+          </p>
+          {editLink && (
+            <div className="bg-muted/50 rounded-md p-4 text-left space-y-2 border border-border">
+              <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                <Pencil className="h-3.5 w-3.5" /> Esqueceu de algo?
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Salve este link para editar seu cadastro depois (válido apenas para você):
+              </p>
+              <div className="flex gap-2">
+                <Input value={editLink} readOnly className="text-xs" onFocus={(e) => e.currentTarget.select()} />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(editLink);
+                    toast.success("Link copiado!");
+                  }}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="link"
+                className="px-0 h-auto text-xs"
+                onClick={() => { window.location.href = editLink; }}
+              >
+                Editar agora
+              </Button>
+            </div>
+          )}
         </div>
+      </div>
+    );
+  }
+
+  if (loadingEdit) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -244,8 +353,12 @@ export default function CadastroPublicoPage() {
               <Building2 className="h-6 w-6 text-primary" />
             </div>
           )}
-          <h1 className="text-xl font-semibold text-foreground">Cadastro de Cliente e Pet</h1>
-          <p className="text-sm text-muted-foreground">Preencha seus dados e dos seus pets abaixo</p>
+          <h1 className="text-xl font-semibold text-foreground">
+            {isEditMode ? "Editar Cadastro" : "Cadastro de Cliente e Pet"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {isEditMode ? "Atualize seus dados e dos seus pets abaixo" : "Preencha seus dados e dos seus pets abaixo"}
+          </p>
         </div>
 
         <Form {...form}>
