@@ -565,9 +565,9 @@ export default function ContratosPage() {
     const tpl = templates.find(t => t.id === templateId);
     if (tpl) {
       let content = tpl.content;
-      // If client already selected, fill placeholders
-      if (contractForm.clienteId) {
-        content = await fillTemplate(content, contractForm.clienteId);
+      // If client or extras present, fill placeholders
+      if (contractForm.clienteId || Object.keys(contractExtras).length > 0) {
+        content = await fillTemplate(content, contractForm.clienteId, contractExtras);
       }
       setContractForm(prev => ({ ...prev, content }));
     }
@@ -755,8 +755,10 @@ export default function ContratosPage() {
               <Select value={contractForm.clienteId} onValueChange={async (v) => {
                 setContractForm(p => ({ ...p, clienteId: v }));
                 // Auto-fill placeholders when client is selected
-                if (v && contractForm.content) {
-                  const filled = await fillTemplate(contractForm.content, v);
+                if (v && contractForm.templateId) {
+                  const tpl = templates.find(t => t.id === contractForm.templateId);
+                  const source = tpl?.content || contractForm.content;
+                  const filled = await fillTemplate(source, v, contractExtras);
                   setContractForm(p => ({ ...p, clienteId: v, content: filled }));
                 }
               }}>
