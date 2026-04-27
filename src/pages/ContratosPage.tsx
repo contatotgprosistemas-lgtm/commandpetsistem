@@ -728,7 +728,10 @@ export default function ContratosPage() {
       </Dialog>
 
       {/* New Contract Dialog */}
-      <Dialog open={showContractDialog} onOpenChange={setShowContractDialog}>
+      <Dialog open={showContractDialog} onOpenChange={(o) => {
+        setShowContractDialog(o);
+        if (!o) setContractExtras({});
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Contrato</DialogTitle>
