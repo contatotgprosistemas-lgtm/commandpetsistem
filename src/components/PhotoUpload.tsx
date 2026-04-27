@@ -10,9 +10,11 @@ interface PhotoUploadProps {
   size?: "sm" | "md";
   /** Use anon client for public forms (no auth) */
   publicUpload?: boolean;
+  /** Override empresa_id (when profiles table is not accessible, e.g. operational users) */
+  empresaId?: string;
 }
 
-export function PhotoUpload({ value, onChange, folder = "clientes", size = "md", publicUpload }: PhotoUploadProps) {
+export function PhotoUpload({ value, onChange, folder = "clientes", size = "md", publicUpload, empresaId }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -35,10 +37,13 @@ export function PhotoUpload({ value, onChange, folder = "clientes", size = "md",
     setUploading(true);
     try {
       // Get empresa_id for tenant-scoped storage path
-      const { data: profile } = await supabase.from("profiles").select("empresa_id").single();
-      const empresaId = profile?.empresa_id || "unknown";
+      let resolvedEmpresaId = empresaId;
+      if (!resolvedEmpresaId) {
+        const { data: profile } = await supabase.from("profiles").select("empresa_id").maybeSingle();
+        resolvedEmpresaId = profile?.empresa_id || "unknown";
+      }
       const ext = file.name.split(".").pop() || "jpg";
-      const fileName = `${empresaId}/${folder}/${crypto.randomUUID()}.${ext}`;
+      const fileName = `${resolvedEmpresaId}/${folder}/${crypto.randomUUID()}.${ext}`;
 
       const { error } = await supabase.storage
         .from("profile-photos")
