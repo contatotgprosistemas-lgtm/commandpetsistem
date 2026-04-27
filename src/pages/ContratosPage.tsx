@@ -103,6 +103,9 @@ export default function ContratosPage() {
   const [companySignerName, setCompanySignerName] = useState("");
   const [companySigning, setCompanySigning] = useState(false);
 
+  // Extra placeholder context (e.g. from subscription auto-fill)
+  const [contractExtras, setContractExtras] = useState<Record<string, string>>({});
+
   useEffect(() => {
     loadData();
   }, []);
@@ -139,7 +142,7 @@ export default function ContratosPage() {
       .from("customer_pet_subscriptions")
       .select("*, cliente:clientes(id, nome, cpf, email, endereco), pet:pets(id, nome, raca, sexo, cor, castrado), plan:service_plans(id, name, price, type), package:service_packages(id, name, price)")
       .eq("id", subscriptionId)
-      .single();
+      .maybeSingle();
 
     if (subError || !sub) {
       console.error("Erro ao buscar contratação:", subError);
@@ -200,27 +203,22 @@ export default function ContratosPage() {
     const startDate = (sub as any).start_date ? format(new Date((sub as any).start_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR }) : "___";
     const finalPrice = Number((sub as any).final_price) || 0;
 
-    const filledContent = matchedTemplate.content
-      .replace(/\{\{cliente_nome\}\}/g, cliente?.nome || "___")
-      .replace(/\{\{cliente_cpf\}\}/g, cliente?.cpf || "___")
-      .replace(/\{\{cliente_email\}\}/g, cliente?.email || "___")
-      .replace(/\{\{cliente_endereco\}\}/g, cliente?.endereco || "___")
-      .replace(/\{\{pet_nome\}\}/g, pet?.nome || "___")
-      .replace(/\{\{pet_raca\}\}/g, pet?.raca || "___")
-      .replace(/\{\{pet_sexo\}\}/g, pet?.sexo || "___")
-      .replace(/\{\{pet_cor\}\}/g, pet?.cor || "___")
-      .replace(/\{\{pet_castrado\}\}/g, pet?.castrado || "___")
-      .replace(/\{\{pets_mesmo_tutor\}\}/g, petsMesmoTutor || pet?.nome || "___")
-      .replace(/\{\{servicos\}\}/g, planName || packageName || "___")
-      .replace(/\{\{plano\}\}/g, planName || "___")
-      .replace(/\{\{pacote\}\}/g, packageName || "___")
-      .replace(/\{\{data_reserva\}\}/g, startDate)
-      .replace(/\{\{valor_plano\}\}/g, planPrice ? `R$ ${planPrice.toFixed(2)}` : `R$ ${finalPrice.toFixed(2)}`)
-      .replace(/\{\{valor_servico\}\}/g, `R$ ${finalPrice.toFixed(2)}`)
-      .replace(/\{\{valor_pacote\}\}/g, packagePrice ? `R$ ${packagePrice.toFixed(2)}` : "___")
-      .replace(/\{\{data_atual\}\}/g, today)
-      .replace(/\{\{tipo_servico\}\}/g, planName || packageName || "___")
-      .replace(/\{\{valor\}\}/g, `R$ ${finalPrice.toFixed(2)}`);
+    const extras: Record<string, string> = {
+      pets_mesmo_tutor: petsMesmoTutor || pet?.nome || "___",
+      servicos: planName || packageName || "___",
+      plano: planName || "___",
+      pacote: packageName || "___",
+      data_reserva: startDate,
+      valor_plano: planPrice ? `R$ ${planPrice.toFixed(2)}` : `R$ ${finalPrice.toFixed(2)}`,
+      valor_servico: `R$ ${finalPrice.toFixed(2)}`,
+      valor_pacote: packagePrice ? `R$ ${packagePrice.toFixed(2)}` : "___",
+      data_atual: today,
+      tipo_servico: planName || packageName || "___",
+      valor: `R$ ${finalPrice.toFixed(2)}`,
+    };
+    setContractExtras(extras);
+
+    const filledContent = await fillTemplate(matchedTemplate.content, cliente?.id || "", extras);
 
     const contractTitle = `${matchedTemplate.name} — ${pet?.nome || cliente?.nome || ""}`;
 
@@ -297,15 +295,15 @@ export default function ContratosPage() {
     loadData();
   }
 
-  async function fillTemplate(templateContent: string, clienteId: string): Promise<string> {
+  async function fillTemplate(templateContent: string, clienteId: string, extras?: Record<string, string>): Promise<string> {
     const cliente = clientes.find(c => c.id === clienteId);
-    if (!cliente) return templateContent;
+    if (!cliente && !extras) return templateContent;
 
     // Fetch pets for this client
-    const { data: petsData } = await supabase
+    const { data: petsData } = cliente ? await supabase
       .from("pets")
       .select("nome, raca, sexo, cor, castrado")
-      .eq("cliente_id", clienteId);
+      .eq("cliente_id", clienteId) : { data: null as any };
 
     const pet = petsData?.[0];
     const petsMesmoTutor = petsData && petsData.length > 0
@@ -314,18 +312,26 @@ export default function ContratosPage() {
 
     const today = format(new Date(), "dd/MM/yyyy", { locale: ptBR });
 
-    return templateContent
-      .replace(/\{\{cliente_nome\}\}/g, cliente.nome || "___")
-      .replace(/\{\{cliente_cpf\}\}/g, cliente.cpf || "___")
-      .replace(/\{\{cliente_email\}\}/g, cliente.email || "___")
-      .replace(/\{\{cliente_endereco\}\}/g, cliente.endereco || "___")
-      .replace(/\{\{pet_nome\}\}/g, pet?.nome || "___")
-      .replace(/\{\{pet_raca\}\}/g, pet?.raca || "___")
-      .replace(/\{\{pet_sexo\}\}/g, pet?.sexo || "___")
-      .replace(/\{\{pet_cor\}\}/g, pet?.cor || "___")
-      .replace(/\{\{pet_castrado\}\}/g, pet?.castrado || "___")
-      .replace(/\{\{pets_mesmo_tutor\}\}/g, petsMesmoTutor || pet?.nome || "___")
-      .replace(/\{\{data_atual\}\}/g, today);
+    const baseValues: Record<string, string> = {
+      cliente_nome: cliente?.nome || "___",
+      cliente_cpf: cliente?.cpf || "___",
+      cliente_email: cliente?.email || "___",
+      cliente_endereco: cliente?.endereco || "___",
+      pet_nome: pet?.nome || "___",
+      pet_raca: pet?.raca || "___",
+      pet_sexo: pet?.sexo || "___",
+      pet_cor: pet?.cor || "___",
+      pet_castrado: pet?.castrado === true ? "Sim" : pet?.castrado === false ? "Não" : (pet?.castrado as any) || "___",
+      pets_mesmo_tutor: petsMesmoTutor || pet?.nome || "___",
+      data_atual: today,
+    };
+    // Extras override base values when provided
+    const merged = { ...baseValues, ...(extras || {}) };
+
+    return templateContent.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (full, key) => {
+      const k = String(key).toLowerCase();
+      return k in merged ? merged[k] : full;
+    });
   }
 
   async function createContract() {
@@ -559,9 +565,9 @@ export default function ContratosPage() {
     const tpl = templates.find(t => t.id === templateId);
     if (tpl) {
       let content = tpl.content;
-      // If client already selected, fill placeholders
-      if (contractForm.clienteId) {
-        content = await fillTemplate(content, contractForm.clienteId);
+      // If client or extras present, fill placeholders
+      if (contractForm.clienteId || Object.keys(contractExtras).length > 0) {
+        content = await fillTemplate(content, contractForm.clienteId, contractExtras);
       }
       setContractForm(prev => ({ ...prev, content }));
     }
@@ -722,7 +728,10 @@ export default function ContratosPage() {
       </Dialog>
 
       {/* New Contract Dialog */}
-      <Dialog open={showContractDialog} onOpenChange={setShowContractDialog}>
+      <Dialog open={showContractDialog} onOpenChange={(o) => {
+        setShowContractDialog(o);
+        if (!o) setContractExtras({});
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Contrato</DialogTitle>
@@ -749,8 +758,10 @@ export default function ContratosPage() {
               <Select value={contractForm.clienteId} onValueChange={async (v) => {
                 setContractForm(p => ({ ...p, clienteId: v }));
                 // Auto-fill placeholders when client is selected
-                if (v && contractForm.content) {
-                  const filled = await fillTemplate(contractForm.content, v);
+                if (v && contractForm.templateId) {
+                  const tpl = templates.find(t => t.id === contractForm.templateId);
+                  const source = tpl?.content || contractForm.content;
+                  const filled = await fillTemplate(source, v, contractExtras);
                   setContractForm(p => ({ ...p, clienteId: v, content: filled }));
                 }
               }}>
