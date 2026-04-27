@@ -202,6 +202,8 @@ export default function ContratosPage() {
     const today = format(new Date(), "dd/MM/yyyy", { locale: ptBR });
     const startDate = (sub as any).start_date ? format(new Date((sub as any).start_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR }) : "___";
     const finalPrice = Number((sub as any).final_price) || 0;
+    const priceContracted = Number((sub as any).price_contracted) || planPrice || packagePrice || finalPrice;
+    const discountAmount = Number((sub as any).discount_amount) || Math.max(0, priceContracted - finalPrice);
 
     const extras: Record<string, string> = {
       pets_mesmo_tutor: petsMesmoTutor || pet?.nome || "___",
@@ -209,9 +211,13 @@ export default function ContratosPage() {
       plano: planName || "___",
       pacote: packageName || "___",
       data_reserva: startDate,
-      valor_plano: planPrice ? `R$ ${planPrice.toFixed(2)}` : `R$ ${finalPrice.toFixed(2)}`,
+      valor_plano: `R$ ${finalPrice.toFixed(2)}`,
+      valor_plano_original: `R$ ${(planPrice || priceContracted).toFixed(2)}`,
       valor_servico: `R$ ${finalPrice.toFixed(2)}`,
-      valor_pacote: packagePrice ? `R$ ${packagePrice.toFixed(2)}` : "___",
+      valor_pacote: `R$ ${(packagePrice ? Math.max(0, finalPrice) : finalPrice).toFixed(2)}`,
+      valor_pacote_original: packagePrice ? `R$ ${packagePrice.toFixed(2)}` : "___",
+      desconto: `R$ ${discountAmount.toFixed(2)}`,
+      valor_com_desconto: `R$ ${finalPrice.toFixed(2)}`,
       data_atual: today,
       tipo_servico: planName || packageName || "___",
       valor: `R$ ${finalPrice.toFixed(2)}`,
