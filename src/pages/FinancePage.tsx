@@ -615,6 +615,10 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
         </Table>
       )}
 
+      {!loading && filtered.length > 0 && (
+        <PaginationBar page={page} pageSize={pageSize} total={filtered.length} totalPages={totalPages} onPage={setPage} onPageSize={setPageSize} />
+      )}
+
       {/* Summary cards */}
       {(() => {
         const totalTitulos = filtered.reduce((s, c) => s + c.valor, 0);
