@@ -3137,6 +3137,45 @@ export type Database = {
           },
         ]
       }
+      data_retention_config: {
+        Row: {
+          audit_log_retention_days: number
+          created_at: string
+          crm_media_retention_days: number
+          crm_message_retention_days: number
+          empresa_id: string
+          enabled: boolean
+          id: string
+          last_run_at: string | null
+          last_run_summary: Json | null
+          updated_at: string
+        }
+        Insert: {
+          audit_log_retention_days?: number
+          created_at?: string
+          crm_media_retention_days?: number
+          crm_message_retention_days?: number
+          empresa_id: string
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          last_run_summary?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          audit_log_retention_days?: number
+          created_at?: string
+          crm_media_retention_days?: number
+          crm_message_retention_days?: number
+          empresa_id?: string
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          last_run_summary?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       drivers: {
         Row: {
           created_at: string
