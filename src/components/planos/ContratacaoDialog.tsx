@@ -342,11 +342,17 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       // Disparo de notificação WhatsApp (best-effort, não bloqueia)
       try {
         const cli = clienteData;
-        if (cli?.whatsapp) {
+        const telefoneContato = cli?.whatsapp ?? cli?.telefone ?? null;
+        if (telefoneContato) {
           supabase.functions.invoke("notificar-fatura-whatsapp", {
             body: {
               empresa_id: empresaId,
-              cliente: { id: clienteId, nome: cli.nome, whatsapp: cli.whatsapp },
+              cliente: {
+                id: clienteId,
+                nome: cli.nome,
+                whatsapp: cli.whatsapp ?? null,
+                telefone: cli.telefone ?? null,
+              },
               fatura: { id: novaFatura?.id ?? null, descricao: descricaoFatura, valor: finalPrice, vencimento: vencimentoStr },
             },
           }).catch(() => {});
