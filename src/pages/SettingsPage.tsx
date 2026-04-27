@@ -31,9 +31,13 @@ function EmpresaTab() {
     horario_sabado_inicio: "", horario_sabado_fim: "",
     horario_domingo_inicio: "", horario_domingo_fim: "",
     logo_url: "",
+    assinatura_url: "",
+    assinatura_responsavel: "",
   });
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAssinatura, setUploadingAssinatura] = useState(false);
+  const assinaturaInputRef = useRef<HTMLInputElement>(null);
 
   async function buscarCep(cep: string) {
     const clean = cep.replace(/\D/g, "");
@@ -58,7 +62,7 @@ function EmpresaTab() {
     if (!profile?.empresa_id) return;
     supabase
       .from("empresas")
-      .select("nome_empresa, cnpj, email, telefone, nome_fantasia, endereco, endereco_numero, cep, inscricao_estadual, inscricao_municipal, horario_semana_inicio, horario_semana_fim, horario_sabado_inicio, horario_sabado_fim, horario_domingo_inicio, horario_domingo_fim, logo_url")
+      .select("nome_empresa, cnpj, email, telefone, nome_fantasia, endereco, endereco_numero, cep, inscricao_estadual, inscricao_municipal, horario_semana_inicio, horario_semana_fim, horario_sabado_inicio, horario_sabado_fim, horario_domingo_inicio, horario_domingo_fim, logo_url, assinatura_url, assinatura_responsavel")
       .eq("id", profile.empresa_id)
       .single()
       .then(({ data }: any) => {
@@ -70,6 +74,8 @@ function EmpresaTab() {
           horario_sabado_inicio: data.horario_sabado_inicio || "", horario_sabado_fim: data.horario_sabado_fim || "",
           horario_domingo_inicio: data.horario_domingo_inicio || "", horario_domingo_fim: data.horario_domingo_fim || "",
           logo_url: data.logo_url || "",
+          assinatura_url: data.assinatura_url || "",
+          assinatura_responsavel: data.assinatura_responsavel || "",
         });
         setLoading(false);
       });
@@ -94,6 +100,28 @@ function EmpresaTab() {
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = "";
+    }
+  };
+
+  const handleUploadAssinatura = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile?.empresa_id) return;
+    if (!file.type.startsWith("image/")) { toast({ title: "Selecione uma imagem válida", variant: "destructive" }); return; }
+    if (file.size > 5 * 1024 * 1024) { toast({ title: "Imagem deve ter no máximo 5MB", variant: "destructive" }); return; }
+    setUploadingAssinatura(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const fileName = `${profile.empresa_id}/assinatura.${ext}`;
+      const { error } = await supabase.storage.from("profile-photos").upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("profile-photos").getPublicUrl(fileName);
+      setForm(f => ({ ...f, assinatura_url: `${urlData.publicUrl}?t=${Date.now()}` }));
+      toast({ title: "Assinatura enviada! Clique em Salvar para confirmar." });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar assinatura", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingAssinatura(false);
+      if (assinaturaInputRef.current) assinaturaInputRef.current.value = "";
     }
   };
 
