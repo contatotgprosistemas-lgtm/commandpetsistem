@@ -511,7 +511,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map(c => {
+            {paginated.map(c => {
               const isExpanded = expandedRows.includes(c.id);
               const items = itemsCache[c.id] || [];
               return (
