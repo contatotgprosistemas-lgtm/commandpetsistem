@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,23 @@ export default function PortalLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Use Portal manifest so "Add to Home Screen" creates a shortcut to /portal,
+  // not the management area at /.
+  useEffect(() => {
+    const linkEl = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    const previousHref = linkEl?.getAttribute("href") ?? "/manifest.webmanifest";
+    if (linkEl) linkEl.setAttribute("href", "/portal-manifest.webmanifest");
+
+    const appleTitle = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]');
+    const previousAppleTitle = appleTitle?.getAttribute("content") ?? "PetControl";
+    if (appleTitle) appleTitle.setAttribute("content", "Portal Cliente");
+
+    return () => {
+      if (linkEl) linkEl.setAttribute("href", previousHref);
+      if (appleTitle) appleTitle.setAttribute("content", previousAppleTitle);
+    };
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
