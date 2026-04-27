@@ -501,6 +501,37 @@ export default function Dashboard() {
         <p className="text-[13px] text-muted-foreground mt-0.5">Visão geral do dia — {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</p>
       </div>
 
+      {novosCadastros.length > 0 && (
+        <div className="space-y-2">
+          {novosCadastros.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-start gap-3 rounded-md border border-sky-200 bg-sky-50 dark:border-sky-900/50 dark:bg-sky-950/30 px-4 py-2.5"
+            >
+              <UserPlus className="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
+              <div className="flex-1 text-sm text-sky-900 dark:text-sky-100">
+                <span className="font-semibold">Novo Cliente:</span>{" "}
+                <span className="font-medium">{c.nome}</span> efetuou o cadastro online
+                {c.pets.length > 0 && (
+                  <>
+                    {" "}— Pet{c.pets.length > 1 ? "s" : ""}:{" "}
+                    <span className="font-medium">{c.pets.join(", ")}</span>
+                  </>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => dispensarCadastro(c.id)}
+                className="text-sky-700/70 hover:text-sky-900 dark:text-sky-300/70 dark:hover:text-sky-100 shrink-0"
+                aria-label="Dispensar notificação"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard filled title="Chats Ativos" value="0" change="—" changeType="neutral" icon={<MessageSquare className="h-4 w-4" strokeWidth={1.5} />} accent="blue" />
         <MetricCard filled title="Pets na Empresa" value={String(petsNaEmpresa.length)} change="—" changeType="neutral" icon={<PawPrint className="h-4 w-4" strokeWidth={1.5} />} accent="emerald" />
