@@ -693,6 +693,8 @@ export type Database = {
           id: string
           nome: string
           notas: string | null
+          notificacao_cadastro_dispensada: boolean
+          origem_cadastro: string | null
           saldo_credito: number
           tags: string[] | null
           telefone: string | null
@@ -717,6 +719,8 @@ export type Database = {
           id?: string
           nome: string
           notas?: string | null
+          notificacao_cadastro_dispensada?: boolean
+          origem_cadastro?: string | null
           saldo_credito?: number
           tags?: string[] | null
           telefone?: string | null
@@ -741,6 +745,8 @@ export type Database = {
           id?: string
           nome?: string
           notas?: string | null
+          notificacao_cadastro_dispensada?: boolean
+          origem_cadastro?: string | null
           saldo_credito?: number
           tags?: string[] | null
           telefone?: string | null

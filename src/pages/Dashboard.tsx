@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap } from "lucide-react";
+import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap, Info, X, UserPlus } from "lucide-react";
 
 function ServicoIcon({ tipo }: { tipo?: string | null }) {
   const t = (tipo || "").toLowerCase();
@@ -93,6 +93,29 @@ export default function Dashboard() {
   const [faturamentoData, setFaturamentoData] = useState<{ dia: string; pendente: number; pago: number }[]>([]);
   const [faturamentoTotal, setFaturamentoTotal] = useState({ pendente: 0, pago: 0 });
   const [aniversariantes, setAniversariantes] = useState<{ tipo: "cliente" | "pet"; id: string; nome: string; dia: number; extra?: string }[]>([]);
+  const [novosCadastros, setNovosCadastros] = useState<{ id: string; nome: string; pets: string[] }[]>([]);
+
+  async function fetchNovosCadastros() {
+    const { data } = await supabase
+      .from("clientes")
+      .select("id, nome, pets:pets(nome)")
+      .eq("origem_cadastro", "publico")
+      .eq("notificacao_cadastro_dispensada", false)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (!data) return;
+    setNovosCadastros((data as any[]).map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      pets: Array.isArray(c.pets) ? c.pets.map((p: any) => p.nome).filter(Boolean) : [],
+    })));
+  }
+
+  async function dispensarCadastro(id: string) {
+    setNovosCadastros((prev) => prev.filter((c) => c.id !== id));
+    await supabase.from("clientes").update({ notificacao_cadastro_dispensada: true } as any).eq("id", id);
+  }
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
@@ -234,6 +257,7 @@ export default function Dashboard() {
       lista.sort((a, b) => a.dia - b.dia);
       setAniversariantes(lista);
     })();
+    fetchNovosCadastros();
   }, []);
 
   // Auto-refresh at midnight
@@ -257,6 +281,19 @@ export default function Dashboard() {
         "postgres_changes",
         { event: "*", schema: "public", table: "agendamentos" },
         () => { fetchAgendamentos(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  // Realtime: refetch novos cadastros públicos
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-novos-cadastros-rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "clientes" },
+        () => { fetchNovosCadastros(); }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -463,6 +500,37 @@ export default function Dashboard() {
         <h1 className="text-lg font-semibold text-foreground tracking-tight">Dashboard</h1>
         <p className="text-[13px] text-muted-foreground mt-0.5">Visão geral do dia — {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</p>
       </div>
+
+      {novosCadastros.length > 0 && (
+        <div className="space-y-2">
+          {novosCadastros.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-start gap-3 rounded-md border border-sky-200 bg-sky-50 dark:border-sky-900/50 dark:bg-sky-950/30 px-4 py-2.5"
+            >
+              <UserPlus className="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
+              <div className="flex-1 text-sm text-sky-900 dark:text-sky-100">
+                <span className="font-semibold">Novo Cliente:</span>{" "}
+                <span className="font-medium">{c.nome}</span> efetuou o cadastro online
+                {c.pets.length > 0 && (
+                  <>
+                    {" "}— Pet{c.pets.length > 1 ? "s" : ""}:{" "}
+                    <span className="font-medium">{c.pets.join(", ")}</span>
+                  </>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => dispensarCadastro(c.id)}
+                className="text-sky-700/70 hover:text-sky-900 dark:text-sky-300/70 dark:hover:text-sky-100 shrink-0"
+                aria-label="Dispensar notificação"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard filled title="Chats Ativos" value="0" change="—" changeType="neutral" icon={<MessageSquare className="h-4 w-4" strokeWidth={1.5} />} accent="blue" />
