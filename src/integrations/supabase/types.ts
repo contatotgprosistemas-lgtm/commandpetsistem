@@ -441,47 +441,6 @@ export type Database = {
           },
         ]
       }
-      audit_log: {
-        Row: {
-          acao: string
-          created_at: string
-          detalhes: Json | null
-          empresa_id: string
-          id: string
-          registro_id: string | null
-          tabela: string
-          user_id: string | null
-        }
-        Insert: {
-          acao: string
-          created_at?: string
-          detalhes?: Json | null
-          empresa_id: string
-          id?: string
-          registro_id?: string | null
-          tabela: string
-          user_id?: string | null
-        }
-        Update: {
-          acao?: string
-          created_at?: string
-          detalhes?: Json | null
-          empresa_id?: string
-          id?: string
-          registro_id?: string | null
-          tabela?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "audit_log_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       baias: {
         Row: {
           ativa: boolean
@@ -3139,7 +3098,6 @@ export type Database = {
       }
       data_retention_config: {
         Row: {
-          audit_log_retention_days: number
           created_at: string
           crm_media_retention_days: number
           crm_message_retention_days: number
@@ -3151,7 +3109,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          audit_log_retention_days?: number
           created_at?: string
           crm_media_retention_days?: number
           crm_message_retention_days?: number
@@ -3163,7 +3120,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          audit_log_retention_days?: number
           created_at?: string
           crm_media_retention_days?: number
           crm_message_retention_days?: number
