@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast, isToday } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -388,12 +390,40 @@ function sortData<T>(data: T[], sortKey: SortKey | null, sortDir: SortDir, acces
   });
 }
 
+function PaginationBar({ page, pageSize, total, totalPages, onPage, onPageSize }: { page: number; pageSize: number; total: number; totalPages: number; onPage: (p: number) => void; onPageSize: (s: number) => void }) {
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+  return (
+    <div className="px-5 py-3 border-t border-border flex flex-wrap items-center justify-between gap-3 bg-muted/10">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span>Itens por página:</span>
+        <Select value={String(pageSize)} onValueChange={v => onPageSize(Number(v))}>
+          <SelectTrigger className="h-8 w-[80px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[10, 25, 50, 100].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <span className="ml-2">{start}–{end} de {total}</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => onPage(1)}><ChevronsLeft className="h-4 w-4" /></Button>
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => onPage(page - 1)}><ChevronLeftIcon className="h-4 w-4" /></Button>
+        <span className="text-xs text-muted-foreground px-2 tabular-nums">Página {page} de {totalPages}</span>
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => onPage(page + 1)}><ChevronRightIcon className="h-4 w-4" /></Button>
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => onPage(totalPages)}><ChevronsRight className="h-4 w-4" /></Button>
+      </div>
+    </div>
+  );
+}
+
 function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [itemsCache, setItemsCache] = useState<Record<string, { descricao: string; valor: number; tipo: string }[]>>({});
   const { sortKey, sortDir, onSort } = useSortable();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const toggleExpand = async (id: string) => {
     if (expandedRows.includes(id)) {
@@ -427,10 +457,15 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
     });
   }, [preFiltered, sortKey, sortDir]);
 
-  const allSelected = filtered.length > 0 && selected.length === filtered.length;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  useEffect(() => { if (page > totalPages) setPage(1); }, [totalPages, page]);
+  useEffect(() => { setPage(1); }, [search, sortKey, sortDir, pageSize]);
+  const paginated = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
+  const allSelected = paginated.length > 0 && paginated.every(c => selected.includes(c.id));
 
   const toggleAll = () => {
-    setSelected(allSelected ? [] : filtered.map(c => c.id));
+    setSelected(allSelected ? selected.filter(id => !paginated.some(c => c.id === id)) : Array.from(new Set([...selected, ...paginated.map(c => c.id)])));
   };
   const toggle = (id: string) => {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -502,7 +537,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map(c => {
+            {paginated.map(c => {
               const isExpanded = expandedRows.includes(c.id);
               const items = itemsCache[c.id] || [];
               return (
@@ -606,6 +641,10 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
         </Table>
       )}
 
+      {!loading && filtered.length > 0 && (
+        <PaginationBar page={page} pageSize={pageSize} total={filtered.length} totalPages={totalPages} onPage={setPage} onPageSize={setPageSize} />
+      )}
+
       {/* Summary cards */}
       {(() => {
         const totalTitulos = filtered.reduce((s, c) => s + c.valor, 0);
@@ -643,6 +682,8 @@ function ContasPagarContent() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string[]>([]);
   const { sortKey, sortDir, onSort } = useSortable();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const sorted = useMemo(() => {
     return sortData(contas, sortKey, sortDir, (item: any, key: string) => {
@@ -658,8 +699,13 @@ function ContasPagarContent() {
     });
   }, [contas, sortKey, sortDir]);
 
-  const allSelected = sorted.length > 0 && selected.length === sorted.length;
-  const toggleAll = () => setSelected(allSelected ? [] : sorted.map((c: any) => c.id));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  useEffect(() => { if (page > totalPages) setPage(1); }, [totalPages, page]);
+  useEffect(() => { setPage(1); }, [sortKey, sortDir, pageSize]);
+  const paginated = useMemo(() => sorted.slice((page - 1) * pageSize, page * pageSize), [sorted, page, pageSize]);
+
+  const allSelected = paginated.length > 0 && paginated.every((c: any) => selected.includes(c.id));
+  const toggleAll = () => setSelected(allSelected ? selected.filter(id => !paginated.some((c: any) => c.id === id)) : Array.from(new Set([...selected, ...paginated.map((c: any) => c.id)])));
   const toggle = (id: string) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   async function fetchData() {
@@ -723,7 +769,7 @@ function ContasPagarContent() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sorted.map((c: any) => (
+            {paginated.map((c: any) => (
               <TableRow key={c.id} className={`group transition-colors ${selected.includes(c.id) ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30"}`}>
                 <TableCell className="py-3">
                   <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
@@ -746,6 +792,9 @@ function ContasPagarContent() {
             ))}
           </TableBody>
         </Table>
+      )}
+      {!loading && sorted.length > 0 && (
+        <PaginationBar page={page} pageSize={pageSize} total={sorted.length} totalPages={totalPages} onPage={setPage} onPageSize={setPageSize} />
       )}
     </div>
   );
