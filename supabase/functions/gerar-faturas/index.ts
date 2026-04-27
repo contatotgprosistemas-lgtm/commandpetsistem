@@ -9,6 +9,22 @@ const corsHeaders = {
 const EVOLUTION_URL = Deno.env.get("EVOLUTION_API_URL") ?? "";
 const EVOLUTION_KEY = Deno.env.get("EVOLUTION_API_KEY") ?? "";
 
+function normalizeWhatsappNumber(raw?: string | null) {
+  const digits = (raw ?? "").replace(/\D/g, "");
+  if (!digits) return { primary: "", variants: [] as string[] };
+
+  const primary = digits.startsWith("55")
+    ? digits
+    : digits.length >= 10 && digits.length <= 11
+      ? `55${digits}`
+      : digits;
+
+  const local = primary.startsWith("55") ? primary.slice(2) : primary;
+  const variants = Array.from(new Set([primary, local, digits]));
+
+  return { primary, variants };
+}
+
 async function enviarNotifFaturaWhats(
   supabase: any,
   empresa_id: string,
@@ -35,7 +51,7 @@ async function enviarNotifFaturaWhats(
       .maybeSingle();
     if (cfg && cfg.enabled === false) return;
 
-    const numero = (cliente.whatsapp ?? cliente.telefone ?? "").replace(/\D/g, "");
+    const { primary: numero, variants: numeroVariants } = normalizeWhatsappNumber(cliente.whatsapp ?? cliente.telefone ?? "");
     if (!numero) return;
 
     // Active WhatsApp channel
@@ -81,7 +97,7 @@ async function enviarNotifFaturaWhats(
       .from("crm_contatos")
       .select("id")
       .eq("empresa_id", empresa_id)
-      .or(`whatsapp.eq.${numero},telefone.eq.${numero}`)
+      .or(numeroVariants.map((value) => `whatsapp.eq.${value},telefone.eq.${value}`).join(","))
       .limit(1)
       .maybeSingle();
     if (!contato) {
