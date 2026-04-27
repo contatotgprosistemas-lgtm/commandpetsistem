@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PawPrint, Loader2 } from "lucide-react";
+import { PawPrint, Loader2, Link2, Copy, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -45,6 +45,8 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
   const [cepLoading, setCepLoading] = useState(false);
   const [diaVencimento, setDiaVencimento] = useState(10);
   const [diasGerarFatura, setDiasGerarFatura] = useState(5);
+  const [editLink, setEditLink] = useState<string | null>(null);
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -68,9 +70,60 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
       });
       setDiaVencimento(cliente.dia_vencimento_fatura ?? 10);
       setDiasGerarFatura(cliente.dias_gerar_fatura ?? 5);
-      
+      setEditLink(null);
     }
   }, [cliente, form]);
+
+  async function gerarLinkEdicao() {
+    if (!cliente?.id || !cliente?.empresa_id) return;
+    setGeneratingLink(true);
+    try {
+      // Garante que existe um edit_token
+      let token: string | null = cliente.edit_token || null;
+      if (!token) {
+        const novo = (crypto as any).randomUUID();
+        const { error: updErr } = await supabase
+          .from("clientes")
+          .update({ edit_token: novo } as any)
+          .eq("id", cliente.id);
+        if (updErr) throw updErr;
+        token = novo;
+      } else {
+        // Recarrega para garantir consistência
+        const { data, error } = await supabase
+          .from("clientes")
+          .select("edit_token")
+          .eq("id", cliente.id)
+          .maybeSingle();
+        if (error) throw error;
+        token = (data as any)?.edit_token || token;
+      }
+      const link = `${window.location.origin}/cadastro/${cliente.empresa_id}?edit=${token}`;
+      setEditLink(link);
+    } catch (err: any) {
+      toast({ title: "Erro ao gerar link", description: err.message, variant: "destructive" });
+    } finally {
+      setGeneratingLink(false);
+    }
+  }
+
+  function copiarLink() {
+    if (!editLink) return;
+    navigator.clipboard.writeText(editLink);
+    toast({ title: "Link copiado!" });
+  }
+
+  function enviarWhatsapp() {
+    if (!editLink) return;
+    const numero = (cliente?.whatsapp || "").replace(/\D/g, "");
+    const msg = encodeURIComponent(
+      `Olá${cliente?.nome ? `, ${cliente.nome}` : ""}! Use este link para conferir e atualizar seu cadastro: ${editLink}`
+    );
+    const url = numero
+      ? `https://wa.me/${numero}?text=${msg}`
+      : `https://wa.me/?text=${msg}`;
+    window.open(url, "_blank");
+  }
 
   async function buscarCep(cep: string) {
     const clean = cep.replace(/\D/g, "");
@@ -248,6 +301,36 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
                     <FormMessage />
                   </FormItem>
                 )} />
+                <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium flex items-center gap-1.5">
+                        <Link2 className="h-3.5 w-3.5" /> Link de edição para o cliente
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Envie ao cliente um link para que ele complete ou atualize o próprio cadastro.
+                      </p>
+                    </div>
+                    {!editLink && (
+                      <Button type="button" size="sm" variant="outline" onClick={gerarLinkEdicao} disabled={generatingLink}>
+                        {generatingLink ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Gerar link"}
+                      </Button>
+                    )}
+                  </div>
+                  {editLink && (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input value={editLink} readOnly className="text-xs" onFocus={(e) => e.currentTarget.select()} />
+                        <Button type="button" size="sm" variant="outline" onClick={copiarLink} title="Copiar link">
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" onClick={enviarWhatsapp} title="Enviar via WhatsApp">
+                          <MessageCircle className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium">Venc. Fatura (dia do mês)</label>
