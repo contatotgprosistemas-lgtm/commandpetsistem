@@ -30,6 +30,26 @@ import { toast } from "sonner";
 
 const BETA_EMAILS = ["maria@teste.com"];
 
+// Switch manifest + apple PWA title to the Portal scope so that
+// "Add to Home Screen" creates a shortcut that opens /portal,
+// not the management area at /.
+function usePortalPwaManifest() {
+  useEffect(() => {
+    const linkEl = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    const previousHref = linkEl?.getAttribute("href") ?? "/manifest.webmanifest";
+    if (linkEl) linkEl.setAttribute("href", "/portal-manifest.webmanifest");
+
+    const appleTitle = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]');
+    const previousAppleTitle = appleTitle?.getAttribute("content") ?? "PetControl";
+    if (appleTitle) appleTitle.setAttribute("content", "Portal Cliente");
+
+    return () => {
+      if (linkEl) linkEl.setAttribute("href", previousHref);
+      if (appleTitle) appleTitle.setAttribute("content", previousAppleTitle);
+    };
+  }, []);
+}
+
 const allNavItems = [
   { path: "/portal", label: "Dashboard", icon: LayoutDashboard, beta: false },
   { path: "/portal/pets", label: "Meus Pets", icon: PawPrint, beta: false },
