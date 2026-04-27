@@ -390,6 +390,32 @@ function sortData<T>(data: T[], sortKey: SortKey | null, sortDir: SortDir, acces
   });
 }
 
+function PaginationBar({ page, pageSize, total, totalPages, onPage, onPageSize }: { page: number; pageSize: number; total: number; totalPages: number; onPage: (p: number) => void; onPageSize: (s: number) => void }) {
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+  return (
+    <div className="px-5 py-3 border-t border-border flex flex-wrap items-center justify-between gap-3 bg-muted/10">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span>Itens por página:</span>
+        <Select value={String(pageSize)} onValueChange={v => onPageSize(Number(v))}>
+          <SelectTrigger className="h-8 w-[80px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[10, 25, 50, 100].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <span className="ml-2">{start}–{end} de {total}</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => onPage(1)}><ChevronsLeft className="h-4 w-4" /></Button>
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => onPage(page - 1)}><ChevronLeftIcon className="h-4 w-4" /></Button>
+        <span className="text-xs text-muted-foreground px-2 tabular-nums">Página {page} de {totalPages}</span>
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => onPage(page + 1)}><ChevronRightIcon className="h-4 w-4" /></Button>
+        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => onPage(totalPages)}><ChevronsRight className="h-4 w-4" /></Button>
+      </div>
+    </div>
+  );
+}
+
 function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
