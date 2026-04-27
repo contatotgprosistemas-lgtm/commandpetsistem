@@ -37,7 +37,6 @@ const allNavItems = [
   { path: "/portal/mensagens", label: "Mensagens", icon: MessageCircle, beta: true },
   { path: "/portal/solicitacoes", label: "Solicitações", icon: ClipboardList, beta: true },
   { path: "/portal/notificacoes", label: "Notificações", icon: Bell, beta: false },
-  { path: "/portal/contratos", label: "Contratos", icon: FileText, beta: false },
   { path: "/portal/estou-chegando", label: "Estou Chegando", icon: Navigation, beta: false },
   { path: "/portal/transporte", label: "Transporte", icon: Car, beta: true },
   { path: "/portal/historico", label: "Histórico", icon: History, beta: false },
