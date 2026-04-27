@@ -72,6 +72,7 @@ export function PortalLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logoUrl: empresaLogo } = useEmpresaLogo(logoTgPro);
+  usePortalPwaManifest();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
