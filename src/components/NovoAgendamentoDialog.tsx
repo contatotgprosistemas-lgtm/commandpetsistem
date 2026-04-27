@@ -410,44 +410,46 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
       const extrasACobrar = servicosExtras.filter(e => !e.cortesia && e.valor > 0 && e.descricao);
       const descontoTotal = data.desconto ? parseFloat(data.desconto) : 0;
-      const descontoPorPet = data.pet_ids.length > 0 ? descontoTotal / data.pet_ids.length : 0;
 
-      for (let idx = 0; idx < data.pet_ids.length; idx++) {
-        const petName = pets.find(p => p.id === data.pet_ids[idx])?.nome || "Pet";
-        const isFirstPet = idx === 0;
+      // ===== UMA fatura consolidada por agendamento (cliente + vencimento) =====
+      // Itens: serviço por pet + extras (uma vez) + cortesias (registro) + desconto
+      const lineItems: { descricao: string; valor: number; tipo: string }[] = [];
 
-        // Build line items for this pet
-        const lineItems: { descricao: string; valor: number; tipo: string }[] = [];
-        if (valorNum > 0) {
+      if (valorNum > 0) {
+        for (const petId of data.pet_ids) {
+          const petName = pets.find(p => p.id === petId)?.nome || "Pet";
           lineItems.push({ descricao: `${data.tipo_servico} — ${petName}`, valor: valorNum, tipo: "principal" });
         }
-        // Extras são cobrados apenas uma vez (na fatura do primeiro pet),
-        // respeitando a quantidade marcada — não duplicam por pet.
-        if (isFirstPet) {
-          for (const extra of extrasACobrar) {
-            const qtd = extra.quantidade || 1;
-            lineItems.push({ descricao: `${extra.descricao} x${qtd} (extra)`, valor: extra.valor * qtd, tipo: "extra" });
-          }
-          for (const extra of servicosExtras.filter(e => e.cortesia && e.descricao)) {
-            lineItems.push({ descricao: `${extra.descricao} (cortesia)`, valor: 0, tipo: "cortesia" });
-          }
+      }
+
+      // Extras cobrados apenas uma vez na fatura consolidada
+      for (const extra of extrasACobrar) {
+        const qtd = extra.quantidade || 1;
+        lineItems.push({ descricao: `${extra.descricao} x${qtd} (extra)`, valor: extra.valor * qtd, tipo: "extra" });
+      }
+      for (const extra of servicosExtras.filter(e => e.cortesia && e.descricao)) {
+        lineItems.push({ descricao: `${extra.descricao} (cortesia)`, valor: 0, tipo: "cortesia" });
+      }
+
+      const totalBruto = lineItems.reduce((sum, li) => sum + li.valor, 0);
+      const totalFatura = Math.max(totalBruto - descontoTotal, 0);
+
+      const podeCriarFatura = lineItems.some(li => li.tipo !== "cortesia") && totalFatura > 0;
+
+      if (podeCriarFatura) {
+        if (descontoTotal > 0) {
+          lineItems.push({ descricao: `Desconto`, valor: -descontoTotal, tipo: "desconto" });
         }
 
-        if (lineItems.length === 0) continue;
-
-        const totalBruto = lineItems.reduce((sum, li) => sum + li.valor, 0);
-        const totalFatura = Math.max(totalBruto - descontoPorPet, 0);
-        if (totalFatura <= 0 && lineItems.every(li => li.tipo === "cortesia")) continue;
-
-        // Add discount line item if applicable
-        if (descontoPorPet > 0) {
-          lineItems.push({ descricao: `Desconto — ${petName}`, valor: -descontoPorPet, tipo: "desconto" });
-        }
-
+        const petNames = data.pet_ids
+          .map(pid => pets.find(p => p.id === pid)?.nome)
+          .filter(Boolean)
+          .join(", ");
         const descParts = [data.tipo_servico];
-        if (isFirstPet && extrasACobrar.length > 0) descParts.push(`+${extrasACobrar.length} extra(s)`);
-        if (descontoPorPet > 0) descParts.push(`-R$${descontoPorPet.toFixed(2)} desc.`);
-        const descricaoFatura = `${descParts.join(" ")} — ${petName}`;
+        if (data.pet_ids.length > 1) descParts.push(`(${data.pet_ids.length} pets)`);
+        if (extrasACobrar.length > 0) descParts.push(`+${extrasACobrar.length} extra(s)`);
+        if (descontoTotal > 0) descParts.push(`-R$${descontoTotal.toFixed(2)} desc.`);
+        const descricaoFatura = `${descParts.join(" ")} — ${petNames}`;
 
         const { data: insertedFatura } = await supabase.from("contas_receber").insert({
           empresa_id: empresaId,
@@ -459,7 +461,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           status: "pendente",
         } as any).select("id").single();
 
-        if (insertedFatura?.id && lineItems.length > 0) {
+        if (insertedFatura?.id) {
           await supabase.from("contas_receber_itens" as any).insert(
             lineItems.map(li => ({
               conta_receber_id: insertedFatura.id,
