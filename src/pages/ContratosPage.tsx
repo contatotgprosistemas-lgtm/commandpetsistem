@@ -508,10 +508,14 @@ export default function ContratosPage() {
   }
 
   async function getSigningUrl(contract: Contract) {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) throw new Error("Usuário não autenticado");
+
     const { data: profile, error } = await supabase
       .from("profiles")
       .select("empresa_id")
-      .single();
+      .eq("user_id", authUser.id)
+      .maybeSingle();
 
     if (error || !profile?.empresa_id) {
       throw error || new Error("Empresa não encontrada");
