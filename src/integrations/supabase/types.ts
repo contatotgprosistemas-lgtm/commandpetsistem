@@ -3743,6 +3743,79 @@ export type Database = {
           },
         ]
       }
+      invoice_notification_config: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          enabled: boolean
+          mensagem: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          enabled?: boolean
+          mensagem?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          enabled?: boolean
+          mensagem?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_notification_config_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_notification_log: {
+        Row: {
+          cliente_id: string | null
+          conta_receber_id: string | null
+          conversa_id: string | null
+          empresa_id: string
+          enviado_em: string
+          erro: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          conta_receber_id?: string | null
+          conversa_id?: string | null
+          empresa_id: string
+          enviado_em?: string
+          erro?: string | null
+          id?: string
+          status?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          conta_receber_id?: string | null
+          conversa_id?: string | null
+          empresa_id?: string
+          enviado_em?: string
+          erro?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_notification_log_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           created_at: string

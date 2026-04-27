@@ -6,6 +6,135 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const EVOLUTION_URL = Deno.env.get("EVOLUTION_API_URL") ?? "";
+const EVOLUTION_KEY = Deno.env.get("EVOLUTION_API_KEY") ?? "";
+
+async function enviarNotifFaturaWhats(
+  supabase: any,
+  empresa_id: string,
+  cliente: { id: string; nome: string; whatsapp?: string | null; telefone?: string | null },
+  fatura: { id?: string | null; descricao: string; valor: number; vencimento: string },
+) {
+  try {
+    // Already sent for this invoice?
+    if (fatura.id) {
+      const { data: existsLog } = await supabase
+        .from("invoice_notification_log")
+        .select("id")
+        .eq("conta_receber_id", fatura.id)
+        .eq("status", "enviado")
+        .limit(1);
+      if (existsLog && existsLog.length > 0) return;
+    }
+
+    // Config (default enabled)
+    const { data: cfg } = await supabase
+      .from("invoice_notification_config")
+      .select("enabled, mensagem")
+      .eq("empresa_id", empresa_id)
+      .maybeSingle();
+    if (cfg && cfg.enabled === false) return;
+
+    const numero = (cliente.whatsapp ?? cliente.telefone ?? "").replace(/\D/g, "");
+    if (!numero) return;
+
+    // Active WhatsApp channel
+    const { data: canais } = await supabase
+      .from("crm_canais")
+      .select("id, identificador, status")
+      .eq("empresa_id", empresa_id)
+      .eq("tipo", "whatsapp")
+      .eq("ativo", true)
+      .order("updated_at", { ascending: false });
+    const canal = (canais ?? []).find((c: any) => c.status === "conectado") ?? (canais ?? [])[0];
+    if (!canal?.identificador) return;
+    if (!EVOLUTION_URL || !EVOLUTION_KEY) return;
+
+    const template = (cfg?.mensagem ?? "Olá {nome}! Sua fatura *{descricao}* no valor de *R$ {valor}* foi gerada com vencimento em *{vencimento}*.") as string;
+    const conteudo = template
+      .replace(/\{nome\}/g, cliente.nome ?? "")
+      .replace(/\{primeiro_nome\}/g, (cliente.nome ?? "").split(" ")[0])
+      .replace(/\{descricao\}/g, fatura.descricao)
+      .replace(/\{valor\}/g, Number(fatura.valor).toFixed(2).replace(".", ","))
+      .replace(/\{vencimento\}/g, formatDateBR(fatura.vencimento));
+
+    // Send via Evolution
+    const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+      body: JSON.stringify({ number: numero, text: conteudo }),
+    });
+    if (!evoRes.ok) {
+      const txt = await evoRes.text();
+      await supabase.from("invoice_notification_log").insert({
+        empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
+        status: "falha", erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}`,
+      });
+      return;
+    }
+    const evoData = await evoRes.json().catch(() => ({}));
+    const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
+    const now = new Date().toISOString();
+
+    // Find/create CRM contact + conversation
+    let { data: contato } = await supabase
+      .from("crm_contatos")
+      .select("id")
+      .eq("empresa_id", empresa_id)
+      .or(`whatsapp.eq.${numero},telefone.eq.${numero}`)
+      .limit(1)
+      .maybeSingle();
+    if (!contato) {
+      const { data: novo } = await supabase
+        .from("crm_contatos")
+        .insert({ empresa_id, nome: cliente.nome, whatsapp: numero, telefone: numero, origem: "faturamento" })
+        .select("id")
+        .single();
+      contato = novo;
+    }
+
+    let { data: conversa } = await supabase
+      .from("crm_conversas")
+      .select("id")
+      .eq("empresa_id", empresa_id)
+      .eq("contato_id", contato!.id)
+      .eq("canal_id", canal.id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!conversa) {
+      const { data: nova } = await supabase
+        .from("crm_conversas")
+        .insert({ empresa_id, contato_id: contato!.id, canal_id: canal.id, status: "aberta", ultima_mensagem: conteudo, ultima_mensagem_em: now })
+        .select("id")
+        .single();
+      conversa = nova;
+    }
+
+    await supabase.from("crm_mensagens").insert({
+      empresa_id, conversa_id: conversa!.id, tipo: "texto", direcao: "saida",
+      conteudo, status: "enviado", remetente_nome: "💰 Faturamento",
+      identificador_externo: externalId, enviada_em: now,
+    });
+    await supabase.from("crm_conversas").update({
+      ultima_mensagem: conteudo, ultima_mensagem_em: now,
+    }).eq("id", conversa!.id);
+
+    await supabase.from("invoice_notification_log").insert({
+      empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
+      conversa_id: conversa!.id, status: "enviado",
+    });
+  } catch (err) {
+    console.error("enviarNotifFaturaWhats error", err);
+    try {
+      await supabase.from("invoice_notification_log").insert({
+        empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
+        status: "falha", erro: String((err as Error).message ?? err).slice(0, 500),
+      });
+    } catch { /* noop */ }
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -24,7 +153,7 @@ Deno.serve(async (req) => {
     const { data: subscriptions, error: subErr } = await supabase
       .from("customer_pet_subscriptions")
       .select(
-        "id, empresa_id, cliente_id, pet_id, plan_id, package_id, price_contracted, discount_amount, final_price, planned_days, cliente:clientes(id, nome, dia_vencimento_fatura, dias_gerar_fatura)"
+        "id, empresa_id, cliente_id, pet_id, plan_id, package_id, price_contracted, discount_amount, final_price, planned_days, cliente:clientes(id, nome, whatsapp, telefone, dia_vencimento_fatura, dias_gerar_fatura)"
       )
       .eq("status", "ativo");
 
@@ -107,16 +236,28 @@ Deno.serve(async (req) => {
           .limit(1);
 
         if (!existing || existing.length === 0) {
-          await supabase.from("contas_receber").insert({
+          const descricao = `${sub.plan_id ? "Plano" : "Pacote"}: ${planName}`;
+          const { data: novaFatura } = await supabase.from("contas_receber").insert({
             empresa_id: sub.empresa_id,
             cliente_id: sub.cliente_id,
-            descricao: `${sub.plan_id ? "Plano" : "Pacote"}: ${planName}`,
+            descricao,
             valor: sub.final_price,
             vencimento: vencStr,
             status: "pendente",
             categoria: "Planos e Pacotes",
-          });
+          }).select("id").single();
           faturasCriadas++;
+
+          // Send WhatsApp/CRM notification
+          await enviarNotifFaturaWhats(supabase, sub.empresa_id, {
+            id: cliente.id, nome: cliente.nome,
+            whatsapp: cliente.whatsapp ?? null, telefone: cliente.telefone ?? null,
+          }, {
+            id: novaFatura?.id ?? null,
+            descricao,
+            valor: Number(sub.final_price),
+            vencimento: vencStr,
+          });
 
           // Notify client: invoice generated
           await supabase.from("customer_notifications").insert({
