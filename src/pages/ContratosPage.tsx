@@ -339,8 +339,21 @@ export default function ContratosPage() {
       toast.error("Preencha título e selecione um cliente");
       return;
     }
-    const { data: profile } = await supabase.from("profiles").select("empresa_id, id").single();
-    if (!profile?.empresa_id) return;
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
+    const { data: profile, error: profileErr } = await supabase
+      .from("profiles")
+      .select("empresa_id, id")
+      .eq("user_id", authUser.id)
+      .maybeSingle();
+    if (profileErr || !profile?.empresa_id) {
+      console.error("Erro ao identificar empresa:", profileErr, profile);
+      toast.error("Erro ao identificar empresa do usuário");
+      return;
+    }
 
     // Use the content from the editor directly (already filled by handleFillAndPreview)
     let content = contractForm.content;
@@ -368,7 +381,8 @@ export default function ContratosPage() {
     }).select("id, signing_token").single();
 
     if (error) {
-      toast.error("Erro ao criar contrato");
+      console.error("Erro ao inserir contrato:", error);
+      toast.error(`Erro ao criar contrato: ${error.message}`);
       return;
     }
 
