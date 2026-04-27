@@ -257,6 +257,7 @@ export default function Dashboard() {
       lista.sort((a, b) => a.dia - b.dia);
       setAniversariantes(lista);
     })();
+    fetchNovosCadastros();
   }, []);
 
   // Auto-refresh at midnight
@@ -280,6 +281,19 @@ export default function Dashboard() {
         "postgres_changes",
         { event: "*", schema: "public", table: "agendamentos" },
         () => { fetchAgendamentos(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  // Realtime: refetch novos cadastros públicos
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-novos-cadastros-rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "clientes" },
+        () => { fetchNovosCadastros(); }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
