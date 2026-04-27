@@ -7,11 +7,14 @@ const corsHeaders = {
 };
 
 /**
- * Runs on the 1st of each month.
- * For every active weekly (mensal) bath subscription that has planned_days,
- * checks how many times that weekday falls in the current month.
- * If it's 5 instead of the usual 4, creates an extra appointment
- * and adjusts the invoice with the proportional extra charge.
+ * Runs on the 1st of each month. Handles automatic adjustments for:
+ *  - Weekly (semanal) plans: extra session when the planned weekday occurs 5x in a month.
+ *    Charge = final_price / 4 per extra session (added to the month's invoice).
+ *  - Bi-weekly (quinzenal) plans: when a 3rd fortnight occurs in the same month.
+ *    Behavior depends on extra_session_policy:
+ *      - "skip" (default): the 3rd session is NOT scheduled, no charge applied.
+ *      - "charge": the 3rd session is scheduled and charged proportionally
+ *                  (final_price / 2 per extra session, since base covers 2 sessions).
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -26,8 +29,8 @@ Deno.serve(async (req) => {
     const today = new Date();
     const year = today.getFullYear();
     const month = today.getMonth(); // 0-indexed
+    const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
 
-    // Count how many times each weekday (0-6) occurs in this month
     function countWeekdayInMonth(weekday: number, y: number, m: number): number {
       let count = 0;
       const daysInMonth = new Date(y, m + 1, 0).getDate();
@@ -37,7 +40,6 @@ Deno.serve(async (req) => {
       return count;
     }
 
-    // Get all dates of a given weekday in the month
     function getWeekdayDates(weekday: number, y: number, m: number): string[] {
       const dates: string[] = [];
       const daysInMonth = new Date(y, m + 1, 0).getDate();
@@ -51,14 +53,14 @@ Deno.serve(async (req) => {
       return dates;
     }
 
-    // Fetch active monthly subscriptions with planned_days
+    // Fetch all active subscriptions with planned_days (semanal + quinzenal)
     const { data: subscriptions, error: subErr } = await supabase
       .from("customer_pet_subscriptions")
       .select(
-        "id, empresa_id, cliente_id, pet_id, plan_id, package_id, price_contracted, discount_amount, final_price, planned_days, start_date, end_date, frequency"
+        "id, empresa_id, cliente_id, pet_id, plan_id, package_id, price_contracted, discount_amount, final_price, planned_days, start_date, end_date, frequency, extra_session_policy"
       )
       .eq("status", "ativo")
-      .eq("frequency", "mensal")
+      .in("frequency", ["semanal", "quinzenal"])
       .not("planned_days", "is", null);
 
     if (subErr) {
@@ -69,12 +71,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch plan/package names
+    // Resolve plan/package names
     const planIds = [...new Set((subscriptions || []).filter((s: any) => s.plan_id).map((s: any) => s.plan_id))];
     const packageIds = [...new Set((subscriptions || []).filter((s: any) => s.package_id).map((s: any) => s.package_id))];
 
-    let plansMap: Record<string, string> = {};
-    let packagesMap: Record<string, string> = {};
+    const plansMap: Record<string, string> = {};
+    const packagesMap: Record<string, string> = {};
 
     if (planIds.length > 0) {
       const { data: plans } = await supabase.from("service_plans").select("id, name").in("id", planIds);
@@ -87,44 +89,100 @@ Deno.serve(async (req) => {
 
     let agendamentosCriados = 0;
     let faturasAjustadas = 0;
+    let quinzenaisProcessadas = 0;
 
     for (const sub of subscriptions || []) {
       const plannedDays: number[] = sub.planned_days || [];
       if (plannedDays.length === 0) continue;
 
-      // Check if any planned weekday occurs 5 times this month
-      let has5thWeek = false;
-      let extraDates: string[] = [];
+      const isQuinzenal = sub.frequency === "quinzenal";
+      const baseSessionCount = isQuinzenal ? 2 : 4;
+      const noteTag = isQuinzenal ? "3ª sessão quinzenal extra" : "5º banho extra";
+      const policy = (sub.extra_session_policy || "skip").toLowerCase();
 
-      for (const weekday of plannedDays) {
-        const count = countWeekdayInMonth(weekday, year, month);
-        if (count >= 5) {
-          has5thWeek = true;
-          // The 5th occurrence is the last date
-          const allDates = getWeekdayDates(weekday, year, month);
-          extraDates.push(allDates[4]); // 5th date (0-indexed)
+      // Determine extra dates
+      const extraDates: string[] = [];
+
+      if (isQuinzenal) {
+        // For each planned weekday, the 3rd occurrence (index 2) within
+        // a 14-day cadence starting from start_date is the "extra".
+        // Simpler heuristic: if the weekday occurs >=5 times this month,
+        // there's a 3rd fortnight (since 5 weekdays = 3 fortnights overlap).
+        // More precise: compute occurrences from start_date with 14-day step.
+        const startDate = new Date(sub.start_date + "T00:00:00");
+        const monthEnd = new Date(year, month + 1, 0);
+
+        for (const weekday of plannedDays) {
+          // Find first occurrence of this weekday from start_date
+          const occurrences: Date[] = [];
+          const cursor = new Date(startDate);
+          // align to weekday
+          while (cursor.getDay() !== weekday) {
+            cursor.setDate(cursor.getDate() + 1);
+          }
+          // walk in 14-day steps until end of current month
+          while (cursor <= monthEnd) {
+            if (
+              cursor.getFullYear() === year &&
+              cursor.getMonth() === month
+            ) {
+              occurrences.push(new Date(cursor));
+            }
+            cursor.setDate(cursor.getDate() + 14);
+          }
+          // If 3 or more fortnight occurrences fall in this month, the 3rd+ are "extras"
+          if (occurrences.length >= 3) {
+            for (let i = 2; i < occurrences.length; i++) {
+              const d = occurrences[i];
+              const dd = String(d.getDate()).padStart(2, "0");
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              extraDates.push(`${d.getFullYear()}-${mm}-${dd}`);
+            }
+          }
+        }
+      } else {
+        // Semanal: 5th occurrence of weekday
+        for (const weekday of plannedDays) {
+          const count = countWeekdayInMonth(weekday, year, month);
+          if (count >= 5) {
+            const allDates = getWeekdayDates(weekday, year, month);
+            extraDates.push(allDates[4]);
+          }
         }
       }
 
-      if (!has5thWeek) continue;
+      if (extraDates.length === 0) continue;
 
       const planName = sub.plan_id
         ? plansMap[sub.plan_id] || "Plano"
         : packagesMap[sub.package_id] || "Pacote";
 
-      // Check if we already processed this month (avoid duplicates)
-      const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+      // Avoid duplicates
       const { data: existingExtra } = await supabase
         .from("agendamentos")
         .select("id")
         .eq("subscription_id", sub.id)
         .gte("data_hora", monthStart + "T00:00:00")
-        .ilike("notas", "%5º banho extra%")
+        .ilike("notas", `%${noteTag}%`)
         .limit(1);
 
       if (existingExtra && existingExtra.length > 0) continue;
 
-      // Create extra appointments for each 5th occurrence
+      // For quinzenal with policy "skip", we just notify the client and DO NOT
+      // create the appointment or invoice adjustment.
+      if (isQuinzenal && policy === "skip") {
+        await supabase.from("customer_notifications").insert({
+          empresa_id: sub.empresa_id,
+          cliente_id: sub.cliente_id,
+          title: "Mês com 3ª quinzena",
+          message: `Este mês possui uma 3ª quinzena para ${planName}. Conforme contratado, sessões extras não são incluídas. Caso deseje agendar, entre em contato.`,
+          type: "informativo",
+        });
+        quinzenaisProcessadas++;
+        continue;
+      }
+
+      // Create extra appointments
       for (const extraDate of extraDates) {
         await supabase.from("agendamentos").insert({
           empresa_id: sub.empresa_id,
@@ -134,20 +192,18 @@ Deno.serve(async (req) => {
           data_hora: extraDate + "T08:00:00",
           status: "agendado",
           subscription_id: sub.id,
-          notas: "5º banho extra - gerado automaticamente",
+          notas: `${noteTag} - gerado automaticamente`,
         } as any);
         agendamentosCriados++;
       }
 
       // Calculate proportional adjustment
-      // base price covers 4 sessions, extra sessions = final_price / 4 per extra
-      const baseSessionCount = 4;
       const extraCount = extraDates.length;
       const valorPorSessao = Number(sub.final_price) / baseSessionCount;
       const valorExtra = valorPorSessao * extraCount;
       const valorTotal = Number(sub.final_price) + valorExtra;
 
-      // Find and update this month's pending invoice for this subscription
+      // Find this month's pending invoice
       const { data: invoice } = await supabase
         .from("contas_receber")
         .select("id, valor")
@@ -159,7 +215,6 @@ Deno.serve(async (req) => {
         .limit(1);
 
       if (invoice && invoice.length > 0) {
-        // Update existing invoice with adjusted value
         await supabase
           .from("contas_receber")
           .update({
@@ -169,9 +224,6 @@ Deno.serve(async (req) => {
           .eq("id", invoice[0].id);
         faturasAjustadas++;
       } else {
-        // No invoice found yet - create one with the extra value only
-        // The regular invoice will be created by gerar-faturas
-        // So we create a separate charge for the extra session
         const { data: cliente } = await supabase
           .from("clientes")
           .select("dia_vencimento_fatura")
@@ -184,7 +236,7 @@ Deno.serve(async (req) => {
         await supabase.from("contas_receber").insert({
           empresa_id: sub.empresa_id,
           cliente_id: sub.cliente_id,
-          descricao: `${sub.plan_id ? "Plano" : "Pacote"}: ${planName} - 5º banho extra`,
+          descricao: `${sub.plan_id ? "Plano" : "Pacote"}: ${planName} - ${noteTag}`,
           valor: valorExtra,
           vencimento: vencStr,
           status: "pendente",
@@ -193,23 +245,27 @@ Deno.serve(async (req) => {
         faturasAjustadas++;
       }
 
-      // Notify client
       await supabase.from("customer_notifications").insert({
         empresa_id: sub.empresa_id,
         cliente_id: sub.cliente_id,
         title: "Ajuste mensal - sessão extra",
-        message: `Este mês possui ${baseSessionCount + extraCount} ${planName.toLowerCase()} para seu pet. O valor proporcional de R$ ${valorExtra.toFixed(2)} foi adicionado à sua fatura (total: R$ ${valorTotal.toFixed(2)}).`,
+        message: `Este mês possui ${baseSessionCount + extraCount} sessões de ${planName.toLowerCase()} para seu pet. O valor proporcional de R$ ${valorExtra.toFixed(2)} foi adicionado à sua fatura (total: R$ ${valorTotal.toFixed(2)}).`,
         type: "financeiro",
       });
+
+      if (isQuinzenal) quinzenaisProcessadas++;
     }
 
-    console.log(`Ajuste mensal concluído: ${agendamentosCriados} agendamentos extras, ${faturasAjustadas} faturas ajustadas.`);
+    console.log(
+      `Ajuste mensal: ${agendamentosCriados} agendamentos extras, ${faturasAjustadas} faturas ajustadas, ${quinzenaisProcessadas} quinzenais processadas.`
+    );
 
     return new Response(
       JSON.stringify({
         success: true,
         agendamentos_criados: agendamentosCriados,
         faturas_ajustadas: faturasAjustadas,
+        quinzenais_processadas: quinzenaisProcessadas,
         month: `${year}-${String(month + 1).padStart(2, "0")}`,
       }),
       {
