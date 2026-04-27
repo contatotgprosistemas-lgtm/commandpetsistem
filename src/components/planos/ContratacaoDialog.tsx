@@ -132,7 +132,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
   useEffect(() => {
     if (!open) return;
-    supabase.from("clientes").select("id, nome, whatsapp, dia_vencimento_fatura").is("deleted_at", null).order("nome").then(({ data }) => data && setClientes(data));
+    supabase.from("clientes").select("id, nome, whatsapp, telefone, dia_vencimento_fatura").is("deleted_at", null).order("nome").then(({ data }) => data && setClientes(data));
     supabase.from("service_plans" as any).select("*").eq("status", "ativo").then(({ data }) => data && setPlans(data));
     supabase.from("service_packages" as any).select("*").eq("status", "ativo").then(({ data }) => data && setPackages(data));
     supabase.from("profiles").select("id, nome, cargo").eq("empresa_id", empresaId).eq("cargo", "banhista").then(({ data }) => data && setBanhistas(data));
