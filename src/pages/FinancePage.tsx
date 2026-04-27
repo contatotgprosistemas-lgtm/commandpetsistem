@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { MetricCard } from "@/components/MetricCard";
 import { DollarSign, TrendingUp, TrendingDown, AlertCircle, ArrowDownCircle, Plus, Trash2, MoreVertical, Pencil, Search, Ban, CheckSquare, XCircle, Upload, ChevronDown, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, BarChart3, Wallet, FileText, Settings2, Receipt, Landmark, ArrowDownToLine, ArrowUpFromLine, ListTree } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -541,8 +541,8 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
               const isExpanded = expandedRows.includes(c.id);
               const items = itemsCache[c.id] || [];
               return (
-                <>
-                  <TableRow key={c.id} className={`group transition-colors ${selected.includes(c.id) ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30"}`}>
+                <Fragment key={c.id}>
+                  <TableRow className={`group transition-colors ${selected.includes(c.id) ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30"}`}>
                     <TableCell className="py-3">
                       <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
                     </TableCell>
@@ -634,7 +634,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
                       </TableRow>
                     )
                   )}
-                </>
+                </Fragment>
               );
             })}
           </TableBody>
