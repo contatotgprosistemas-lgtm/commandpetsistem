@@ -431,10 +431,15 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
     });
   }, [preFiltered, sortKey, sortDir]);
 
-  const allSelected = filtered.length > 0 && selected.length === filtered.length;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  useEffect(() => { if (page > totalPages) setPage(1); }, [totalPages, page]);
+  useEffect(() => { setPage(1); }, [search, sortKey, sortDir, pageSize]);
+  const paginated = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
+  const allSelected = paginated.length > 0 && paginated.every(c => selected.includes(c.id));
 
   const toggleAll = () => {
-    setSelected(allSelected ? [] : filtered.map(c => c.id));
+    setSelected(allSelected ? selected.filter(id => !paginated.some(c => c.id === id)) : Array.from(new Set([...selected, ...paginated.map(c => c.id)])));
   };
   const toggle = (id: string) => {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
