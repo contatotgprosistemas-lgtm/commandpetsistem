@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap } from "lucide-react";
+import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap, Info, X, UserPlus } from "lucide-react";
 
 function ServicoIcon({ tipo }: { tipo?: string | null }) {
   const t = (tipo || "").toLowerCase();
@@ -93,6 +93,29 @@ export default function Dashboard() {
   const [faturamentoData, setFaturamentoData] = useState<{ dia: string; pendente: number; pago: number }[]>([]);
   const [faturamentoTotal, setFaturamentoTotal] = useState({ pendente: 0, pago: 0 });
   const [aniversariantes, setAniversariantes] = useState<{ tipo: "cliente" | "pet"; id: string; nome: string; dia: number; extra?: string }[]>([]);
+  const [novosCadastros, setNovosCadastros] = useState<{ id: string; nome: string; pets: string[] }[]>([]);
+
+  async function fetchNovosCadastros() {
+    const { data } = await supabase
+      .from("clientes")
+      .select("id, nome, pets:pets(nome)")
+      .eq("origem_cadastro", "publico")
+      .eq("notificacao_cadastro_dispensada", false)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (!data) return;
+    setNovosCadastros((data as any[]).map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      pets: Array.isArray(c.pets) ? c.pets.map((p: any) => p.nome).filter(Boolean) : [],
+    })));
+  }
+
+  async function dispensarCadastro(id: string) {
+    setNovosCadastros((prev) => prev.filter((c) => c.id !== id));
+    await supabase.from("clientes").update({ notificacao_cadastro_dispensada: true } as any).eq("id", id);
+  }
 
   // Pets na empresa state
   const [manejoOpen, setManejoOpen] = useState<Agendamento | null>(null);
