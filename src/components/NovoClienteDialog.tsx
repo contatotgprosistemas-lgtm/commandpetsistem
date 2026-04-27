@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { resolveEmpresaId } from "@/lib/empresa";
+import { montarEndereco } from "@/lib/endereco";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
@@ -74,9 +75,11 @@ export function NovoClienteDialog({ onSuccess, empresaId: empresaIdProp }: { onS
         return;
       }
 
-      let enderecoCompleto = data.endereco || "";
-      if (data.numero) enderecoCompleto = enderecoCompleto ? `${enderecoCompleto}, ${data.numero}` : data.numero;
-      if (data.complemento) enderecoCompleto = enderecoCompleto ? `${enderecoCompleto} - ${data.complemento}` : data.complemento;
+      const enderecoCompleto = montarEndereco({
+        logradouro: data.endereco,
+        numero: data.numero,
+        complemento: data.complemento,
+      });
 
       const { error } = await supabase.from("clientes").insert({
         empresa_id: empresaId,
