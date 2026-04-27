@@ -333,29 +333,70 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       const descExtra = isQuinzenal && hasThreeOccurrences && extraSessionPolicy === "charge" ? " (+1 sessão extra)" : "";
       const descricaoFatura = `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name} - ${petNome}${descFreq}${descProp}${descExtra}`;
 
-      const { data: novaFatura } = await supabase.from("contas_receber").insert({
-        empresa_id: empresaId, cliente_id: clienteId,
-        descricao: descricaoFatura,
-        valor: finalPrice, vencimento: vencimentoStr, status: "pendente", categoria: "Planos e Pacotes"
-      }).select("id").single();
+      // Tenta agrupar com fatura pendente já existente do mesmo cliente/vencimento (Planos e Pacotes)
+      const { data: faturaExistente } = await supabase
+        .from("contas_receber")
+        .select("id, valor, descricao")
+        .eq("cliente_id", clienteId)
+        .eq("vencimento", vencimentoStr)
+        .eq("status", "pendente")
+        .eq("categoria", "Planos e Pacotes")
+        .limit(1)
+        .maybeSingle();
+
+      let faturaId: string | null = null;
+      let valorFaturaTotal = finalPrice;
+      let descricaoFaturaFinal = descricaoFatura;
+
+      if (faturaExistente?.id) {
+        faturaId = faturaExistente.id;
+        valorFaturaTotal = Number(faturaExistente.valor) + finalPrice;
+        descricaoFaturaFinal = `Faturamento mensal (consolidado)`;
+        await supabase.from("contas_receber").update({
+          valor: valorFaturaTotal,
+          descricao: descricaoFaturaFinal,
+          updated_at: new Date().toISOString(),
+        }).eq("id", faturaId);
+      } else {
+        const { data: novaFatura } = await supabase.from("contas_receber").insert({
+          empresa_id: empresaId, cliente_id: clienteId,
+          descricao: descricaoFatura,
+          valor: finalPrice, vencimento: vencimentoStr, status: "pendente", categoria: "Planos e Pacotes"
+        }).select("id").single();
+        faturaId = novaFatura?.id ?? null;
+      }
+
+      // Adiciona o item detalhado
+      if (faturaId) {
+        await supabase.from("contas_receber_itens" as any).insert({
+          conta_receber_id: faturaId,
+          empresa_id: empresaId,
+          descricao: descricaoFatura,
+          valor: finalPrice,
+          tipo: "principal",
+        });
+      }
 
       // Disparo de notificação WhatsApp (best-effort, não bloqueia)
+      // Só envia se for fatura NOVA. Se foi anexada à existente, evita duplicar mensagem.
       try {
-        const cli = clienteData;
-        const telefoneContato = cli?.whatsapp ?? cli?.telefone ?? null;
-        if (telefoneContato) {
-          await supabase.functions.invoke("notificar-fatura-whatsapp", {
-            body: {
-              empresa_id: empresaId,
-              cliente: {
-                id: clienteId,
-                nome: cli.nome,
-                whatsapp: cli.whatsapp ?? null,
-                telefone: cli.telefone ?? null,
+        if (!faturaExistente?.id) {
+          const cli = clienteData;
+          const telefoneContato = cli?.whatsapp ?? cli?.telefone ?? null;
+          if (telefoneContato) {
+            await supabase.functions.invoke("notificar-fatura-whatsapp", {
+              body: {
+                empresa_id: empresaId,
+                cliente: {
+                  id: clienteId,
+                  nome: cli.nome,
+                  whatsapp: cli.whatsapp ?? null,
+                  telefone: cli.telefone ?? null,
+                },
+                fatura: { id: faturaId, descricao: descricaoFaturaFinal, valor: valorFaturaTotal, vencimento: vencimentoStr },
               },
-              fatura: { id: novaFatura?.id ?? null, descricao: descricaoFatura, valor: finalPrice, vencimento: vencimentoStr },
-            },
-          }).catch(() => {});
+            }).catch(() => {});
+          }
         }
       } catch { /* noop */ }
 
