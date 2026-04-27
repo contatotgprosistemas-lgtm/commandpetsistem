@@ -414,19 +414,23 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
       for (let idx = 0; idx < data.pet_ids.length; idx++) {
         const petName = pets.find(p => p.id === data.pet_ids[idx])?.nome || "Pet";
+        const isFirstPet = idx === 0;
 
         // Build line items for this pet
         const lineItems: { descricao: string; valor: number; tipo: string }[] = [];
         if (valorNum > 0) {
           lineItems.push({ descricao: `${data.tipo_servico} — ${petName}`, valor: valorNum, tipo: "principal" });
         }
-        for (const extra of extrasACobrar) {
-          const qtd = extra.quantidade || 1;
-          lineItems.push({ descricao: `${extra.descricao} x${qtd} (extra) — ${petName}`, valor: extra.valor * qtd, tipo: "extra" });
-        }
-        // Add cortesia items with valor 0
-        for (const extra of servicosExtras.filter(e => e.cortesia && e.descricao)) {
-          lineItems.push({ descricao: `${extra.descricao} (cortesia) — ${petName}`, valor: 0, tipo: "cortesia" });
+        // Extras são cobrados apenas uma vez (na fatura do primeiro pet),
+        // respeitando a quantidade marcada — não duplicam por pet.
+        if (isFirstPet) {
+          for (const extra of extrasACobrar) {
+            const qtd = extra.quantidade || 1;
+            lineItems.push({ descricao: `${extra.descricao} x${qtd} (extra)`, valor: extra.valor * qtd, tipo: "extra" });
+          }
+          for (const extra of servicosExtras.filter(e => e.cortesia && e.descricao)) {
+            lineItems.push({ descricao: `${extra.descricao} (cortesia)`, valor: 0, tipo: "cortesia" });
+          }
         }
 
         if (lineItems.length === 0) continue;
@@ -441,7 +445,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         }
 
         const descParts = [data.tipo_servico];
-        if (extrasACobrar.length > 0) descParts.push(`+${extrasACobrar.length} extra(s)`);
+        if (isFirstPet && extrasACobrar.length > 0) descParts.push(`+${extrasACobrar.length} extra(s)`);
         if (descontoPorPet > 0) descParts.push(`-R$${descontoPorPet.toFixed(2)} desc.`);
         const descricaoFatura = `${descParts.join(" ")} — ${petName}`;
 
