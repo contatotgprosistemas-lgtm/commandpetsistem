@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.asaas-webhook]
 verify_jwt = false
+
+[functions.notificar-fatura-whatsapp]
+verify_jwt = false
