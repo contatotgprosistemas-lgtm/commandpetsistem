@@ -20,7 +20,6 @@ export function RetencaoDadosCard() {
     enabled: true,
     crm_media_retention_days: 60,
     crm_message_retention_days: 180,
-    audit_log_retention_days: 180,
   });
   const [lastRunAt, setLastRunAt] = useState<string | null>(null);
   const [lastRunSummary, setLastRunSummary] = useState<any>(null);
@@ -38,7 +37,6 @@ export function RetencaoDadosCard() {
           enabled: data.enabled,
           crm_media_retention_days: data.crm_media_retention_days,
           crm_message_retention_days: data.crm_message_retention_days,
-          audit_log_retention_days: data.audit_log_retention_days,
         });
         setLastRunAt(data.last_run_at);
         setLastRunSummary(data.last_run_summary);
@@ -70,7 +68,7 @@ export function RetencaoDadosCard() {
       toast({
         title: "Limpeza concluída",
         description: stats
-          ? `Mídias: ${stats.crm_media_files_deleted} • Mensagens: ${stats.crm_messages_deleted} • Logs: ${stats.audit_logs_deleted}`
+          ? `Mídias: ${stats.crm_media_files_deleted} • Mensagens: ${stats.crm_messages_deleted}`
           : "Sem dados a remover.",
       });
       // refresh
@@ -105,8 +103,8 @@ export function RetencaoDadosCard() {
           <Database className="h-4 w-4" /> Retenção de Dados (Cloud)
         </CardTitle>
         <CardDescription>
-          Apaga automaticamente mídias do WhatsApp, mensagens do CRM e logs de auditoria
-          antigos para reduzir o consumo de armazenamento e tráfego (egress).
+          Apaga automaticamente mídias do WhatsApp e mensagens antigas do CRM
+          para reduzir o consumo de armazenamento e tráfego (egress).
           Executado diariamente às 03:00.
         </CardDescription>
       </CardHeader>
@@ -122,7 +120,7 @@ export function RetencaoDadosCard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Mídias do WhatsApp (dias)</Label>
             <Input
@@ -142,16 +140,6 @@ export function RetencaoDadosCard() {
               onChange={(e) => setForm({ ...form, crm_message_retention_days: Number(e.target.value) })}
             />
             <p className="text-xs text-muted-foreground">Apaga registros antigos. Padrão: 180</p>
-          </div>
-          <div className="space-y-2">
-            <Label>Logs de auditoria (dias)</Label>
-            <Input
-              type="number"
-              min={30}
-              value={form.audit_log_retention_days}
-              onChange={(e) => setForm({ ...form, audit_log_retention_days: Number(e.target.value) })}
-            />
-            <p className="text-xs text-muted-foreground">Apaga histórico antigo. Padrão: 180</p>
           </div>
         </div>
 
@@ -173,7 +161,6 @@ export function RetencaoDadosCard() {
               <>
                 — Mídias: <strong>{lastRunSummary.crm_media_files_deleted ?? 0}</strong> •
                 {" "}Mensagens: <strong>{lastRunSummary.crm_messages_deleted ?? 0}</strong> •
-                {" "}Logs: <strong>{lastRunSummary.audit_logs_deleted ?? 0}</strong>
                 {lastRunSummary.errors?.length > 0 && (
                   <span className="text-destructive"> • {lastRunSummary.errors.length} erro(s)</span>
                 )}

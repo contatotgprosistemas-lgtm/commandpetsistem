@@ -50,13 +50,11 @@ Deno.serve(async (req) => {
         empresa_id: empresaId,
         crm_media_files_deleted: 0,
         crm_messages_deleted: 0,
-        audit_logs_deleted: 0,
         errors: [] as string[],
       };
 
       const mediaCutoff = new Date(Date.now() - cfg.crm_media_retention_days * 86400000).toISOString();
       const msgCutoff = new Date(Date.now() - cfg.crm_message_retention_days * 86400000).toISOString();
-      const auditCutoff = new Date(Date.now() - cfg.audit_log_retention_days * 86400000).toISOString();
 
       // 1) Delete chat-media files older than mediaCutoff
       try {
@@ -127,20 +125,6 @@ Deno.serve(async (req) => {
         stats.crm_messages_deleted = deleted?.length ?? 0;
       } catch (e: any) {
         stats.errors.push(`messages: ${e.message}`);
-      }
-
-      // 3) Delete audit_log older than auditCutoff
-      try {
-        const { data: deleted, error } = await admin
-          .from("audit_log")
-          .delete()
-          .eq("empresa_id", empresaId)
-          .lt("created_at", auditCutoff)
-          .select("id");
-        if (error) throw error;
-        stats.audit_logs_deleted = deleted?.length ?? 0;
-      } catch (e: any) {
-        stats.errors.push(`audit: ${e.message}`);
       }
 
       await admin.from("data_retention_config").update({
