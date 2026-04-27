@@ -226,23 +226,44 @@ Deno.serve(async (req) => {
       } else {
         const { data: cliente } = await supabase
           .from("clientes")
-          .select("dia_vencimento_fatura")
+          .select("id, nome, whatsapp, dia_vencimento_fatura")
           .eq("id", sub.cliente_id)
           .single();
 
         const diaVenc = (cliente as any)?.dia_vencimento_fatura || 10;
         const vencStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(diaVenc).padStart(2, "0")}`;
+        const descricaoFatura = `${sub.plan_id ? "Plano" : "Pacote"}: ${planName} - ${noteTag}`;
 
-        await supabase.from("contas_receber").insert({
+        const { data: novaFatura } = await supabase.from("contas_receber").insert({
           empresa_id: sub.empresa_id,
           cliente_id: sub.cliente_id,
-          descricao: `${sub.plan_id ? "Plano" : "Pacote"}: ${planName} - ${noteTag}`,
+          descricao: descricaoFatura,
           valor: valorExtra,
           vencimento: vencStr,
           status: "pendente",
           categoria: "Planos e Pacotes",
-        });
+        }).select("id").single();
         faturasAjustadas++;
+
+        // Notificação WhatsApp (best-effort)
+        try {
+          const cli: any = cliente;
+          if (cli?.whatsapp) {
+            const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/notificar-fatura-whatsapp`;
+            fetch(fnUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              },
+              body: JSON.stringify({
+                empresa_id: sub.empresa_id,
+                cliente: { id: sub.cliente_id, nome: cli.nome, whatsapp: cli.whatsapp },
+                fatura: { id: novaFatura?.id ?? null, descricao: descricaoFatura, valor: valorExtra, vencimento: vencStr },
+              }),
+            }).catch(() => {});
+          }
+        } catch { /* noop */ }
       }
 
       await supabase.from("customer_notifications").insert({
