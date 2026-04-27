@@ -15,6 +15,7 @@ import { CalendarIcon, PawPrint } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { PhotoUpload } from "@/components/PhotoUpload";
 
 function calcularIdade(nascimento: Date): string {
   const anos = differenceInYears(new Date(), nascimento);
@@ -55,6 +56,7 @@ interface Props {
 
 export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -66,6 +68,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
 
   useEffect(() => {
     if (pet) {
+      setFotoUrl(pet.foto_url || null);
       form.reset({
         nome: pet.nome || "",
         especie: pet.especie || "Cachorro",
@@ -95,6 +98,7 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
     try {
       const { error } = await supabase.from("pets").update({
         nome: data.nome,
+        foto_url: fotoUrl,
         especie: data.especie,
         raca: data.raca || null,
         cor: data.cor || null,
@@ -141,6 +145,14 @@ export function EditarPetDialog({ pet, open, onOpenChange, onSuccess }: Props) {
           <TabsContent value="dados">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="flex justify-center">
+                  <PhotoUpload
+                    value={fotoUrl}
+                    onChange={setFotoUrl}
+                    folder="pets"
+                    empresaId={pet?.empresa_id}
+                  />
+                </div>
                 <FormField control={form.control} name="nome" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nome do Pet *</FormLabel>
