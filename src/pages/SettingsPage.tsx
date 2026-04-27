@@ -17,6 +17,7 @@ import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye,
 import { PermissoesCargoPanel } from "@/components/PermissoesCargoPanel";
 import { translateAuthError } from "@/lib/authErrors";
 import { AniversariosCard } from "@/components/AniversariosCard";
+import { FaturaWhatsappCard } from "@/components/FaturaWhatsappCard";
 
 // ─── Dados da Empresa ───────────────────────────────────────────────
 function EmpresaTab() {
@@ -578,6 +579,7 @@ function NotificacoesTab() {
   return (
     <div className="space-y-4">
       <AniversariosCard />
+      <FaturaWhatsappCard />
       <Card>
       <CardHeader>
         <CardTitle className="text-base">Notificações</CardTitle>
