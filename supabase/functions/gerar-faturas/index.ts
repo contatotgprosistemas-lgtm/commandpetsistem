@@ -236,16 +236,28 @@ Deno.serve(async (req) => {
           .limit(1);
 
         if (!existing || existing.length === 0) {
-          await supabase.from("contas_receber").insert({
+          const descricao = `${sub.plan_id ? "Plano" : "Pacote"}: ${planName}`;
+          const { data: novaFatura } = await supabase.from("contas_receber").insert({
             empresa_id: sub.empresa_id,
             cliente_id: sub.cliente_id,
-            descricao: `${sub.plan_id ? "Plano" : "Pacote"}: ${planName}`,
+            descricao,
             valor: sub.final_price,
             vencimento: vencStr,
             status: "pendente",
             categoria: "Planos e Pacotes",
-          });
+          }).select("id").single();
           faturasCriadas++;
+
+          // Send WhatsApp/CRM notification
+          await enviarNotifFaturaWhats(supabase, sub.empresa_id, {
+            id: cliente.id, nome: cliente.nome,
+            whatsapp: cliente.whatsapp ?? null, telefone: cliente.telefone ?? null,
+          }, {
+            id: novaFatura?.id ?? null,
+            descricao,
+            valor: Number(sub.final_price),
+            vencimento: vencStr,
+          });
 
           // Notify client: invoice generated
           await supabase.from("customer_notifications").insert({
