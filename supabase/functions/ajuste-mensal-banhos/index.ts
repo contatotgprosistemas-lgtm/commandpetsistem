@@ -199,9 +199,9 @@ Deno.serve(async (req) => {
 
       // Calculate proportional adjustment
       const extraCount = extraDates.length;
-      const valorPorSessao = Number(sub.final_price) / baseSessionCount;
-      const valorExtra = valorPorSessao * extraCount;
-      const valorTotal = Number(sub.final_price) + valorExtra;
+      const valorPorSessao = Math.ceil((Number(sub.final_price) / baseSessionCount) * 100) / 100;
+      const valorExtra = Math.ceil(valorPorSessao * extraCount * 100) / 100;
+      const valorTotal = Math.ceil((Number(sub.final_price) + valorExtra) * 100) / 100;
 
       // Find this month's pending invoice
       const { data: invoice } = await supabase
