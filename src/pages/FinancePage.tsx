@@ -396,6 +396,8 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [itemsCache, setItemsCache] = useState<Record<string, { descricao: string; valor: number; tipo: string }[]>>({});
   const { sortKey, sortDir, onSort } = useSortable();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const toggleExpand = async (id: string) => {
     if (expandedRows.includes(id)) {
