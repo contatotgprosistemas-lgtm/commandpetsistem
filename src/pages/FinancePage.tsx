@@ -769,7 +769,7 @@ function ContasPagarContent() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sorted.map((c: any) => (
+            {paginated.map((c: any) => (
               <TableRow key={c.id} className={`group transition-colors ${selected.includes(c.id) ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30"}`}>
                 <TableCell className="py-3">
                   <Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} />
@@ -792,6 +792,9 @@ function ContasPagarContent() {
             ))}
           </TableBody>
         </Table>
+      )}
+      {!loading && sorted.length > 0 && (
+        <PaginationBar page={page} pageSize={pageSize} total={sorted.length} totalPages={totalPages} onPage={setPage} onPageSize={setPageSize} />
       )}
     </div>
   );
