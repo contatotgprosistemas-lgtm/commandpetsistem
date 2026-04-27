@@ -214,6 +214,16 @@ Deno.serve(async (req) => {
     let faturasCriadas = 0;
     let notificacoesCriadas = 0;
 
+    // Agrupador: cliente_id + vencimento -> { empresa_id, cliente, items[], total }
+    const groups = new Map<string, {
+      empresa_id: string;
+      cliente_id: string;
+      cliente: any;
+      vencimento: string;
+      items: { descricao: string; valor: number; subscription_id: string }[];
+      total: number;
+    }>();
+
     for (const sub of subscriptions || []) {
       const cliente = sub.cliente as any;
       if (!cliente) continue;
@@ -240,53 +250,35 @@ Deno.serve(async (req) => {
         ? plansMap[sub.plan_id] || "Plano"
         : packagesMap[sub.package_id] || "Pacote";
 
-      // --- GENERATE INVOICE if today = diasAntes before vencimento ---
+      // --- COLETA para gerar fatura agrupada se today = diasAntes before vencimento ---
       if (diffDays === diasAntes) {
-        // Check if invoice already exists for this subscription + due date
+        // Verifica se já existe fatura desse plano/pacote específico para o cliente nesse vencimento
         const { data: existing } = await supabase
           .from("contas_receber")
-          .select("id")
+          .select("id, contas_receber_itens(descricao)")
           .eq("cliente_id", sub.cliente_id)
-          .eq("vencimento", vencStr)
-          .ilike("descricao", `%${planName}%`)
-          .limit(1);
+          .eq("vencimento", vencStr);
 
-        if (!existing || existing.length === 0) {
-          const descricao = `${sub.plan_id ? "Plano" : "Pacote"}: ${planName}`;
-          const { data: novaFatura } = await supabase.from("contas_receber").insert({
-            empresa_id: sub.empresa_id,
-            cliente_id: sub.cliente_id,
-            descricao,
-            valor: sub.final_price,
-            vencimento: vencStr,
-            status: "pendente",
-            categoria: "Planos e Pacotes",
-          }).select("id").single();
-          faturasCriadas++;
+        const planLabel = `${sub.plan_id ? "Plano" : "Pacote"}: ${planName}`;
+        const alreadyExists = (existing || []).some((f: any) => {
+          const items = f.contas_receber_itens || [];
+          if (items.length > 0) return items.some((it: any) => (it.descricao || "").includes(planName));
+          return false; // sem itens cadastrados ainda; deixa o agrupador decidir
+        });
+        if (alreadyExists) continue;
 
-          // Send WhatsApp/CRM notification
-          await enviarNotifFaturaWhats(supabase, sub.empresa_id, {
-            id: cliente.id, nome: cliente.nome,
-            whatsapp: cliente.whatsapp ?? null, telefone: cliente.telefone ?? null,
-          }, {
-            id: novaFatura?.id ?? null,
-            descricao,
-            valor: Number(sub.final_price),
-            vencimento: vencStr,
-          });
-
-          // Notify client: invoice generated
-          await supabase.from("customer_notifications").insert({
-            empresa_id: sub.empresa_id,
-            cliente_id: sub.cliente_id,
-            title: "Nova fatura emitida",
-            message: `Sua fatura de ${planName} no valor de R$ ${Number(
-              sub.final_price
-            ).toFixed(2)} foi gerada com vencimento em ${formatDateBR(vencStr)}.`,
-            type: "financeiro",
-          });
-          notificacoesCriadas++;
-        }
+        const key = `${sub.cliente_id}|${vencStr}`;
+        const g = groups.get(key) ?? {
+          empresa_id: sub.empresa_id,
+          cliente_id: sub.cliente_id,
+          cliente,
+          vencimento: vencStr,
+          items: [],
+          total: 0,
+        };
+        g.items.push({ descricao: planLabel, valor: Number(sub.final_price), subscription_id: sub.id });
+        g.total += Number(sub.final_price);
+        groups.set(key, g);
       }
 
       // --- NOTIFY 3 days before due date ---
@@ -375,6 +367,81 @@ Deno.serve(async (req) => {
           }
         }
       }
+    }
+
+    // ===== Cria UMA fatura consolidada por (cliente, vencimento) =====
+    for (const [, g] of groups) {
+      // Tenta achar fatura já existente nesse vencimento para anexar itens
+      const { data: existingFat } = await supabase
+        .from("contas_receber")
+        .select("id, valor, descricao")
+        .eq("cliente_id", g.cliente_id)
+        .eq("vencimento", g.vencimento)
+        .eq("status", "pendente")
+        .eq("categoria", "Planos e Pacotes")
+        .limit(1);
+
+      let faturaId: string | null = existingFat && existingFat.length > 0 ? existingFat[0].id : null;
+      let totalFatura = g.total;
+      let descricaoFatura = g.items.length === 1
+        ? g.items[0].descricao
+        : `Faturamento mensal (${g.items.length} itens)`;
+
+      if (faturaId) {
+        // Soma os novos itens ao valor existente
+        totalFatura = Number(existingFat![0].valor) + g.total;
+        await supabase.from("contas_receber").update({
+          valor: totalFatura,
+          descricao: descricaoFatura,
+          updated_at: new Date().toISOString(),
+        }).eq("id", faturaId);
+      } else {
+        const { data: novaFatura } = await supabase.from("contas_receber").insert({
+          empresa_id: g.empresa_id,
+          cliente_id: g.cliente_id,
+          descricao: descricaoFatura,
+          valor: totalFatura,
+          vencimento: g.vencimento,
+          status: "pendente",
+          categoria: "Planos e Pacotes",
+        }).select("id").single();
+        faturaId = novaFatura?.id ?? null;
+        faturasCriadas++;
+      }
+
+      // Insere itens detalhados
+      if (faturaId) {
+        await supabase.from("contas_receber_itens").insert(
+          g.items.map((it) => ({
+            conta_receber_id: faturaId,
+            empresa_id: g.empresa_id,
+            descricao: it.descricao,
+            valor: it.valor,
+            tipo: "principal",
+          }))
+        );
+      }
+
+      // 1 notificação WhatsApp consolidada
+      await enviarNotifFaturaWhats(supabase, g.empresa_id, {
+        id: g.cliente.id, nome: g.cliente.nome,
+        whatsapp: g.cliente.whatsapp ?? null, telefone: g.cliente.telefone ?? null,
+      }, {
+        id: faturaId,
+        descricao: descricaoFatura,
+        valor: totalFatura,
+        vencimento: g.vencimento,
+      });
+
+      // 1 notificação interna ao cliente (portal)
+      await supabase.from("customer_notifications").insert({
+        empresa_id: g.empresa_id,
+        cliente_id: g.cliente_id,
+        title: "Nova fatura emitida",
+        message: `Sua fatura no valor de R$ ${totalFatura.toFixed(2)} foi gerada com vencimento em ${formatDateBR(g.vencimento)}.`,
+        type: "financeiro",
+      });
+      notificacoesCriadas++;
     }
 
     console.log(
