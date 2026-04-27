@@ -14,6 +14,22 @@ function formatDateBR(dateStr: string): string {
   return `${d}/${m}/${y}`;
 }
 
+function normalizeWhatsappNumber(raw?: string | null) {
+  const digits = (raw ?? "").replace(/\D/g, "");
+  if (!digits) return { primary: "", variants: [] as string[] };
+
+  const primary = digits.startsWith("55")
+    ? digits
+    : digits.length >= 10 && digits.length <= 11
+      ? `55${digits}`
+      : digits;
+
+  const local = primary.startsWith("55") ? primary.slice(2) : primary;
+  const variants = Array.from(new Set([primary, local, digits]));
+
+  return { primary, variants };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -64,7 +80,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ skipped: "disabled" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const numero = (cliente.whatsapp ?? cliente.telefone ?? "").replace(/\D/g, "");
+    const { primary: numero, variants: numeroVariants } = normalizeWhatsappNumber(cliente.whatsapp ?? cliente.telefone ?? "");
     if (!numero) {
       return new Response(JSON.stringify({ skipped: "no_whatsapp" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -110,7 +126,7 @@ Deno.serve(async (req) => {
     let { data: contato } = await supabase
       .from("crm_contatos").select("id")
       .eq("empresa_id", empresa_id)
-      .or(`whatsapp.eq.${numero},telefone.eq.${numero}`)
+      .or(numeroVariants.map((value) => `whatsapp.eq.${value},telefone.eq.${value}`).join(","))
       .limit(1).maybeSingle();
     if (!contato) {
       const { data: novo } = await supabase
