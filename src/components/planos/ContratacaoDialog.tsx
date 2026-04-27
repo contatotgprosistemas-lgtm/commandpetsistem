@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { addDays, format, getDay, isBefore, startOfDay, lastDayOfMonth, startOfMonth, addMonths } from "date-fns";
 import { Check, AlertTriangle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, roundUpMoney } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useBanhoAvailability } from "@/hooks/useBanhoAvailability";
 import { BanhoTimeSlotPicker } from "./BanhoTimeSlotPicker";
@@ -168,7 +168,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     : 0;
 
   // Price per session for biweekly (base price = 2 sessions)
-  const pricePerSession = priceContracted / 2;
+  const pricePerSession = roundUpMoney(priceContracted / 2);
 
   // Calculate proportional price
   const isFirstDay = startDateObj.getDate() === 1;
@@ -177,7 +177,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
   if (isQuinzenal) {
     if (hasThreeOccurrences && extraSessionPolicy === "charge") {
-      proportionalPrice = priceContracted + pricePerSession;
+      proportionalPrice = roundUpMoney(priceContracted + pricePerSession);
       proportionalInfo = `3 ocorrências no mês: R$ ${priceContracted.toFixed(2)} + R$ ${pricePerSession.toFixed(2)} (sessão extra) = R$ ${proportionalPrice.toFixed(2)}`;
     } else if (hasThreeOccurrences && extraSessionPolicy === "skip") {
       proportionalInfo = `3ª ocorrência será pulada. Valor normal: R$ ${priceContracted.toFixed(2)} (2 banhos)`;
@@ -188,12 +188,12 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     const totalDaysInMonth = countWeekdaysInMonth(startDateObj.getFullYear(), startDateObj.getMonth(), plannedDays);
     const remainingDays = countWeekdaysInRange(startDateObj, endOfMonth, plannedDays);
     if (totalDaysInMonth > 0) {
-      proportionalPrice = (priceContracted / totalDaysInMonth) * remainingDays;
+      proportionalPrice = roundUpMoney((priceContracted / totalDaysInMonth) * remainingDays);
       proportionalInfo = `Proporcional: ${remainingDays}/${totalDaysInMonth} dias → R$ ${proportionalPrice.toFixed(2)}`;
     }
   }
 
-  const finalPrice = Math.max(0, proportionalPrice - Number(discount || 0));
+  const finalPrice = roundUpMoney(Math.max(0, proportionalPrice - Number(discount || 0)));
 
   function toggleDay(day: number) {
     if (isQuinzenal) {
