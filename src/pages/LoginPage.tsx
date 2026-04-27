@@ -25,14 +25,40 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
+      setLoading(false);
       toast({ title: "Erro ao entrar", description: translateAuthError(error, "Não foi possível entrar. Verifique seus dados."), variant: "destructive" });
       return;
     }
 
+    // CRITICAL SECURITY: block clients from entering the management system.
+    const userId = data.user?.id;
+    if (userId) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      const roleList = (roles ?? []).map((r) => r.role);
+      const isCliente = roleList.includes("cliente" as never);
+      const hasStaffRole = roleList.some((r) =>
+        ["admin", "gerente", "atendente", "financeiro", "operacional", "banhista", "super_admin"].includes(r as string)
+      );
+      if (isCliente && !hasStaffRole) {
+        await supabase.auth.signOut();
+        setLoading(false);
+        toast({
+          title: "Acesso restrito",
+          description: "Esta conta é de cliente. Use o Portal do Cliente para entrar.",
+          variant: "destructive",
+        });
+        navigate("/portal/login");
+        return;
+      }
+    }
+
+    setLoading(false);
     navigate("/");
   };
 
