@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
     const { data: subscriptions, error: subErr } = await supabase
       .from("customer_pet_subscriptions")
       .select(
-        "id, empresa_id, cliente_id, pet_id, plan_id, package_id, price_contracted, discount_amount, final_price, planned_days, cliente:clientes(id, nome, dia_vencimento_fatura, dias_gerar_fatura)"
+        "id, empresa_id, cliente_id, pet_id, plan_id, package_id, price_contracted, discount_amount, final_price, planned_days, cliente:clientes(id, nome, whatsapp, telefone, dia_vencimento_fatura, dias_gerar_fatura)"
       )
       .eq("status", "ativo");
 
