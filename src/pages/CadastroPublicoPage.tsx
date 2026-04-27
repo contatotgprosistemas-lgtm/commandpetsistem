@@ -485,7 +485,7 @@ export default function CadastroPublicoPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Enviando..." : "Enviar cadastro"}
+              {loading ? "Enviando..." : (isEditMode ? "Salvar alterações" : "Enviar cadastro")}
             </Button>
           </form>
         </Form>
