@@ -2,7 +2,8 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, LogOut } from "lucide-react";
+import { Clock, LogOut, ShieldAlert } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 function PendingApprovalScreen() {
   const { signOut, profile } = useAuth();
@@ -44,6 +45,13 @@ export function ProtectedRoute({ children, requireAdmin }: { children: React.Rea
     return <Navigate to="/login" replace />;
   }
 
+  // CRITICAL SECURITY: Clients (portal users) must NEVER access the management system.
+  // They must use /portal exclusively.
+  const userRole = (user as { role?: string | null })?.role;
+  if (userRole === "cliente") {
+    return <ClienteBlockedScreen />;
+  }
+
   if (!isApproved) {
     return <PendingApprovalScreen />;
   }
@@ -53,4 +61,33 @@ export function ProtectedRoute({ children, requireAdmin }: { children: React.Rea
   }
 
   return <>{children}</>;
+}
+
+function ClienteBlockedScreen() {
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = "/portal/login";
+  }
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+      <Card className="max-w-md w-full text-center">
+        <CardHeader>
+          <div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+            <ShieldAlert className="h-8 w-8 text-destructive" />
+          </div>
+          <CardTitle className="text-xl">Acesso restrito</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">
+            Esta área é exclusiva da equipe da empresa. O seu acesso é pelo Portal do Cliente.
+          </p>
+          <Button onClick={handleLogout} className="gap-2">
+            <LogOut className="h-4 w-4" />
+            Ir para o Portal do Cliente
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
