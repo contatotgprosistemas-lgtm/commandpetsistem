@@ -410,44 +410,46 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
       const extrasACobrar = servicosExtras.filter(e => !e.cortesia && e.valor > 0 && e.descricao);
       const descontoTotal = data.desconto ? parseFloat(data.desconto) : 0;
-      const descontoPorPet = data.pet_ids.length > 0 ? descontoTotal / data.pet_ids.length : 0;
 
-      for (let idx = 0; idx < data.pet_ids.length; idx++) {
-        const petName = pets.find(p => p.id === data.pet_ids[idx])?.nome || "Pet";
-        const isFirstPet = idx === 0;
+      // ===== UMA fatura consolidada por agendamento (cliente + vencimento) =====
+      // Itens: serviço por pet + extras (uma vez) + cortesias (registro) + desconto
+      const lineItems: { descricao: string; valor: number; tipo: string }[] = [];
 
-        // Build line items for this pet
-        const lineItems: { descricao: string; valor: number; tipo: string }[] = [];
-        if (valorNum > 0) {
+      if (valorNum > 0) {
+        for (const petId of data.pet_ids) {
+          const petName = pets.find(p => p.id === petId)?.nome || "Pet";
           lineItems.push({ descricao: `${data.tipo_servico} — ${petName}`, valor: valorNum, tipo: "principal" });
         }
-        // Extras são cobrados apenas uma vez (na fatura do primeiro pet),
-        // respeitando a quantidade marcada — não duplicam por pet.
-        if (isFirstPet) {
-          for (const extra of extrasACobrar) {
-            const qtd = extra.quantidade || 1;
-            lineItems.push({ descricao: `${extra.descricao} x${qtd} (extra)`, valor: extra.valor * qtd, tipo: "extra" });
-          }
-          for (const extra of servicosExtras.filter(e => e.cortesia && e.descricao)) {
-            lineItems.push({ descricao: `${extra.descricao} (cortesia)`, valor: 0, tipo: "cortesia" });
-          }
+      }
+
+      // Extras cobrados apenas uma vez na fatura consolidada
+      for (const extra of extrasACobrar) {
+        const qtd = extra.quantidade || 1;
+        lineItems.push({ descricao: `${extra.descricao} x${qtd} (extra)`, valor: extra.valor * qtd, tipo: "extra" });
+      }
+      for (const extra of servicosExtras.filter(e => e.cortesia && e.descricao)) {
+        lineItems.push({ descricao: `${extra.descricao} (cortesia)`, valor: 0, tipo: "cortesia" });
+      }
+
+      const totalBruto = lineItems.reduce((sum, li) => sum + li.valor, 0);
+      const totalFatura = Math.max(totalBruto - descontoTotal, 0);
+
+      const podeCriarFatura = lineItems.some(li => li.tipo !== "cortesia") && totalFatura > 0;
+
+      if (podeCriarFatura) {
+        if (descontoTotal > 0) {
+          lineItems.push({ descricao: `Desconto`, valor: -descontoTotal, tipo: "desconto" });
         }
 
-        if (lineItems.length === 0) continue;
-
-        const totalBruto = lineItems.reduce((sum, li) => sum + li.valor, 0);
-        const totalFatura = Math.max(totalBruto - descontoPorPet, 0);
-        if (totalFatura <= 0 && lineItems.every(li => li.tipo === "cortesia")) continue;
-
-        // Add discount line item if applicable
-        if (descontoPorPet > 0) {
-          lineItems.push({ descricao: `Desconto — ${petName}`, valor: -descontoPorPet, tipo: "desconto" });
-        }
-
+        const petNames = data.pet_ids
+          .map(pid => pets.find(p => p.id === pid)?.nome)
+          .filter(Boolean)
+          .join(", ");
         const descParts = [data.tipo_servico];
-        if (isFirstPet && extrasACobrar.length > 0) descParts.push(`+${extrasACobrar.length} extra(s)`);
-        if (descontoPorPet > 0) descParts.push(`-R$${descontoPorPet.toFixed(2)} desc.`);
-        const descricaoFatura = `${descParts.join(" ")} — ${petName}`;
+        if (data.pet_ids.length > 1) descParts.push(`(${data.pet_ids.length} pets)`);
+        if (extrasACobrar.length > 0) descParts.push(`+${extrasACobrar.length} extra(s)`);
+        if (descontoTotal > 0) descParts.push(`-R$${descontoTotal.toFixed(2)} desc.`);
+        const descricaoFatura = `${descParts.join(" ")} — ${petNames}`;
 
         const { data: insertedFatura } = await supabase.from("contas_receber").insert({
           empresa_id: empresaId,
@@ -459,7 +461,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
           status: "pendente",
         } as any).select("id").single();
 
-        if (insertedFatura?.id && lineItems.length > 0) {
+        if (insertedFatura?.id) {
           await supabase.from("contas_receber_itens" as any).insert(
             lineItems.map(li => ({
               conta_receber_id: insertedFatura.id,
@@ -1086,6 +1088,64 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 </p>
               </FormItem>
             </div>
+
+            {/* Resumo de cobrança (multi-pet) */}
+            {selectedPetIds.length > 1 && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2 text-xs">
+                <p className="text-sm font-medium text-foreground">Resumo da fatura consolidada</p>
+                <p className="text-muted-foreground">
+                  Será gerada <strong>1 fatura única</strong> para o cliente, contendo todos os itens abaixo.
+                </p>
+                <div className="space-y-1.5">
+                  {/* Serviço por pet */}
+                  <div>
+                    <p className="text-foreground font-medium">Cobrado por pet:</p>
+                    <ul className="ml-3 mt-0.5 space-y-0.5 text-muted-foreground">
+                      {selectedPetIds.map(pid => {
+                        const petName = pets.find(p => p.id === pid)?.nome || "Pet";
+                        const v = form.watch("valor") ? parseFloat(form.watch("valor")) : 0;
+                        return (
+                          <li key={pid} className="flex justify-between">
+                            <span>• {selectedServico || "Serviço"} — {petName}</span>
+                            <span>R$ {v.toFixed(2)}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+
+                  {/* Extras (uma vez) */}
+                  {servicosExtras.filter(e => e.descricao).length > 0 && (
+                    <div>
+                      <p className="text-foreground font-medium pt-1">Cobrado uma única vez (extras):</p>
+                      <ul className="ml-3 mt-0.5 space-y-0.5 text-muted-foreground">
+                        {servicosExtras.filter(e => e.descricao).map((e, i) => {
+                          const qtd = e.quantidade || 1;
+                          const total = e.cortesia ? 0 : e.valor * qtd;
+                          return (
+                            <li key={i} className="flex justify-between">
+                              <span>• {e.descricao} x{qtd} {e.cortesia ? "(cortesia)" : ""}</span>
+                              <span>{e.cortesia ? "Grátis" : `R$ ${total.toFixed(2)}`}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+
+                  {descontoStr && parseFloat(descontoStr) > 0 && (
+                    <div className="flex justify-between pt-1 text-muted-foreground">
+                      <span>Desconto aplicado</span>
+                      <span>- R$ {parseFloat(descontoStr).toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-border">
+                  <span className="text-sm font-semibold text-foreground">Total da fatura</span>
+                  <span className="text-sm font-bold text-primary">R$ {valorContrato.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
 
             {/* Forma de Pagamento + Data de Pagamento */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
