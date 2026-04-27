@@ -344,7 +344,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
         const cli = clienteData;
         const telefoneContato = cli?.whatsapp ?? cli?.telefone ?? null;
         if (telefoneContato) {
-          supabase.functions.invoke("notificar-fatura-whatsapp", {
+          await supabase.functions.invoke("notificar-fatura-whatsapp", {
             body: {
               empresa_id: empresaId,
               cliente: {
