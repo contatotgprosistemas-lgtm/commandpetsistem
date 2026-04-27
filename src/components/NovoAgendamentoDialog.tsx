@@ -1089,6 +1089,64 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               </FormItem>
             </div>
 
+            {/* Resumo de cobrança (multi-pet) */}
+            {selectedPetIds.length > 1 && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2 text-xs">
+                <p className="text-sm font-medium text-foreground">Resumo da fatura consolidada</p>
+                <p className="text-muted-foreground">
+                  Será gerada <strong>1 fatura única</strong> para o cliente, contendo todos os itens abaixo.
+                </p>
+                <div className="space-y-1.5">
+                  {/* Serviço por pet */}
+                  <div>
+                    <p className="text-foreground font-medium">Cobrado por pet:</p>
+                    <ul className="ml-3 mt-0.5 space-y-0.5 text-muted-foreground">
+                      {selectedPetIds.map(pid => {
+                        const petName = pets.find(p => p.id === pid)?.nome || "Pet";
+                        const v = form.watch("valor") ? parseFloat(form.watch("valor")) : 0;
+                        return (
+                          <li key={pid} className="flex justify-between">
+                            <span>• {selectedServico || "Serviço"} — {petName}</span>
+                            <span>R$ {v.toFixed(2)}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+
+                  {/* Extras (uma vez) */}
+                  {servicosExtras.filter(e => e.descricao).length > 0 && (
+                    <div>
+                      <p className="text-foreground font-medium pt-1">Cobrado uma única vez (extras):</p>
+                      <ul className="ml-3 mt-0.5 space-y-0.5 text-muted-foreground">
+                        {servicosExtras.filter(e => e.descricao).map((e, i) => {
+                          const qtd = e.quantidade || 1;
+                          const total = e.cortesia ? 0 : e.valor * qtd;
+                          return (
+                            <li key={i} className="flex justify-between">
+                              <span>• {e.descricao} x{qtd} {e.cortesia ? "(cortesia)" : ""}</span>
+                              <span>{e.cortesia ? "Grátis" : `R$ ${total.toFixed(2)}`}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+
+                  {descontoStr && parseFloat(descontoStr) > 0 && (
+                    <div className="flex justify-between pt-1 text-muted-foreground">
+                      <span>Desconto aplicado</span>
+                      <span>- R$ {parseFloat(descontoStr).toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-border">
+                  <span className="text-sm font-semibold text-foreground">Total da fatura</span>
+                  <span className="text-sm font-bold text-primary">R$ {valorContrato.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+
             {/* Forma de Pagamento + Data de Pagamento */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormField control={form.control} name="forma_pagamento" render={({ field }) => (
