@@ -356,7 +356,7 @@ export default function ContratosPage() {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const contentHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 
-    const { error } = await supabase.from("contracts").insert({
+    const { data: inserted, error } = await supabase.from("contracts").insert({
       empresa_id: profile.empresa_id,
       template_id: contractForm.templateId || null,
       cliente_id: contractForm.clienteId,
@@ -365,14 +365,46 @@ export default function ContratosPage() {
       content_hash: contentHash,
       created_by: profile.id,
       token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    });
+    }).select("id, signing_token").single();
 
     if (error) {
       toast.error("Erro ao criar contrato");
       return;
     }
 
-    toast.success("Contrato criado!");
+    // Auto-sign by company if signature is configured
+    let autoSigned = false;
+    try {
+      const { data: empresa } = await supabase
+        .from("empresas")
+        .select("assinatura_url, assinatura_responsavel, nome_fantasia, nome_empresa")
+        .eq("id", profile.empresa_id)
+        .maybeSingle();
+
+      const responsavel = (empresa?.assinatura_responsavel || "").trim();
+      const hasSignature = !!empresa?.assinatura_url && !!responsavel;
+
+      if (hasSignature && inserted?.signing_token) {
+        const { error: signErr } = await supabase.functions.invoke("sign-contract", {
+          body: {
+            action: "sign",
+            signing_token: inserted.signing_token,
+            signer_name: responsavel,
+            signer_user_agent: navigator.userAgent,
+            signer_device: "Auto (configuração)",
+            signature_image: empresa?.assinatura_url,
+            content_hash: contentHash,
+            acceptance_text: "Assinatura da empresa aplicada automaticamente conforme configuração",
+            signer_type: "empresa",
+          },
+        });
+        if (!signErr) autoSigned = true;
+      }
+    } catch (e) {
+      console.warn("Falha ao aplicar assinatura automática da empresa:", e);
+    }
+
+    toast.success(autoSigned ? "Contrato criado e já assinado pela empresa!" : "Contrato criado!");
     setShowContractDialog(false);
     setContractForm({ title: "", templateId: "", clienteId: "", content: "" });
     loadData();
