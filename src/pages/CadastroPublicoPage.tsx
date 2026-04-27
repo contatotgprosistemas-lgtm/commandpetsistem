@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { montarEndereco, parseEndereco } from "@/lib/endereco";
 
 function applyDateMask(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 8);
@@ -187,7 +188,8 @@ export default function CadastroPublicoPage() {
         if (!cliente) return;
         setIsEditMode(true);
         setClienteFotoUrl(cliente.foto_url || null);
-        // Separar endereço/numero/complemento de forma simples (mantém em endereco)
+        // Separar endereço/numero/complemento para preencher campos individuais
+        const partes = parseEndereco(cliente.endereco);
         form.reset({
           nome: cliente.nome || "",
           cpf: cliente.cpf || "",
@@ -195,9 +197,9 @@ export default function CadastroPublicoPage() {
           whatsapp: cliente.whatsapp || "",
           email: cliente.email || "",
           cep: "",
-          endereco: cliente.endereco || "",
-          numero: "",
-          complemento: "",
+          endereco: partes.logradouro,
+          numero: partes.numero,
+          complemento: partes.complemento,
           como_conheceu: cliente.como_conheceu || "",
           pets: (pets && pets.length > 0) ? pets.map((p: any) => ({
             nome: p.nome || "",
@@ -260,9 +262,11 @@ export default function CadastroPublicoPage() {
               whatsapp: data.whatsapp || null,
               email: data.email || null,
               cpf: data.cpf || null,
-              endereco: data.numero 
-                ? (data.complemento ? `${data.endereco}, ${data.numero} - ${data.complemento}` : `${data.endereco}, ${data.numero}`)
-                : (data.complemento ? `${data.endereco} - ${data.complemento}` : (data.endereco || null)),
+              endereco: montarEndereco({
+                logradouro: data.endereco,
+                numero: data.numero,
+                complemento: data.complemento,
+              }) || null,
               como_conheceu: data.como_conheceu || null,
               foto_url: clienteFotoUrl || null,
             },
