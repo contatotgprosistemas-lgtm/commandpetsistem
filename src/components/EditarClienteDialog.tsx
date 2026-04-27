@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ClienteTimelineTab } from "@/components/ClienteTimelineTab";
+import { montarEndereco, parseEndereco } from "@/lib/endereco";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres").max(100),
@@ -55,6 +56,7 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
 
   useEffect(() => {
     if (cliente) {
+      const partes = parseEndereco(cliente.endereco);
       form.reset({
         nome: cliente.nome || "",
         cpf: cliente.cpf || "",
@@ -62,9 +64,9 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
         whatsapp: cliente.whatsapp || "",
         email: cliente.email || "",
         cep: cliente.cep || "",
-        endereco: cliente.endereco || "",
-        numero: "",
-        complemento: "",
+        endereco: partes.logradouro,
+        numero: partes.numero,
+        complemento: partes.complemento,
         como_conheceu: cliente.como_conheceu || "",
         notas: cliente.notas || "",
       });
@@ -149,9 +151,11 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
     if (!cliente?.id) return;
     setLoading(true);
     try {
-      let enderecoFinal: string | null = data.endereco || null;
-      if (data.numero) enderecoFinal = enderecoFinal ? `${enderecoFinal}, ${data.numero}` : data.numero;
-      if (data.complemento) enderecoFinal = enderecoFinal ? `${enderecoFinal} - ${data.complemento}` : data.complemento;
+      const enderecoFinal = montarEndereco({
+        logradouro: data.endereco,
+        numero: data.numero,
+        complemento: data.complemento,
+      }) || null;
 
       const { error } = await supabase.from("clientes").update({
         nome: data.nome,
