@@ -682,6 +682,8 @@ function ContasPagarContent() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string[]>([]);
   const { sortKey, sortDir, onSort } = useSortable();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const sorted = useMemo(() => {
     return sortData(contas, sortKey, sortDir, (item: any, key: string) => {
@@ -697,8 +699,13 @@ function ContasPagarContent() {
     });
   }, [contas, sortKey, sortDir]);
 
-  const allSelected = sorted.length > 0 && selected.length === sorted.length;
-  const toggleAll = () => setSelected(allSelected ? [] : sorted.map((c: any) => c.id));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  useEffect(() => { if (page > totalPages) setPage(1); }, [totalPages, page]);
+  useEffect(() => { setPage(1); }, [sortKey, sortDir, pageSize]);
+  const paginated = useMemo(() => sorted.slice((page - 1) * pageSize, page * pageSize), [sorted, page, pageSize]);
+
+  const allSelected = paginated.length > 0 && paginated.every((c: any) => selected.includes(c.id));
+  const toggleAll = () => setSelected(allSelected ? selected.filter(id => !paginated.some((c: any) => c.id === id)) : Array.from(new Set([...selected, ...paginated.map((c: any) => c.id)])));
   const toggle = (id: string) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   async function fetchData() {
