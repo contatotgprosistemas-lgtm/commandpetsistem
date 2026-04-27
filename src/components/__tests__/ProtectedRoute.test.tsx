@@ -79,7 +79,7 @@ describe("ProtectedRoute - client role security", () => {
     renderWithRouter("/");
     expect(screen.queryByText("MANAGEMENT DASHBOARD")).not.toBeInTheDocument();
     expect(screen.getByText(/Acesso restrito/i)).toBeInTheDocument();
-    expect(screen.getByText(/Portal do Cliente/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Portal do Cliente/i })).toBeInTheDocument();
   });
 
   it("BLOCKS clients even when navigating directly to admin routes", () => {
