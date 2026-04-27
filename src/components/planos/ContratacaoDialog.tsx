@@ -331,12 +331,27 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       const descFreq = isQuinzenal ? " (quinzenal)" : "";
       const descProp = !isFirstDay && !isQuinzenal ? " (proporcional)" : "";
       const descExtra = isQuinzenal && hasThreeOccurrences && extraSessionPolicy === "charge" ? " (+1 sessão extra)" : "";
+      const descricaoFatura = `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name} - ${petNome}${descFreq}${descProp}${descExtra}`;
 
-      await supabase.from("contas_receber").insert({
+      const { data: novaFatura } = await supabase.from("contas_receber").insert({
         empresa_id: empresaId, cliente_id: clienteId,
-        descricao: `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name} - ${petNome}${descFreq}${descProp}${descExtra}`,
+        descricao: descricaoFatura,
         valor: finalPrice, vencimento: vencimentoStr, status: "pendente", categoria: "Planos e Pacotes"
-      });
+      }).select("id").single();
+
+      // Disparo de notificação WhatsApp (best-effort, não bloqueia)
+      try {
+        const cli = clienteData;
+        if (cli?.whatsapp) {
+          supabase.functions.invoke("notificar-fatura-whatsapp", {
+            body: {
+              empresa_id: empresaId,
+              cliente: { id: clienteId, nome: cli.nome, whatsapp: cli.whatsapp },
+              fatura: { id: novaFatura?.id ?? null, descricao: descricaoFatura, valor: finalPrice, vencimento: vencimentoStr },
+            },
+          }).catch(() => {});
+        }
+      } catch { /* noop */ }
 
       // Generate agendamentos
       if (isQuinzenal && plannedDays.length === 1) {
