@@ -171,20 +171,33 @@ Deno.serve(async (req) => {
       .single();
     if (!cliente) throw new Error("Client not found");
 
-    // Create or reuse Asaas customer
-    let asaasCustomerId = cliente.asaas_customer_id;
-    if (!asaasCustomerId) {
-      const cleanedCpf = cliente.cpf?.replace(/\D/g, "") || "";
-      if (cleanedCpf.length !== 11 && cleanedCpf.length !== 14) {
-        throw new Error("CPF/CNPJ do cliente não cadastrado ou inválido. Atualize o cadastro do cliente antes de gerar o PIX.");
-      }
+    const cleanedCpf = cliente.cpf?.replace(/\D/g, "") || "";
+    if (cleanedCpf.length !== 11 && cleanedCpf.length !== 14) {
+      throw new Error("CPF/CNPJ do cliente não cadastrado ou inválido. Atualize o cadastro do cliente antes de gerar o PIX.");
+    }
 
+    // Create or reuse Asaas customer for THIS specific Asaas account.
+    // The cached cliente.asaas_customer_id may belong to another Asaas account
+    // (e.g. a previous account that was deactivated), which would cause
+    // "invalid_customer". So we always validate it against the active key.
+    let asaasCustomerId: string | null = cliente.asaas_customer_id || null;
+
+    const validateCustomer = async (id: string) => {
+      const r = await fetch(`${ASAAS_BASE}/customers/${id}`, { headers: { access_token: ASAAS_API_KEY! } });
+      return r.ok;
+    };
+
+    const findOrCreateCustomer = async () => {
+      // Try to find existing customer by CPF in current account
+      const findRes = await fetch(`${ASAAS_BASE}/customers?cpfCnpj=${cleanedCpf}`, { headers: { access_token: ASAAS_API_KEY! } });
+      if (findRes.ok) {
+        const found = await findRes.json();
+        if (found?.data?.length > 0) return found.data[0].id as string;
+      }
+      // Create
       const customerRes = await fetch(`${ASAAS_BASE}/customers`, {
         method: "POST",
-        headers: {
-          access_token: ASAAS_API_KEY,
-          "Content-Type": "application/json",
-        },
+        headers: { access_token: ASAAS_API_KEY!, "Content-Type": "application/json" },
         body: JSON.stringify({
           name: cliente.nome,
           cpfCnpj: cleanedCpf,
@@ -194,9 +207,20 @@ Deno.serve(async (req) => {
       });
       const customerData = await customerRes.json();
       if (!customerRes.ok) throw new Error(`Asaas customer error: ${JSON.stringify(customerData)}`);
+      return customerData.id as string;
+    };
 
-      asaasCustomerId = customerData.id;
+    if (asaasCustomerId) {
+      const ok = await validateCustomer(asaasCustomerId);
+      if (!ok) {
+        console.log(`Cached customer ${asaasCustomerId} not found in account "${ASAAS_CONTA_LABEL}". Re-resolving.`);
+        asaasCustomerId = await findOrCreateCustomer();
+      }
+    } else {
+      asaasCustomerId = await findOrCreateCustomer();
+    }
 
+    if (asaasCustomerId !== cliente.asaas_customer_id) {
       await serviceSupabase
         .from("clientes")
         .update({ asaas_customer_id: asaasCustomerId })
