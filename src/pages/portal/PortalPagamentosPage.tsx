@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { CreditCard, Copy, Check, Loader2, QrCode, Download, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
+import { CreditCard, Copy, Check, Loader2, QrCode, Download, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -120,6 +120,7 @@ export default function PortalPagamentosPage() {
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [pixProgress, setPixProgress] = useState({ current: 0, total: 0 });
+  const [pixError, setPixError] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchPagamentos = useCallback(async () => {
@@ -200,6 +201,7 @@ export default function PortalPagamentosPage() {
     setPixData(null);
     setCopied(false);
     setPaymentConfirmed(false);
+    setPixError(null);
     setPixProgress({ current: 0, total: grupo.faturas.length });
 
     try {
@@ -229,8 +231,33 @@ export default function PortalPagamentosPage() {
       }
     } catch (err: any) {
       console.error("PIX error:", err);
-      toast.error(err.message || "Erro ao gerar PIX");
-      setPixDialogOpen(false);
+      const msg = err?.message || "Erro ao gerar PIX";
+      setPixError(msg);
+      toast.error(msg);
+    } finally {
+      setPixLoading(false);
+    }
+  };
+
+  const handleReprocessPix = async () => {
+    if (!selectedGrupo) return;
+    setPixLoading(true);
+    setPixError(null);
+    setPixData(null);
+    try {
+      const body = selectedGrupo.faturas.length === 1
+        ? { conta_id: selectedGrupo.faturas[0].id, force_refresh: true }
+        : { conta_ids: selectedGrupo.faturas.map(f => f.id), force_refresh: true };
+      const { data, error } = await supabase.functions.invoke("asaas-pix", { body });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setPixData(data);
+      toast.success("PIX reprocessado com sucesso");
+    } catch (err: any) {
+      console.error("PIX reprocess error:", err);
+      const msg = err?.message || "Erro ao reprocessar PIX";
+      setPixError(msg);
+      toast.error(msg);
     } finally {
       setPixLoading(false);
     }
@@ -373,7 +400,10 @@ export default function PortalPagamentosPage() {
       {/* PIX Dialog */}
       <Dialog open={pixDialogOpen} onOpenChange={(open) => {
         setPixDialogOpen(open);
-        if (!open) setPaymentConfirmed(false);
+        if (!open) {
+          setPaymentConfirmed(false);
+          setPixError(null);
+        }
       }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -409,6 +439,23 @@ export default function PortalPagamentosPage() {
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">Gerando QR Code PIX...</p>
+            </div>
+          ) : pixError ? (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-10 w-10 text-destructive" />
+              </div>
+              <div className="text-center space-y-1">
+                <p className="text-sm font-medium text-foreground">Não foi possível gerar o PIX</p>
+                <p className="text-xs text-muted-foreground break-words max-w-xs">{pixError}</p>
+              </div>
+              <Button className="w-full gap-2" onClick={handleReprocessPix}>
+                <RefreshCw className="h-4 w-4" />
+                Reprocessar pagamento PIX
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => setPixDialogOpen(false)}>
+                Fechar
+              </Button>
             </div>
           ) : pixData ? (
             <div className="flex flex-col items-center gap-4">
@@ -455,6 +502,16 @@ export default function PortalPagamentosPage() {
                 <Loader2 className="h-3 w-3 animate-spin" />
                 Aguardando confirmação do pagamento...
               </div>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full gap-2 text-xs"
+                onClick={handleReprocessPix}
+              >
+                <RefreshCw className="h-3 w-3" />
+                Reprocessar pagamento PIX
+              </Button>
             </div>
           ) : null}
         </DialogContent>
