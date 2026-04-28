@@ -52,6 +52,7 @@ interface ContaReceber {
   cliente: { nome: string } | null;
   cliente_id: string | null;
   banco: string | null;
+  valor_pago?: number | null;
 }
 
 function statusBadge(status: string, vencimento: string) {
@@ -99,7 +100,7 @@ export default function FinancePage() {
     setLoading(true);
     const { data } = await supabase
       .from("contas_receber")
-      .select("id, descricao, valor, vencimento, categoria, status, cliente_id, banco, cliente:clientes(nome)")
+      .select("id, descricao, valor, vencimento, categoria, status, cliente_id, banco, valor_pago, cliente:clientes(nome)")
       .neq("status", "pago")
       .order("vencimento", { ascending: false });
     if (data) {
