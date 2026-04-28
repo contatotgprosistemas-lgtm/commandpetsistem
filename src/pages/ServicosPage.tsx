@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, Plus, Loader2, Pencil, Trash2, BedDouble } from "lucide-react";
+import { Package, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,7 +18,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 const ServicosPage = () => {
@@ -41,14 +40,6 @@ const ServicosPage = () => {
   const [tipoEditOpen, setTipoEditOpen] = useState(false);
   const [tipoEditId, setTipoEditId] = useState<string | null>(null);
   const [tipoNome, setTipoNome] = useState("");
-
-  // Baias state
-  const [baiaOpen, setBaiaOpen] = useState(false);
-  const [baiaEditOpen, setBaiaEditOpen] = useState(false);
-  const [baiaEditId, setBaiaEditId] = useState<string | null>(null);
-  const [baiaNome, setBaiaNome] = useState("");
-  const [baiaTamanho, setBaiaTamanho] = useState("");
-  const [baiaCapacidade, setBaiaCapacidade] = useState("1");
 
   // Queries
   const { data: servicos, isLoading } = useQuery({
