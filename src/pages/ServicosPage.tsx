@@ -207,10 +207,6 @@ const ServicosPage = () => {
         <TabsList>
           <TabsTrigger value="servicos">Serviços</TabsTrigger>
           <TabsTrigger value="tipos">Tipos de Serviço</TabsTrigger>
-          <TabsTrigger value="baias" className="gap-1.5">
-            <BedDouble className="h-3.5 w-3.5" />
-            Baias
-          </TabsTrigger>
         </TabsList>
 
         {/* ─── Serviços Tab ─── */}
@@ -343,79 +339,6 @@ const ServicosPage = () => {
           )}
         </TabsContent>
 
-        {/* ─── Baias Tab ─── */}
-        <TabsContent value="baias" className="space-y-4">
-          <div className="flex justify-end">
-            <Dialog open={baiaOpen} onOpenChange={setBaiaOpen}>
-              <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4" />Nova Baia</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Nova Baia</DialogTitle>
-                  <DialogDescription>Cadastre uma nova baia com suas dimensões</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Nome *</Label>
-                    <Input value={baiaNome} onChange={(e) => setBaiaNome(e.target.value)} placeholder="Ex: Baia 1, Suíte Premium..." />
-                  </div>
-                  <div>
-                    <Label>Tamanho</Label>
-                    <Input value={baiaTamanho} onChange={(e) => setBaiaTamanho(e.target.value)} placeholder="Ex: 2m x 3m, Grande, Pequeno..." />
-                  </div>
-                  <div>
-                    <Label>Capacidade de Pets</Label>
-                    <Input type="number" min="1" value={baiaCapacidade} onChange={(e) => setBaiaCapacidade(e.target.value)} placeholder="1" />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setBaiaOpen(false)}>Cancelar</Button>
-                  <Button onClick={() => addBaiaMutation.mutate()} disabled={!baiaNome || addBaiaMutation.isPending}>
-                    {addBaiaMutation.isPending ? "Salvando..." : "Salvar"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          {baiasLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-          ) : baias && baias.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {baias.map((b: any) => (
-                <div key={b.id} className="border border-border p-4 rounded-lg bg-card space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <BedDouble className="h-5 w-5 text-primary" />
-                      <p className="font-semibold text-foreground">{b.nome}</p>
-                    </div>
-                    <Badge variant={b.ativa ? "default" : "secondary"} className="text-[10px]">
-                      {b.ativa ? "Ativa" : "Inativa"}
-                    </Badge>
-                  </div>
-                  {b.tamanho && (
-                    <p className="text-sm text-muted-foreground">Tamanho: {b.tamanho}</p>
-                  )}
-                  <p className="text-sm text-muted-foreground">Capacidade: {b.capacidade_pets} pet(s)</p>
-                  <div className="flex gap-2 pt-1">
-                    <Button variant="outline" size="sm" onClick={() => openEditBaia(b)}>
-                      <Pencil className="h-3.5 w-3.5 mr-1" />Editar
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => deleteBaiaMutation.mutate(b.id)}>
-                      <Trash2 className="h-3.5 w-3.5 mr-1" />Excluir
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <BedDouble className="h-10 w-10 mx-auto mb-2 opacity-30" />
-              <p>Nenhuma baia cadastrada. Crie a primeira!</p>
-            </div>
-          )}
-        </TabsContent>
       </Tabs>
 
       {/* Edit Serviço Dialog */}
@@ -487,35 +410,6 @@ const ServicosPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Baia Dialog */}
-      <Dialog open={baiaEditOpen} onOpenChange={(o) => { setBaiaEditOpen(o); if (!o) resetBaiaForm(); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Baia</DialogTitle>
-            <DialogDescription>Atualize as informações da baia</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Nome *</Label>
-              <Input value={baiaNome} onChange={(e) => setBaiaNome(e.target.value)} />
-            </div>
-            <div>
-              <Label>Tamanho</Label>
-              <Input value={baiaTamanho} onChange={(e) => setBaiaTamanho(e.target.value)} />
-            </div>
-            <div>
-              <Label>Capacidade de Pets</Label>
-              <Input type="number" min="1" value={baiaCapacidade} onChange={(e) => setBaiaCapacidade(e.target.value)} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setBaiaEditOpen(false); resetBaiaForm(); }}>Cancelar</Button>
-            <Button onClick={() => editBaiaMutation.mutate()} disabled={!baiaNome || editBaiaMutation.isPending}>
-              {editBaiaMutation.isPending ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
