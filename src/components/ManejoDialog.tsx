@@ -24,9 +24,10 @@ interface PerguntaCustom {
   id: string;
   pergunta: string;
   tipo: "sim_nao" | "select" | "texto" | "numero";
+  opcoes?: string[];
 }
 
-const defaultPerguntas = [
+const defaultPerguntasFallback = [
   { key: "interagiu_amigos", label: "Interagiu com os amiguinhos?", tipo: "sim_nao" as const },
   { key: "participou_atividades", label: "Participou das atividades?", tipo: "sim_nao" as const },
   { key: "almocou", label: "Almoçou?", tipo: "select" as const, opcoes: ["Sim", "Não", "Parcial"] },
@@ -49,9 +50,34 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
   const empresaId = empresaIdOverride || authCtx.profile?.empresa_id;
   const [respostas, setRespostas] = useState<Record<string, string>>({});
   const [customPerguntas, setCustomPerguntas] = useState<PerguntaCustom[]>([]);
+  const [perguntasConfig, setPerguntasConfig] = useState<Array<{ key: string; label: string; tipo: any; opcoes?: string[] }>>(defaultPerguntasFallback as any);
   const [novaPergunta, setNovaPergunta] = useState("");
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
+
+  // Load configured questions for this service type (if any)
+  useEffect(() => {
+    if (!open) return;
+    const loadConfig = async () => {
+      const { data: ag } = await supabase.from("agendamentos").select("tipo_servico").eq("id", agendamentoId).maybeSingle();
+      const tipoNome = (ag as any)?.tipo_servico;
+      if (!tipoNome || !empresaId) return;
+      const { data: tipoRow } = await supabase.from("tipos_servico" as any).select("id").eq("empresa_id", empresaId).eq("nome", tipoNome).maybeSingle();
+      const tipoId = (tipoRow as any)?.id;
+      if (!tipoId) return;
+      const { data: cfg } = await supabase.from("tipo_servico_perguntas_manejo" as any).select("*").eq("tipo_servico_id", tipoId).eq("ativo", true).order("ordem");
+      const list = (cfg as any[]) || [];
+      if (list.length > 0) {
+        setPerguntasConfig(list.map((p: any) => ({
+          key: `cfg_${p.id}`,
+          label: p.pergunta,
+          tipo: p.tipo,
+          opcoes: Array.isArray(p.opcoes) ? p.opcoes : [],
+        })));
+      }
+    };
+    loadConfig();
+  }, [open, agendamentoId, empresaId]);
 
   // Load today's record if exists
   useEffect(() => {
@@ -164,7 +190,7 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
             <span>Pergunta</span>
             <span>Resposta</span>
           </div>
-          {defaultPerguntas.map(p => (
+          {perguntasConfig.map(p => (
             <div key={p.key}>
               <div className="grid grid-cols-[1fr_1fr] px-2 py-3 items-center gap-2">
                 <span className="text-sm text-foreground">{p.label}</span>
