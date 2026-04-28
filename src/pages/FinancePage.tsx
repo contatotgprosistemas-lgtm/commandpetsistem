@@ -621,7 +621,15 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
                     <TableCell className="text-sm py-3 text-right tabular-nums font-semibold text-foreground">
                       R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </TableCell>
-                    <TableCell className="text-sm py-3 text-right tabular-nums text-muted-foreground">R$ 0,00</TableCell>
+                    <TableCell className="text-sm py-3 text-right tabular-nums">
+                      {Number(c.valor_pago || 0) > 0 ? (
+                        <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                          R$ {Number(c.valor_pago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">R$ 0,00</span>
+                      )}
+                    </TableCell>
                     <TableCell className="py-3">
                       {statusBadge(c.status, c.vencimento)}
                     </TableCell>
@@ -661,14 +669,29 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
                       <TableRow key={`${c.id}-item-${i}`} className="bg-muted/20">
                         <TableCell />
                         <TableCell colSpan={4} className="text-xs text-muted-foreground pl-10">
-                          <Badge variant="outline" className="text-[9px] mr-2">
-                            {item.tipo === "principal" ? "Principal" : item.tipo === "extra" ? "Extra" : "Cortesia"}
+                          <Badge
+                            variant="outline"
+                            className={`text-[9px] mr-2 ${item.tipo === "pagamento" ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400" : ""}`}
+                          >
+                            {item.tipo === "principal"
+                              ? "Principal"
+                              : item.tipo === "extra"
+                              ? "Extra"
+                              : item.tipo === "pagamento"
+                              ? "Pago"
+                              : "Cortesia"}
                           </Badge>
                           {item.descricao}
                         </TableCell>
                         <TableCell />
-                        <TableCell className="text-xs text-right tabular-nums text-muted-foreground">
-                          {Number(item.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        <TableCell
+                          className={`text-xs text-right tabular-nums ${
+                            Number(item.valor) < 0
+                              ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {Number(item.valor) < 0 ? "-" : ""}R$ {Math.abs(Number(item.valor)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell colSpan={3} />
                       </TableRow>
