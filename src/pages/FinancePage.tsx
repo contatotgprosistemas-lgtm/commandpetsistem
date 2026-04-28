@@ -345,6 +345,45 @@ export default function FinancePage() {
         conta={dividirConta}
         empresaId={profile?.empresa_id || ""}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteTarget && deleteTarget.ids.length > 1
+                ? `Excluir ${deleteTarget.ids.length} faturas?`
+                : "Excluir fatura?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. {deleteTarget && deleteTarget.ids.length > 1
+                ? "As faturas selecionadas serão removidas permanentemente."
+                : "A fatura será removida permanentemente."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!deleteTarget) return;
+                const { error } = await supabase
+                  .from("contas_receber")
+                  .delete()
+                  .in("id", deleteTarget.ids);
+                if (error) {
+                  toast.error("Erro ao excluir");
+                } else {
+                  toast.success(deleteTarget.ids.length > 1 ? "Faturas excluídas" : "Fatura excluída");
+                  fetchContas();
+                }
+                setDeleteTarget(null);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
