@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, Plus, Loader2, Pencil, Trash2, BedDouble } from "lucide-react";
+import { Package, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,7 +18,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 const ServicosPage = () => {
@@ -41,14 +40,6 @@ const ServicosPage = () => {
   const [tipoEditOpen, setTipoEditOpen] = useState(false);
   const [tipoEditId, setTipoEditId] = useState<string | null>(null);
   const [tipoNome, setTipoNome] = useState("");
-
-  // Baias state
-  const [baiaOpen, setBaiaOpen] = useState(false);
-  const [baiaEditOpen, setBaiaEditOpen] = useState(false);
-  const [baiaEditId, setBaiaEditId] = useState<string | null>(null);
-  const [baiaNome, setBaiaNome] = useState("");
-  const [baiaTamanho, setBaiaTamanho] = useState("");
-  const [baiaCapacidade, setBaiaCapacidade] = useState("1");
 
   // Queries
   const { data: servicos, isLoading } = useQuery({
@@ -80,21 +71,6 @@ const ServicosPage = () => {
   });
 
   const tiposList = (tiposServico || []).filter((t: any) => t.ativo).map((t: any) => t.nome);
-
-  // Baias query
-  const { data: baias, isLoading: baiasLoading } = useQuery({
-    queryKey: ["baias", empresaId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("baias")
-        .select("*")
-        .eq("empresa_id", empresaId!)
-        .order("nome");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!empresaId,
-  });
 
   // Serviço mutations
   const addMutation = useMutation({
@@ -194,54 +170,6 @@ const ServicosPage = () => {
     onError: () => toast.error("Erro ao excluir tipo."),
   });
 
-  // Baia mutations
-  const addBaiaMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("baias").insert({
-        empresa_id: empresaId!,
-        nome: baiaNome,
-        tamanho: baiaTamanho,
-        capacidade_pets: parseInt(baiaCapacidade) || 1,
-      } as any);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["baias"] });
-      toast.success("Baia criada!");
-      resetBaiaForm();
-    },
-    onError: () => toast.error("Erro ao criar baia."),
-  });
-
-  const editBaiaMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from("baias")
-        .update({ nome: baiaNome, tamanho: baiaTamanho, capacidade_pets: parseInt(baiaCapacidade) || 1 } as any)
-        .eq("id", baiaEditId!);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["baias"] });
-      toast.success("Baia atualizada!");
-      resetBaiaForm();
-      setBaiaEditOpen(false);
-    },
-    onError: () => toast.error("Erro ao atualizar baia."),
-  });
-
-  const deleteBaiaMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("baias").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["baias"] });
-      toast.success("Baia excluída!");
-    },
-    onError: () => toast.error("Erro ao excluir baia."),
-  });
-
   const resetForm = () => {
     setDescricao("");
     setValor("");
@@ -250,22 +178,6 @@ const ServicosPage = () => {
     setDiaria24h(false);
     setOpen(false);
     setEditId(null);
-  };
-
-  const resetBaiaForm = () => {
-    setBaiaNome("");
-    setBaiaTamanho("");
-    setBaiaCapacidade("1");
-    setBaiaOpen(false);
-    setBaiaEditId(null);
-  };
-
-  const openEditBaia = (b: any) => {
-    setBaiaEditId(b.id);
-    setBaiaNome(b.nome);
-    setBaiaTamanho(b.tamanho || "");
-    setBaiaCapacidade(String(b.capacidade_pets || 1));
-    setBaiaEditOpen(true);
   };
 
   const openEdit = (s: any) => {
@@ -295,10 +207,6 @@ const ServicosPage = () => {
         <TabsList>
           <TabsTrigger value="servicos">Serviços</TabsTrigger>
           <TabsTrigger value="tipos">Tipos de Serviço</TabsTrigger>
-          <TabsTrigger value="baias" className="gap-1.5">
-            <BedDouble className="h-3.5 w-3.5" />
-            Baias
-          </TabsTrigger>
         </TabsList>
 
         {/* ─── Serviços Tab ─── */}
@@ -431,79 +339,6 @@ const ServicosPage = () => {
           )}
         </TabsContent>
 
-        {/* ─── Baias Tab ─── */}
-        <TabsContent value="baias" className="space-y-4">
-          <div className="flex justify-end">
-            <Dialog open={baiaOpen} onOpenChange={setBaiaOpen}>
-              <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4" />Nova Baia</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Nova Baia</DialogTitle>
-                  <DialogDescription>Cadastre uma nova baia com suas dimensões</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Nome *</Label>
-                    <Input value={baiaNome} onChange={(e) => setBaiaNome(e.target.value)} placeholder="Ex: Baia 1, Suíte Premium..." />
-                  </div>
-                  <div>
-                    <Label>Tamanho</Label>
-                    <Input value={baiaTamanho} onChange={(e) => setBaiaTamanho(e.target.value)} placeholder="Ex: 2m x 3m, Grande, Pequeno..." />
-                  </div>
-                  <div>
-                    <Label>Capacidade de Pets</Label>
-                    <Input type="number" min="1" value={baiaCapacidade} onChange={(e) => setBaiaCapacidade(e.target.value)} placeholder="1" />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setBaiaOpen(false)}>Cancelar</Button>
-                  <Button onClick={() => addBaiaMutation.mutate()} disabled={!baiaNome || addBaiaMutation.isPending}>
-                    {addBaiaMutation.isPending ? "Salvando..." : "Salvar"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          {baiasLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-          ) : baias && baias.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {baias.map((b: any) => (
-                <div key={b.id} className="border border-border p-4 rounded-lg bg-card space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <BedDouble className="h-5 w-5 text-primary" />
-                      <p className="font-semibold text-foreground">{b.nome}</p>
-                    </div>
-                    <Badge variant={b.ativa ? "default" : "secondary"} className="text-[10px]">
-                      {b.ativa ? "Ativa" : "Inativa"}
-                    </Badge>
-                  </div>
-                  {b.tamanho && (
-                    <p className="text-sm text-muted-foreground">Tamanho: {b.tamanho}</p>
-                  )}
-                  <p className="text-sm text-muted-foreground">Capacidade: {b.capacidade_pets} pet(s)</p>
-                  <div className="flex gap-2 pt-1">
-                    <Button variant="outline" size="sm" onClick={() => openEditBaia(b)}>
-                      <Pencil className="h-3.5 w-3.5 mr-1" />Editar
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => deleteBaiaMutation.mutate(b.id)}>
-                      <Trash2 className="h-3.5 w-3.5 mr-1" />Excluir
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <BedDouble className="h-10 w-10 mx-auto mb-2 opacity-30" />
-              <p>Nenhuma baia cadastrada. Crie a primeira!</p>
-            </div>
-          )}
-        </TabsContent>
       </Tabs>
 
       {/* Edit Serviço Dialog */}
@@ -575,35 +410,6 @@ const ServicosPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Baia Dialog */}
-      <Dialog open={baiaEditOpen} onOpenChange={(o) => { setBaiaEditOpen(o); if (!o) resetBaiaForm(); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Baia</DialogTitle>
-            <DialogDescription>Atualize as informações da baia</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Nome *</Label>
-              <Input value={baiaNome} onChange={(e) => setBaiaNome(e.target.value)} />
-            </div>
-            <div>
-              <Label>Tamanho</Label>
-              <Input value={baiaTamanho} onChange={(e) => setBaiaTamanho(e.target.value)} />
-            </div>
-            <div>
-              <Label>Capacidade de Pets</Label>
-              <Input type="number" min="1" value={baiaCapacidade} onChange={(e) => setBaiaCapacidade(e.target.value)} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setBaiaEditOpen(false); resetBaiaForm(); }}>Cancelar</Button>
-            <Button onClick={() => editBaiaMutation.mutate()} disabled={!baiaNome || editBaiaMutation.isPending}>
-              {editBaiaMutation.isPending ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

@@ -5287,6 +5287,94 @@ export type Database = {
           },
         ]
       }
+      tipo_servico_perguntas_checklist: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          empresa_id: string
+          id: string
+          ordem: number
+          pergunta: string
+          tipo_servico_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id: string
+          id?: string
+          ordem?: number
+          pergunta: string
+          tipo_servico_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          ordem?: number
+          pergunta?: string
+          tipo_servico_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tipo_servico_perguntas_checklist_tipo_servico_id_fkey"
+            columns: ["tipo_servico_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tipo_servico_perguntas_manejo: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          empresa_id: string
+          id: string
+          opcoes: Json | null
+          ordem: number
+          pergunta: string
+          tipo: string
+          tipo_servico_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id: string
+          id?: string
+          opcoes?: Json | null
+          ordem?: number
+          pergunta: string
+          tipo?: string
+          tipo_servico_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          opcoes?: Json | null
+          ordem?: number
+          pergunta?: string
+          tipo?: string
+          tipo_servico_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tipo_servico_perguntas_manejo_tipo_servico_id_fkey"
+            columns: ["tipo_servico_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tipos_servico: {
         Row: {
           ativo: boolean
