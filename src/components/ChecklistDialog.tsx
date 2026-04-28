@@ -18,7 +18,7 @@ interface ChecklistDialogProps {
   petName: string;
 }
 
-const defaultPerguntas = [
+const defaultPerguntasFallback = [
   "Olhos Ok?",
   "Orelhas Ok?",
   "Focinho Ok?",
@@ -44,9 +44,27 @@ export function ChecklistDialog({ open, onOpenChange, agendamentoId, petId, petN
   const { profile } = useAuth();
   const [respostas, setRespostas] = useState<Record<string, string>>({});
   const [customPerguntas, setCustomPerguntas] = useState<{ id: string; pergunta: string }[]>([]);
+  const [perguntasList, setPerguntasList] = useState<string[]>(defaultPerguntasFallback);
   const [novaPergunta, setNovaPergunta] = useState("");
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
+
+  // Load configured checklist questions for this service type
+  useEffect(() => {
+    if (!open) return;
+    const loadCfg = async () => {
+      const { data: ag } = await supabase.from("agendamentos").select("tipo_servico").eq("id", agendamentoId).maybeSingle();
+      const tipoNome = (ag as any)?.tipo_servico;
+      if (!tipoNome || !profile?.empresa_id) return;
+      const { data: tipoRow } = await supabase.from("tipos_servico" as any).select("id").eq("empresa_id", profile.empresa_id).eq("nome", tipoNome).maybeSingle();
+      const tipoId = (tipoRow as any)?.id;
+      if (!tipoId) return;
+      const { data: cfg } = await supabase.from("tipo_servico_perguntas_checklist" as any).select("pergunta").eq("tipo_servico_id", tipoId).eq("ativo", true).order("ordem");
+      const list = ((cfg as any[]) || []).map((p: any) => p.pergunta);
+      if (list.length > 0) setPerguntasList(list);
+    };
+    loadCfg();
+  }, [open, agendamentoId, profile?.empresa_id]);
 
   // Load today's record if exists
   useEffect(() => {
@@ -134,7 +152,7 @@ export function ChecklistDialog({ open, onOpenChange, agendamentoId, petId, petN
             <span>Pergunta</span>
             <span>Resposta</span>
           </div>
-          {defaultPerguntas.map(p => {
+          {perguntasList.map(p => {
             const key = p.toLowerCase().replace(/[^a-z]/g, "_");
             return (
               <div key={key} className="grid grid-cols-[1fr_1fr] px-2 py-3 items-center gap-2">
