@@ -423,7 +423,7 @@ function PaginationBar({ page, pageSize, total, totalPages, onPage, onPageSize }
   );
 }
 
-function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
+function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete, onDeleteBulk }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void; onDeleteBulk: (ids: string[]) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
@@ -483,8 +483,8 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
     onBaixarLote(items);
     setSelected([]);
   };
-  const handleBulkDelete = async () => {
-    for (const id of selected) { await onDelete(id); }
+  const handleBulkDelete = () => {
+    onDeleteBulk(selected);
     setSelected([]);
   };
 
