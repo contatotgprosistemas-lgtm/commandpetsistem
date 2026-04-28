@@ -10,6 +10,16 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast, isToday } from "date-fns";
@@ -83,6 +93,7 @@ export default function FinancePage() {
   const [editConta, setEditConta] = useState<ContaReceber | null>(null);
   const [editContaBancaria, setEditContaBancaria] = useState<any | null>(null);
   const [dividirConta, setDividirConta] = useState<ContaReceber | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ ids: string[] } | null>(null);
 
   async function fetchContas() {
     setLoading(true);
@@ -241,12 +252,8 @@ export default function FinancePage() {
             }}
             onEdit={(c) => setEditConta(c)}
             onDividir={(c) => setDividirConta(c)}
-            onDelete={async (id) => {
-              const { error } = await supabase.from("contas_receber").delete().eq("id", id);
-              if (error) { toast.error("Erro ao excluir"); return; }
-              toast.success("Fatura excluída");
-              fetchContas();
-            }}
+            onDelete={(id) => setDeleteTarget({ ids: [id] })}
+            onDeleteBulk={(ids) => setDeleteTarget({ ids })}
           />
         </TabsContent>
 
@@ -338,6 +345,45 @@ export default function FinancePage() {
         conta={dividirConta}
         empresaId={profile?.empresa_id || ""}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteTarget && deleteTarget.ids.length > 1
+                ? `Excluir ${deleteTarget.ids.length} faturas?`
+                : "Excluir fatura?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. {deleteTarget && deleteTarget.ids.length > 1
+                ? "As faturas selecionadas serão removidas permanentemente."
+                : "A fatura será removida permanentemente."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!deleteTarget) return;
+                const { error } = await supabase
+                  .from("contas_receber")
+                  .delete()
+                  .in("id", deleteTarget.ids);
+                if (error) {
+                  toast.error("Erro ao excluir");
+                } else {
+                  toast.success(deleteTarget.ids.length > 1 ? "Faturas excluídas" : "Fatura excluída");
+                  fetchContas();
+                }
+                setDeleteTarget(null);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -416,7 +462,7 @@ function PaginationBar({ page, pageSize, total, totalPages, onPage, onPageSize }
   );
 }
 
-function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void }) {
+function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete, onDeleteBulk }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void; onDeleteBulk: (ids: string[]) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
@@ -476,8 +522,8 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
     onBaixarLote(items);
     setSelected([]);
   };
-  const handleBulkDelete = async () => {
-    for (const id of selected) { await onDelete(id); }
+  const handleBulkDelete = () => {
+    onDeleteBulk(selected);
     setSelected([]);
   };
 
