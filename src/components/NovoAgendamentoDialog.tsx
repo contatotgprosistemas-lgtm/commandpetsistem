@@ -197,6 +197,16 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     }
   }, [isBanho, servicoObj]);
 
+  // Auto-fill valor for any other service type (taxi, daycare, avulsos, etc.)
+  // when a service is picked and the user hasn't typed a value yet.
+  useEffect(() => {
+    if (!servicoObj || isBanho || isHotel) return;
+    const current = form.getValues("valor");
+    if (!current || current === "" || current === "0" || current === "0.00") {
+      form.setValue("valor", servicoObj.valor.toFixed(2));
+    }
+  }, [servicoObj, isBanho, isHotel]);
+
   // Check banho availability when date changes
   useEffect(() => {
     if (isBanho && dataReserva && empresaId) {
