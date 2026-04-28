@@ -672,7 +672,6 @@ function SegurancaTab() {
         </CardContent>
       </Card>
 
-      <RetencaoDadosCard />
     </div>
   );
 }
