@@ -72,21 +72,6 @@ const ServicosPage = () => {
 
   const tiposList = (tiposServico || []).filter((t: any) => t.ativo).map((t: any) => t.nome);
 
-  // Baias query
-  const { data: baias, isLoading: baiasLoading } = useQuery({
-    queryKey: ["baias", empresaId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("baias")
-        .select("*")
-        .eq("empresa_id", empresaId!)
-        .order("nome");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!empresaId,
-  });
-
   // Serviço mutations
   const addMutation = useMutation({
     mutationFn: async () => {
