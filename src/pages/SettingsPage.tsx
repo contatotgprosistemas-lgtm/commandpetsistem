@@ -18,7 +18,6 @@ import { PermissoesCargoPanel } from "@/components/PermissoesCargoPanel";
 import { translateAuthError } from "@/lib/authErrors";
 import { AniversariosCard } from "@/components/AniversariosCard";
 import { FaturaWhatsappCard } from "@/components/FaturaWhatsappCard";
-import { RetencaoDadosCard } from "@/components/RetencaoDadosCard";
 
 // ─── Dados da Empresa ───────────────────────────────────────────────
 function EmpresaTab() {
@@ -673,7 +672,6 @@ function SegurancaTab() {
         </CardContent>
       </Card>
 
-      <RetencaoDadosCard />
     </div>
   );
 }
