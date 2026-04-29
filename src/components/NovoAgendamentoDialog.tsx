@@ -114,6 +114,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [formasPagamento, setFormasPagamento] = useState<{ id: string; nome: string }[]>([]);
   const [availableReplacements, setAvailableReplacements] = useState<any[]>([]);
   const [useReplacement, setUseReplacement] = useState(false);
+  // Map<pet_id, absence_id> — qual reposição cada pet vai consumir
+  const [replacementChoices, setReplacementChoices] = useState<Record<string, string>>({});
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [servicosExtras, setServicosExtras] = useState<ServicoExtra[]>([]);
   const [baias, setBaias] = useState<{ id: string; nome: string; capacidade_pets: number }[]>([]);
@@ -264,6 +266,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   useEffect(() => {
     setAvailableReplacements([]);
     setUseReplacement(false);
+    setReplacementChoices({});
 
     if (selectedPetIds.length === 0 || !selectedServico || !empresaId) return;
 
@@ -280,19 +283,26 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       const absenceAgendamentoIds = absences.map((a: any) => a.agendamento_id);
       const { data: agendamentos } = await supabase
         .from("agendamentos")
-        .select("id, pet_id, tipo_servico, pet:pets(nome), cliente:clientes(nome)")
+        .select("id, pet_id, tipo_servico, data_hora, pet:pets(nome), cliente:clientes(nome)")
         .in("id", absenceAgendamentoIds);
 
       if (!agendamentos) return;
 
-      const matching = absences.filter((abs: any) => {
-        const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
-        if (!ag) return false;
-        return selectedPetIds.includes(ag.pet_id);
-      }).map((abs: any) => {
-        const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
-        return { ...abs, agendamento: ag };
-      });
+      // Mesmo tipo de serviço da nova reserva (case-insensitive)
+      const svcLower = (selectedServico || "").toLowerCase();
+      const matching = absences
+        .map((abs: any) => {
+          const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
+          return ag ? { ...abs, agendamento: ag } : null;
+        })
+        .filter((abs: any) => {
+          if (!abs) return false;
+          const ag = abs.agendamento;
+          return (
+            selectedPetIds.includes(ag.pet_id) &&
+            (ag.tipo_servico || "").toLowerCase() === svcLower
+          );
+        });
 
       if (matching.length > 0) {
         setAvailableReplacements(matching);
@@ -367,7 +377,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         return new Date(d + "T" + (h || "00:00") + ":00").toISOString();
       };
 
-      const finalValor = useRepl ? 0 : (data.valor ? parseFloat(data.valor) : null);
+      const baseValor = data.valor ? parseFloat(data.valor) : null;
+      const petUsesReplacement = (petId: string) => useRepl && !!replacementChoices[petId];
 
       const rows = data.pet_ids.map(pet_id => ({
         empresa_id: empresaId,
@@ -382,10 +393,10 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         data_saida: buildTs(data.data_saida || "", data.hora_saida || ""),
         hora_saida: data.hora_saida || null,
         baia: data.baia || null,
-        valor: finalValor,
+        valor: petUsesReplacement(pet_id) ? 0 : baseValor,
         desconto: data.desconto ? parseFloat(data.desconto) : 0,
         forma_pagamento: data.forma_pagamento || null,
-        notas: useRepl
+        notas: petUsesReplacement(pet_id)
           ? `${data.notas || ""} [Reposição de falta justificada]`.trim()
           : data.notas || null,
       }));
@@ -393,26 +404,24 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       const { data: insertedRows, error } = await supabase.from("agendamentos").insert(rows as any).select("id, pet_id");
       if (error) throw error;
 
-      // Mark replacement absences as used
+      // Mark replacement absences as used (apenas para o pet que escolheu)
       if (useRepl && insertedRows) {
         for (const row of insertedRows) {
-          const matchingAbsence = availableReplacements.find(
-            (abs: any) => abs.agendamento?.pet_id === row.pet_id
-          );
-          if (matchingAbsence) {
+          const chosenAbsenceId = replacementChoices[row.pet_id];
+          if (chosenAbsenceId) {
             await supabase
               .from("agendamento_absences" as any)
               .update({
                 reposicao_utilizada: true,
                 reposicao_agendamento_id: row.id,
               })
-              .eq("id", matchingAbsence.id);
+              .eq("id", chosenAbsenceId);
           }
         }
       }
 
       // Generate GROUPED invoice: one fatura per pet with line items
-      const valorNum = useRepl ? 0 : (data.valor ? parseFloat(data.valor) : 0);
+      const valorNum = data.valor ? parseFloat(data.valor) : 0;
       const isPagamentoPosterior = data.forma_pagamento === "Pagamento Posterior";
       const vencimentoFatura = isPagamentoPosterior && data.data_pagamento
         ? data.data_pagamento
@@ -427,6 +436,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
       if (valorNum > 0) {
         for (const petId of data.pet_ids) {
+          // Pets que estão usando reposição não geram cobrança
+          if (petUsesReplacement(petId)) continue;
           const petName = pets.find(p => p.id === petId)?.nome || "Pet";
           lineItems.push({ descricao: `${data.tipo_servico} — ${petName}`, valor: valorNum, tipo: "principal" });
         }
@@ -641,6 +652,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       form.reset();
       setAvailableReplacements([]);
       setUseReplacement(false);
+      setReplacementChoices({});
       setServicosExtras([]);
       setGerarContrato(false);
       setOpen(false);
@@ -819,27 +831,71 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
               </FormItem>
             )} />
 
-            {/* Replacement banner */}
+            {/* Replacement banner — escolha qual reposição consumir por pet */}
             {availableReplacements.length > 0 && (
-              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-3">
                 <div className="flex items-center gap-2">
                   <RotateCcw className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium text-foreground">
-                    Reposição disponível! ({availableReplacements.length} falta{availableReplacements.length > 1 ? "s" : ""} justificada{availableReplacements.length > 1 ? "s" : ""})
+                    Reposição disponível para {selectedServico}
                   </span>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {availableReplacements.map((r: any) => (
-                    <p key={r.id}>{r.agendamento?.pet?.nome} — {r.agendamento?.tipo_servico}</p>
-                  ))}
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={useReplacement} onCheckedChange={(v) => {
-                    setUseReplacement(!!v);
-                    if (v) form.setValue("valor", "0");
-                  }} />
-                  <span className="text-sm font-medium">Usar reposição (valor zerado, sem fatura)</span>
-                </label>
+                <p className="text-xs text-muted-foreground">
+                  Existe(m) falta(s) justificada(s) para este serviço. Escolha qual deseja consumir
+                  — o saldo do plano será reaberto e o pet não será cobrado neste agendamento.
+                </p>
+
+                {selectedPetIds.map((petId) => {
+                  const pet = pets.find((p) => p.id === petId);
+                  const opcoes = availableReplacements.filter(
+                    (r: any) => r.agendamento?.pet_id === petId
+                  );
+                  if (opcoes.length === 0) return null;
+                  const selecionado = replacementChoices[petId] || "";
+                  return (
+                    <div key={petId} className="space-y-1.5 rounded-md border bg-background p-2.5">
+                      <Label className="text-xs font-medium">{pet?.nome ?? "Pet"}</Label>
+                      <Select
+                        value={selecionado}
+                        onValueChange={(v) => {
+                          setReplacementChoices((prev) => {
+                            const next = { ...prev };
+                            if (v === "__none__") delete next[petId];
+                            else next[petId] = v;
+                            return next;
+                          });
+                          // Habilita modo reposição se ao menos um pet está usando
+                          setUseReplacement(true);
+                          if (v !== "__none__") form.setValue("valor", form.getValues("valor") || "0");
+                        }}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Não usar reposição (cobrar normalmente)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Não usar reposição (cobrar normalmente)</SelectItem>
+                          {opcoes.map((r: any) => {
+                            const dt = r.agendamento?.data_hora
+                              ? format(new Date(r.agendamento.data_hora), "dd/MM/yyyy")
+                              : "—";
+                            return (
+                              <SelectItem key={r.id} value={r.id}>
+                                Falta de {dt} — {r.agendamento?.tipo_servico}
+                                {r.notes ? ` · ${r.notes.slice(0, 30)}` : ""}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
+
+                {Object.keys(replacementChoices).length > 0 && (
+                  <div className="text-xs text-primary font-medium">
+                    {Object.keys(replacementChoices).length} pet(s) usarão reposição — sem cobrança para esses pets.
+                  </div>
+                )}
               </div>
             )}
 
