@@ -287,14 +287,18 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Total de baias ativas (para ocupação do hotel)
+  // Capacidade total de pets do hotel (soma de capacidade_pets das baias ativas)
   useEffect(() => {
     const fetchBaias = async () => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from("baias")
-        .select("id", { count: "exact", head: true })
+        .select("capacidade_pets")
         .eq("ativa", true);
-      setTotalBaias(count ?? 0);
+      const total = (data ?? []).reduce(
+        (acc, b: any) => acc + Number(b.capacidade_pets || 0),
+        0,
+      );
+      setCapacidadeHotel(total);
     };
     fetchBaias();
     const channel = supabase
