@@ -85,6 +85,7 @@ export default function Dashboard() {
   const [expiringContracts, setExpiringContracts] = useState<any[]>([]);
   const [petsPlanoEscola, setPetsPlanoEscola] = useState(0);
   const [petsPlanoBanho, setPetsPlanoBanho] = useState(0);
+  const [totalBaias, setTotalBaias] = useState(0);
   const [massCheckoutOpen, setMassCheckoutOpen] = useState(false);
   const [massCheckoutLoading, setMassCheckoutLoading] = useState(false);
   const [selectedNaEmpresa, setSelectedNaEmpresa] = useState<Set<string>>(new Set());
@@ -286,6 +287,23 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // Total de baias ativas (para ocupação do hotel)
+  useEffect(() => {
+    const fetchBaias = async () => {
+      const { count } = await supabase
+        .from("baias")
+        .select("id", { count: "exact", head: true })
+        .eq("ativa", true);
+      setTotalBaias(count ?? 0);
+    };
+    fetchBaias();
+    const channel = supabase
+      .channel("dashboard-baias-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "baias" }, fetchBaias)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   // Realtime: refetch novos cadastros públicos
   useEffect(() => {
     const channel = supabase
@@ -433,6 +451,8 @@ export default function Dashboard() {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const sortByPetName = (a: Agendamento, b: Agendamento) => (a.pet?.nome ?? "").localeCompare(b.pet?.nome ?? "");
   const petsNaEmpresa = agendamentos.filter(a => a.status === "na_empresa").sort(sortByPetName);
+  const petsHotelNaEmpresa = petsNaEmpresa.filter(a => isHotelService(a.tipo_servico)).length;
+  const ocupacaoHotelPct = totalBaias > 0 ? Math.round((petsHotelNaEmpresa / totalBaias) * 100) : 0;
   const isTransportService = (tipo: string) => {
     const t = tipo.toLowerCase();
     return t.includes("taxi") || t.includes("transporte") || t.includes("leva") || t.includes("busca");
@@ -533,7 +553,15 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard filled title="Chats Ativos" value="0" change="—" changeType="neutral" icon={<MessageSquare className="h-4 w-4" strokeWidth={1.5} />} accent="blue" />
+        <MetricCard
+          filled
+          title="Ocupação do Hotel"
+          value={`${ocupacaoHotelPct}%`}
+          change={totalBaias > 0 ? `${petsHotelNaEmpresa}/${totalBaias} baias` : "Sem baias cadastradas"}
+          changeType="neutral"
+          icon={<Hotel className="h-4 w-4" strokeWidth={1.5} />}
+          accent="blue"
+        />
         <MetricCard filled title="Pets na Empresa" value={String(petsNaEmpresa.length)} change="—" changeType="neutral" icon={<PawPrint className="h-4 w-4" strokeWidth={1.5} />} accent="emerald" />
         <MetricCard filled title="Pets Plano Escola" value={String(petsPlanoEscola)} change="—" changeType="neutral" icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />} accent="violet" />
         <MetricCard filled title="Pets Plano Banho" value={String(petsPlanoBanho)} change="—" changeType="neutral" icon={<ShowerHead className="h-4 w-4" strokeWidth={1.5} />} accent="amber" />
