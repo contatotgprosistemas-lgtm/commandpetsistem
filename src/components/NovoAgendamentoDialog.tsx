@@ -114,6 +114,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   const [formasPagamento, setFormasPagamento] = useState<{ id: string; nome: string }[]>([]);
   const [availableReplacements, setAvailableReplacements] = useState<any[]>([]);
   const [useReplacement, setUseReplacement] = useState(false);
+  // Map<pet_id, absence_id> — qual reposição cada pet vai consumir
+  const [replacementChoices, setReplacementChoices] = useState<Record<string, string>>({});
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [servicosExtras, setServicosExtras] = useState<ServicoExtra[]>([]);
   const [baias, setBaias] = useState<{ id: string; nome: string; capacidade_pets: number }[]>([]);
