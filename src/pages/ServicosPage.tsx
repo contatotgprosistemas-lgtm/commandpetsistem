@@ -34,6 +34,7 @@ const ServicosPage = () => {
   const [tipo, setTipo] = useState("");
   const [considerarDia, setConsiderarDia] = useState(false);
   const [diaria24h, setDiaria24h] = useState(false);
+  const [pernoite, setPernoite] = useState(false);
 
   // Tipos state
   const [tipoOpen, setTipoOpen] = useState(false);
@@ -82,6 +83,7 @@ const ServicosPage = () => {
         tipo,
         considerar_dia: considerarDia,
         diaria_24h: diaria24h,
+        pernoite: pernoite,
       } as any);
       if (error) throw error;
     },
@@ -97,7 +99,7 @@ const ServicosPage = () => {
     mutationFn: async () => {
       const { error } = await supabase
         .from("servicos")
-        .update({ descricao, valor: parseFloat(valor) || 0, tipo, considerar_dia: considerarDia, diaria_24h: diaria24h } as any)
+        .update({ descricao, valor: parseFloat(valor) || 0, tipo, considerar_dia: considerarDia, diaria_24h: diaria24h, pernoite: pernoite } as any)
         .eq("id", editId!);
       if (error) throw error;
     },
@@ -176,6 +178,7 @@ const ServicosPage = () => {
     setTipo("");
     setConsiderarDia(false);
     setDiaria24h(false);
+    setPernoite(false);
     setOpen(false);
     setEditId(null);
   };
@@ -187,6 +190,7 @@ const ServicosPage = () => {
     setTipo(s.tipo);
     setConsiderarDia((s as any).considerar_dia ?? false);
     setDiaria24h((s as any).diaria_24h ?? false);
+    setPernoite((s as any).pernoite ?? false);
     setEditOpen(true);
   };
 
@@ -242,12 +246,16 @@ const ServicosPage = () => {
                   {/hotel|hospedagem|hotelzinho|pensão|pens[aã]o|pernoite|estadia/i.test(tipo) && (
                   <div className="flex gap-6">
                     <div className="flex items-center gap-2">
-                      <Checkbox id="new-considerar-dia" checked={considerarDia} onCheckedChange={(v) => { setConsiderarDia(!!v); if (v) setDiaria24h(false); }} />
+                      <Checkbox id="new-considerar-dia" checked={considerarDia} onCheckedChange={(v) => { setConsiderarDia(!!v); if (v) { setDiaria24h(false); setPernoite(false); } }} />
                       <Label htmlFor="new-considerar-dia" className="text-sm font-normal">Considerar o Dia</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Checkbox id="new-diaria-24h" checked={diaria24h} onCheckedChange={(v) => { setDiaria24h(!!v); if (v) setConsiderarDia(false); }} />
+                      <Checkbox id="new-diaria-24h" checked={diaria24h} onCheckedChange={(v) => { setDiaria24h(!!v); if (v) { setConsiderarDia(false); setPernoite(false); } }} />
                       <Label htmlFor="new-diaria-24h" className="text-sm font-normal">Diária de 24 Horas</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="new-pernoite" checked={pernoite} onCheckedChange={(v) => { setPernoite(!!v); if (v) { setConsiderarDia(false); setDiaria24h(false); } }} />
+                      <Label htmlFor="new-pernoite" className="text-sm font-normal">Pernoite (18h às 8h)</Label>
                     </div>
                   </div>
                   )}
@@ -369,12 +377,16 @@ const ServicosPage = () => {
             {/hotel|hospedagem|hotelzinho|pensão|pens[aã]o|pernoite|estadia/i.test(tipo) && (
             <div className="flex gap-6">
               <div className="flex items-center gap-2">
-                <Checkbox id="edit-considerar-dia" checked={considerarDia} onCheckedChange={(v) => { setConsiderarDia(!!v); if (v) setDiaria24h(false); }} />
+                <Checkbox id="edit-considerar-dia" checked={considerarDia} onCheckedChange={(v) => { setConsiderarDia(!!v); if (v) { setDiaria24h(false); setPernoite(false); } }} />
                 <Label htmlFor="edit-considerar-dia" className="text-sm font-normal">Considerar o Dia</Label>
               </div>
               <div className="flex items-center gap-2">
-                <Checkbox id="edit-diaria-24h" checked={diaria24h} onCheckedChange={(v) => { setDiaria24h(!!v); if (v) setConsiderarDia(false); }} />
+                <Checkbox id="edit-diaria-24h" checked={diaria24h} onCheckedChange={(v) => { setDiaria24h(!!v); if (v) { setConsiderarDia(false); setPernoite(false); } }} />
                 <Label htmlFor="edit-diaria-24h" className="text-sm font-normal">Diária de 24 Horas</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="edit-pernoite" checked={pernoite} onCheckedChange={(v) => { setPernoite(!!v); if (v) { setConsiderarDia(false); setDiaria24h(false); } }} />
+                <Label htmlFor="edit-pernoite" className="text-sm font-normal">Pernoite (18h às 8h)</Label>
               </div>
             </div>
             )}

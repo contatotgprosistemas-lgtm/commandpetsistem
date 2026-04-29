@@ -5021,6 +5021,7 @@ export type Database = {
           diaria_24h: boolean
           empresa_id: string
           id: string
+          pernoite: boolean
           tipo: string
           updated_at: string
           valor: number
@@ -5033,6 +5034,7 @@ export type Database = {
           diaria_24h?: boolean
           empresa_id: string
           id?: string
+          pernoite?: boolean
           tipo?: string
           updated_at?: string
           valor?: number
@@ -5045,6 +5047,7 @@ export type Database = {
           diaria_24h?: boolean
           empresa_id?: string
           id?: string
+          pernoite?: boolean
           tipo?: string
           updated_at?: string
           valor?: number
