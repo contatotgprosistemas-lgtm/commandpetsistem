@@ -652,6 +652,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       form.reset();
       setAvailableReplacements([]);
       setUseReplacement(false);
+      setReplacementChoices({});
       setServicosExtras([]);
       setGerarContrato(false);
       setOpen(false);
