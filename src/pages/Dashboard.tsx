@@ -573,7 +573,9 @@ export default function Dashboard() {
           filled
           title="Ocupação do Hotel"
           value={`${ocupacaoHotelPct}%`}
-          change={totalBaias > 0 ? `${petsHotelNaEmpresa}/${totalBaias} baias` : "Sem baias cadastradas"}
+          change={capacidadeHotel > 0
+            ? `${petsHotelSemana}/${capacidadeHotel} pets · semana (${petsHotelNaEmpresa} agora)`
+            : "Sem baias cadastradas"}
           changeType="neutral"
           icon={<Hotel className="h-4 w-4" strokeWidth={1.5} />}
           accent="blue"
