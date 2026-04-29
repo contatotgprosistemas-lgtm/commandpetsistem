@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, lazy, Suspense } from "react";
+import { useEffect, useState, useRef, lazy, Suspense, useCallback } from "react";
 import { MapPin, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -54,33 +54,44 @@ export function EstouChegandoMapDialog({ empresaId }: EstouChegandoMapDialogProp
     return () => { supabase.removeChannel(channel); };
   }, [empresaId]);
 
-  // When dialog is open, poll positions every 5 seconds
+  const fetchEntries = useCallback(async () => {
+    let q = supabase
+      .from("estou_chegando")
+      .select("id, cliente_id, pet_id, latitude, longitude, updated_at, cliente:clientes(nome, foto_url), pet:pets(nome, foto_url)")
+      .eq("active", true);
+    if (empresaId) q = q.eq("empresa_id", empresaId);
+    const { data, error } = await q;
+    if (!error && data) {
+      setEntries(data as unknown as TrackingEntry[]);
+    }
+  }, [empresaId]);
+
+  // When dialog is open: realtime updates + light polling fallback (10s) so
+  // moving pins stay fresh even if a realtime event is missed.
   useEffect(() => {
     if (!open) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
 
-    const fetchEntries = async () => {
-      let q = supabase
-        .from("estou_chegando")
-        .select("id, cliente_id, pet_id, latitude, longitude, updated_at, cliente:clientes(nome, foto_url), pet:pets(nome, foto_url)")
-        .eq("active", true);
-      if (empresaId) q = q.eq("empresa_id", empresaId);
-      const { data, error } = await q;
-
-      if (!error && data) {
-        setEntries(data as unknown as TrackingEntry[]);
-      }
-    };
-
     fetchEntries();
-    intervalRef.current = setInterval(fetchEntries, 5000);
+
+    const channel = supabase
+      .channel(`estou-chegando-map-${Math.random().toString(36).slice(2)}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "estou_chegando" },
+        () => fetchEntries()
+      )
+      .subscribe();
+
+    intervalRef.current = setInterval(fetchEntries, 10000);
 
     return () => {
+      supabase.removeChannel(channel);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [open, empresaId]);
+  }, [open, empresaId, fetchEntries]);
 
   const timeSince = (dateStr: string) => {
     const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
