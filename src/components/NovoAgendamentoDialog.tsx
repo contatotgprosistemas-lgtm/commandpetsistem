@@ -421,7 +421,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       }
 
       // Generate GROUPED invoice: one fatura per pet with line items
-      const valorNum = useRepl ? 0 : (data.valor ? parseFloat(data.valor) : 0);
+      const valorNum = data.valor ? parseFloat(data.valor) : 0;
       const isPagamentoPosterior = data.forma_pagamento === "Pagamento Posterior";
       const vencimentoFatura = isPagamentoPosterior && data.data_pagamento
         ? data.data_pagamento
@@ -436,6 +436,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
       if (valorNum > 0) {
         for (const petId of data.pet_ids) {
+          // Pets que estão usando reposição não geram cobrança
+          if (petUsesReplacement(petId)) continue;
           const petName = pets.find(p => p.id === petId)?.nome || "Pet";
           lineItems.push({ descricao: `${data.tipo_servico} — ${petName}`, valor: valorNum, tipo: "principal" });
         }
