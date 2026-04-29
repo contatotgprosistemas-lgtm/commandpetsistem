@@ -451,7 +451,6 @@ export default function Dashboard() {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const sortByPetName = (a: Agendamento, b: Agendamento) => (a.pet?.nome ?? "").localeCompare(b.pet?.nome ?? "");
   const petsNaEmpresa = agendamentos.filter(a => a.status === "na_empresa").sort(sortByPetName);
-  const isHotelService = (tipo: string) => /hotel|hosped|pernoit|diár|diari/i.test(tipo);
   const petsHotelNaEmpresa = petsNaEmpresa.filter(a => isHotelService(a.tipo_servico)).length;
   const ocupacaoHotelPct = totalBaias > 0 ? Math.round((petsHotelNaEmpresa / totalBaias) * 100) : 0;
   const isTransportService = (tipo: string) => {
