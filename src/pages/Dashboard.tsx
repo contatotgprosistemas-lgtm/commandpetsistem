@@ -456,7 +456,19 @@ export default function Dashboard() {
   const sortByPetName = (a: Agendamento, b: Agendamento) => (a.pet?.nome ?? "").localeCompare(b.pet?.nome ?? "");
   const petsNaEmpresa = agendamentos.filter(a => a.status === "na_empresa").sort(sortByPetName);
   const petsHotelNaEmpresa = petsNaEmpresa.filter(a => isHotelService(a.tipo_servico)).length;
-  const ocupacaoHotelPct = totalBaias > 0 ? Math.round((petsHotelNaEmpresa / totalBaias) * 100) : 0;
+  // Hotel na semana: agendamentos de hotel agendados/confirmados nos próximos 7 dias + os já na empresa
+  const weekEnd = new Date(today);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  const petsHotelSemana = agendamentos.filter(a => {
+    if (!isHotelService(a.tipo_servico)) return false;
+    if (a.status === "na_empresa") return true;
+    if (["cancelado", "concluido", "falta", "troca"].includes(a.status)) return false;
+    const d = startOfDay(new Date(a.data_hora));
+    return d >= today && d < weekEnd;
+  }).length;
+  const ocupacaoHotelPct = capacidadeHotel > 0
+    ? Math.min(100, Math.round((petsHotelSemana / capacidadeHotel) * 100))
+    : 0;
   const isTransportService = (tipo: string) => {
     const t = tipo.toLowerCase();
     return t.includes("taxi") || t.includes("transporte") || t.includes("leva") || t.includes("busca");
