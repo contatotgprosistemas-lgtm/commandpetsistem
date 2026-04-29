@@ -281,6 +281,19 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
                   />
                 </div>
               )}
+              {/* Meal photo upload — for café da manhã, almoço, janta etc. */}
+              {isMealQuestion(p.label) && (
+                <div className="px-2 pb-3 flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">Foto do pet comendo (opcional)</span>
+                  <PhotoUpload
+                    size="sm"
+                    folder={`manejo/${petId}`}
+                    empresaId={empresaId}
+                    value={respostas[`foto_${p.key}`] || null}
+                    onChange={(url) => setResposta(`foto_${p.key}`, url || "")}
+                  />
+                </div>
+              )}
             </div>
           ))}
           {customPerguntas.map(p => (
