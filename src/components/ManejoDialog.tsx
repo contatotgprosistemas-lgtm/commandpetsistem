@@ -10,6 +10,15 @@ import { Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { PhotoUpload } from "@/components/PhotoUpload";
+
+function isMealQuestion(label: string): boolean {
+  const n = (label || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return /(cafe da manha|cafe-da-manha|almoco|almocou|janta|jantar|refeicao|comeu|alimentac)/.test(n);
+}
 
 interface ManejoDialogProps {
   open: boolean;
