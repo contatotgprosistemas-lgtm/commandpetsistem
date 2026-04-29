@@ -62,8 +62,58 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
       const { data: ag } = await supabase.from("agendamentos").select("tipo_servico").eq("id", agendamentoId).maybeSingle();
       const tipoNome = (ag as any)?.tipo_servico;
       if (!tipoNome || !empresaId) return;
-      const { data: tipoRow } = await supabase.from("tipos_servico" as any).select("id").eq("empresa_id", empresaId).eq("nome", tipoNome).maybeSingle();
-      const tipoId = (tipoRow as any)?.id;
+
+      // Match the appointment service to a configured tipo_servico via keywords
+      // (appointment names like "Plano Escola Premium" should match "Escola/Daycare")
+      const { data: tipos } = await supabase
+        .from("tipos_servico" as any)
+        .select("id, nome")
+        .eq("empresa_id", empresaId);
+      const tiposList = ((tipos as any[]) || []) as Array<{ id: string; nome: string }>;
+      if (tiposList.length === 0) return;
+
+      const norm = (s: string) =>
+        (s || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+      const agNome = norm(tipoNome);
+
+      // Keyword groups: any keyword in the group matches the canonical tipo_servico
+      const keywordGroups: Array<{ keys: string[]; match: (n: string) => boolean }> = [
+        { keys: ["hotel", "hospedagem", "pernoite", "diaria"], match: (n) => /hotel|hospedagem|pernoite|diaria/.test(n) },
+        { keys: ["escola", "creche", "daycare"], match: (n) => /escola|creche|daycare/.test(n) },
+        { keys: ["banho", "tosa", "higien"], match: (n) => /banho|tosa|higien/.test(n) },
+        { keys: ["taxi", "transporte"], match: (n) => /taxi|transporte/.test(n) },
+        { keys: ["avaliacao", "comportament"], match: (n) => /avaliacao|comportament/.test(n) },
+        { keys: ["adestr"], match: (n) => /adestr/.test(n) },
+      ];
+
+      let tipoId: string | undefined;
+
+      // 1) Direct exact / contains match between agendamento name and tipo nome
+      const exact = tiposList.find((t) => norm(t.nome) === agNome);
+      if (exact) tipoId = exact.id;
+
+      // 2) Keyword-group match
+      if (!tipoId) {
+        const group = keywordGroups.find((g) => g.keys.some((k) => agNome.includes(k)));
+        if (group) {
+          const found = tiposList.find((t) => group.match(norm(t.nome)));
+          if (found) tipoId = found.id;
+        }
+      }
+
+      // 3) Fallback: any tipo whose name shares a token with the agendamento name
+      if (!tipoId) {
+        const tokens = agNome.split(/\s+/).filter((t) => t.length > 3);
+        const found = tiposList.find((t) => {
+          const tn = norm(t.nome);
+          return tokens.some((tok) => tn.includes(tok));
+        });
+        if (found) tipoId = found.id;
+      }
+
       if (!tipoId) return;
       const { data: cfg } = await supabase.from("tipo_servico_perguntas_manejo" as any).select("*").eq("tipo_servico_id", tipoId).eq("ativo", true).order("ordem");
       const list = (cfg as any[]) || [];
