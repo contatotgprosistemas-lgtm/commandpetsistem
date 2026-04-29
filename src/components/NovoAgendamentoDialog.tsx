@@ -377,7 +377,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         return new Date(d + "T" + (h || "00:00") + ":00").toISOString();
       };
 
-      const finalValor = useRepl ? 0 : (data.valor ? parseFloat(data.valor) : null);
+      const baseValor = data.valor ? parseFloat(data.valor) : null;
+      const petUsesReplacement = (petId: string) => useRepl && !!replacementChoices[petId];
 
       const rows = data.pet_ids.map(pet_id => ({
         empresa_id: empresaId,
@@ -392,10 +393,10 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         data_saida: buildTs(data.data_saida || "", data.hora_saida || ""),
         hora_saida: data.hora_saida || null,
         baia: data.baia || null,
-        valor: finalValor,
+        valor: petUsesReplacement(pet_id) ? 0 : baseValor,
         desconto: data.desconto ? parseFloat(data.desconto) : 0,
         forma_pagamento: data.forma_pagamento || null,
-        notas: useRepl
+        notas: petUsesReplacement(pet_id)
           ? `${data.notas || ""} [Reposição de falta justificada]`.trim()
           : data.notas || null,
       }));
@@ -403,20 +404,18 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       const { data: insertedRows, error } = await supabase.from("agendamentos").insert(rows as any).select("id, pet_id");
       if (error) throw error;
 
-      // Mark replacement absences as used
+      // Mark replacement absences as used (apenas para o pet que escolheu)
       if (useRepl && insertedRows) {
         for (const row of insertedRows) {
-          const matchingAbsence = availableReplacements.find(
-            (abs: any) => abs.agendamento?.pet_id === row.pet_id
-          );
-          if (matchingAbsence) {
+          const chosenAbsenceId = replacementChoices[row.pet_id];
+          if (chosenAbsenceId) {
             await supabase
               .from("agendamento_absences" as any)
               .update({
                 reposicao_utilizada: true,
                 reposicao_agendamento_id: row.id,
               })
-              .eq("id", matchingAbsence.id);
+              .eq("id", chosenAbsenceId);
           }
         }
       }
