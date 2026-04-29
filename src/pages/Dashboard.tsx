@@ -85,7 +85,7 @@ export default function Dashboard() {
   const [expiringContracts, setExpiringContracts] = useState<any[]>([]);
   const [petsPlanoEscola, setPetsPlanoEscola] = useState(0);
   const [petsPlanoBanho, setPetsPlanoBanho] = useState(0);
-  const [totalBaias, setTotalBaias] = useState(0);
+  const [capacidadeHotel, setCapacidadeHotel] = useState(0);
   const [massCheckoutOpen, setMassCheckoutOpen] = useState(false);
   const [massCheckoutLoading, setMassCheckoutLoading] = useState(false);
   const [selectedNaEmpresa, setSelectedNaEmpresa] = useState<Set<string>>(new Set());
@@ -287,14 +287,18 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Total de baias ativas (para ocupação do hotel)
+  // Capacidade total de pets do hotel (soma de capacidade_pets das baias ativas)
   useEffect(() => {
     const fetchBaias = async () => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from("baias")
-        .select("id", { count: "exact", head: true })
+        .select("capacidade_pets")
         .eq("ativa", true);
-      setTotalBaias(count ?? 0);
+      const total = (data ?? []).reduce(
+        (acc, b: any) => acc + Number(b.capacidade_pets || 0),
+        0,
+      );
+      setCapacidadeHotel(total);
     };
     fetchBaias();
     const channel = supabase
@@ -452,7 +456,19 @@ export default function Dashboard() {
   const sortByPetName = (a: Agendamento, b: Agendamento) => (a.pet?.nome ?? "").localeCompare(b.pet?.nome ?? "");
   const petsNaEmpresa = agendamentos.filter(a => a.status === "na_empresa").sort(sortByPetName);
   const petsHotelNaEmpresa = petsNaEmpresa.filter(a => isHotelService(a.tipo_servico)).length;
-  const ocupacaoHotelPct = totalBaias > 0 ? Math.round((petsHotelNaEmpresa / totalBaias) * 100) : 0;
+  // Hotel na semana: agendamentos de hotel agendados/confirmados nos próximos 7 dias + os já na empresa
+  const weekEnd = new Date(today);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  const petsHotelSemana = agendamentos.filter(a => {
+    if (!isHotelService(a.tipo_servico)) return false;
+    if (a.status === "na_empresa") return true;
+    if (["cancelado", "concluido", "falta", "troca"].includes(a.status)) return false;
+    const d = startOfDay(new Date(a.data_hora));
+    return d >= today && d < weekEnd;
+  }).length;
+  const ocupacaoHotelPct = capacidadeHotel > 0
+    ? Math.min(100, Math.round((petsHotelSemana / capacidadeHotel) * 100))
+    : 0;
   const isTransportService = (tipo: string) => {
     const t = tipo.toLowerCase();
     return t.includes("taxi") || t.includes("transporte") || t.includes("leva") || t.includes("busca");
@@ -557,7 +573,9 @@ export default function Dashboard() {
           filled
           title="Ocupação do Hotel"
           value={`${ocupacaoHotelPct}%`}
-          change={totalBaias > 0 ? `${petsHotelNaEmpresa}/${totalBaias} baias` : "Sem baias cadastradas"}
+          change={capacidadeHotel > 0
+            ? `${petsHotelSemana}/${capacidadeHotel} pets · semana (${petsHotelNaEmpresa} agora)`
+            : "Sem baias cadastradas"}
           changeType="neutral"
           icon={<Hotel className="h-4 w-4" strokeWidth={1.5} />}
           accent="blue"
