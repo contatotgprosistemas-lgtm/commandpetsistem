@@ -287,6 +287,23 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // Total de baias ativas (para ocupação do hotel)
+  useEffect(() => {
+    const fetchBaias = async () => {
+      const { count } = await supabase
+        .from("baias")
+        .select("id", { count: "exact", head: true })
+        .eq("ativa", true);
+      setTotalBaias(count ?? 0);
+    };
+    fetchBaias();
+    const channel = supabase
+      .channel("dashboard-baias-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "baias" }, fetchBaias)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   // Realtime: refetch novos cadastros públicos
   useEffect(() => {
     const channel = supabase
