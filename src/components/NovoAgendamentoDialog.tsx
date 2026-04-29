@@ -266,6 +266,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
   useEffect(() => {
     setAvailableReplacements([]);
     setUseReplacement(false);
+    setReplacementChoices({});
 
     if (selectedPetIds.length === 0 || !selectedServico || !empresaId) return;
 
@@ -282,19 +283,26 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       const absenceAgendamentoIds = absences.map((a: any) => a.agendamento_id);
       const { data: agendamentos } = await supabase
         .from("agendamentos")
-        .select("id, pet_id, tipo_servico, pet:pets(nome), cliente:clientes(nome)")
+        .select("id, pet_id, tipo_servico, data_hora, pet:pets(nome), cliente:clientes(nome)")
         .in("id", absenceAgendamentoIds);
 
       if (!agendamentos) return;
 
-      const matching = absences.filter((abs: any) => {
-        const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
-        if (!ag) return false;
-        return selectedPetIds.includes(ag.pet_id);
-      }).map((abs: any) => {
-        const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
-        return { ...abs, agendamento: ag };
-      });
+      // Mesmo tipo de serviço da nova reserva (case-insensitive)
+      const svcLower = (selectedServico || "").toLowerCase();
+      const matching = absences
+        .map((abs: any) => {
+          const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
+          return ag ? { ...abs, agendamento: ag } : null;
+        })
+        .filter((abs: any) => {
+          if (!abs) return false;
+          const ag = abs.agendamento;
+          return (
+            selectedPetIds.includes(ag.pet_id) &&
+            (ag.tipo_servico || "").toLowerCase() === svcLower
+          );
+        });
 
       if (matching.length > 0) {
         setAvailableReplacements(matching);
