@@ -288,8 +288,11 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
 
       if (!agendamentos) return;
 
-      // Mesmo tipo de serviço da nova reserva (case-insensitive)
-      const svcLower = (selectedServico || "").toLowerCase();
+      // Match por palavra-chave: agendamento "Escola" deve casar com falta de
+      // "Plano Escola Premium 3x Semana", "Hotel" com "Hotel Diária", etc.
+      const SERVICE_KEYWORDS = ["escola", "hotel", "creche", "daycare", "banho", "tosa", "taxi", "adestramento"];
+      const newSvcLower = (selectedServico || "").toLowerCase();
+      const newKeywords = SERVICE_KEYWORDS.filter((k) => newSvcLower.includes(k));
       const matching = absences
         .map((abs: any) => {
           const ag = agendamentos.find((a: any) => a.id === abs.agendamento_id);
@@ -298,10 +301,14 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         .filter((abs: any) => {
           if (!abs) return false;
           const ag = abs.agendamento;
-          return (
-            selectedPetIds.includes(ag.pet_id) &&
-            (ag.tipo_servico || "").toLowerCase() === svcLower
-          );
+          if (!selectedPetIds.includes(ag.pet_id)) return false;
+          const absSvcLower = (ag.tipo_servico || "").toLowerCase();
+          // Casa se compartilham alguma palavra-chave conhecida
+          if (newKeywords.length > 0) {
+            return newKeywords.some((k) => absSvcLower.includes(k));
+          }
+          // Fallback: igualdade exata (lowercase)
+          return absSvcLower === newSvcLower;
         });
 
       if (matching.length > 0) {
