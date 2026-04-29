@@ -151,19 +151,37 @@ export default function PortalEstouChegandoPage() {
         .eq("id", sessionId);
 
       const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
       const todayEnd = new Date();
       todayEnd.setHours(23, 59, 59, 999);
 
-      const isCheckOutTime = currentHour >= 16; // a partir de 16h
-      const isCheckInTime = currentHour < 9 || (currentHour === 9 && currentMinute <= 30); // até 9:30
+      // Lógica resiliente: tenta check-in se houver pets pendentes hoje;
+      // caso contrário, tenta check-out de pets que estão na empresa.
+      const horaStr = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-      if (isCheckOutTime) {
-        // Check-out: find appointments with status "na_empresa" for today
-        const { data: agendamentos } = await supabase
+      const { data: pendentes } = await supabase
+        .from("agendamentos")
+        .select("id")
+        .eq("cliente_id", cliente.id)
+        .gte("data_hora", todayStart.toISOString())
+        .lte("data_hora", todayEnd.toISOString())
+        .in("status", ["agendado", "confirmado", "pendente"]);
+
+      if (pendentes && pendentes.length > 0) {
+        const ids = pendentes.map((a) => a.id);
+        await supabase
+          .from("agendamentos")
+          .update({
+            status: "na_empresa",
+            data_entrada: now.toISOString(),
+            hora_entrada: horaStr,
+          })
+          .in("id", ids);
+
+        toast.success(`Check-in realizado para ${pendentes.length} agendamento${pendentes.length > 1 ? "s" : ""}! 🎉`);
+      } else {
+        const { data: naEmpresa } = await supabase
           .from("agendamentos")
           .select("id")
           .eq("cliente_id", cliente.id)
@@ -171,45 +189,20 @@ export default function PortalEstouChegandoPage() {
           .lte("data_hora", todayEnd.toISOString())
           .eq("status", "na_empresa");
 
-        if (agendamentos && agendamentos.length > 0) {
-          const ids = agendamentos.map((a) => a.id);
+        if (naEmpresa && naEmpresa.length > 0) {
+          const ids = naEmpresa.map((a) => a.id);
           await supabase
             .from("agendamentos")
             .update({
               status: "concluido",
               data_saida: now.toISOString(),
-              hora_saida: now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+              hora_saida: horaStr,
             })
             .in("id", ids);
 
-          toast.success(`Check-out realizado para ${agendamentos.length} agendamento${agendamentos.length > 1 ? "s" : ""}! 🎉`);
+          toast.success(`Check-out realizado para ${naEmpresa.length} agendamento${naEmpresa.length > 1 ? "s" : ""}! 🎉`);
         } else {
-          toast.success("Chegada registrada! Nenhum agendamento pendente de saída.");
-        }
-      } else {
-        // Check-in: find pending appointments for today
-        const { data: agendamentos } = await supabase
-          .from("agendamentos")
-          .select("id")
-          .eq("cliente_id", cliente.id)
-          .gte("data_hora", todayStart.toISOString())
-          .lte("data_hora", todayEnd.toISOString())
-          .in("status", ["agendado", "confirmado", "pendente"]);
-
-        if (agendamentos && agendamentos.length > 0) {
-          const ids = agendamentos.map((a) => a.id);
-          await supabase
-            .from("agendamentos")
-            .update({
-              status: "na_empresa",
-              data_entrada: now.toISOString(),
-              hora_entrada: now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-            })
-            .in("id", ids);
-
-          toast.success(`Check-in realizado para ${agendamentos.length} agendamento${agendamentos.length > 1 ? "s" : ""}! 🎉`);
-        } else {
-          toast.success("Chegada registrada!");
+          toast.success("Chegada registrada! Nenhum agendamento ativo encontrado para hoje.");
         }
       }
 
