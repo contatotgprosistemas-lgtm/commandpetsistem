@@ -6066,6 +6066,10 @@ export type Database = {
         Args: { _conversa_id: string }
         Returns: boolean
       }
+      cleanup_estou_chegando_stale: {
+        Args: { p_hours?: number }
+        Returns: number
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
