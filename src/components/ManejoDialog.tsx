@@ -10,6 +10,15 @@ import { Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { PhotoUpload } from "@/components/PhotoUpload";
+
+function isMealQuestion(label: string): boolean {
+  const n = (label || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return /(cafe da manha|cafe-da-manha|almoco|almocou|janta|jantar|refeicao|comeu|alimentac)/.test(n);
+}
 
 interface ManejoDialogProps {
   open: boolean;
@@ -269,6 +278,19 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
                     placeholder="Descreva a ocorrência em detalhes..."
                     value={respostas["ocorrencia_detalhes"] || ""}
                     onChange={e => setResposta("ocorrencia_detalhes", e.target.value)}
+                  />
+                </div>
+              )}
+              {/* Meal photo upload — for café da manhã, almoço, janta etc. */}
+              {isMealQuestion(p.label) && (
+                <div className="px-2 pb-3 flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">Foto do pet comendo (opcional)</span>
+                  <PhotoUpload
+                    size="sm"
+                    folder={`manejo/${petId}`}
+                    empresaId={empresaId}
+                    value={respostas[`foto_${p.key}`] || null}
+                    onChange={(url) => setResposta(`foto_${p.key}`, url || "")}
                   />
                 </div>
               )}

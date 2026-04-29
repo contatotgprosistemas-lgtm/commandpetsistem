@@ -91,13 +91,25 @@ export default function PortalManejoPage() {
             <CardContent>
               <div className="divide-y divide-border">
                 {Object.entries(respostas)
-                  .filter(([key]) => key !== "custom_perguntas")
-                  .map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between py-2">
-                      <span className="text-sm text-muted-foreground">{defaultLabels[key] || key}</span>
-                      <span className="text-sm font-medium text-foreground capitalize">{String(value) || "—"}</span>
-                    </div>
-                  ))}
+                  .filter(([key]) => key !== "custom_perguntas" && !key.startsWith("foto_"))
+                  .map(([key, value]) => {
+                    const fotoUrl = respostas[`foto_${key}`];
+                    return (
+                      <div key={key} className="py-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">{defaultLabels[key] || key}</span>
+                          <span className="text-sm font-medium text-foreground capitalize">{String(value) || "—"}</span>
+                        </div>
+                        {fotoUrl && (
+                          <img
+                            src={fotoUrl}
+                            alt={`Foto ${defaultLabels[key] || key}`}
+                            className="mt-2 rounded-lg max-h-48 object-cover border border-border"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 {customPerguntas.map((cp, i) => (
                   <div key={i} className="flex items-center justify-between py-2">
                     <span className="text-sm text-muted-foreground">{cp.pergunta}</span>
