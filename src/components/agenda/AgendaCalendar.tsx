@@ -28,6 +28,8 @@ interface Agendamento {
   valor?: number | null;
   baia?: string | null;
   subscription_id?: string | null;
+  data_saida_provavel?: string | null;
+  hora_saida_provavel?: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string; foto_url?: string | null } | null;
   cliente: { id: string; nome: string; whatsapp: string | null; foto_url?: string | null } | null;
 }
@@ -165,9 +167,21 @@ export function AgendaCalendar({ agendamentos, onEditAgendamento, serviceKeyword
   const agendamentosByDay = useMemo(() => {
     const map = new Map<string, Agendamento[]>();
     filteredAgendamentos.forEach(a => {
-      const key = format(new Date(a.data_hora), "yyyy-MM-dd");
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(a);
+      const start = new Date(a.data_hora);
+      // For hospedagem, span every day from entrada to saida (inclusive)
+      const isMultiDay = isHospedagem(a.tipo_servico) && a.data_saida_provavel;
+      const end = isMultiDay ? new Date(a.data_saida_provavel as string) : start;
+      let cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      // Safety guard: cap at 365 days to avoid runaway loops on bad data
+      let guard = 0;
+      while (cursor <= last && guard < 366) {
+        const key = format(cursor, "yyyy-MM-dd");
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(a);
+        cursor = addDays(cursor, 1);
+        guard++;
+      }
     });
     return map;
   }, [filteredAgendamentos]);
@@ -269,7 +283,7 @@ export function AgendaCalendar({ agendamentos, onEditAgendamento, serviceKeyword
                 </div>
                 <div className="space-y-0.5 overflow-y-auto max-h-[200px]">
                   {dayItems.map(item => (
-                    <CalendarEvent key={item.id} item={item} />
+                    <CalendarEvent key={item.id} item={item} day={day} />
                   ))}
                 </div>
               </div>
@@ -374,8 +388,16 @@ function DayListItem({ item, onEdit }: { item: Agendamento; onEdit?: (a: Agendam
   );
 }
 
-function CalendarEvent({ item }: { item: Agendamento }) {
-  const hora = format(new Date(item.data_hora), "HH:mm");
+function CalendarEvent({ item, day }: { item: Agendamento; day: Date }) {
+  const start = new Date(item.data_hora);
+  const isMultiDay = isHospedagem(item.tipo_servico) && !!item.data_saida_provavel;
+  const end = isMultiDay ? new Date(item.data_saida_provavel as string) : start;
+  const isStart = isSameDay(day, start);
+  const isEnd = isSameDay(day, end);
+  const isMiddle = isMultiDay && !isStart && !isEnd;
+
+  const hora = format(start, "HH:mm");
+  const horaSaida = item.hora_saida_provavel || (isMultiDay ? format(end, "HH:mm") : null);
   const petName = item.pet?.nome ?? "Pet";
   const isFromPlan = !!item.subscription_id;
   const colorClass = getServiceColor(item.tipo_servico, isFromPlan, item.status);
@@ -383,18 +405,27 @@ function CalendarEvent({ item }: { item: Agendamento }) {
   return (
     <div
       className={cn(
-        "rounded px-1.5 py-0.5 text-[10px] leading-tight transition-colors",
+        "px-1.5 py-0.5 text-[10px] leading-tight transition-colors",
         colorClass,
+        // Continuous bar styling for multi-day hospedagem
+        isMultiDay && isStart && !isEnd && "rounded-l rounded-r-none -mr-1",
+        isMultiDay && isEnd && !isStart && "rounded-r rounded-l-none -ml-1",
+        isMultiDay && isMiddle && "rounded-none -mx-1",
+        (!isMultiDay || (isStart && isEnd)) && "rounded",
         isFromPlan && "ring-1 ring-fuchsia-400/50"
       )}
       onClick={(e) => e.stopPropagation()}
+      title={isMultiDay ? `${item.tipo_servico} • ${format(start, "dd/MM")} ${hora} → ${format(end, "dd/MM")}${horaSaida ? " " + horaSaida : ""} • ${petName}` : undefined}
     >
       <div className="font-bold flex items-center gap-1">
-        <span>{hora}</span>
+        {isStart && <span>{hora}</span>}
+        {isEnd && !isStart && horaSaida && <span>→ {horaSaida}</span>}
         <span className="truncate">{petName}</span>
         {isFromPlan && <span className="opacity-70">📋</span>}
       </div>
-      <div className="opacity-70 truncate">{isFromPlan ? `${item.tipo_servico} (Pacote)` : item.tipo_servico}</div>
+      {isStart && (
+        <div className="opacity-70 truncate">{isFromPlan ? `${item.tipo_servico} (Pacote)` : item.tipo_servico}</div>
+      )}
     </div>
   );
 }
