@@ -6,9 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { format, differenceInDays, isPast, addDays } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { Search, Package, AlertTriangle, CheckCircle2, Calendar } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
+
+/** Today at 00:00 local time, for date-only comparisons. */
+function startOfToday(): Date {
+  const t = new Date();
+  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+}
+/** Days remaining until endDate (positive = future, 0 = today, negative = past). */
+function daysUntil(endDate: string): number {
+  return differenceInDays(parseLocalDate(endDate), startOfToday());
+}
+/** A subscription is only "vencido" AFTER the end_date day has fully passed. */
+function isExpired(endDate: string | null): boolean {
+  if (!endDate) return false;
+  return daysUntil(endDate) < 0;
+}
 
 interface ConsumoRow {
   subscriptionId: string;
@@ -101,11 +116,11 @@ export function ConsumoTab() {
       if (statusFilter === "ativo") return r.status === "ativo";
       if (statusFilter === "vencendo") {
         if (!r.endDate) return false;
-        const days = differenceInDays(new Date(r.endDate + "T00:00:00"), new Date());
+        const days = daysUntil(r.endDate);
         return r.status === "ativo" && days >= 0 && days <= 7;
       }
       if (statusFilter === "vencido") {
-        return r.endDate ? isPast(new Date(r.endDate + "T00:00:00")) : false;
+        return isExpired(r.endDate);
       }
       if (statusFilter === "saldo_baixo") {
         return r.restantes != null && r.totalCreditos != null && r.totalCreditos > 0 && r.restantes / r.totalCreditos <= 0.2;
@@ -118,7 +133,7 @@ export function ConsumoTab() {
   const totalAtivos = rows.filter(r => r.status === "ativo").length;
   const vencendo = rows.filter(r => {
     if (!r.endDate) return false;
-    const days = differenceInDays(new Date(r.endDate + "T00:00:00"), new Date());
+    const days = daysUntil(r.endDate);
     return r.status === "ativo" && days >= 0 && days <= 7;
   }).length;
   const saldoBaixo = rows.filter(r => r.restantes != null && r.totalCreditos != null && r.totalCreditos > 0 && r.restantes / r.totalCreditos <= 0.2 && r.restantes > 0).length;
@@ -181,7 +196,7 @@ export function ConsumoTab() {
                 const pct = r.totalCreditos && r.totalCreditos > 0
                   ? Math.min(100, Math.round((r.usados / r.totalCreditos) * 100))
                   : null;
-                const venceEm = r.endDate ? differenceInDays(new Date(r.endDate + "T00:00:00"), new Date()) : null;
+                const venceEm = r.endDate ? daysUntil(r.endDate) : null;
                 const venceuJa = venceEm != null && venceEm < 0;
                 return (
                   <TableRow key={r.subscriptionId}>
@@ -215,10 +230,12 @@ export function ConsumoTab() {
                     <TableCell className="text-sm">
                       {r.endDate ? (
                         <div>
-                          <div>{format(new Date(r.endDate + "T00:00:00"), "dd/MM/yy")}</div>
+                          <div>{format(parseLocalDate(r.endDate), "dd/MM/yy")}</div>
                           {r.status === "ativo" && venceEm != null && (
                             <div className={cn("text-[10px]", venceuJa ? "text-rose-600" : venceEm <= 7 ? "text-amber-600" : "text-muted-foreground")}>
-                              {venceuJa ? `${Math.abs(venceEm)}d atraso` : `em ${venceEm}d`}
+                              {venceuJa
+                                ? `${Math.abs(venceEm)}d atraso`
+                                : venceEm === 0 ? "vence hoje" : `em ${venceEm}d`}
                             </div>
                           )}
                         </div>
@@ -226,7 +243,7 @@ export function ConsumoTab() {
                     </TableCell>
                     <TableCell className="text-sm">
                       {r.autoRenew && r.renovacao
-                        ? <span className="text-emerald-600">{format(new Date(r.renovacao + "T00:00:00"), "dd/MM/yy")} <span className="text-[10px] text-muted-foreground">(auto)</span></span>
+                        ? <span className="text-emerald-600">{format(parseLocalDate(r.renovacao), "dd/MM/yy")} <span className="text-[10px] text-muted-foreground">(auto)</span></span>
                         : r.autoRenew
                           ? <span className="text-emerald-600 text-xs">Automática</span>
                           : <span className="text-muted-foreground text-xs">Manual</span>}
