@@ -641,6 +641,9 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
                 <SelectContent>
                   <SelectItem value="semanal">Semanal</SelectItem>
                   <SelectItem value="quinzenal">Quinzenal (a cada 14 dias)</SelectItem>
+                  {planType === "package" && (
+                    <SelectItem value="mensal">Mensal (1x no mês)</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -705,9 +708,12 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
           )}
 
           <div className="space-y-2">
-            <Label>{isQuinzenal ? "Dia da semana (quinzenal)" : "Dias de uso na semana"}</Label>
+            <Label>{isQuinzenal ? "Dia da semana (quinzenal)" : isMensal ? "Dia da semana (mensal)" : "Dias de uso na semana"}</Label>
             {isQuinzenal && (
               <p className="text-xs text-muted-foreground">Selecione apenas 1 dia — o banho será a cada 14 dias neste dia da semana</p>
+            )}
+            {isMensal && (
+              <p className="text-xs text-muted-foreground">Selecione apenas 1 dia — o banho será 1 vez no mês neste dia da semana</p>
             )}
             <div className="flex flex-wrap gap-2">
               {DIAS_SEMANA.map(dia => {
@@ -737,9 +743,21 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             <p className="text-xs text-muted-foreground">
               {isQuinzenal
                 ? `${plannedDays.length} dia selecionado — ${biweeklyDates.length} ocorrência(s) no mês`
+                : isMensal
+                ? `${plannedDays.length} dia selecionado — ${monthlyDate ? "1 ocorrência" : "nenhuma ocorrência"} no mês`
                 : `${plannedDays.length} dia(s) — reservas serão criadas automaticamente`}
             </p>
           </div>
+
+          {/* Monthly preview */}
+          {isMensal && monthlyDate && (
+            <div className="rounded-md bg-muted p-3 space-y-2">
+              <p className="text-xs font-medium text-foreground">Data prevista:</p>
+              <span className="text-xs px-2 py-1 rounded-md border bg-primary/10 text-primary border-primary/30 inline-block">
+                {format(monthlyDate, "dd/MM/yyyy")}
+              </span>
+            </div>
+          )}
 
           {/* Biweekly preview of dates */}
           {isQuinzenal && biweeklyDates.length > 0 && (
