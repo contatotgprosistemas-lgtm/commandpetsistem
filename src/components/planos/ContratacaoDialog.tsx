@@ -664,50 +664,24 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             <div className="rounded-md bg-muted p-3 space-y-2">
               <p className="text-xs font-medium text-foreground">Datas previstas:</p>
               <div className="flex flex-wrap gap-2">
-                {biweeklyDates.map((d, i) => {
-                  const willSkip = hasThreeOccurrences && extraSessionPolicy === "skip" && i === 2;
-                  return (
-                    <span
-                      key={i}
-                      className={cn(
-                        "text-xs px-2 py-1 rounded-md border",
-                        willSkip
-                          ? "bg-destructive/10 text-destructive border-destructive/30 line-through"
-                          : "bg-primary/10 text-primary border-primary/30"
-                      )}
-                    >
-                      {format(d, "dd/MM")}
-                      {willSkip && " (pulado)"}
-                    </span>
-                  );
-                })}
+                {biweeklyDates.map((d, i) => (
+                  <span
+                    key={i}
+                    className="text-xs px-2 py-1 rounded-md border bg-primary/10 text-primary border-primary/30"
+                  >
+                    {format(d, "dd/MM")} <span className="opacity-60">(sem. {getISOWeek(d)})</span>
+                  </span>
+                ))}
               </div>
             </div>
           )}
 
-          {/* 3 occurrences decision */}
           {hasThreeOccurrences && (
-            <div className="rounded-md border border-accent bg-accent/50 p-3 space-y-3">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
-                <p className="text-xs font-medium text-foreground">
-                  Este mês possui 3 ocorrências no intervalo quinzenal. Como deseja proceder?
-                </p>
-              </div>
-              <RadioGroup value={extraSessionPolicy} onValueChange={v => setExtraSessionPolicy(v as any)}>
-                <div className="flex items-start gap-2">
-                  <RadioGroupItem value="skip" id="skip" />
-                  <Label htmlFor="skip" className="text-xs font-normal leading-tight cursor-pointer">
-                    Pular a 3ª semana (2 banhos — R$ {priceContracted.toFixed(2)})
-                  </Label>
-                </div>
-                <div className="flex items-start gap-2">
-                  <RadioGroupItem value="charge" id="charge" />
-                  <Label htmlFor="charge" className="text-xs font-normal leading-tight cursor-pointer">
-                    Realizar 3 banhos (+R$ {pricePerSession.toFixed(2)} = R$ {(priceContracted + pricePerSession).toFixed(2)})
-                  </Label>
-                </div>
-              </RadioGroup>
+            <div className="rounded-md border border-accent bg-accent/50 p-3 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-foreground">
+                Este mês possui {biweeklyDates.length} ocorrências na semana {weekParity === "par" ? "par" : "ímpar"} — será cobrada {biweeklyDates.length - 2} sessão(ões) extra de R$ {pricePerSession.toFixed(2)}.
+              </p>
             </div>
           )}
 
