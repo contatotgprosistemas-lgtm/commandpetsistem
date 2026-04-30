@@ -732,6 +732,7 @@ export type Database = {
           data_conexao: string | null
           empresa_id: string
           id: string
+          instance_name: string | null
           numero: string | null
           session_data: Json | null
           status: string
@@ -743,6 +744,7 @@ export type Database = {
           data_conexao?: string | null
           empresa_id: string
           id?: string
+          instance_name?: string | null
           numero?: string | null
           session_data?: Json | null
           status?: string
@@ -754,6 +756,7 @@ export type Database = {
           data_conexao?: string | null
           empresa_id?: string
           id?: string
+          instance_name?: string | null
           numero?: string | null
           session_data?: Json | null
           status?: string
