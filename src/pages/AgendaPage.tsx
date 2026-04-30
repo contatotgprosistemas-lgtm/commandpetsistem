@@ -91,12 +91,25 @@ export default function AgendaPage() {
 
   async function fetchAgendamentos() {
     setLoading(true);
-    const { data } = await supabase
-      .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
-      .order("data_hora", { ascending: true });
-
-    if (data) setAgendamentos(data as any);
+    // Fetch all agendamentos in pages to bypass Supabase's 1000-row default limit.
+    // Without this, plans/hospedagens with many future appointments (e.g. yearly bookings)
+    // get cut off and don't appear on the calendar.
+    const PAGE_SIZE = 1000;
+    const all: any[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("agendamentos")
+        .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
+        .order("data_hora", { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) break;
+      if (!data || data.length === 0) break;
+      all.push(...data);
+      if (data.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+    setAgendamentos(all as any);
     setLoading(false);
   }
 
