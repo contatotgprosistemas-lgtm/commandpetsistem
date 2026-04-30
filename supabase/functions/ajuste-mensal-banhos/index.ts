@@ -26,9 +26,19 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // Allow manual override: { month_offset: 1 } to process next month
+    let monthOffset = 0;
+    try {
+      if (req.method === "POST") {
+        const body = await req.json().catch(() => ({}));
+        if (typeof body?.month_offset === "number") monthOffset = body.month_offset;
+      }
+    } catch { /* noop */ }
+
     const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth(); // 0-indexed
+    const targetDate = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+    const year = targetDate.getFullYear();
+    const month = targetDate.getMonth(); // 0-indexed
     const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
 
     function countWeekdayInMonth(weekday: number, y: number, m: number): number {
