@@ -404,6 +404,17 @@ export default function PlanosPacotesPage() {
               <Plus className="h-4 w-4" />Nova Contratação
             </Button>
           </div>
+          {(searchContratacao || tipoFilterContratacao !== "all" || statusFilterContratacao !== "all") && filteredSubscriptions.length > 0 && (
+            <div className="mb-3 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Total filtrado</p>
+                <p className="text-xs text-foreground/80">{filteredSubscriptions.length} contratação(ões)</p>
+              </div>
+              <p className="text-lg font-semibold text-primary tabular-nums">
+                R$ {filteredSubscriptions.reduce((acc: number, s: any) => acc + Number(s.final_price || 0), 0).toFixed(2)}
+              </p>
+            </div>
+          )}
           {loading ? <LoadingSkeleton /> : filteredSubscriptions.length === 0 ? <EmptyState text="Nenhuma contratação" /> : (
             <div className="bg-card rounded-lg shadow-card divide-y divide-border">
               {filteredSubscriptions.map((s: any) => {
