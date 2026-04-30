@@ -2866,6 +2866,7 @@ export type Database = {
           start_date: string
           status: string
           updated_at: string
+          week_parity: string | null
         }
         Insert: {
           auto_renew?: boolean | null
@@ -2892,6 +2893,7 @@ export type Database = {
           start_date?: string
           status?: string
           updated_at?: string
+          week_parity?: string | null
         }
         Update: {
           auto_renew?: boolean | null
@@ -2918,6 +2920,7 @@ export type Database = {
           start_date?: string
           status?: string
           updated_at?: string
+          week_parity?: string | null
         }
         Relationships: [
           {
