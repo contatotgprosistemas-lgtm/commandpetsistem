@@ -9,19 +9,44 @@ const corsHeaders = {
 const EVOLUTION_URL = Deno.env.get("EVOLUTION_API_URL") ?? "";
 const EVOLUTION_KEY = Deno.env.get("EVOLUTION_API_KEY") ?? "";
 
+function formatDateBR(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function fmtLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Calcula próximo vencimento conforme dia_vencimento_fatura
+// Roda no dia 1: se diaVenc >= hoje (=1), vence neste mês; senão, próximo mês.
+function calcularVencimento(diaVenc: number, hoje: Date): string {
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth();
+  const dia = hoje.getDate();
+  const ultimoDiaEsteMes = new Date(ano, mes + 1, 0).getDate();
+  const diaEsteMes = Math.min(diaVenc, ultimoDiaEsteMes);
+  if (diaEsteMes >= dia) {
+    return fmtLocal(new Date(ano, mes, diaEsteMes));
+  }
+  const ultimoDiaProx = new Date(ano, mes + 2, 0).getDate();
+  const diaProxMes = Math.min(diaVenc, ultimoDiaProx);
+  return fmtLocal(new Date(ano, mes + 1, diaProxMes));
+}
+
 function normalizeWhatsappNumber(raw?: string | null) {
   const digits = (raw ?? "").replace(/\D/g, "");
   if (!digits) return { primary: "", variants: [] as string[] };
-
   const primary = digits.startsWith("55")
     ? digits
     : digits.length >= 10 && digits.length <= 11
       ? `55${digits}`
       : digits;
-
   const local = primary.startsWith("55") ? primary.slice(2) : primary;
   const variants = Array.from(new Set([primary, local, digits]));
-
   return { primary, variants };
 }
 
@@ -32,7 +57,6 @@ async function enviarNotifFaturaWhats(
   fatura: { id?: string | null; descricao: string; valor: number; vencimento: string },
 ) {
   try {
-    // Already sent for this invoice?
     if (fatura.id) {
       const { data: existsLog } = await supabase
         .from("invoice_notification_log")
@@ -43,7 +67,6 @@ async function enviarNotifFaturaWhats(
       if (existsLog && existsLog.length > 0) return;
     }
 
-    // Config (default enabled)
     const { data: cfg } = await supabase
       .from("invoice_notification_config")
       .select("enabled, mensagem")
@@ -51,10 +74,11 @@ async function enviarNotifFaturaWhats(
       .maybeSingle();
     if (cfg && cfg.enabled === false) return;
 
-    const { primary: numero, variants: numeroVariants } = normalizeWhatsappNumber(cliente.whatsapp ?? cliente.telefone ?? "");
+    const { primary: numero, variants: numeroVariants } = normalizeWhatsappNumber(
+      cliente.whatsapp ?? cliente.telefone ?? "",
+    );
     if (!numero) return;
 
-    // Active WhatsApp channel
     const { data: canais } = await supabase
       .from("crm_canais")
       .select("id, identificador, status")
@@ -66,7 +90,8 @@ async function enviarNotifFaturaWhats(
     if (!canal?.identificador) return;
     if (!EVOLUTION_URL || !EVOLUTION_KEY) return;
 
-    const template = (cfg?.mensagem ?? "Olá {nome}! Sua fatura *{descricao}* no valor de *R$ {valor}* foi gerada com vencimento em *{vencimento}*.") as string;
+    const template = (cfg?.mensagem ??
+      "Olá {nome}! Sua fatura *{descricao}* no valor de *R$ {valor}* foi gerada com vencimento em *{vencimento}*.") as string;
     const conteudo = template
       .replace(/\{nome\}/g, cliente.nome ?? "")
       .replace(/\{primeiro_nome\}/g, (cliente.nome ?? "").split(" ")[0])
@@ -74,17 +99,22 @@ async function enviarNotifFaturaWhats(
       .replace(/\{valor\}/g, Number(fatura.valor).toFixed(2).replace(".", ","))
       .replace(/\{vencimento\}/g, formatDateBR(fatura.vencimento));
 
-    // Send via Evolution
-    const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
-      body: JSON.stringify({ number: numero, text: conteudo }),
-    });
+    const evoRes = await fetch(
+      `${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+        body: JSON.stringify({ number: numero, text: conteudo }),
+      },
+    );
     if (!evoRes.ok) {
       const txt = await evoRes.text();
       await supabase.from("invoice_notification_log").insert({
-        empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
-        status: "falha", erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}`,
+        empresa_id,
+        cliente_id: cliente.id,
+        conta_receber_id: fatura.id ?? null,
+        status: "falha",
+        erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}`,
       });
       return;
     }
@@ -92,7 +122,6 @@ async function enviarNotifFaturaWhats(
     const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
     const now = new Date().toISOString();
 
-    // Find/create CRM contact + conversation
     let { data: contato } = await supabase
       .from("crm_contatos")
       .select("id")
@@ -121,33 +150,44 @@ async function enviarNotifFaturaWhats(
     if (!conversa) {
       const { data: nova } = await supabase
         .from("crm_conversas")
-        .insert({ empresa_id, contato_id: contato!.id, canal_id: canal.id, status: "aberta", ultima_mensagem: conteudo, ultima_mensagem_em: now })
+        .insert({
+          empresa_id,
+          contato_id: contato!.id,
+          canal_id: canal.id,
+          status: "aberta",
+          ultima_mensagem: conteudo,
+          ultima_mensagem_em: now,
+        })
         .select("id")
         .single();
       conversa = nova;
     }
 
     await supabase.from("crm_mensagens").insert({
-      empresa_id, conversa_id: conversa!.id, tipo: "texto", direcao: "saida",
-      conteudo, status: "enviado", remetente_nome: "💰 Faturamento",
-      identificador_externo: externalId, enviada_em: now,
+      empresa_id,
+      conversa_id: conversa!.id,
+      tipo: "texto",
+      direcao: "saida",
+      conteudo,
+      status: "enviado",
+      remetente_nome: "💰 Faturamento",
+      identificador_externo: externalId,
+      enviada_em: now,
     });
-    await supabase.from("crm_conversas").update({
-      ultima_mensagem: conteudo, ultima_mensagem_em: now,
-    }).eq("id", conversa!.id);
+    await supabase
+      .from("crm_conversas")
+      .update({ ultima_mensagem: conteudo, ultima_mensagem_em: now })
+      .eq("id", conversa!.id);
 
     await supabase.from("invoice_notification_log").insert({
-      empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
-      conversa_id: conversa!.id, status: "enviado",
+      empresa_id,
+      cliente_id: cliente.id,
+      conta_receber_id: fatura.id ?? null,
+      conversa_id: conversa!.id,
+      status: "enviado",
     });
   } catch (err) {
     console.error("enviarNotifFaturaWhats error", err);
-    try {
-      await supabase.from("invoice_notification_log").insert({
-        empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
-        status: "falha", erro: String((err as Error).message ?? err).slice(0, 500),
-      });
-    } catch { /* noop */ }
   }
 }
 
@@ -157,259 +197,151 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
 
-    const today = new Date();
-    const todayDay = today.getDate();
-    const todayStr = today.toISOString().split("T")[0];
+    // Hoje em horário de Brasília
+    const now = new Date();
+    const brtNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+    const todayStr = fmtLocal(brtNow);
 
-    // 1. Fetch all active subscriptions with client billing config
+    // Buscar TODAS as assinaturas ativas
     const { data: subscriptions, error: subErr } = await supabase
       .from("customer_pet_subscriptions")
       .select(
-        "id, empresa_id, cliente_id, pet_id, plan_id, package_id, price_contracted, discount_amount, final_price, planned_days, cliente:clientes(id, nome, whatsapp, telefone, dia_vencimento_fatura, dias_gerar_fatura)"
+        "id, empresa_id, cliente_id, pet_id, plan_id, package_id, final_price, cliente:clientes(id, nome, whatsapp, telefone, dia_vencimento_fatura)",
       )
       .eq("status", "ativo");
 
     if (subErr) {
-      console.error("Error fetching subscriptions:", subErr);
       return new Response(JSON.stringify({ error: subErr.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // 2. Fetch plan/package names for descriptions
-    const planIds = [
-      ...new Set(
-        (subscriptions || []).filter((s: any) => s.plan_id).map((s: any) => s.plan_id)
-      ),
-    ];
-    const packageIds = [
-      ...new Set(
-        (subscriptions || []).filter((s: any) => s.package_id).map((s: any) => s.package_id)
-      ),
-    ];
+    const planIds = [...new Set((subscriptions || []).filter((s: any) => s.plan_id).map((s: any) => s.plan_id))];
+    const packageIds = [...new Set((subscriptions || []).filter((s: any) => s.package_id).map((s: any) => s.package_id))];
 
-    let plansMap: Record<string, string> = {};
-    let packagesMap: Record<string, string> = {};
+    const plansMap: Record<string, string> = {};
+    const packagesMap: Record<string, string> = {};
 
     if (planIds.length > 0) {
-      const { data: plans } = await supabase
-        .from("service_plans")
-        .select("id, name")
-        .in("id", planIds);
+      const { data: plans } = await supabase.from("service_plans").select("id, name").in("id", planIds);
       (plans || []).forEach((p: any) => (plansMap[p.id] = p.name));
     }
     if (packageIds.length > 0) {
-      const { data: pkgs } = await supabase
-        .from("service_packages")
-        .select("id, name")
-        .in("id", packageIds);
+      const { data: pkgs } = await supabase.from("service_packages").select("id, name").in("id", packageIds);
       (pkgs || []).forEach((p: any) => (packagesMap[p.id] = p.name));
     }
 
-    let faturasCriadas = 0;
-    let notificacoesCriadas = 0;
-
-    // Agrupador: cliente_id + vencimento -> { empresa_id, cliente, items[], total }
-    const groups = new Map<string, {
-      empresa_id: string;
-      cliente_id: string;
-      cliente: any;
-      vencimento: string;
-      items: { descricao: string; valor: number; subscription_id: string }[];
-      total: number;
-    }>();
+    // Agrupar UMA fatura por cliente
+    const groups = new Map<
+      string,
+      {
+        empresa_id: string;
+        cliente_id: string;
+        cliente: any;
+        vencimento: string;
+        items: { descricao: string; valor: number; subscription_id: string }[];
+        total: number;
+      }
+    >();
 
     for (const sub of subscriptions || []) {
       const cliente = sub.cliente as any;
       if (!cliente) continue;
 
-      const diaVencimento = cliente.dia_vencimento_fatura || 10;
-      const diasAntes = cliente.dias_gerar_fatura || 5;
-
-      // Calculate next due date (this month or next)
-      const currentMonth = today.getMonth();
-      const currentYear = today.getFullYear();
-
-      let vencDate = new Date(currentYear, currentMonth, diaVencimento);
-      // If we already passed this month's due date, target next month
-      if (todayDay > diaVencimento) {
-        vencDate = new Date(currentYear, currentMonth + 1, diaVencimento);
-      }
-      const vencStr = vencDate.toISOString().split("T")[0];
-
-      // Calculate days until due date
-      const diffMs = vencDate.getTime() - today.getTime();
-      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      const diaVenc = cliente.dia_vencimento_fatura || 10;
+      const vencStr = calcularVencimento(diaVenc, brtNow);
 
       const planName = sub.plan_id
         ? plansMap[sub.plan_id] || "Plano"
         : packagesMap[sub.package_id] || "Pacote";
+      const planLabel = `${sub.plan_id ? "Plano" : "Pacote"}: ${planName}`;
 
-      // --- COLETA para gerar fatura agrupada se today = diasAntes before vencimento ---
-      if (diffDays === diasAntes) {
-        // Verifica se já existe fatura desse plano/pacote específico para o cliente nesse vencimento
-        const { data: existing } = await supabase
-          .from("contas_receber")
-          .select("id, contas_receber_itens(descricao)")
-          .eq("cliente_id", sub.cliente_id)
-          .eq("vencimento", vencStr);
+      // Evitar duplicação: se já existe fatura para este cliente neste vencimento
+      // contendo este item, pula.
+      const { data: existingItems } = await supabase
+        .from("contas_receber")
+        .select("id, contas_receber_itens(descricao)")
+        .eq("cliente_id", sub.cliente_id)
+        .eq("vencimento", vencStr)
+        .eq("categoria", "Planos e Pacotes");
 
-        const planLabel = `${sub.plan_id ? "Plano" : "Pacote"}: ${planName}`;
-        const alreadyExists = (existing || []).some((f: any) => {
-          const items = f.contas_receber_itens || [];
-          if (items.length > 0) return items.some((it: any) => (it.descricao || "").includes(planName));
-          return false; // sem itens cadastrados ainda; deixa o agrupador decidir
-        });
-        if (alreadyExists) continue;
+      const alreadyHas = (existingItems || []).some((f: any) =>
+        (f.contas_receber_itens || []).some((it: any) => (it.descricao || "").includes(planName)),
+      );
+      if (alreadyHas) continue;
 
-        const key = `${sub.cliente_id}|${vencStr}`;
-        const g = groups.get(key) ?? {
+      const key = `${sub.cliente_id}|${vencStr}`;
+      const g =
+        groups.get(key) ?? {
           empresa_id: sub.empresa_id,
           cliente_id: sub.cliente_id,
           cliente,
           vencimento: vencStr,
-          items: [],
+          items: [] as { descricao: string; valor: number; subscription_id: string }[],
           total: 0,
         };
-        g.items.push({ descricao: planLabel, valor: Number(sub.final_price), subscription_id: sub.id });
-        g.total += Number(sub.final_price);
-        groups.set(key, g);
-      }
-
-      // --- NOTIFY 3 days before due date ---
-      if (diffDays === 3) {
-        // Check if there's a pending invoice for this due date
-        const { data: pendingInvoice } = await supabase
-          .from("contas_receber")
-          .select("id")
-          .eq("cliente_id", sub.cliente_id)
-          .eq("vencimento", vencStr)
-          .eq("status", "pendente")
-          .ilike("descricao", `%${planName}%`)
-          .limit(1);
-
-        if (pendingInvoice && pendingInvoice.length > 0) {
-          await supabase.from("customer_notifications").insert({
-            empresa_id: sub.empresa_id,
-            cliente_id: sub.cliente_id,
-            title: "Fatura vence em 3 dias",
-            message: `Sua fatura de ${planName} no valor de R$ ${Number(
-              sub.final_price
-            ).toFixed(2)} vence em ${formatDateBR(vencStr)}. Evite juros, pague em dia!`,
-            type: "financeiro",
-          });
-          notificacoesCriadas++;
-        }
-      }
-
-      // --- NOTIFY on the due date ---
-      if (diffDays === 0) {
-        const { data: pendingInvoice } = await supabase
-          .from("contas_receber")
-          .select("id")
-          .eq("cliente_id", sub.cliente_id)
-          .eq("vencimento", vencStr)
-          .eq("status", "pendente")
-          .ilike("descricao", `%${planName}%`)
-          .limit(1);
-
-        if (pendingInvoice && pendingInvoice.length > 0) {
-          await supabase.from("customer_notifications").insert({
-            empresa_id: sub.empresa_id,
-            cliente_id: sub.cliente_id,
-            title: "Fatura vence hoje!",
-            message: `Sua fatura de ${planName} no valor de R$ ${Number(
-              sub.final_price
-            ).toFixed(2)} vence hoje (${formatDateBR(vencStr)}). Efetue o pagamento para evitar pendências.`,
-            type: "financeiro",
-          });
-          notificacoesCriadas++;
-        }
-      }
-
-      // --- OVERDUE ALERTS: check current month's due date if already passed ---
-      if (todayDay > diaVencimento) {
-        const overdueDate = new Date(currentYear, currentMonth, diaVencimento);
-        const overdueStr = overdueDate.toISOString().split("T")[0];
-        const daysOverdue = todayDay - diaVencimento;
-
-        if (daysOverdue === 2 || daysOverdue === 4) {
-          const { data: overdueInvoice } = await supabase
-            .from("contas_receber")
-            .select("id")
-            .eq("cliente_id", sub.cliente_id)
-            .eq("vencimento", overdueStr)
-            .eq("status", "pendente")
-            .ilike("descricao", `%${planName}%`)
-            .limit(1);
-
-          if (overdueInvoice && overdueInvoice.length > 0) {
-            const titulo = daysOverdue === 2
-              ? "Fatura atrasada há 2 dias"
-              : "Fatura atrasada há 4 dias";
-            const msg = daysOverdue === 2
-              ? `Sua fatura de ${planName} (R$ ${Number(sub.final_price).toFixed(2)}) venceu em ${formatDateBR(overdueStr)} e está pendente. Regularize o pagamento o quanto antes.`
-              : `Sua fatura de ${planName} (R$ ${Number(sub.final_price).toFixed(2)}) está atrasada há 4 dias (vencimento ${formatDateBR(overdueStr)}). Entre em contato para regularizar.`;
-
-            await supabase.from("customer_notifications").insert({
-              empresa_id: sub.empresa_id,
-              cliente_id: sub.cliente_id,
-              title: titulo,
-              message: msg,
-              type: "financeiro",
-            });
-            notificacoesCriadas++;
-          }
-        }
-      }
+      g.items.push({ descricao: planLabel, valor: Number(sub.final_price), subscription_id: sub.id });
+      g.total += Number(sub.final_price);
+      groups.set(key, g);
     }
 
-    // ===== Cria UMA fatura consolidada por (cliente, vencimento) =====
+    let faturasCriadas = 0;
+    let faturasAtualizadas = 0;
+    let notificacoesCriadas = 0;
+
     for (const [, g] of groups) {
-      // Tenta achar fatura já existente nesse vencimento para anexar itens
+      // Tenta achar fatura pendente já existente para mesclar
       const { data: existingFat } = await supabase
         .from("contas_receber")
-        .select("id, valor, descricao")
+        .select("id, valor")
         .eq("cliente_id", g.cliente_id)
         .eq("vencimento", g.vencimento)
         .eq("status", "pendente")
         .eq("categoria", "Planos e Pacotes")
         .limit(1);
 
-      let faturaId: string | null = existingFat && existingFat.length > 0 ? existingFat[0].id : null;
-      let totalFatura = g.total;
-      let descricaoFatura = g.items.length === 1
-        ? g.items[0].descricao
-        : `Faturamento mensal (${g.items.length} itens)`;
+      const descricaoFatura =
+        g.items.length === 1 ? g.items[0].descricao : `Faturamento mensal (${g.items.length} itens)`;
 
-      if (faturaId) {
-        // Soma os novos itens ao valor existente
-        totalFatura = Number(existingFat![0].valor) + g.total;
-        await supabase.from("contas_receber").update({
-          valor: totalFatura,
-          descricao: descricaoFatura,
-          updated_at: new Date().toISOString(),
-        }).eq("id", faturaId);
+      let faturaId: string | null = null;
+      let totalFatura = g.total;
+
+      if (existingFat && existingFat.length > 0) {
+        faturaId = existingFat[0].id;
+        totalFatura = Number(existingFat[0].valor) + g.total;
+        await supabase
+          .from("contas_receber")
+          .update({
+            valor: totalFatura,
+            descricao: descricaoFatura,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", faturaId);
+        faturasAtualizadas++;
       } else {
-        const { data: novaFatura } = await supabase.from("contas_receber").insert({
-          empresa_id: g.empresa_id,
-          cliente_id: g.cliente_id,
-          descricao: descricaoFatura,
-          valor: totalFatura,
-          vencimento: g.vencimento,
-          status: "pendente",
-          categoria: "Planos e Pacotes",
-        }).select("id").single();
+        const { data: novaFatura } = await supabase
+          .from("contas_receber")
+          .insert({
+            empresa_id: g.empresa_id,
+            cliente_id: g.cliente_id,
+            descricao: descricaoFatura,
+            valor: totalFatura,
+            vencimento: g.vencimento,
+            status: "pendente",
+            categoria: "Planos e Pacotes",
+          })
+          .select("id")
+          .single();
         faturaId = novaFatura?.id ?? null;
         faturasCriadas++;
       }
 
-      // Insere itens detalhados
       if (faturaId) {
         await supabase.from("contas_receber_itens").insert(
           g.items.map((it) => ({
@@ -418,22 +350,22 @@ Deno.serve(async (req) => {
             descricao: it.descricao,
             valor: it.valor,
             tipo: "principal",
-          }))
+          })),
         );
       }
 
-      // 1 notificação WhatsApp consolidada
-      await enviarNotifFaturaWhats(supabase, g.empresa_id, {
-        id: g.cliente.id, nome: g.cliente.nome,
-        whatsapp: g.cliente.whatsapp ?? null, telefone: g.cliente.telefone ?? null,
-      }, {
-        id: faturaId,
-        descricao: descricaoFatura,
-        valor: totalFatura,
-        vencimento: g.vencimento,
-      });
+      await enviarNotifFaturaWhats(
+        supabase,
+        g.empresa_id,
+        {
+          id: g.cliente.id,
+          nome: g.cliente.nome,
+          whatsapp: g.cliente.whatsapp ?? null,
+          telefone: g.cliente.telefone ?? null,
+        },
+        { id: faturaId, descricao: descricaoFatura, valor: totalFatura, vencimento: g.vencimento },
+      );
 
-      // 1 notificação interna ao cliente (portal)
       await supabase.from("customer_notifications").insert({
         empresa_id: g.empresa_id,
         cliente_id: g.cliente_id,
@@ -445,20 +377,18 @@ Deno.serve(async (req) => {
     }
 
     console.log(
-      `Processamento concluído: ${faturasCriadas} faturas criadas, ${notificacoesCriadas} notificações enviadas.`
+      `gerar-faturas: ${faturasCriadas} novas, ${faturasAtualizadas} atualizadas, ${notificacoesCriadas} notificações.`,
     );
 
     return new Response(
       JSON.stringify({
         success: true,
         faturas_criadas: faturasCriadas,
+        faturas_atualizadas: faturasAtualizadas,
         notificacoes_criadas: notificacoesCriadas,
         date: todayStr,
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
     );
   } catch (err) {
     console.error("Unexpected error:", err);
@@ -468,8 +398,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-
-function formatDateBR(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-");
-  return `${d}/${m}/${y}`;
-}
