@@ -426,8 +426,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
           };
           if (showHorarios) {
-            ag.hora_prevista_buscar = horaBuscar;
-            ag.hora_prevista_levar = horaLevar;
+            if (transportMode === "ambos" || transportMode === "buscar") ag.hora_prevista_buscar = horaBuscar;
+            if (transportMode === "ambos" || transportMode === "levar") ag.hora_prevista_levar = horaLevar;
           }
           agendamentos.push(ag);
         }
@@ -460,8 +460,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
               ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
             };
             if (showHorarios) {
-              ag.hora_prevista_buscar = horaBuscar;
-              ag.hora_prevista_levar = horaLevar;
+              if (transportMode === "ambos" || transportMode === "buscar") ag.hora_prevista_buscar = horaBuscar;
+              if (transportMode === "ambos" || transportMode === "levar") ag.hora_prevista_levar = horaLevar;
             }
             agendamentos.push(ag);
           }
