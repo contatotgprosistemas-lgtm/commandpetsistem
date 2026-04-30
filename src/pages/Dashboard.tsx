@@ -983,11 +983,13 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
   );
 }
 
-function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist, onCheckout, selectedIds, onToggleSelect }: {
+function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist, onCheckout, onFichaCliente, onFichaPet, selectedIds, onToggleSelect }: {
   items: Agendamento[]; loading: boolean;
   onEdit: (a: Agendamento) => void; onFicha: (a: Agendamento) => void;
   onManejo: (a: Agendamento) => void; onChecklist: (a: Agendamento) => void;
   onCheckout: (a: Agendamento) => void;
+  onFichaCliente?: (c: any) => void;
+  onFichaPet?: (p: any) => void;
   selectedIds?: Set<string>; onToggleSelect?: (id: string) => void;
 }) {
   if (loading) return <div className="space-y-3 mt-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}</div>;
@@ -1067,16 +1069,22 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {clientWhatsapp && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" title="WhatsApp" onClick={() => window.open(`https://wa.me/${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}>
-                  <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Abrir WhatsApp Web" onClick={() => window.open(`https://web.whatsapp.com/send?phone=${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}>
+                  <WhatsAppIcon className="h-4 w-4 text-emerald-600" />
                 </Button>
               )}
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Cliente" onClick={() => onFichaCliente?.(item.cliente)} disabled={!item.cliente?.id}>
+                <User className="h-3.5 w-3.5 text-primary" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Pet" onClick={() => onFichaPet?.(item.pet)} disabled={!item.pet?.id}>
+                <PawPrint className="h-3.5 w-3.5 text-primary" />
+              </Button>
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Serviço" onClick={() => onFicha(item)}>
-                <FileText className="h-3.5 w-3.5 text-primary" />
+                <FileSearch className="h-3.5 w-3.5 text-primary" />
               </Button>
               
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Manejo" onClick={() => onManejo(item)}>
-                <Stethoscope className="h-3.5 w-3.5 text-primary" />
+                <HeartPulse className="h-3.5 w-3.5 text-rose-500" />
               </Button>
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Checklist" onClick={() => onChecklist(item)}>
                 <ClipboardList className="h-3.5 w-3.5 text-primary" />
