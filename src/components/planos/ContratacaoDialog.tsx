@@ -600,6 +600,42 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </div>
           )}
 
+          {/* Week parity selector for quinzenal */}
+          {isQuinzenal && (
+            <div className="space-y-1.5">
+              <Label>Semana do banho quinzenal</Label>
+              <p className="text-xs text-muted-foreground">
+                Estamos na semana <strong>{currentWeekNumber}</strong> do ano ({currentWeekParity === "par" ? "par" : "ímpar"}). Os banhos quinzenais ocorrerão sempre na semana escolhida.
+              </p>
+              <RadioGroup
+                value={weekParity}
+                onValueChange={v => setWeekParity(v as "par" | "impar")}
+                className="grid grid-cols-2 gap-2"
+              >
+                <Label
+                  htmlFor="parity-impar"
+                  className={cn(
+                    "flex items-center gap-2 rounded-md border-2 p-2 cursor-pointer text-xs font-medium transition-all",
+                    weekParity === "impar" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                  )}
+                >
+                  <RadioGroupItem value="impar" id="parity-impar" />
+                  Semana ímpar {currentWeekParity === "impar" && <span className="ml-auto text-[10px] opacity-70">(atual)</span>}
+                </Label>
+                <Label
+                  htmlFor="parity-par"
+                  className={cn(
+                    "flex items-center gap-2 rounded-md border-2 p-2 cursor-pointer text-xs font-medium transition-all",
+                    weekParity === "par" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                  )}
+                >
+                  <RadioGroupItem value="par" id="parity-par" />
+                  Semana par {currentWeekParity === "par" && <span className="ml-auto text-[10px] opacity-70">(atual)</span>}
+                </Label>
+              </RadioGroup>
+            </div>
+          )}
+
           <div className={planType === "plan" ? "grid grid-cols-2 gap-4" : ""}>
             {planType === "plan" && (
               <div className="space-y-1.5">
