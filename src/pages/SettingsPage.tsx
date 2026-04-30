@@ -916,60 +916,61 @@ function EvolutionApiPanel() {
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [working, setWorking] = useState(false);
   const [instanceName, setInstanceName] = useState("");
   const [numero, setNumero] = useState("");
   const [status, setStatus] = useState<string>("desconectado");
-  const [recordId, setRecordId] = useState<string | null>(null);
+  const [qr, setQr] = useState<string | null>(null);
 
   useEffect(() => {
     if (!empresaId) return;
     (async () => {
       const { data } = await supabase
         .from("conexoes_whatsapp")
-        .select("id, instance_name, numero, status")
+        .select("id, instance_name, numero, status, session_data")
         .eq("empresa_id", empresaId)
         .maybeSingle();
       if (data) {
-        setRecordId((data as any).id);
         setInstanceName((data as any).instance_name || "");
         setNumero((data as any).numero || "");
         setStatus((data as any).status || "desconectado");
+        setQr(((data as any).session_data?.qr) || null);
       }
       setLoading(false);
     })();
   }, [empresaId]);
 
-  async function salvar() {
-    if (!empresaId) return;
-    setSaving(true);
-    const payload: any = {
-      empresa_id: empresaId,
-      instance_name: instanceName.trim() || null,
-      numero: numero.trim() || null,
-    };
-    let error;
-    if (recordId) {
-      ({ error } = await supabase.from("conexoes_whatsapp").update(payload).eq("id", recordId));
-    } else {
-      const inserted = await supabase.from("conexoes_whatsapp").insert(payload).select("id").single();
-      error = inserted.error;
-      if (inserted.data) setRecordId(inserted.data.id);
+  async function callAction(action: "connect" | "status" | "disconnect" | "delete") {
+    setWorking(true);
+    const { data, error } = await supabase.functions.invoke("whatsapp-qr", { body: { action } });
+    setWorking(false);
+    if (error || (data as any)?.error) {
+      toast({ title: "Erro", description: (data as any)?.error || error?.message, variant: "destructive" });
+      return null;
     }
-    setSaving(false);
-    if (error) {
-      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Integração salva!" });
+    if (data) {
+      if ((data as any).status) setStatus((data as any).status);
+      if ("qr" in (data as any)) setQr((data as any).qr || null);
+      if ((data as any).instance_name) setInstanceName((data as any).instance_name);
+      if ((data as any).numero !== undefined) setNumero((data as any).numero || "");
     }
+    return data;
   }
+
+  // Poll status while waiting for QR scan
+  useEffect(() => {
+    if (status !== "conectando") return;
+    const t = setInterval(() => { callAction("status"); }, 4000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Evolution API (WhatsApp)</CardTitle>
         <CardDescription>
-          Cadastre a instância da Evolution API para o sistema enviar mensagens automáticas (notificações da Esteira de Banho, faturas, etc.) sem depender do CRM.
+          Conecte o WhatsApp lendo o QR code abaixo. O sistema enviará mensagens automáticas (notificações da Esteira de Banho, faturas, etc.) sem depender do CRM.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -977,33 +978,47 @@ function EvolutionApiPanel() {
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : (
           <>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label>Nome da Instância *</Label>
-                <Input value={instanceName} onChange={(e) => setInstanceName(e.target.value)} placeholder="Ex: petshop-principal" />
-                <p className="text-xs text-muted-foreground">Mesmo nome cadastrado no servidor Evolution.</p>
-              </div>
-              <div className="space-y-1">
-                <Label>Número conectado</Label>
-                <Input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Ex: 5511999999999" />
-              </div>
-            </div>
-
             <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-card">
               <div>
-                <p className="text-sm font-medium text-foreground">Status</p>
+                <p className="text-sm font-medium text-foreground">
+                  Status: {status === "conectado" ? "Conectado" : status === "conectando" ? "Aguardando leitura do QR" : "Desconectado"}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Servidor e API Key configurados como segredos do sistema (EVOLUTION_API_URL, EVOLUTION_API_KEY).
+                  {instanceName ? `Instância: ${instanceName}` : "Nenhuma instância configurada"}
+                  {numero ? ` • Número: ${numero}` : ""}
                 </p>
               </div>
               <Badge variant={status === "conectado" ? "default" : "secondary"}>
-                {status === "conectado" ? "Conectado" : "Desconectado"}
+                {status === "conectado" ? "Conectado" : status === "conectando" ? "Conectando" : "Desconectado"}
               </Badge>
             </div>
 
-            <div className="flex justify-end">
-              <Button onClick={salvar} disabled={saving || !instanceName.trim()}>
-                {saving ? "Salvando..." : "Salvar"}
+            {status !== "conectado" && qr && (
+              <div className="flex flex-col items-center gap-2 rounded-lg border border-border p-4 bg-muted/30">
+                <p className="text-sm font-medium">Escaneie o QR Code com o WhatsApp</p>
+                <img
+                  src={qr.startsWith("data:") ? qr : `data:image/png;base64,${qr}`}
+                  alt="QR Code WhatsApp"
+                  className="h-64 w-64 rounded-md bg-white p-2"
+                />
+                <p className="text-xs text-muted-foreground text-center max-w-sm">
+                  WhatsApp → Aparelhos conectados → Conectar um aparelho. A página atualiza automaticamente após a leitura.
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-wrap justify-end gap-2">
+              {status !== "conectado" ? (
+                <Button onClick={() => callAction("connect")} disabled={working}>
+                  {working ? <Loader2 className="h-4 w-4 animate-spin" /> : qr ? "Gerar novo QR" : "Conectar WhatsApp"}
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => callAction("disconnect")} disabled={working}>
+                  {working ? <Loader2 className="h-4 w-4 animate-spin" /> : "Desconectar"}
+                </Button>
+              )}
+              <Button variant="ghost" onClick={() => callAction("status")} disabled={working}>
+                Atualizar status
               </Button>
             </div>
           </>
