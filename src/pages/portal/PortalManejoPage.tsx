@@ -126,7 +126,7 @@ export default function PortalManejoPage() {
                         {fotoUrl && (
                           <img
                             src={fotoUrl}
-                            alt={`Foto ${defaultLabels[key] || key}`}
+                            alt={`Foto ${defaultLabels[key] || perguntasMap[key] || key}`}
                             className="mt-2 rounded-lg max-h-48 object-cover border border-border"
                           />
                         )}
