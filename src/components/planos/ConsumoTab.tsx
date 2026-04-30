@@ -50,7 +50,7 @@ export function ConsumoTab() {
   const [rows, setRows] = useState<ConsumoRow[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "ativo" | "vencendo" | "vencido" | "saldo_baixo">("all");
-  const [tipoFilter, setTipoFilter] = useState<"all" | "Plano" | "Pacote">("all");
+  const [tipoFilter, setTipoFilter] = useState<"all" | "banho" | "escola" | "taxipet">("all");
   const [nomeFilter, setNomeFilter] = useState<string>("all");
 
   useEffect(() => {
@@ -109,13 +109,21 @@ export function ConsumoTab() {
     });
   }, [empresaId]);
 
+  const matchesCategoria = (nome: string, cat: "banho" | "escola" | "taxipet") => {
+    const n = (nome || "").toLowerCase();
+    if (cat === "banho") return n.includes("banho");
+    if (cat === "escola") return n.includes("escola") || n.includes("creche") || n.includes("daycare");
+    if (cat === "taxipet") return n.includes("taxi") || n.includes("táxi");
+    return true;
+  };
+
   const filtered = useMemo(() => {
     return rows.filter(r => {
       if (search) {
         const q = search.toLowerCase();
         if (!r.cliente.toLowerCase().includes(q) && !r.pet.toLowerCase().includes(q) && !r.nome.toLowerCase().includes(q)) return false;
       }
-      if (tipoFilter !== "all" && r.tipo !== tipoFilter) return false;
+      if (tipoFilter !== "all" && !matchesCategoria(r.nome, tipoFilter)) return false;
       if (nomeFilter !== "all" && r.nome !== nomeFilter) return false;
       if (statusFilter === "ativo") return r.status === "ativo";
       if (statusFilter === "vencendo") {
@@ -136,7 +144,7 @@ export function ConsumoTab() {
   const nomesDisponiveis = useMemo(() => {
     const set = new Set<string>();
     rows.forEach(r => {
-      if (tipoFilter === "all" || r.tipo === tipoFilter) set.add(r.nome);
+      if (tipoFilter === "all" || matchesCategoria(r.nome, tipoFilter)) set.add(r.nome);
     });
     return Array.from(set).filter(n => n && n !== "—").sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [rows, tipoFilter]);
@@ -178,11 +186,12 @@ export function ConsumoTab() {
           </SelectContent>
         </Select>
         <Select value={tipoFilter} onValueChange={(v: any) => { setTipoFilter(v); setNomeFilter("all"); }}>
-          <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectTrigger className="w-[200px] h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Planos e Pacotes</SelectItem>
-            <SelectItem value="Plano">Apenas Planos</SelectItem>
-            <SelectItem value="Pacote">Apenas Pacotes</SelectItem>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            <SelectItem value="banho">Pacote de Banho</SelectItem>
+            <SelectItem value="escola">Plano de Escola</SelectItem>
+            <SelectItem value="taxipet">Plano de TaxiPet</SelectItem>
           </SelectContent>
         </Select>
         <Select value={nomeFilter} onValueChange={(v: any) => setNomeFilter(v)}>
