@@ -3407,6 +3407,69 @@ export type Database = {
           },
         ]
       }
+      esteira_notification_config: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          enabled: boolean
+          id: string
+          mensagem: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          enabled?: boolean
+          id?: string
+          mensagem?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          enabled?: boolean
+          id?: string
+          mensagem?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      esteira_notification_log: {
+        Row: {
+          agendamento_id: string | null
+          cliente_id: string | null
+          conversa_id: string | null
+          created_at: string
+          empresa_id: string
+          erro: string | null
+          esteira_id: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          agendamento_id?: string | null
+          cliente_id?: string | null
+          conversa_id?: string | null
+          created_at?: string
+          empresa_id: string
+          erro?: string | null
+          esteira_id?: string | null
+          id?: string
+          status: string
+        }
+        Update: {
+          agendamento_id?: string | null
+          cliente_id?: string | null
+          conversa_id?: string | null
+          created_at?: string
+          empresa_id?: string
+          erro?: string | null
+          esteira_id?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       estou_chegando: {
         Row: {
           active: boolean
