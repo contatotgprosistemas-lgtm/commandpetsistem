@@ -224,6 +224,23 @@ Deno.serve(async (req) => {
       const noteTag = isQuinzenal ? "3ª sessão quinzenal extra" : "5º banho extra";
       const policy = (sub.extra_session_policy || "skip").toLowerCase();
 
+      // ✋ Extra-session adjustment ONLY applies to BATH/GROOMING plans.
+      // Daycare, Escola, TaxiPet/TaxiDog and similar all-day plans must NOT
+      // receive a "5º banho extra" charge or appointment.
+      const planNameForCheck = (sub.plan_id
+        ? plansMap[sub.plan_id]
+        : packagesMap[sub.package_id]) || "";
+      const lowerName = planNameForCheck.toLowerCase();
+      const isBanhoTosa = /(banho|tosa|grooming|hidrata|pelo)/i.test(lowerName);
+      if (!isBanhoTosa) continue;
+
+      // Skip past months: never create extras for dates already in the past
+      // (e.g. running on the last day of the month should not back-fill).
+      const isCurrentOrFutureMonth =
+        year > today.getFullYear() ||
+        (year === today.getFullYear() && month >= today.getMonth());
+      if (!isCurrentOrFutureMonth) continue;
+
       // Determine extra dates
       const extraDates: string[] = [];
 
