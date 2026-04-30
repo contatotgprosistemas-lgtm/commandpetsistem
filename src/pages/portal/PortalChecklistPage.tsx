@@ -59,10 +59,9 @@ export default function PortalChecklistPage() {
       const recs = (data as any[]) ?? [];
       setRecords(recs);
 
-      // Load configured-question labels (cfg_<id> -> pergunta)
-      const { data: cfg } = await supabase
-        .from("tipo_servico_perguntas_checklist" as any)
-        .select("id, pergunta");
+      // Load configured-question labels (cfg_<id> -> pergunta) via RPC
+      // (RPC bypasses RLS that blocks cliente users from reading the table directly)
+      const { data: cfg } = await supabase.rpc("get_perguntas_checklist_for_cliente" as any);
       const map: Record<string, string> = {};
       ((cfg as any[]) ?? []).forEach((p: any) => {
         map[`cfg_${p.id}`] = p.pergunta;
