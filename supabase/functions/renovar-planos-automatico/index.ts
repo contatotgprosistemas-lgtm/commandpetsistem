@@ -11,7 +11,19 @@ function addDays(date: Date, days: number): Date {
   return d;
 }
 function fmt(d: Date): string {
-  return d.toISOString().split("T")[0];
+  // Use local date components to avoid UTC shift (Brazil = UTC-3)
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function startOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function endOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0);
 }
 
 Deno.serve(async (req) => {
@@ -117,6 +129,92 @@ Deno.serve(async (req) => {
           status: "pendente",
           categoria: "Planos e Pacotes",
         });
+
+        // ========== Generate agendamentos for the new period ==========
+        try {
+          const plannedDays: number[] = sub.planned_days || [];
+          const frequency: string = sub.frequency || "semanal";
+          const tipoServico = nome;
+          const startObj = startOfDay(newStart);
+          const monthEnd = endOfMonth(startObj);
+          const todayStart = startOfDay(new Date());
+          const agendamentos: any[] = [];
+
+          if (plannedDays.length > 0) {
+            if (frequency === "mensal" && plannedDays.length === 1) {
+              // First occurrence of weekday in the month from newStart
+              const cursor = new Date(startObj);
+              while (cursor <= monthEnd) {
+                if (cursor.getDay() === plannedDays[0]) {
+                  if (cursor >= todayStart) {
+                    agendamentos.push({
+                      empresa_id: sub.empresa_id,
+                      cliente_id: sub.cliente_id,
+                      pet_id: sub.pet_id,
+                      tipo_servico: tipoServico,
+                      data_hora: `${fmt(cursor)}T07:00:00-03:00`,
+                      status: "agendado",
+                      subscription_id: sub.id,
+                      notas: "Gerado automaticamente pela renovação (mensal)",
+                    });
+                  }
+                  break;
+                }
+                cursor.setDate(cursor.getDate() + 1);
+              }
+            } else if (frequency === "quinzenal" && plannedDays.length === 1) {
+              // Every 14 days from first matching weekday, until end of new period
+              const newEndObj = startOfDay(addDays(newStart, validityDays));
+              const cursor = new Date(startObj);
+              while (cursor.getDay() !== plannedDays[0]) {
+                cursor.setDate(cursor.getDate() + 1);
+              }
+              while (cursor <= newEndObj) {
+                if (cursor >= todayStart) {
+                  agendamentos.push({
+                    empresa_id: sub.empresa_id,
+                    cliente_id: sub.cliente_id,
+                    pet_id: sub.pet_id,
+                    tipo_servico: tipoServico,
+                    data_hora: `${fmt(cursor)}T07:00:00-03:00`,
+                    status: "agendado",
+                    subscription_id: sub.id,
+                    notas: "Gerado automaticamente pela renovação (quinzenal)",
+                  });
+                }
+                cursor.setDate(cursor.getDate() + 14);
+              }
+            } else {
+              // Semanal: all matching weekdays from newStart until end of month
+              const cursor = new Date(startObj);
+              while (cursor <= monthEnd) {
+                if (plannedDays.includes(cursor.getDay()) && cursor >= todayStart) {
+                  agendamentos.push({
+                    empresa_id: sub.empresa_id,
+                    cliente_id: sub.cliente_id,
+                    pet_id: sub.pet_id,
+                    tipo_servico: tipoServico,
+                    data_hora: `${fmt(cursor)}T07:00:00-03:00`,
+                    status: "agendado",
+                    subscription_id: sub.id,
+                    notas: "Gerado automaticamente pela renovação (semanal)",
+                  });
+                }
+                cursor.setDate(cursor.getDate() + 1);
+              }
+            }
+          }
+
+          // Insert in chunks of 50
+          for (let i = 0; i < agendamentos.length; i += 50) {
+            const chunk = agendamentos.slice(i, i + 50);
+            const { error: agErr } = await supabase.from("agendamentos").insert(chunk as any);
+            if (agErr) console.error("Erro inserindo agendamentos:", agErr);
+          }
+          console.log(`Sub ${sub.id}: ${agendamentos.length} agendamentos gerados`);
+        } catch (agExc) {
+          console.error("Erro gerando agendamentos para sub", sub.id, agExc);
+        }
 
         // Notify tutor (success)
         await supabase.from("customer_notifications").insert({
