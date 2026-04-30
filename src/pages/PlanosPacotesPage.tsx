@@ -361,7 +361,7 @@ export default function PlanosPacotesPage() {
             <div className="bg-card rounded-lg shadow-card divide-y divide-border">
               {filteredSubscriptions.map((s: any) => {
                 const planName = plans.find((p: any) => p.id === s.plan_id)?.name || packages.find((p: any) => p.id === s.package_id)?.name || "—";
-                const isExpired = s.end_date && isPast(new Date(s.end_date)) && s.status === "ativo";
+                const isExpired = isSubExpired(s.end_date) && s.status === "ativo";
                 return (
                   <div key={s.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
                     <div className="flex-1 min-w-0">
