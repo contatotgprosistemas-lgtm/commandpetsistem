@@ -312,6 +312,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
         notes, status: "ativo", planned_days: plannedDays,
         frequency: isQuinzenal ? "quinzenal" : "semanal",
         extra_session_policy: null,
+        week_parity: isQuinzenal ? weekParity : null,
       };
       if (planType === "plan") payload.plan_id = selectedId;
       else payload.package_id = selectedId;
