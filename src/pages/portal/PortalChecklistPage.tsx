@@ -34,16 +34,40 @@ interface ChecklistRecord {
 export default function PortalChecklistPage() {
   const { cliente, loading: clienteLoading } = usePortalCliente();
   const [records, setRecords] = useState<ChecklistRecord[]>([]);
+  const [perguntasMap, setPerguntasMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!cliente) return;
     const fetchData = async () => {
+      // Get pets of this client to filter records
+      const { data: pets } = await supabase
+        .from("pets")
+        .select("id")
+        .eq("cliente_id", cliente.id);
+      const petIds = (pets ?? []).map((p: any) => p.id);
+      if (petIds.length === 0) {
+        setRecords([]);
+        setLoading(false);
+        return;
+      }
       const { data } = await supabase
         .from("checklist_registros")
         .select("id, pet_id, created_at, respostas, pet:pets(nome, raca, especie)")
+        .in("pet_id", petIds)
         .order("created_at", { ascending: false });
-      setRecords((data as any) ?? []);
+      const recs = (data as any[]) ?? [];
+      setRecords(recs);
+
+      // Load configured-question labels (cfg_<id> -> pergunta)
+      const { data: cfg } = await supabase
+        .from("tipo_servico_perguntas_checklist" as any)
+        .select("id, pergunta");
+      const map: Record<string, string> = {};
+      ((cfg as any[]) ?? []).forEach((p: any) => {
+        map[`cfg_${p.id}`] = p.pergunta;
+      });
+      setPerguntasMap(map);
       setLoading(false);
     };
     fetchData();
@@ -99,7 +123,7 @@ export default function PortalChecklistPage() {
                   .filter(([key]) => key !== "custom_perguntas")
                   .map(([key, value]) => (
                     <div key={key} className="flex items-center justify-between py-2">
-                      <span className="text-sm text-muted-foreground">{defaultLabels[key] || key}</span>
+                      <span className="text-sm text-muted-foreground">{defaultLabels[key] || perguntasMap[key] || key}</span>
                       <Badge variant={String(value) === "sim" ? "default" : String(value) === "nao" ? "destructive" : "secondary"} className="text-xs capitalize">
                         {String(value) === "sim" ? "Sim" : String(value) === "nao" ? "Não" : String(value) || "—"}
                       </Badge>
