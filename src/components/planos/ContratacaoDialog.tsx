@@ -59,30 +59,38 @@ function countWeekdaysInMonth(year: number, month: number, days: number[]): numb
   return countWeekdaysInRange(start, end, days);
 }
 
-/** Generate biweekly dates: every 14 days starting from startDate, within the month */
-function generateBiweeklyDates(startDate: Date, endOfMonth: Date, plannedDays: number[]): Date[] {
+/** ISO week number (1-53). Quinzenal cadence is based on parity of this value. */
+function getISOWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function getWeekParity(date: Date): "par" | "impar" {
+  return getISOWeek(date) % 2 === 0 ? "par" : "impar";
+}
+
+/**
+ * Generate biweekly dates within the month: every occurrence of plannedDays
+ * whose ISO-week parity matches `parity`, starting on or after startDate.
+ */
+function generateBiweeklyDatesByParity(
+  startDate: Date,
+  endOfMonth: Date,
+  plannedDays: number[],
+  parity: "par" | "impar"
+): Date[] {
   const dates: Date[] = [];
   if (plannedDays.length === 0) return dates;
-
-  // Find the first occurrence of the selected weekday on or after startDate
   let current = new Date(startDate);
   while (!isBefore(endOfMonth, current)) {
-    if (plannedDays.includes(getDay(current))) {
-      break;
+    if (plannedDays.includes(getDay(current)) && getWeekParity(current) === parity) {
+      dates.push(new Date(current));
     }
     current = addDays(current, 1);
   }
-
-  // Generate dates every 14 days
-  while (!isBefore(endOfMonth, current)) {
-    if (plannedDays.includes(getDay(current))) {
-      dates.push(new Date(current));
-      current = addDays(current, 14);
-    } else {
-      current = addDays(current, 1);
-    }
-  }
-
   return dates;
 }
 
