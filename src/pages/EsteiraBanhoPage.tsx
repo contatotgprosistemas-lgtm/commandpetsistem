@@ -75,7 +75,7 @@ export default function EsteiraBanhoPage() {
 
     const { data } = await supabase
       .from("esteira_banho")
-      .select("id, agendamento_id, banhista_nome, status, inicio_at, fim_at, duracao_segundos, created_at, agendamento:agendamentos(id, tipo_servico, status, pet:pets(id, nome, raca, foto_url), cliente:clientes(id, nome))")
+      .select("id, agendamento_id, banhista_nome, status, inicio_at, fim_at, duracao_segundos, created_at, agendamento:agendamentos(id, tipo_servico, status, pet:pets(id, nome, raca, foto_url), cliente:clientes(id, nome, whatsapp, telefone))")
       .eq("empresa_id", empresaId)
       .gte("created_at", today.toISOString())
       .order("created_at", { ascending: true });
