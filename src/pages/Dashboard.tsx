@@ -136,6 +136,10 @@ export default function Dashboard() {
   const [editOpen, setEditOpen] = useState<Agendamento | null>(null);
   const [faltaOpen, setFaltaOpen] = useState<Agendamento | null>(null);
   const [hotelCheckoutOpen, setHotelCheckoutOpen] = useState<Agendamento | null>(null);
+  const [fichaClienteOpen, setFichaClienteOpen] = useState<any | null>(null);
+  const [fichaPetOpen, setFichaPetOpen] = useState<any | null>(null);
+  const [fichaDetalhes, setFichaDetalhes] = useState<{ pet: any; cliente: any } | null>(null);
+  const [fichaLoading, setFichaLoading] = useState(false);
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
