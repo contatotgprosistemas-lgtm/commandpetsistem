@@ -28,6 +28,8 @@ interface Agendamento {
   valor?: number | null;
   baia?: string | null;
   subscription_id?: string | null;
+  data_saida_provavel?: string | null;
+  hora_saida_provavel?: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string; foto_url?: string | null } | null;
   cliente: { id: string; nome: string; whatsapp: string | null; foto_url?: string | null } | null;
 }
