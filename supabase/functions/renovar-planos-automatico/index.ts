@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
           empresa_id: sub.empresa_id,
           cliente_id: sub.cliente_id,
           title: "Plano renovado com sucesso",
-          message: `Seu plano "${nome}" foi renovado automaticamente. Nova validade: ${newEndStr.split("-").reverse().join("/")}. Uma nova fatura foi gerada com vencimento em ${vencimento.split("-").reverse().join("/")}.`,
+          message: `Seu plano "${nome}" foi renovado automaticamente. Nova validade: ${newEndStr.split("-").reverse().join("/")}.`,
           type: "plano_renovado",
           is_read: false,
         });
