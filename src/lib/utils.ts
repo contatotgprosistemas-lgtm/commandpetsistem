@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
  * local Date object so that formatting always shows the correct day in
  * the user's timezone (Brazil).
  */
-function parseLocalDate(dateStr: string): Date {
+export function parseLocalDate(dateStr: string): Date {
   const datePart = dateStr.split("T")[0];
   const [y, m, d] = datePart.split("-").map(Number);
   return new Date(y, m - 1, d);
