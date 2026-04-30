@@ -126,7 +126,9 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setHoraBanhoPorPet(prev => ({ ...prev, _default: time }));
   };
   const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
-  const [extraSessionPolicy, setExtraSessionPolicy] = useState<"skip" | "charge">("skip");
+  const currentWeekNumber = getISOWeek(new Date());
+  const currentWeekParity: "par" | "impar" = currentWeekNumber % 2 === 0 ? "par" : "impar";
+  const [weekParity, setWeekParity] = useState<"par" | "impar">(currentWeekParity);
   const [banhistas, setBanhistas] = useState<any[]>([]);
   const [selectedBanhistaId, setSelectedBanhistaId] = useState("");
 
@@ -168,13 +170,11 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   // Biweekly dates calculation
   const biweeklyDates = useMemo(() => {
     if (!isQuinzenal) return [];
-    return generateBiweeklyDates(startDateObj, endOfMonth, plannedDays);
-  }, [isQuinzenal, startDate, plannedDays]);
+    return generateBiweeklyDatesByParity(startDateObj, endOfMonth, plannedDays, weekParity);
+  }, [isQuinzenal, startDate, plannedDays, weekParity]);
 
+  const biweeklyCount = isQuinzenal ? biweeklyDates.length : 0;
   const hasThreeOccurrences = isQuinzenal && biweeklyDates.length >= 3;
-  const biweeklyCount = isQuinzenal
-    ? (extraSessionPolicy === "skip" && hasThreeOccurrences ? 2 : biweeklyDates.length)
-    : 0;
 
   // Price per session for biweekly (base price = 2 sessions)
   const pricePerSession = roundUpMoney(priceContracted / 2);
@@ -185,13 +185,11 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   let proportionalInfo = "";
 
   if (isQuinzenal) {
-    if (hasThreeOccurrences && extraSessionPolicy === "charge") {
-      proportionalPrice = roundUpMoney(priceContracted + pricePerSession);
-      proportionalInfo = `3 ocorrências no mês: R$ ${priceContracted.toFixed(2)} + R$ ${pricePerSession.toFixed(2)} (sessão extra) = R$ ${proportionalPrice.toFixed(2)}`;
-    } else if (hasThreeOccurrences && extraSessionPolicy === "skip") {
-      proportionalInfo = `3ª ocorrência será pulada. Valor normal: R$ ${priceContracted.toFixed(2)} (2 banhos)`;
+    if (hasThreeOccurrences) {
+      proportionalPrice = roundUpMoney(priceContracted + pricePerSession * (biweeklyDates.length - 2));
+      proportionalInfo = `${biweeklyDates.length} ocorrências na semana ${weekParity === "par" ? "par" : "ímpar"}: R$ ${priceContracted.toFixed(2)} + R$ ${(pricePerSession * (biweeklyDates.length - 2)).toFixed(2)} extra = R$ ${proportionalPrice.toFixed(2)}`;
     } else {
-      proportionalInfo = `${biweeklyDates.length} banho(s) quinzenal(is) no período`;
+      proportionalInfo = `${biweeklyDates.length} banho(s) quinzenal(is) na semana ${weekParity === "par" ? "par" : "ímpar"}`;
     }
   } else if (!isFirstDay && plannedDays.length > 0) {
     const totalDaysInMonth = countWeekdaysInMonth(startDateObj.getFullYear(), startDateObj.getMonth(), plannedDays);
