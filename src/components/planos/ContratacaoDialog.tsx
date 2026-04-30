@@ -214,7 +214,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   // Reset frequency when plan type or selected plan changes
   useEffect(() => {
     setFrequency("semanal");
-    setExtraSessionPolicy("skip");
+    setWeekParity(currentWeekParity);
   }, [planType, selectedId]);
 
   // Check availability when planned days, date, or banho visibility changes
@@ -311,7 +311,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
         final_price: finalPrice, auto_renew: autoRenew,
         notes, status: "ativo", planned_days: plannedDays,
         frequency: isQuinzenal ? "quinzenal" : "semanal",
-        extra_session_policy: isQuinzenal && hasThreeOccurrences ? extraSessionPolicy : null,
+        extra_session_policy: null,
       };
       if (planType === "plan") payload.plan_id = selectedId;
       else payload.package_id = selectedId;
@@ -337,7 +337,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
       const descFreq = isQuinzenal ? " (quinzenal)" : "";
       const descProp = !isFirstDay && !isQuinzenal ? " (proporcional)" : "";
-      const descExtra = isQuinzenal && hasThreeOccurrences && extraSessionPolicy === "charge" ? " (+1 sessão extra)" : "";
+      const descExtra = isQuinzenal && hasThreeOccurrences ? ` (+${biweeklyDates.length - 2} sessão(ões) extra)` : "";
       const descricaoFatura = `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name} - ${petNome}${descFreq}${descProp}${descExtra}`;
 
       // Tenta agrupar com fatura pendente já existente do mesmo cliente/vencimento (Planos e Pacotes)
@@ -412,10 +412,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
         const today = startOfDay(new Date());
         const tipoServico = selectedPlan?.name || "Pacote";
 
-        // Use biweekly dates, applying the skip policy
-        const datesToSchedule = hasThreeOccurrences && extraSessionPolicy === "skip"
-          ? biweeklyDates.slice(0, 2)
-          : biweeklyDates;
+        // All dates that match the selected week parity
+        const datesToSchedule = biweeklyDates;
 
         const agendamentos: any[] = [];
         for (const date of datesToSchedule) {
@@ -502,7 +500,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setHoraLevar("17:00");
     setHoraBanhoPorPet({});
     setFrequency("semanal");
-    setExtraSessionPolicy("skip");
+    setWeekParity(currentWeekParity);
     setSelectedBanhistaId("");
     setSaving(false); onSuccess(); onOpenChange(false);
   }
