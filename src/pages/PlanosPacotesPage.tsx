@@ -8,7 +8,18 @@ import { MetricCard } from "@/components/MetricCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { format, isPast, differenceInDays, addDays } from "date-fns";
+import { format, differenceInDays, addDays } from "date-fns";
+import { parseLocalDate } from "@/lib/utils";
+
+// Date-only "vencido": a subscription is only expired AFTER the end_date day passes.
+function startOfTodayLocal(): Date {
+  const t = new Date();
+  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+}
+function isSubExpired(endDate?: string | null): boolean {
+  if (!endDate) return false;
+  return differenceInDays(parseLocalDate(endDate), startOfTodayLocal()) < 0;
+}
 import { useNavigate } from "react-router-dom";
 import { NovoPlanoDialog } from "@/components/planos/NovoPlanoDialog";
 import { NovoPacoteDialog } from "@/components/planos/NovoPacoteDialog";
@@ -179,8 +190,12 @@ export default function PlanosPacotesPage() {
 
   // Dashboard metrics
   const activeSubs = subscriptions.filter((s: any) => s.status === "ativo");
-  const expiringThisWeek = activeSubs.filter((s: any) => s.end_date && differenceInDays(new Date(s.end_date), new Date()) <= 7 && differenceInDays(new Date(s.end_date), new Date()) >= 0);
-  const expiredSubs = subscriptions.filter((s: any) => s.status === "ativo" && s.end_date && isPast(new Date(s.end_date)));
+  const expiringThisWeek = activeSubs.filter((s: any) => {
+    if (!s.end_date) return false;
+    const d = differenceInDays(parseLocalDate(s.end_date), startOfTodayLocal());
+    return d >= 0 && d <= 7;
+  });
+  const expiredSubs = subscriptions.filter((s: any) => s.status === "ativo" && isSubExpired(s.end_date));
   const monthlyRevenue = activeSubs.reduce((acc: number, s: any) => acc + Number(s.final_price || 0), 0);
   const totalUsage = usageLogs.length;
 
@@ -346,7 +361,7 @@ export default function PlanosPacotesPage() {
             <div className="bg-card rounded-lg shadow-card divide-y divide-border">
               {filteredSubscriptions.map((s: any) => {
                 const planName = plans.find((p: any) => p.id === s.plan_id)?.name || packages.find((p: any) => p.id === s.package_id)?.name || "—";
-                const isExpired = s.end_date && isPast(new Date(s.end_date)) && s.status === "ativo";
+                const isExpired = isSubExpired(s.end_date) && s.status === "ativo";
                 return (
                   <div key={s.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
                     <div className="flex-1 min-w-0">
