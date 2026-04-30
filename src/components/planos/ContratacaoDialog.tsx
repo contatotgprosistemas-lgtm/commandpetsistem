@@ -426,7 +426,34 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       } catch { /* noop */ }
 
       // Generate agendamentos
-      if (isQuinzenal && plannedDays.length === 1) {
+      if (isMensal && plannedDays.length === 1 && monthlyDate) {
+        const today = startOfDay(new Date());
+        const tipoServico = selectedPlan?.name || "Pacote";
+        const agendamentos: any[] = [];
+        if (!isBefore(monthlyDate, today)) {
+          const horaBase = showHorarioBanho ? getHoraBanho(petId) : "07:00";
+          const ag: any = {
+            empresa_id: empresaId,
+            cliente_id: clienteId,
+            pet_id: petId,
+            tipo_servico: tipoServico,
+            data_hora: format(monthlyDate, "yyyy-MM-dd") + "T" + horaBase + ":00-03:00",
+            status: "agendado",
+            subscription_id: subscriptionId,
+            notas: "Gerado automaticamente pelo pacote (mensal)",
+            ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
+          };
+          if (showHorarios) {
+            if (transportMode === "ambos" || transportMode === "buscar") ag.hora_prevista_buscar = horaBuscar;
+            if (transportMode === "ambos" || transportMode === "levar") ag.hora_prevista_levar = horaLevar;
+          }
+          agendamentos.push(ag);
+        }
+        if (agendamentos.length > 0) {
+          await supabase.from("agendamentos").insert(agendamentos as any);
+        }
+        totalAgendamentos += agendamentos.length;
+      } else if (isQuinzenal && plannedDays.length === 1) {
         const today = startOfDay(new Date());
         const tipoServico = selectedPlan?.name || "Pacote";
 
