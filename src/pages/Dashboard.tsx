@@ -1,6 +1,15 @@
 import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap, Info, X, UserPlus } from "lucide-react";
+import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap, Info, X, UserPlus, HeartPulse, User, Cake, Mail, MapPin, Calendar, DollarSign, Bed, CreditCard, FileSearch, Syringe, AlertCircle } from "lucide-react";
+
+// WhatsApp icon (SVG)
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.002-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+    </svg>
+  );
+}
 
 function ServicoIcon({ tipo }: { tipo?: string | null }) {
   const t = (tipo || "").toLowerCase();
@@ -33,6 +42,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { EditarAgendamentoDialog } from "@/components/EditarAgendamentoDialog";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { OrcamentoDialog } from "@/components/OrcamentoDialog";
+import { EditarClienteDialog } from "@/components/EditarClienteDialog";
+import { EditarPetDialog } from "@/components/EditarPetDialog";
 import { addToEsteiraIfApplicable } from "@/lib/esteira";
 import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
 
@@ -125,6 +136,30 @@ export default function Dashboard() {
   const [editOpen, setEditOpen] = useState<Agendamento | null>(null);
   const [faltaOpen, setFaltaOpen] = useState<Agendamento | null>(null);
   const [hotelCheckoutOpen, setHotelCheckoutOpen] = useState<Agendamento | null>(null);
+  const [fichaClienteOpen, setFichaClienteOpen] = useState<any | null>(null);
+  const [fichaPetOpen, setFichaPetOpen] = useState<any | null>(null);
+  const [fichaDetalhes, setFichaDetalhes] = useState<{ pet: any; cliente: any } | null>(null);
+  const [fichaLoading, setFichaLoading] = useState(false);
+
+  // Load complete pet/cliente details when ficha opens
+  useEffect(() => {
+    if (!fichaOpen) { setFichaDetalhes(null); return; }
+    let cancelled = false;
+    (async () => {
+      setFichaLoading(true);
+      const petId = fichaOpen.pet?.id;
+      const cliId = fichaOpen.cliente?.id;
+      const [{ data: petData }, { data: cliData }] = await Promise.all([
+        petId ? supabase.from("pets").select("*").eq("id", petId).maybeSingle() : Promise.resolve({ data: null } as any),
+        cliId ? supabase.from("clientes").select("*").eq("id", cliId).maybeSingle() : Promise.resolve({ data: null } as any),
+      ]);
+      if (!cancelled) {
+        setFichaDetalhes({ pet: petData, cliente: cliData });
+        setFichaLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [fichaOpen]);
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
@@ -640,6 +675,8 @@ export default function Dashboard() {
               onManejo={setManejoOpen}
               onChecklist={setChecklistOpen}
               onCheckout={handleCheckout}
+              onFichaCliente={(c) => setFichaClienteOpen(c)}
+              onFichaPet={(p) => setFichaPetOpen(p)}
               selectedIds={selectedNaEmpresa}
               onToggleSelect={(id) => {
                 setSelectedNaEmpresa(prev => {
@@ -795,29 +832,157 @@ export default function Dashboard() {
         <ChecklistDialog open={!!checklistOpen} onOpenChange={() => setChecklistOpen(null)} agendamentoId={checklistOpen.id} petId={checklistOpen.pet?.id ?? ""} petName={checklistOpen.pet?.nome ?? "Pet"} />
       )}
       <Dialog open={!!fichaOpen} onOpenChange={() => setFichaOpen(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Ficha do Serviço</DialogTitle></DialogHeader>
-          {fichaOpen && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div><p className="text-muted-foreground text-xs">Pet</p><p className="font-medium text-foreground">{fichaOpen.pet?.nome ?? "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">Espécie / Raça</p><p className="font-medium text-foreground">{fichaOpen.pet?.especie ?? "—"} {fichaOpen.pet?.raca ? `· ${fichaOpen.pet.raca}` : ""}</p></div>
-                <div><p className="text-muted-foreground text-xs">Tutor</p><p className="font-medium text-foreground">{fichaOpen.cliente?.nome ?? "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">WhatsApp</p><p className="font-medium text-foreground">{fichaOpen.cliente?.whatsapp ?? "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">Serviço</p><p className="font-medium text-foreground">{fichaOpen.tipo_servico}</p></div>
-                <div><p className="text-muted-foreground text-xs">Valor</p><p className="font-medium text-foreground">{fichaOpen.valor != null ? `R$ ${Number(fichaOpen.valor).toFixed(2)}` : "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">Baia</p><p className="font-medium text-foreground">{fichaOpen.baia ?? "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">Forma de Pagamento</p><p className="font-medium text-foreground">{fichaOpen.forma_pagamento ?? "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">Entrada</p><p className="font-medium text-foreground">{fichaOpen.data_entrada ? format(new Date(fichaOpen.data_entrada), "dd/MM/yyyy") : "—"}{fichaOpen.hora_entrada ? ` às ${fichaOpen.hora_entrada}` : ""}</p></div>
-                <div><p className="text-muted-foreground text-xs">Saída Provável</p><p className="font-medium text-foreground">{fichaOpen.data_saida_provavel ? format(new Date(fichaOpen.data_saida_provavel), "dd/MM/yyyy") : "—"}{fichaOpen.hora_saida_provavel ? ` às ${fichaOpen.hora_saida_provavel}` : ""}</p></div>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSearch className="h-5 w-5 text-primary" />
+              Ficha do Serviço
+            </DialogTitle>
+          </DialogHeader>
+          {fichaOpen && (() => {
+            const pet = fichaDetalhes?.pet ?? fichaOpen.pet ?? {};
+            const cliente = fichaDetalhes?.cliente ?? fichaOpen.cliente ?? {};
+            const Field = ({ icon: Icon, label, value, className = "" }: { icon?: any; label: string; value: any; className?: string }) => (
+              <div className={`flex items-start gap-2 ${className}`}>
+                {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <p className="text-sm font-medium text-foreground break-words">{value || "—"}</p>
+                </div>
               </div>
-              {fichaOpen.notas && (
-                <div><p className="text-muted-foreground text-xs mb-1">Observações</p><p className="text-foreground bg-muted/50 rounded-md p-2 whitespace-pre-wrap">{fichaOpen.notas}</p></div>
-              )}
-            </div>
-          )}
+            );
+            return (
+              <div className="space-y-4">
+                {/* Header com avatares */}
+                <div className="flex items-center gap-3 pb-3 border-b border-border">
+                  <div className="flex -space-x-2">
+                    <Avatar className="h-14 w-14 border-2 border-card">
+                      {pet?.foto_url && <AvatarImage src={pet.foto_url} alt={pet?.nome} />}
+                      <AvatarFallback className="bg-accent text-accent-foreground font-bold">{(pet?.nome || "P").slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <Avatar className="h-10 w-10 border-2 border-card mt-3">
+                      {cliente?.foto_url && <AvatarImage src={cliente.foto_url} />}
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{(cliente?.nome || "T").slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <ServicoIcon tipo={fichaOpen.tipo_servico} />
+                      <h3 className="text-lg font-bold text-foreground truncate">{pet?.nome || "—"}</h3>
+                      {fichaOpen.subscription_id && <Badge variant="secondary" className="text-[10px]">Plano</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {[pet?.especie, pet?.raca, pet?.porte].filter(Boolean).join(" · ") || "—"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Tutor: <span className="font-medium text-foreground">{cliente?.nome || "—"}</span></p>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] uppercase">{fichaOpen.status?.replace("_", " ")}</Badge>
+                </div>
+
+                {/* Seção: Serviço */}
+                <section>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5" /> Serviço
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-muted/30 rounded-lg p-3">
+                    <Field label="Tipo" value={fichaOpen.tipo_servico} />
+                    <Field icon={DollarSign} label="Valor" value={fichaOpen.valor != null ? `R$ ${Number(fichaOpen.valor).toFixed(2)}` : "—"} />
+                    <Field icon={CreditCard} label="Pagamento" value={fichaOpen.forma_pagamento} />
+                    <Field icon={Bed} label="Baia / Quarto" value={fichaOpen.baia} />
+                    <Field icon={Calendar} label="Entrada" value={fichaOpen.data_entrada ? `${format(new Date(fichaOpen.data_entrada + (fichaOpen.data_entrada.includes("T") ? "" : "T00:00:00")), "dd/MM/yyyy")}${fichaOpen.hora_entrada ? ` ${fichaOpen.hora_entrada.slice(0,5)}` : ""}` : "—"} />
+                    <Field icon={Calendar} label="Saída Prevista" value={fichaOpen.data_saida_provavel ? `${format(new Date(fichaOpen.data_saida_provavel + (fichaOpen.data_saida_provavel.includes("T") ? "" : "T00:00:00")), "dd/MM/yyyy")}${fichaOpen.hora_saida_provavel ? ` ${fichaOpen.hora_saida_provavel.slice(0,5)}` : ""}` : "—"} />
+                  </div>
+                </section>
+
+                {/* Seção: Pet */}
+                <section>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <PawPrint className="h-3.5 w-3.5" /> Dados do Pet
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-muted/30 rounded-lg p-3">
+                    <Field label="Nome" value={pet?.nome} />
+                    <Field label="Espécie" value={pet?.especie} />
+                    <Field label="Raça" value={pet?.raca} />
+                    <Field label="Sexo" value={pet?.sexo} />
+                    <Field label="Cor" value={pet?.cor} />
+                    <Field label="Porte" value={pet?.porte} />
+                    <Field label="Peso" value={pet?.peso ? `${pet.peso} kg` : null} />
+                    <Field icon={Cake} label="Nascimento" value={pet?.data_nascimento ? format(new Date(pet.data_nascimento + "T00:00:00"), "dd/MM/yyyy") : null} />
+                    <Field label="Castrado" value={pet?.castrado === true ? "Sim" : pet?.castrado === false ? "Não" : null} />
+                  </div>
+                  {(pet?.observacoes_saude || pet?.alergias || pet?.medicamentos) && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                      {pet?.alergias && (
+                        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-md p-2">
+                          <p className="text-[10px] uppercase font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Alergias</p>
+                          <p className="text-xs text-foreground mt-0.5">{pet.alergias}</p>
+                        </div>
+                      )}
+                      {pet?.medicamentos && (
+                        <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900 rounded-md p-2">
+                          <p className="text-[10px] uppercase font-semibold text-sky-700 dark:text-sky-300 flex items-center gap-1"><Syringe className="h-3 w-3" /> Medicamentos</p>
+                          <p className="text-xs text-foreground mt-0.5">{pet.medicamentos}</p>
+                        </div>
+                      )}
+                      {pet?.observacoes_saude && (
+                        <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-md p-2">
+                          <p className="text-[10px] uppercase font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-1"><HeartPulse className="h-3 w-3" /> Saúde</p>
+                          <p className="text-xs text-foreground mt-0.5">{pet.observacoes_saude}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </section>
+
+                {/* Seção: Tutor */}
+                <section>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5" /> Tutor
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-muted/30 rounded-lg p-3">
+                    <Field label="Nome" value={cliente?.nome} />
+                    <Field icon={Phone} label="WhatsApp" value={cliente?.whatsapp} />
+                    <Field icon={Phone} label="Telefone" value={cliente?.telefone} />
+                    <Field icon={Mail} label="E-mail" value={cliente?.email} />
+                    <Field label="CPF" value={cliente?.cpf} />
+                    <Field icon={MapPin} label="Endereço" value={cliente?.endereco} className="col-span-2" />
+                  </div>
+                </section>
+
+                {/* Observações */}
+                {fichaOpen.notas && (
+                  <section>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Observações do Serviço</h4>
+                    <p className="text-sm text-foreground bg-muted/50 rounded-md p-3 whitespace-pre-wrap">{fichaOpen.notas}</p>
+                  </section>
+                )}
+
+                {fichaLoading && <p className="text-xs text-muted-foreground text-center">Carregando dados completos...</p>}
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
+
+      {/* Ficha do Cliente (editar) */}
+      {fichaClienteOpen && (
+        <EditarClienteDialog
+          cliente={fichaClienteOpen}
+          open={!!fichaClienteOpen}
+          onOpenChange={(o) => { if (!o) setFichaClienteOpen(null); }}
+          onSuccess={() => { setFichaClienteOpen(null); fetchAgendamentos(); }}
+        />
+      )}
+
+      {/* Ficha do Pet (editar) */}
+      {fichaPetOpen && (
+        <EditarPetDialog
+          pet={fichaPetOpen}
+          open={!!fichaPetOpen}
+          onOpenChange={(o) => { if (!o) setFichaPetOpen(null); }}
+          onSuccess={() => { setFichaPetOpen(null); fetchAgendamentos(); }}
+        />
+      )}
       <EditarAgendamentoDialog
         agendamento={editingAgendamento ?? editOpen}
         open={!!editingAgendamento || !!editOpen}
@@ -946,11 +1111,13 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
   );
 }
 
-function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist, onCheckout, selectedIds, onToggleSelect }: {
+function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist, onCheckout, onFichaCliente, onFichaPet, selectedIds, onToggleSelect }: {
   items: Agendamento[]; loading: boolean;
   onEdit: (a: Agendamento) => void; onFicha: (a: Agendamento) => void;
   onManejo: (a: Agendamento) => void; onChecklist: (a: Agendamento) => void;
   onCheckout: (a: Agendamento) => void;
+  onFichaCliente?: (c: any) => void;
+  onFichaPet?: (p: any) => void;
   selectedIds?: Set<string>; onToggleSelect?: (id: string) => void;
 }) {
   if (loading) return <div className="space-y-3 mt-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}</div>;
@@ -1030,16 +1197,22 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {clientWhatsapp && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" title="WhatsApp" onClick={() => window.open(`https://wa.me/${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}>
-                  <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Abrir WhatsApp Web" onClick={() => window.open(`https://web.whatsapp.com/send?phone=${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}>
+                  <WhatsAppIcon className="h-4 w-4 text-emerald-600" />
                 </Button>
               )}
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Cliente" onClick={() => onFichaCliente?.(item.cliente)} disabled={!item.cliente?.id}>
+                <User className="h-3.5 w-3.5 text-primary" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Pet" onClick={() => onFichaPet?.(item.pet)} disabled={!item.pet?.id}>
+                <PawPrint className="h-3.5 w-3.5 text-primary" />
+              </Button>
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Ficha do Serviço" onClick={() => onFicha(item)}>
-                <FileText className="h-3.5 w-3.5 text-primary" />
+                <FileSearch className="h-3.5 w-3.5 text-primary" />
               </Button>
               
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Manejo" onClick={() => onManejo(item)}>
-                <Stethoscope className="h-3.5 w-3.5 text-primary" />
+                <HeartPulse className="h-3.5 w-3.5 text-rose-500" />
               </Button>
               <Button variant="ghost" size="icon" className="h-7 w-7" title="Checklist" onClick={() => onChecklist(item)}>
                 <ClipboardList className="h-3.5 w-3.5 text-primary" />
