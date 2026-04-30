@@ -832,29 +832,157 @@ export default function Dashboard() {
         <ChecklistDialog open={!!checklistOpen} onOpenChange={() => setChecklistOpen(null)} agendamentoId={checklistOpen.id} petId={checklistOpen.pet?.id ?? ""} petName={checklistOpen.pet?.nome ?? "Pet"} />
       )}
       <Dialog open={!!fichaOpen} onOpenChange={() => setFichaOpen(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Ficha do Serviço</DialogTitle></DialogHeader>
-          {fichaOpen && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <div><p className="text-muted-foreground text-xs">Pet</p><p className="font-medium text-foreground">{fichaOpen.pet?.nome ?? "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">Espécie / Raça</p><p className="font-medium text-foreground">{fichaOpen.pet?.especie ?? "—"} {fichaOpen.pet?.raca ? `· ${fichaOpen.pet.raca}` : ""}</p></div>
-                <div><p className="text-muted-foreground text-xs">Tutor</p><p className="font-medium text-foreground">{fichaOpen.cliente?.nome ?? "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">WhatsApp</p><p className="font-medium text-foreground">{fichaOpen.cliente?.whatsapp ?? "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">Serviço</p><p className="font-medium text-foreground">{fichaOpen.tipo_servico}</p></div>
-                <div><p className="text-muted-foreground text-xs">Valor</p><p className="font-medium text-foreground">{fichaOpen.valor != null ? `R$ ${Number(fichaOpen.valor).toFixed(2)}` : "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">Baia</p><p className="font-medium text-foreground">{fichaOpen.baia ?? "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">Forma de Pagamento</p><p className="font-medium text-foreground">{fichaOpen.forma_pagamento ?? "—"}</p></div>
-                <div><p className="text-muted-foreground text-xs">Entrada</p><p className="font-medium text-foreground">{fichaOpen.data_entrada ? format(new Date(fichaOpen.data_entrada), "dd/MM/yyyy") : "—"}{fichaOpen.hora_entrada ? ` às ${fichaOpen.hora_entrada}` : ""}</p></div>
-                <div><p className="text-muted-foreground text-xs">Saída Provável</p><p className="font-medium text-foreground">{fichaOpen.data_saida_provavel ? format(new Date(fichaOpen.data_saida_provavel), "dd/MM/yyyy") : "—"}{fichaOpen.hora_saida_provavel ? ` às ${fichaOpen.hora_saida_provavel}` : ""}</p></div>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSearch className="h-5 w-5 text-primary" />
+              Ficha do Serviço
+            </DialogTitle>
+          </DialogHeader>
+          {fichaOpen && (() => {
+            const pet = fichaDetalhes?.pet ?? fichaOpen.pet ?? {};
+            const cliente = fichaDetalhes?.cliente ?? fichaOpen.cliente ?? {};
+            const Field = ({ icon: Icon, label, value, className = "" }: { icon?: any; label: string; value: any; className?: string }) => (
+              <div className={`flex items-start gap-2 ${className}`}>
+                {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <p className="text-sm font-medium text-foreground break-words">{value || "—"}</p>
+                </div>
               </div>
-              {fichaOpen.notas && (
-                <div><p className="text-muted-foreground text-xs mb-1">Observações</p><p className="text-foreground bg-muted/50 rounded-md p-2 whitespace-pre-wrap">{fichaOpen.notas}</p></div>
-              )}
-            </div>
-          )}
+            );
+            return (
+              <div className="space-y-4">
+                {/* Header com avatares */}
+                <div className="flex items-center gap-3 pb-3 border-b border-border">
+                  <div className="flex -space-x-2">
+                    <Avatar className="h-14 w-14 border-2 border-card">
+                      {pet?.foto_url && <AvatarImage src={pet.foto_url} alt={pet?.nome} />}
+                      <AvatarFallback className="bg-accent text-accent-foreground font-bold">{(pet?.nome || "P").slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <Avatar className="h-10 w-10 border-2 border-card mt-3">
+                      {cliente?.foto_url && <AvatarImage src={cliente.foto_url} />}
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{(cliente?.nome || "T").slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <ServicoIcon tipo={fichaOpen.tipo_servico} />
+                      <h3 className="text-lg font-bold text-foreground truncate">{pet?.nome || "—"}</h3>
+                      {fichaOpen.subscription_id && <Badge variant="secondary" className="text-[10px]">Plano</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {[pet?.especie, pet?.raca, pet?.porte].filter(Boolean).join(" · ") || "—"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Tutor: <span className="font-medium text-foreground">{cliente?.nome || "—"}</span></p>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] uppercase">{fichaOpen.status?.replace("_", " ")}</Badge>
+                </div>
+
+                {/* Seção: Serviço */}
+                <section>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5" /> Serviço
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-muted/30 rounded-lg p-3">
+                    <Field label="Tipo" value={fichaOpen.tipo_servico} />
+                    <Field icon={DollarSign} label="Valor" value={fichaOpen.valor != null ? `R$ ${Number(fichaOpen.valor).toFixed(2)}` : "—"} />
+                    <Field icon={CreditCard} label="Pagamento" value={fichaOpen.forma_pagamento} />
+                    <Field icon={Bed} label="Baia / Quarto" value={fichaOpen.baia} />
+                    <Field icon={Calendar} label="Entrada" value={fichaOpen.data_entrada ? `${format(new Date(fichaOpen.data_entrada + (fichaOpen.data_entrada.includes("T") ? "" : "T00:00:00")), "dd/MM/yyyy")}${fichaOpen.hora_entrada ? ` ${fichaOpen.hora_entrada.slice(0,5)}` : ""}` : "—"} />
+                    <Field icon={Calendar} label="Saída Prevista" value={fichaOpen.data_saida_provavel ? `${format(new Date(fichaOpen.data_saida_provavel + (fichaOpen.data_saida_provavel.includes("T") ? "" : "T00:00:00")), "dd/MM/yyyy")}${fichaOpen.hora_saida_provavel ? ` ${fichaOpen.hora_saida_provavel.slice(0,5)}` : ""}` : "—"} />
+                  </div>
+                </section>
+
+                {/* Seção: Pet */}
+                <section>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <PawPrint className="h-3.5 w-3.5" /> Dados do Pet
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-muted/30 rounded-lg p-3">
+                    <Field label="Nome" value={pet?.nome} />
+                    <Field label="Espécie" value={pet?.especie} />
+                    <Field label="Raça" value={pet?.raca} />
+                    <Field label="Sexo" value={pet?.sexo} />
+                    <Field label="Cor" value={pet?.cor} />
+                    <Field label="Porte" value={pet?.porte} />
+                    <Field label="Peso" value={pet?.peso ? `${pet.peso} kg` : null} />
+                    <Field icon={Cake} label="Nascimento" value={pet?.data_nascimento ? format(new Date(pet.data_nascimento + "T00:00:00"), "dd/MM/yyyy") : null} />
+                    <Field label="Castrado" value={pet?.castrado === true ? "Sim" : pet?.castrado === false ? "Não" : null} />
+                  </div>
+                  {(pet?.observacoes_saude || pet?.alergias || pet?.medicamentos) && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                      {pet?.alergias && (
+                        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-md p-2">
+                          <p className="text-[10px] uppercase font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Alergias</p>
+                          <p className="text-xs text-foreground mt-0.5">{pet.alergias}</p>
+                        </div>
+                      )}
+                      {pet?.medicamentos && (
+                        <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900 rounded-md p-2">
+                          <p className="text-[10px] uppercase font-semibold text-sky-700 dark:text-sky-300 flex items-center gap-1"><Syringe className="h-3 w-3" /> Medicamentos</p>
+                          <p className="text-xs text-foreground mt-0.5">{pet.medicamentos}</p>
+                        </div>
+                      )}
+                      {pet?.observacoes_saude && (
+                        <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-md p-2">
+                          <p className="text-[10px] uppercase font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-1"><HeartPulse className="h-3 w-3" /> Saúde</p>
+                          <p className="text-xs text-foreground mt-0.5">{pet.observacoes_saude}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </section>
+
+                {/* Seção: Tutor */}
+                <section>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5" /> Tutor
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-muted/30 rounded-lg p-3">
+                    <Field label="Nome" value={cliente?.nome} />
+                    <Field icon={Phone} label="WhatsApp" value={cliente?.whatsapp} />
+                    <Field icon={Phone} label="Telefone" value={cliente?.telefone} />
+                    <Field icon={Mail} label="E-mail" value={cliente?.email} />
+                    <Field label="CPF" value={cliente?.cpf} />
+                    <Field icon={MapPin} label="Endereço" value={cliente?.endereco} className="col-span-2" />
+                  </div>
+                </section>
+
+                {/* Observações */}
+                {fichaOpen.notas && (
+                  <section>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Observações do Serviço</h4>
+                    <p className="text-sm text-foreground bg-muted/50 rounded-md p-3 whitespace-pre-wrap">{fichaOpen.notas}</p>
+                  </section>
+                )}
+
+                {fichaLoading && <p className="text-xs text-muted-foreground text-center">Carregando dados completos...</p>}
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
+
+      {/* Ficha do Cliente (editar) */}
+      {fichaClienteOpen && (
+        <EditarClienteDialog
+          cliente={fichaClienteOpen}
+          open={!!fichaClienteOpen}
+          onOpenChange={(o) => { if (!o) setFichaClienteOpen(null); }}
+          onSuccess={() => { setFichaClienteOpen(null); fetchAgendamentos(); }}
+        />
+      )}
+
+      {/* Ficha do Pet (editar) */}
+      {fichaPetOpen && (
+        <EditarPetDialog
+          pet={fichaPetOpen}
+          open={!!fichaPetOpen}
+          onOpenChange={(o) => { if (!o) setFichaPetOpen(null); }}
+          onSuccess={() => { setFichaPetOpen(null); fetchAgendamentos(); }}
+        />
+      )}
       <EditarAgendamentoDialog
         agendamento={editingAgendamento ?? editOpen}
         open={!!editingAgendamento || !!editOpen}
