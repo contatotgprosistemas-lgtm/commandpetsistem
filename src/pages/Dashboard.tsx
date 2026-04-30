@@ -141,6 +141,26 @@ export default function Dashboard() {
   const [fichaDetalhes, setFichaDetalhes] = useState<{ pet: any; cliente: any } | null>(null);
   const [fichaLoading, setFichaLoading] = useState(false);
 
+  // Load complete pet/cliente details when ficha opens
+  useEffect(() => {
+    if (!fichaOpen) { setFichaDetalhes(null); return; }
+    let cancelled = false;
+    (async () => {
+      setFichaLoading(true);
+      const petId = fichaOpen.pet?.id;
+      const cliId = fichaOpen.cliente?.id;
+      const [{ data: petData }, { data: cliData }] = await Promise.all([
+        petId ? supabase.from("pets").select("*").eq("id", petId).maybeSingle() : Promise.resolve({ data: null } as any),
+        cliId ? supabase.from("clientes").select("*").eq("id", cliId).maybeSingle() : Promise.resolve({ data: null } as any),
+      ]);
+      if (!cancelled) {
+        setFichaDetalhes({ pet: petData, cliente: cliData });
+        setFichaLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [fichaOpen]);
+
   async function fetchAgendamentos() {
     setAgendaLoading(true);
     const [{ data }, { data: bookings }] = await Promise.all([
