@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle, Search, ClipboardList, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MetricCard } from "@/components/MetricCard";
@@ -57,6 +58,8 @@ export default function PlanosPacotesPage() {
   const [cancelSub, setCancelSub] = useState<any>(null);
   const [discountValue, setDiscountValue] = useState("");
   const [searchContratacao, setSearchContratacao] = useState("");
+  const [tipoFilterContratacao, setTipoFilterContratacao] = useState<"all" | "banho" | "escola" | "taxipet">("all");
+  const [statusFilterContratacao, setStatusFilterContratacao] = useState<"all" | "ativo" | "vencendo" | "vencido" | "pausado" | "cancelado">("all");
 
   async function fetchAll() {
     setLoading(true);
@@ -200,12 +203,33 @@ export default function PlanosPacotesPage() {
   const totalUsage = usageLogs.length;
 
   const filteredSubscriptions = subscriptions.filter((s: any) => {
-    if (!searchContratacao) return true;
-    const q = searchContratacao.toLowerCase();
     const clienteNome = (s.cliente as any)?.nome?.toLowerCase() || "";
     const petNome = (s.pet as any)?.nome?.toLowerCase() || "";
-    const planName = plans.find((p: any) => p.id === s.plan_id)?.name?.toLowerCase() || packages.find((p: any) => p.id === s.package_id)?.name?.toLowerCase() || "";
-    return clienteNome.includes(q) || petNome.includes(q) || planName.includes(q);
+    const planName = (plans.find((p: any) => p.id === s.plan_id)?.name || packages.find((p: any) => p.id === s.package_id)?.name || "").toLowerCase();
+    if (searchContratacao) {
+      const q = searchContratacao.toLowerCase();
+      if (!clienteNome.includes(q) && !petNome.includes(q) && !planName.includes(q)) return false;
+    }
+    if (tipoFilterContratacao !== "all") {
+      if (tipoFilterContratacao === "banho" && !planName.includes("banho")) return false;
+      if (tipoFilterContratacao === "escola" && !(planName.includes("escola") || planName.includes("creche") || planName.includes("daycare"))) return false;
+      if (tipoFilterContratacao === "taxipet" && !(planName.includes("taxi") || planName.includes("táxi"))) return false;
+    }
+    if (statusFilterContratacao !== "all") {
+      const expired = isSubExpired(s.end_date) && s.status === "ativo";
+      if (statusFilterContratacao === "vencido") {
+        if (!(expired || s.status === "vencido")) return false;
+      } else if (statusFilterContratacao === "vencendo") {
+        if (s.status !== "ativo" || !s.end_date) return false;
+        const d = differenceInDays(parseLocalDate(s.end_date), startOfTodayLocal());
+        if (!(d >= 0 && d <= 7)) return false;
+      } else if (statusFilterContratacao === "ativo") {
+        if (s.status !== "ativo" || expired) return false;
+      } else if (s.status !== statusFilterContratacao) {
+        return false;
+      }
+    }
+    return true;
   });
 
   function statusBadge(status: string) {
@@ -344,14 +368,37 @@ export default function PlanosPacotesPage() {
         {/* CONTRATAÇÕES TAB */}
         <TabsContent value="contratações">
           <div className="flex items-center justify-between mt-4 mb-3 gap-2 flex-wrap">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar contratação..."
-                value={searchContratacao}
-                onChange={e => setSearchContratacao(e.target.value)}
-                className="pl-9 h-9"
-              />
+            <div className="flex items-center gap-2 flex-wrap flex-1">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar contratação..."
+                  value={searchContratacao}
+                  onChange={e => setSearchContratacao(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
+              <Select value={tipoFilterContratacao} onValueChange={(v: any) => setTipoFilterContratacao(v)}>
+                <SelectTrigger className="w-[200px] h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="banho">Pacote de Banho</SelectItem>
+                  <SelectItem value="escola">Plano de Escola</SelectItem>
+                  <SelectItem value="taxipet">Plano de TaxiPet</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilterContratacao} onValueChange={(v: any) => setStatusFilterContratacao(v)}>
+                <SelectTrigger className="w-[180px] h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="ativo">Ativos</SelectItem>
+                  <SelectItem value="vencendo">Vencendo em 7 dias</SelectItem>
+                  <SelectItem value="vencido">Vencidos</SelectItem>
+                  <SelectItem value="pausado">Pausados</SelectItem>
+                  <SelectItem value="cancelado">Cancelados</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground">{filteredSubscriptions.length} contratação(ões)</span>
             </div>
             <Button size="sm" className="gap-1" onClick={() => setContratacaoOpen(true)}>
               <Plus className="h-4 w-4" />Nova Contratação
