@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle, Search, ClipboardList, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MetricCard } from "@/components/MetricCard";
@@ -57,6 +58,8 @@ export default function PlanosPacotesPage() {
   const [cancelSub, setCancelSub] = useState<any>(null);
   const [discountValue, setDiscountValue] = useState("");
   const [searchContratacao, setSearchContratacao] = useState("");
+  const [tipoFilterContratacao, setTipoFilterContratacao] = useState<"all" | "banho" | "escola" | "taxipet">("all");
+  const [statusFilterContratacao, setStatusFilterContratacao] = useState<"all" | "ativo" | "vencendo" | "vencido" | "pausado" | "cancelado">("all");
 
   async function fetchAll() {
     setLoading(true);
@@ -200,12 +203,33 @@ export default function PlanosPacotesPage() {
   const totalUsage = usageLogs.length;
 
   const filteredSubscriptions = subscriptions.filter((s: any) => {
-    if (!searchContratacao) return true;
-    const q = searchContratacao.toLowerCase();
     const clienteNome = (s.cliente as any)?.nome?.toLowerCase() || "";
     const petNome = (s.pet as any)?.nome?.toLowerCase() || "";
-    const planName = plans.find((p: any) => p.id === s.plan_id)?.name?.toLowerCase() || packages.find((p: any) => p.id === s.package_id)?.name?.toLowerCase() || "";
-    return clienteNome.includes(q) || petNome.includes(q) || planName.includes(q);
+    const planName = (plans.find((p: any) => p.id === s.plan_id)?.name || packages.find((p: any) => p.id === s.package_id)?.name || "").toLowerCase();
+    if (searchContratacao) {
+      const q = searchContratacao.toLowerCase();
+      if (!clienteNome.includes(q) && !petNome.includes(q) && !planName.includes(q)) return false;
+    }
+    if (tipoFilterContratacao !== "all") {
+      if (tipoFilterContratacao === "banho" && !planName.includes("banho")) return false;
+      if (tipoFilterContratacao === "escola" && !(planName.includes("escola") || planName.includes("creche") || planName.includes("daycare"))) return false;
+      if (tipoFilterContratacao === "taxipet" && !(planName.includes("taxi") || planName.includes("táxi"))) return false;
+    }
+    if (statusFilterContratacao !== "all") {
+      const expired = isSubExpired(s.end_date) && s.status === "ativo";
+      if (statusFilterContratacao === "vencido") {
+        if (!(expired || s.status === "vencido")) return false;
+      } else if (statusFilterContratacao === "vencendo") {
+        if (s.status !== "ativo" || !s.end_date) return false;
+        const d = differenceInDays(parseLocalDate(s.end_date), startOfTodayLocal());
+        if (!(d >= 0 && d <= 7)) return false;
+      } else if (statusFilterContratacao === "ativo") {
+        if (s.status !== "ativo" || expired) return false;
+      } else if (s.status !== statusFilterContratacao) {
+        return false;
+      }
+    }
+    return true;
   });
 
   function statusBadge(status: string) {
