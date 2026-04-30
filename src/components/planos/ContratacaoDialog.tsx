@@ -158,7 +158,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const priceContracted = selectedPlan ? Number(selectedPlan.price) : 0;
   const showHorarios = selectedPlan ? isTaxiPetService(selectedPlan.name) : false;
   const showHorarioBanho = selectedPlan ? isBanhoService(selectedPlan.name) : false;
-  const showFrequency = planType === "package" && showHorarioBanho;
+  const showFrequency = planType === "package" && (showHorarioBanho || showHorarios);
   const isQuinzenal = showFrequency && frequency === "quinzenal";
   const contractDurationMonths = selectedPlan?.min_loyalty_months ? Number(selectedPlan.min_loyalty_months) : null;
 
@@ -418,12 +418,13 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
         const agendamentos: any[] = [];
         for (const date of datesToSchedule) {
           if (isBefore(date, today)) continue;
+          const horaBase = showHorarioBanho ? getHoraBanho(petId) : "07:00";
           const ag: any = {
             empresa_id: empresaId,
             cliente_id: clienteId,
             pet_id: petId,
             tipo_servico: tipoServico,
-            data_hora: format(date, "yyyy-MM-dd") + "T" + getHoraBanho(petId) + ":00-03:00",
+            data_hora: format(date, "yyyy-MM-dd") + "T" + horaBase + ":00-03:00",
             status: "agendado",
             subscription_id: subscriptionId,
             notas: "Gerado automaticamente pelo pacote (quinzenal)",
