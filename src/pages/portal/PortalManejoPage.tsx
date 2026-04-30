@@ -29,6 +29,7 @@ interface ManejoRecord {
 export default function PortalManejoPage() {
   const { cliente, loading: clienteLoading } = usePortalCliente();
   const [records, setRecords] = useState<ManejoRecord[]>([]);
+  const [perguntasMap, setPerguntasMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,6 +52,16 @@ export default function PortalManejoPage() {
         .in("pet_id", petIds)
         .order("created_at", { ascending: false });
       setRecords((data as any) ?? []);
+
+      // Load configured-question labels (cfg_<id> -> pergunta)
+      const { data: cfg } = await supabase
+        .from("tipo_servico_perguntas_manejo" as any)
+        .select("id, pergunta");
+      const map: Record<string, string> = {};
+      ((cfg as any[]) ?? []).forEach((p: any) => {
+        map[`cfg_${p.id}`] = p.pergunta;
+      });
+      setPerguntasMap(map);
       setLoading(false);
     };
     fetch();
@@ -109,7 +120,7 @@ export default function PortalManejoPage() {
                     return (
                       <div key={key} className="py-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">{defaultLabels[key] || key}</span>
+                          <span className="text-sm text-muted-foreground">{defaultLabels[key] || perguntasMap[key] || key}</span>
                           <span className="text-sm font-medium text-foreground capitalize">{String(value) || "—"}</span>
                         </div>
                         {fotoUrl && (
