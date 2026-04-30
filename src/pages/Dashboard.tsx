@@ -675,6 +675,8 @@ export default function Dashboard() {
               onManejo={setManejoOpen}
               onChecklist={setChecklistOpen}
               onCheckout={handleCheckout}
+              onFichaCliente={(c) => setFichaClienteOpen(c)}
+              onFichaPet={(p) => setFichaPetOpen(p)}
               selectedIds={selectedNaEmpresa}
               onToggleSelect={(id) => {
                 setSelectedNaEmpresa(prev => {
