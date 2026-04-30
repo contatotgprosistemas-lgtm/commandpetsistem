@@ -746,14 +746,41 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
           )}
 
           {showHorarios && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3 rounded-md border border-border p-3">
               <div className="space-y-1.5">
-                <Label>Hora prevista buscar</Label>
-                <Input type="time" value={horaBuscar} onChange={e => setHoraBuscar(e.target.value)} />
+                <Label>Tipo de transporte</Label>
+                <RadioGroup
+                  value={transportMode}
+                  onValueChange={(v: any) => setTransportMode(v)}
+                  className="flex flex-wrap gap-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="ambos" id="tm-ambos" />
+                    <Label htmlFor="tm-ambos" className="cursor-pointer font-normal">Buscar e levar</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="buscar" id="tm-buscar" />
+                    <Label htmlFor="tm-buscar" className="cursor-pointer font-normal">Apenas buscar</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="levar" id="tm-levar" />
+                    <Label htmlFor="tm-levar" className="cursor-pointer font-normal">Apenas levar</Label>
+                  </div>
+                </RadioGroup>
               </div>
-              <div className="space-y-1.5">
-                <Label>Hora prevista levar</Label>
-                <Input type="time" value={horaLevar} onChange={e => setHoraLevar(e.target.value)} />
+              <div className="grid grid-cols-2 gap-4">
+                {(transportMode === "ambos" || transportMode === "buscar") && (
+                  <div className="space-y-1.5">
+                    <Label>Hora prevista buscar</Label>
+                    <Input type="time" value={horaBuscar} onChange={e => setHoraBuscar(e.target.value)} />
+                  </div>
+                )}
+                {(transportMode === "ambos" || transportMode === "levar") && (
+                  <div className="space-y-1.5">
+                    <Label>Hora prevista levar</Label>
+                    <Input type="time" value={horaLevar} onChange={e => setHoraLevar(e.target.value)} />
+                  </div>
+                )}
               </div>
             </div>
           )}
