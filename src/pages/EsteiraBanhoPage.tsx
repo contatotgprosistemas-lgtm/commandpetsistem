@@ -161,6 +161,29 @@ export default function EsteiraBanhoPage() {
         message: `O serviço de ${item.agendamento.tipo_servico} do(a) ${petName} foi finalizado! Tempo: ${formatDuration(duracao)}. Pode vir buscar!`,
         type: "servico",
       });
+
+      // Send WhatsApp notification to tutor (uses configurable template)
+      try {
+        const cli = item.agendamento.cliente as any;
+        await supabase.functions.invoke("notificar-esteira-whatsapp", {
+          body: {
+            empresa_id: empresaId,
+            esteira_id: item.id,
+            agendamento_id: item.agendamento.id,
+            cliente: {
+              id: cli.id,
+              nome: cli.nome,
+              whatsapp: cli.whatsapp ?? null,
+              telefone: cli.telefone ?? null,
+            },
+            pet: { nome: petName },
+            servico: item.agendamento.tipo_servico,
+            duracao_segundos: duracao,
+          },
+        });
+      } catch (e) {
+        console.error("[esteira] erro ao notificar WhatsApp:", e);
+      }
     }
 
     toast.success(`Serviço finalizado! Duração: ${formatDuration(duracao)}`);
