@@ -401,6 +401,7 @@ Deno.serve(async (req) => {
         agendamentos_criados: agendamentosCriados,
         faturas_ajustadas: faturasAjustadas,
         quinzenais_processadas: quinzenaisProcessadas,
+        agendamentos_regulares: agendamentosRegulares,
         month: `${year}-${String(month + 1).padStart(2, "0")}`,
       }),
       {
