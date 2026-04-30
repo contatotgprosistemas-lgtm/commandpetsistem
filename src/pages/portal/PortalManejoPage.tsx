@@ -34,9 +34,21 @@ export default function PortalManejoPage() {
   useEffect(() => {
     if (!cliente) return;
     const fetch = async () => {
+      // Get pets owned by this client first
+      const { data: pets } = await supabase
+        .from("pets")
+        .select("id")
+        .eq("cliente_id", cliente.id);
+      const petIds = (pets ?? []).map((p: any) => p.id);
+      if (petIds.length === 0) {
+        setRecords([]);
+        setLoading(false);
+        return;
+      }
       const { data } = await supabase
         .from("manejo_registros")
         .select("id, pet_id, created_at, respostas, pet:pets(nome, raca, especie)")
+        .in("pet_id", petIds)
         .order("created_at", { ascending: false });
       setRecords((data as any) ?? []);
       setLoading(false);
