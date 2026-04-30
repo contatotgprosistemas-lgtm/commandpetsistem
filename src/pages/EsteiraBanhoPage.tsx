@@ -75,7 +75,7 @@ export default function EsteiraBanhoPage() {
 
     const { data } = await supabase
       .from("esteira_banho")
-      .select("id, agendamento_id, banhista_nome, status, inicio_at, fim_at, duracao_segundos, created_at, agendamento:agendamentos(id, tipo_servico, status, pet:pets(id, nome, raca, foto_url), cliente:clientes(id, nome))")
+      .select("id, agendamento_id, banhista_nome, status, inicio_at, fim_at, duracao_segundos, created_at, agendamento:agendamentos(id, tipo_servico, status, pet:pets(id, nome, raca, foto_url), cliente:clientes(id, nome, whatsapp, telefone))")
       .eq("empresa_id", empresaId)
       .gte("created_at", today.toISOString())
       .order("created_at", { ascending: true });
@@ -161,6 +161,29 @@ export default function EsteiraBanhoPage() {
         message: `O serviço de ${item.agendamento.tipo_servico} do(a) ${petName} foi finalizado! Tempo: ${formatDuration(duracao)}. Pode vir buscar!`,
         type: "servico",
       });
+
+      // Send WhatsApp notification to tutor (uses configurable template)
+      try {
+        const cli = item.agendamento.cliente as any;
+        await supabase.functions.invoke("notificar-esteira-whatsapp", {
+          body: {
+            empresa_id: empresaId,
+            esteira_id: item.id,
+            agendamento_id: item.agendamento.id,
+            cliente: {
+              id: cli.id,
+              nome: cli.nome,
+              whatsapp: cli.whatsapp ?? null,
+              telefone: cli.telefone ?? null,
+            },
+            pet: { nome: petName },
+            servico: item.agendamento.tipo_servico,
+            duracao_segundos: duracao,
+          },
+        });
+      } catch (e) {
+        console.error("[esteira] erro ao notificar WhatsApp:", e);
+      }
     }
 
     toast.success(`Serviço finalizado! Duração: ${formatDuration(duracao)}`);

@@ -11,7 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { BedDouble, Stethoscope, ClipboardCheck, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { BedDouble, Stethoscope, ClipboardCheck, Plus, Pencil, Trash2, Loader2, MessageSquare } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 
 /* ─────────── BAIAS ─────────── */
 function BaiasSection() {
@@ -390,10 +392,98 @@ export function SistemaTab() {
         <TabsTrigger value="baias" className="gap-1.5"><BedDouble className="h-3.5 w-3.5" /> Baias</TabsTrigger>
         <TabsTrigger value="manejo" className="gap-1.5"><Stethoscope className="h-3.5 w-3.5" /> Boletim Diário</TabsTrigger>
         <TabsTrigger value="checklist" className="gap-1.5"><ClipboardCheck className="h-3.5 w-3.5" /> Checklist</TabsTrigger>
+        <TabsTrigger value="notif-esteira" className="gap-1.5"><MessageSquare className="h-3.5 w-3.5" /> Notif. Esteira</TabsTrigger>
       </TabsList>
       <TabsContent value="baias" className="mt-4"><BaiasSection /></TabsContent>
       <TabsContent value="manejo" className="mt-4"><PerguntasManejoSection /></TabsContent>
       <TabsContent value="checklist" className="mt-4"><PerguntasChecklistSection /></TabsContent>
+      <TabsContent value="notif-esteira" className="mt-4"><NotifEsteiraSection /></TabsContent>
     </Tabs>
+  );
+}
+
+/* ─────────── NOTIFICAÇÃO WHATSAPP — ESTEIRA DE BANHO ─────────── */
+const DEFAULT_ESTEIRA_MSG = "🐾 Olá {primeiro_nome}! O *{servico}* do(a) *{pet}* foi finalizado! Pode vir buscar. 💙";
+
+function NotifEsteiraSection() {
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
+  const qc = useQueryClient();
+  const [enabled, setEnabled] = useState(true);
+  const [mensagem, setMensagem] = useState(DEFAULT_ESTEIRA_MSG);
+  const [loaded, setLoaded] = useState(false);
+
+  const { data: cfg } = useQuery({
+    queryKey: ["esteira_notification_config", empresaId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("esteira_notification_config" as any)
+        .select("*").eq("empresa_id", empresaId!).maybeSingle();
+      return data as any;
+    },
+    enabled: !!empresaId,
+  });
+
+  if (cfg && !loaded) {
+    setEnabled(cfg.enabled ?? true);
+    setMensagem(cfg.mensagem ?? DEFAULT_ESTEIRA_MSG);
+    setLoaded(true);
+  }
+
+  const saveMut = useMutation({
+    mutationFn: async () => {
+      const payload: any = { empresa_id: empresaId!, enabled, mensagem };
+      if (cfg?.id) {
+        const { error } = await supabase.from("esteira_notification_config" as any).update(payload).eq("id", cfg.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("esteira_notification_config" as any).insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["esteira_notification_config"] }); toast.success("Configuração salva!"); },
+    onError: (e: any) => toast.error("Erro: " + e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> Mensagem WhatsApp ao Finalizar Banho</CardTitle>
+        <CardDescription>Mensagem enviada automaticamente ao tutor quando o banho é finalizado pela Esteira.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between border border-border rounded-lg p-3 bg-card">
+          <div>
+            <p className="text-sm font-medium text-foreground">Enviar WhatsApp ao finalizar</p>
+            <p className="text-xs text-muted-foreground">Quando desativado, nenhuma mensagem é enviada.</p>
+          </div>
+          <Switch checked={enabled} onCheckedChange={setEnabled} />
+        </div>
+
+        <div className="space-y-1">
+          <Label>Template da mensagem</Label>
+          <Textarea
+            rows={5}
+            value={mensagem}
+            onChange={(e) => setMensagem(e.target.value)}
+            placeholder={DEFAULT_ESTEIRA_MSG}
+          />
+          <p className="text-xs text-muted-foreground">
+            Variáveis disponíveis:{" "}
+            <code className="text-foreground">{"{nome}"}</code>,{" "}
+            <code className="text-foreground">{"{primeiro_nome}"}</code>,{" "}
+            <code className="text-foreground">{"{pet}"}</code>,{" "}
+            <code className="text-foreground">{"{servico}"}</code>,{" "}
+            <code className="text-foreground">{"{duracao}"}</code>
+          </p>
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+            {saveMut.isPending ? "Salvando..." : "Salvar"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
