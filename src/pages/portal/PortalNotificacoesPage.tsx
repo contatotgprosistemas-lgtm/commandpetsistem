@@ -33,6 +33,7 @@ const typeRouteMap: Record<string, string> = {
   manejo: "/portal/pets",
   checklist: "/portal/checklist",
   mensagem: "/portal/mensagens",
+  plano: "/portal/historico",
 };
 
 function getRouteForType(type: string): string | null {

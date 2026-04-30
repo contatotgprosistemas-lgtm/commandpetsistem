@@ -118,10 +118,37 @@ Deno.serve(async (req) => {
           categoria: "Planos e Pacotes",
         });
 
+        // Notify tutor (success)
+        await supabase.from("customer_notifications").insert({
+          empresa_id: sub.empresa_id,
+          cliente_id: sub.cliente_id,
+          title: "Plano renovado com sucesso",
+          message: `Seu plano "${nome}" foi renovado automaticamente. Nova validade: ${newEndStr.split("-").reverse().join("/")}. Uma nova fatura foi gerada com vencimento em ${vencimento.split("-").reverse().join("/")}.`,
+          type: "plano_renovado",
+          is_read: false,
+        });
+
         renovadas.push({ id: sub.id, cliente: cliente?.nome, plano: nome, novo_fim: newEndStr });
       } catch (e) {
         console.error("Erro renovando", sub.id, e);
         erros.push({ id: sub.id, erro: String(e) });
+
+        // Notify tutor (failure)
+        try {
+          const plan = (plans ?? []).find((p: any) => p.id === sub.plan_id);
+          const pkg = (pkgs ?? []).find((p: any) => p.id === sub.package_id);
+          const nome = plan?.name || pkg?.name || "Plano/Pacote";
+          await supabase.from("customer_notifications").insert({
+            empresa_id: sub.empresa_id,
+            cliente_id: sub.cliente_id,
+            title: "Falha na renovação do plano",
+            message: `Não foi possível renovar automaticamente seu plano "${nome}". Por favor, entre em contato com a empresa para regularizar.`,
+            type: "plano_falha",
+            is_read: false,
+          });
+        } catch (notifErr) {
+          console.error("Erro ao notificar falha:", notifErr);
+        }
       }
     }
 
