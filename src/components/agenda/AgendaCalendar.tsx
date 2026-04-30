@@ -167,9 +167,21 @@ export function AgendaCalendar({ agendamentos, onEditAgendamento, serviceKeyword
   const agendamentosByDay = useMemo(() => {
     const map = new Map<string, Agendamento[]>();
     filteredAgendamentos.forEach(a => {
-      const key = format(new Date(a.data_hora), "yyyy-MM-dd");
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(a);
+      const start = new Date(a.data_hora);
+      // For hospedagem, span every day from entrada to saida (inclusive)
+      const isMultiDay = isHospedagem(a.tipo_servico) && a.data_saida_provavel;
+      const end = isMultiDay ? new Date(a.data_saida_provavel as string) : start;
+      let cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      // Safety guard: cap at 365 days to avoid runaway loops on bad data
+      let guard = 0;
+      while (cursor <= last && guard < 366) {
+        const key = format(cursor, "yyyy-MM-dd");
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(a);
+        cursor = addDays(cursor, 1);
+        guard++;
+      }
     });
     return map;
   }, [filteredAgendamentos]);
