@@ -50,6 +50,8 @@ export function ConsumoTab() {
   const [rows, setRows] = useState<ConsumoRow[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "ativo" | "vencendo" | "vencido" | "saldo_baixo">("all");
+  const [tipoFilter, setTipoFilter] = useState<"all" | "Plano" | "Pacote">("all");
+  const [nomeFilter, setNomeFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!empresaId) return;
@@ -113,6 +115,8 @@ export function ConsumoTab() {
         const q = search.toLowerCase();
         if (!r.cliente.toLowerCase().includes(q) && !r.pet.toLowerCase().includes(q) && !r.nome.toLowerCase().includes(q)) return false;
       }
+      if (tipoFilter !== "all" && r.tipo !== tipoFilter) return false;
+      if (nomeFilter !== "all" && r.nome !== nomeFilter) return false;
       if (statusFilter === "ativo") return r.status === "ativo";
       if (statusFilter === "vencendo") {
         if (!r.endDate) return false;
@@ -127,7 +131,15 @@ export function ConsumoTab() {
       }
       return true;
     });
-  }, [rows, search, statusFilter]);
+  }, [rows, search, statusFilter, tipoFilter, nomeFilter]);
+
+  const nomesDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach(r => {
+      if (tipoFilter === "all" || r.tipo === tipoFilter) set.add(r.nome);
+    });
+    return Array.from(set).filter(n => n && n !== "—").sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [rows, tipoFilter]);
 
   // KPIs
   const totalAtivos = rows.filter(r => r.status === "ativo").length;
@@ -163,6 +175,23 @@ export function ConsumoTab() {
             <SelectItem value="vencendo">Vencendo em 7 dias</SelectItem>
             <SelectItem value="vencido">Vencidos</SelectItem>
             <SelectItem value="saldo_baixo">Saldo baixo (≤20%)</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={tipoFilter} onValueChange={(v: any) => { setTipoFilter(v); setNomeFilter("all"); }}>
+          <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Planos e Pacotes</SelectItem>
+            <SelectItem value="Plano">Apenas Planos</SelectItem>
+            <SelectItem value="Pacote">Apenas Pacotes</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={nomeFilter} onValueChange={(v: any) => setNomeFilter(v)}>
+          <SelectTrigger className="w-[200px] h-9"><SelectValue placeholder="Nome" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os nomes</SelectItem>
+            {nomesDisponiveis.map(n => (
+              <SelectItem key={n} value={n}>{n}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <span className="text-xs text-muted-foreground ml-auto">{filtered.length} contratação(ões)</span>
