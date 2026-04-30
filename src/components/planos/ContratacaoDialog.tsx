@@ -59,30 +59,38 @@ function countWeekdaysInMonth(year: number, month: number, days: number[]): numb
   return countWeekdaysInRange(start, end, days);
 }
 
-/** Generate biweekly dates: every 14 days starting from startDate, within the month */
-function generateBiweeklyDates(startDate: Date, endOfMonth: Date, plannedDays: number[]): Date[] {
+/** ISO week number (1-53). Quinzenal cadence is based on parity of this value. */
+function getISOWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function getWeekParity(date: Date): "par" | "impar" {
+  return getISOWeek(date) % 2 === 0 ? "par" : "impar";
+}
+
+/**
+ * Generate biweekly dates within the month: every occurrence of plannedDays
+ * whose ISO-week parity matches `parity`, starting on or after startDate.
+ */
+function generateBiweeklyDatesByParity(
+  startDate: Date,
+  endOfMonth: Date,
+  plannedDays: number[],
+  parity: "par" | "impar"
+): Date[] {
   const dates: Date[] = [];
   if (plannedDays.length === 0) return dates;
-
-  // Find the first occurrence of the selected weekday on or after startDate
   let current = new Date(startDate);
   while (!isBefore(endOfMonth, current)) {
-    if (plannedDays.includes(getDay(current))) {
-      break;
+    if (plannedDays.includes(getDay(current)) && getWeekParity(current) === parity) {
+      dates.push(new Date(current));
     }
     current = addDays(current, 1);
   }
-
-  // Generate dates every 14 days
-  while (!isBefore(endOfMonth, current)) {
-    if (plannedDays.includes(getDay(current))) {
-      dates.push(new Date(current));
-      current = addDays(current, 14);
-    } else {
-      current = addDays(current, 1);
-    }
-  }
-
   return dates;
 }
 
@@ -118,7 +126,9 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setHoraBanhoPorPet(prev => ({ ...prev, _default: time }));
   };
   const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
-  const [extraSessionPolicy, setExtraSessionPolicy] = useState<"skip" | "charge">("skip");
+  const currentWeekNumber = getISOWeek(new Date());
+  const currentWeekParity: "par" | "impar" = currentWeekNumber % 2 === 0 ? "par" : "impar";
+  const [weekParity, setWeekParity] = useState<"par" | "impar">(currentWeekParity);
   const [banhistas, setBanhistas] = useState<any[]>([]);
   const [selectedBanhistaId, setSelectedBanhistaId] = useState("");
 
@@ -160,13 +170,11 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   // Biweekly dates calculation
   const biweeklyDates = useMemo(() => {
     if (!isQuinzenal) return [];
-    return generateBiweeklyDates(startDateObj, endOfMonth, plannedDays);
-  }, [isQuinzenal, startDate, plannedDays]);
+    return generateBiweeklyDatesByParity(startDateObj, endOfMonth, plannedDays, weekParity);
+  }, [isQuinzenal, startDate, plannedDays, weekParity]);
 
+  const biweeklyCount = isQuinzenal ? biweeklyDates.length : 0;
   const hasThreeOccurrences = isQuinzenal && biweeklyDates.length >= 3;
-  const biweeklyCount = isQuinzenal
-    ? (extraSessionPolicy === "skip" && hasThreeOccurrences ? 2 : biweeklyDates.length)
-    : 0;
 
   // Price per session for biweekly (base price = 2 sessions)
   const pricePerSession = roundUpMoney(priceContracted / 2);
@@ -177,13 +185,11 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   let proportionalInfo = "";
 
   if (isQuinzenal) {
-    if (hasThreeOccurrences && extraSessionPolicy === "charge") {
-      proportionalPrice = roundUpMoney(priceContracted + pricePerSession);
-      proportionalInfo = `3 ocorrências no mês: R$ ${priceContracted.toFixed(2)} + R$ ${pricePerSession.toFixed(2)} (sessão extra) = R$ ${proportionalPrice.toFixed(2)}`;
-    } else if (hasThreeOccurrences && extraSessionPolicy === "skip") {
-      proportionalInfo = `3ª ocorrência será pulada. Valor normal: R$ ${priceContracted.toFixed(2)} (2 banhos)`;
+    if (hasThreeOccurrences) {
+      proportionalPrice = roundUpMoney(priceContracted + pricePerSession * (biweeklyDates.length - 2));
+      proportionalInfo = `${biweeklyDates.length} ocorrências na semana ${weekParity === "par" ? "par" : "ímpar"}: R$ ${priceContracted.toFixed(2)} + R$ ${(pricePerSession * (biweeklyDates.length - 2)).toFixed(2)} extra = R$ ${proportionalPrice.toFixed(2)}`;
     } else {
-      proportionalInfo = `${biweeklyDates.length} banho(s) quinzenal(is) no período`;
+      proportionalInfo = `${biweeklyDates.length} banho(s) quinzenal(is) na semana ${weekParity === "par" ? "par" : "ímpar"}`;
     }
   } else if (!isFirstDay && plannedDays.length > 0) {
     const totalDaysInMonth = countWeekdaysInMonth(startDateObj.getFullYear(), startDateObj.getMonth(), plannedDays);
@@ -208,7 +214,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   // Reset frequency when plan type or selected plan changes
   useEffect(() => {
     setFrequency("semanal");
-    setExtraSessionPolicy("skip");
+    setWeekParity(currentWeekParity);
   }, [planType, selectedId]);
 
   // Check availability when planned days, date, or banho visibility changes
@@ -305,7 +311,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
         final_price: finalPrice, auto_renew: autoRenew,
         notes, status: "ativo", planned_days: plannedDays,
         frequency: isQuinzenal ? "quinzenal" : "semanal",
-        extra_session_policy: isQuinzenal && hasThreeOccurrences ? extraSessionPolicy : null,
+        extra_session_policy: null,
       };
       if (planType === "plan") payload.plan_id = selectedId;
       else payload.package_id = selectedId;
@@ -331,7 +337,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
 
       const descFreq = isQuinzenal ? " (quinzenal)" : "";
       const descProp = !isFirstDay && !isQuinzenal ? " (proporcional)" : "";
-      const descExtra = isQuinzenal && hasThreeOccurrences && extraSessionPolicy === "charge" ? " (+1 sessão extra)" : "";
+      const descExtra = isQuinzenal && hasThreeOccurrences ? ` (+${biweeklyDates.length - 2} sessão(ões) extra)` : "";
       const descricaoFatura = `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name} - ${petNome}${descFreq}${descProp}${descExtra}`;
 
       // Tenta agrupar com fatura pendente já existente do mesmo cliente/vencimento (Planos e Pacotes)
@@ -406,10 +412,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
         const today = startOfDay(new Date());
         const tipoServico = selectedPlan?.name || "Pacote";
 
-        // Use biweekly dates, applying the skip policy
-        const datesToSchedule = hasThreeOccurrences && extraSessionPolicy === "skip"
-          ? biweeklyDates.slice(0, 2)
-          : biweeklyDates;
+        // All dates that match the selected week parity
+        const datesToSchedule = biweeklyDates;
 
         const agendamentos: any[] = [];
         for (const date of datesToSchedule) {
@@ -496,7 +500,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setHoraLevar("17:00");
     setHoraBanhoPorPet({});
     setFrequency("semanal");
-    setExtraSessionPolicy("skip");
+    setWeekParity(currentWeekParity);
     setSelectedBanhistaId("");
     setSaving(false); onSuccess(); onOpenChange(false);
   }
@@ -596,6 +600,42 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             </div>
           )}
 
+          {/* Week parity selector for quinzenal */}
+          {isQuinzenal && (
+            <div className="space-y-1.5">
+              <Label>Semana do banho quinzenal</Label>
+              <p className="text-xs text-muted-foreground">
+                Estamos na semana <strong>{currentWeekNumber}</strong> do ano ({currentWeekParity === "par" ? "par" : "ímpar"}). Os banhos quinzenais ocorrerão sempre na semana escolhida.
+              </p>
+              <RadioGroup
+                value={weekParity}
+                onValueChange={v => setWeekParity(v as "par" | "impar")}
+                className="grid grid-cols-2 gap-2"
+              >
+                <Label
+                  htmlFor="parity-impar"
+                  className={cn(
+                    "flex items-center gap-2 rounded-md border-2 p-2 cursor-pointer text-xs font-medium transition-all",
+                    weekParity === "impar" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                  )}
+                >
+                  <RadioGroupItem value="impar" id="parity-impar" />
+                  Semana ímpar {currentWeekParity === "impar" && <span className="ml-auto text-[10px] opacity-70">(atual)</span>}
+                </Label>
+                <Label
+                  htmlFor="parity-par"
+                  className={cn(
+                    "flex items-center gap-2 rounded-md border-2 p-2 cursor-pointer text-xs font-medium transition-all",
+                    weekParity === "par" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                  )}
+                >
+                  <RadioGroupItem value="par" id="parity-par" />
+                  Semana par {currentWeekParity === "par" && <span className="ml-auto text-[10px] opacity-70">(atual)</span>}
+                </Label>
+              </RadioGroup>
+            </div>
+          )}
+
           <div className={planType === "plan" ? "grid grid-cols-2 gap-4" : ""}>
             {planType === "plan" && (
               <div className="space-y-1.5">
@@ -660,50 +700,24 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             <div className="rounded-md bg-muted p-3 space-y-2">
               <p className="text-xs font-medium text-foreground">Datas previstas:</p>
               <div className="flex flex-wrap gap-2">
-                {biweeklyDates.map((d, i) => {
-                  const willSkip = hasThreeOccurrences && extraSessionPolicy === "skip" && i === 2;
-                  return (
-                    <span
-                      key={i}
-                      className={cn(
-                        "text-xs px-2 py-1 rounded-md border",
-                        willSkip
-                          ? "bg-destructive/10 text-destructive border-destructive/30 line-through"
-                          : "bg-primary/10 text-primary border-primary/30"
-                      )}
-                    >
-                      {format(d, "dd/MM")}
-                      {willSkip && " (pulado)"}
-                    </span>
-                  );
-                })}
+                {biweeklyDates.map((d, i) => (
+                  <span
+                    key={i}
+                    className="text-xs px-2 py-1 rounded-md border bg-primary/10 text-primary border-primary/30"
+                  >
+                    {format(d, "dd/MM")} <span className="opacity-60">(sem. {getISOWeek(d)})</span>
+                  </span>
+                ))}
               </div>
             </div>
           )}
 
-          {/* 3 occurrences decision */}
           {hasThreeOccurrences && (
-            <div className="rounded-md border border-accent bg-accent/50 p-3 space-y-3">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
-                <p className="text-xs font-medium text-foreground">
-                  Este mês possui 3 ocorrências no intervalo quinzenal. Como deseja proceder?
-                </p>
-              </div>
-              <RadioGroup value={extraSessionPolicy} onValueChange={v => setExtraSessionPolicy(v as any)}>
-                <div className="flex items-start gap-2">
-                  <RadioGroupItem value="skip" id="skip" />
-                  <Label htmlFor="skip" className="text-xs font-normal leading-tight cursor-pointer">
-                    Pular a 3ª semana (2 banhos — R$ {priceContracted.toFixed(2)})
-                  </Label>
-                </div>
-                <div className="flex items-start gap-2">
-                  <RadioGroupItem value="charge" id="charge" />
-                  <Label htmlFor="charge" className="text-xs font-normal leading-tight cursor-pointer">
-                    Realizar 3 banhos (+R$ {pricePerSession.toFixed(2)} = R$ {(priceContracted + pricePerSession).toFixed(2)})
-                  </Label>
-                </div>
-              </RadioGroup>
+            <div className="rounded-md border border-accent bg-accent/50 p-3 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-foreground">
+                Este mês possui {biweeklyDates.length} ocorrências na semana {weekParity === "par" ? "par" : "ímpar"} — será cobrada {biweeklyDates.length - 2} sessão(ões) extra de R$ {pricePerSession.toFixed(2)}.
+              </p>
             </div>
           )}
 
