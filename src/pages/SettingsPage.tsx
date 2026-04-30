@@ -906,7 +906,110 @@ function IntegracoesTab() {
   return (
     <div className="space-y-6">
       <AsaasIntegrationPanel />
+      <EvolutionApiPanel />
     </div>
+  );
+}
+
+// ─── Evolution API (WhatsApp) ────────────────────────────────────────
+function EvolutionApiPanel() {
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [instanceName, setInstanceName] = useState("");
+  const [numero, setNumero] = useState("");
+  const [status, setStatus] = useState<string>("desconectado");
+  const [recordId, setRecordId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!empresaId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("conexoes_whatsapp")
+        .select("id, instance_name, numero, status")
+        .eq("empresa_id", empresaId)
+        .maybeSingle();
+      if (data) {
+        setRecordId((data as any).id);
+        setInstanceName((data as any).instance_name || "");
+        setNumero((data as any).numero || "");
+        setStatus((data as any).status || "desconectado");
+      }
+      setLoading(false);
+    })();
+  }, [empresaId]);
+
+  async function salvar() {
+    if (!empresaId) return;
+    setSaving(true);
+    const payload: any = {
+      empresa_id: empresaId,
+      instance_name: instanceName.trim() || null,
+      numero: numero.trim() || null,
+    };
+    let error;
+    if (recordId) {
+      ({ error } = await supabase.from("conexoes_whatsapp").update(payload).eq("id", recordId));
+    } else {
+      const inserted = await supabase.from("conexoes_whatsapp").insert(payload).select("id").single();
+      error = inserted.error;
+      if (inserted.data) setRecordId(inserted.data.id);
+    }
+    setSaving(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Integração salva!" });
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Evolution API (WhatsApp)</CardTitle>
+        <CardDescription>
+          Cadastre a instância da Evolution API para o sistema enviar mensagens automáticas (notificações da Esteira de Banho, faturas, etc.) sem depender do CRM.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {loading ? (
+          <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label>Nome da Instância *</Label>
+                <Input value={instanceName} onChange={(e) => setInstanceName(e.target.value)} placeholder="Ex: petshop-principal" />
+                <p className="text-xs text-muted-foreground">Mesmo nome cadastrado no servidor Evolution.</p>
+              </div>
+              <div className="space-y-1">
+                <Label>Número conectado</Label>
+                <Input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Ex: 5511999999999" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-card">
+              <div>
+                <p className="text-sm font-medium text-foreground">Status</p>
+                <p className="text-xs text-muted-foreground">
+                  Servidor e API Key configurados como segredos do sistema (EVOLUTION_API_URL, EVOLUTION_API_KEY).
+                </p>
+              </div>
+              <Badge variant={status === "conectado" ? "default" : "secondary"}>
+                {status === "conectado" ? "Conectado" : "Desconectado"}
+              </Badge>
+            </div>
+
+            <div className="flex justify-end">
+              <Button onClick={salvar} disabled={saving || !instanceName.trim()}>
+                {saving ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
