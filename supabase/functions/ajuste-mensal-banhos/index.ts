@@ -26,9 +26,19 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // Allow manual override: { month_offset: 1 } to process next month
+    let monthOffset = 0;
+    try {
+      if (req.method === "POST") {
+        const body = await req.json().catch(() => ({}));
+        if (typeof body?.month_offset === "number") monthOffset = body.month_offset;
+      }
+    } catch { /* noop */ }
+
     const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth(); // 0-indexed
+    const targetDate = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+    const year = targetDate.getFullYear();
+    const month = targetDate.getMonth(); // 0-indexed
     const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
 
     function countWeekdayInMonth(weekday: number, y: number, m: number): number {
@@ -60,7 +70,7 @@ Deno.serve(async (req) => {
         "id, empresa_id, cliente_id, pet_id, plan_id, package_id, price_contracted, discount_amount, final_price, planned_days, start_date, end_date, frequency, extra_session_policy"
       )
       .eq("status", "ativo")
-      .in("frequency", ["semanal", "quinzenal"])
+      .in("frequency", ["semanal", "quinzenal", "mensal"])
       .not("planned_days", "is", null);
 
     if (subErr) {
@@ -90,12 +100,126 @@ Deno.serve(async (req) => {
     let agendamentosCriados = 0;
     let faturasAjustadas = 0;
     let quinzenaisProcessadas = 0;
+    let agendamentosRegulares = 0;
+
+    // ===== STEP 0: Generate REGULAR appointments for the current month =====
+    // Many subscriptions only had appointments scheduled for the contract month;
+    // this loop ensures every active subscription has its regular sessions for
+    // the current month (idempotent - skips dates where an agendamento already exists).
+    function fmtDate(d: Date): string {
+      const y = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${y}-${mm}-${dd}`;
+    }
+
+    const monthStartDate = new Date(year, month, 1);
+    const monthEndDate = new Date(year, month + 1, 0);
+    const todayStart = new Date(year, today.getMonth(), today.getDate());
+
+    for (const sub of subscriptions || []) {
+      const plannedDays: number[] = sub.planned_days || [];
+      if (plannedDays.length === 0) continue;
+
+      // Skip if subscription is not active during current month
+      const subStart = new Date(sub.start_date + "T00:00:00");
+      const subEnd = sub.end_date ? new Date(sub.end_date + "T00:00:00") : null;
+      if (subEnd && subEnd < monthStartDate) continue;
+      if (subStart > monthEndDate) continue;
+
+      // Compute candidate dates for the current month
+      const candidates: Date[] = [];
+      if (sub.frequency === "mensal" && plannedDays.length === 1) {
+        const cursor = new Date(monthStartDate);
+        while (cursor <= monthEndDate) {
+          if (cursor.getDay() === plannedDays[0]) {
+            candidates.push(new Date(cursor));
+            break;
+          }
+          cursor.setDate(cursor.getDate() + 1);
+        }
+      } else if (sub.frequency === "quinzenal" && plannedDays.length === 1) {
+        // Walk in 14-day cadence from start_date, keeping dates within current month
+        const cursor = new Date(subStart);
+        while (cursor.getDay() !== plannedDays[0]) {
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        while (cursor <= monthEndDate) {
+          if (cursor >= monthStartDate) {
+            candidates.push(new Date(cursor));
+          }
+          cursor.setDate(cursor.getDate() + 14);
+        }
+      } else {
+        // Semanal: every matching weekday in month
+        const cursor = new Date(monthStartDate);
+        while (cursor <= monthEndDate) {
+          if (plannedDays.includes(cursor.getDay())) {
+            candidates.push(new Date(cursor));
+          }
+          cursor.setDate(cursor.getDate() + 1);
+        }
+      }
+
+      if (candidates.length === 0) continue;
+
+      // Fetch existing appointments for this subscription in the month
+      const { data: existing } = await supabase
+        .from("agendamentos")
+        .select("data_hora")
+        .eq("subscription_id", sub.id)
+        .gte("data_hora", monthStart + "T00:00:00")
+        .lte("data_hora", fmtDate(monthEndDate) + "T23:59:59");
+
+      const existingDates = new Set(
+        (existing || []).map((a: any) => (a.data_hora as string).split("T")[0])
+      );
+
+      const planName = sub.plan_id
+        ? plansMap[sub.plan_id] || "Plano"
+        : packagesMap[sub.package_id] || "Pacote";
+
+      const toInsert: any[] = [];
+      for (const date of candidates) {
+        // Skip past dates and dates already scheduled
+        if (date < todayStart) continue;
+        const ds = fmtDate(date);
+        if (existingDates.has(ds)) continue;
+        // Skip if outside subscription validity
+        if (subEnd && date > subEnd) continue;
+        if (date < subStart) continue;
+
+        toInsert.push({
+          empresa_id: sub.empresa_id,
+          cliente_id: sub.cliente_id,
+          pet_id: sub.pet_id,
+          tipo_servico: planName,
+          data_hora: `${ds}T07:00:00-03:00`,
+          status: "agendado",
+          subscription_id: sub.id,
+          notas: `Gerado automaticamente pelo plano (${sub.frequency})`,
+        });
+      }
+
+      if (toInsert.length > 0) {
+        for (let i = 0; i < toInsert.length; i += 50) {
+          const { error: insErr } = await supabase
+            .from("agendamentos")
+            .insert(toInsert.slice(i, i + 50) as any);
+          if (insErr) console.error("Erro inserindo agendamentos regulares:", insErr);
+        }
+        agendamentosRegulares += toInsert.length;
+      }
+    }
+    console.log(`Agendamentos regulares gerados: ${agendamentosRegulares}`);
 
     for (const sub of subscriptions || []) {
       const plannedDays: number[] = sub.planned_days || [];
       if (plannedDays.length === 0) continue;
 
       const isQuinzenal = sub.frequency === "quinzenal";
+      // Skip "mensal" subscriptions for the extra-session adjustment logic
+      if (sub.frequency === "mensal") continue;
       const baseSessionCount = isQuinzenal ? 2 : 4;
       const noteTag = isQuinzenal ? "3ª sessão quinzenal extra" : "5º banho extra";
       const policy = (sub.extra_session_policy || "skip").toLowerCase();
@@ -287,6 +411,7 @@ Deno.serve(async (req) => {
         agendamentos_criados: agendamentosCriados,
         faturas_ajustadas: faturasAjustadas,
         quinzenais_processadas: quinzenaisProcessadas,
+        agendamentos_regulares: agendamentosRegulares,
         month: `${year}-${String(month + 1).padStart(2, "0")}`,
       }),
       {
