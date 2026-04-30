@@ -6172,6 +6172,20 @@ export type Database = {
       get_operational_empresa_id: { Args: never; Returns: string }
       get_operational_user_id: { Args: never; Returns: string }
       get_own_cargo: { Args: never; Returns: string }
+      get_perguntas_checklist_for_cliente: {
+        Args: never
+        Returns: {
+          id: string
+          pergunta: string
+        }[]
+      }
+      get_perguntas_manejo_for_cliente: {
+        Args: never
+        Returns: {
+          id: string
+          pergunta: string
+        }[]
+      }
       get_user_cliente_id: { Args: never; Returns: string }
       get_user_empresa_id: { Args: never; Returns: string }
       get_user_setor_ids: { Args: never; Returns: string[] }
