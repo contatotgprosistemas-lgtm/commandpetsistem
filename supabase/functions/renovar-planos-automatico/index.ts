@@ -73,31 +73,12 @@ Deno.serve(async (req) => {
         const newStartStr = fmt(newStart);
         const newEndStr = fmt(newEnd);
 
-        // Look up cliente due-date day
+        // Look up cliente nome (apenas para notificação)
         const { data: cliente } = await supabase
           .from("clientes")
-          .select("dia_vencimento_fatura, nome")
+          .select("nome")
           .eq("id", sub.cliente_id)
           .maybeSingle();
-
-        // Compute invoice due date (similar logic to handleFaturar)
-        const hoje = new Date();
-        let vencimento = newStartStr;
-        const diaVenc = cliente?.dia_vencimento_fatura;
-        if (diaVenc && diaVenc >= 1 && diaVenc <= 31) {
-          const ano = hoje.getFullYear();
-          const mes = hoje.getMonth();
-          const ultimoDiaMesAtual = new Date(ano, mes + 1, 0).getDate();
-          const diaEsteMes = Math.min(diaVenc, ultimoDiaMesAtual);
-          const dataEsteMes = new Date(ano, mes, diaEsteMes);
-          if (dataEsteMes >= new Date(ano, mes, hoje.getDate())) {
-            vencimento = fmt(dataEsteMes);
-          } else {
-            const ultimoDiaProxMes = new Date(ano, mes + 2, 0).getDate();
-            const diaProxMes = Math.min(diaVenc, ultimoDiaProxMes);
-            vencimento = fmt(new Date(ano, mes + 1, diaProxMes));
-          }
-        }
 
         // Update subscription
         const { error: updErr } = await supabase
@@ -119,16 +100,9 @@ Deno.serve(async (req) => {
           description: "Renovação automática",
         });
 
-        // Generate invoice
-        await supabase.from("contas_receber").insert({
-          empresa_id: sub.empresa_id,
-          cliente_id: sub.cliente_id,
-          descricao: `Renovação automática: ${nome}`,
-          valor: sub.final_price,
-          vencimento,
-          status: "pendente",
-          categoria: "Planos e Pacotes",
-        });
+        // Faturas são geradas separadamente pela função `gerar-faturas`
+        // (todo dia 1 às 13h BRT) — unificadas por cliente e com vencimento
+        // conforme cadastro do cliente.
 
         // ========== Generate agendamentos for the new period ==========
         try {
