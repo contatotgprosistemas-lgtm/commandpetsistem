@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ skipped: "disabled" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { primary: numero, variants: numeroVariants } = normalizeWhatsappNumber(cliente.whatsapp ?? cliente.telefone ?? "");
+    const { primary: numero } = normalizeWhatsappNumber(cliente.whatsapp ?? cliente.telefone ?? "");
     if (!numero) {
       await supabase.from("esteira_notification_log").insert({
         empresa_id, cliente_id: cliente.id, esteira_id: esteira_id ?? null, agendamento_id: agendamento_id ?? null,
