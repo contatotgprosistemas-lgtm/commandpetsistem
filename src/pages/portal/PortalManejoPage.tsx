@@ -53,10 +53,9 @@ export default function PortalManejoPage() {
         .order("created_at", { ascending: false });
       setRecords((data as any) ?? []);
 
-      // Load configured-question labels (cfg_<id> -> pergunta)
-      const { data: cfg } = await supabase
-        .from("tipo_servico_perguntas_manejo" as any)
-        .select("id, pergunta");
+      // Load configured-question labels (cfg_<id> -> pergunta) via RPC
+      // (RPC bypasses RLS that blocks cliente users from reading the table directly)
+      const { data: cfg } = await supabase.rpc("get_perguntas_manejo_for_cliente" as any);
       const map: Record<string, string> = {};
       ((cfg as any[]) ?? []).forEach((p: any) => {
         map[`cfg_${p.id}`] = p.pergunta;
