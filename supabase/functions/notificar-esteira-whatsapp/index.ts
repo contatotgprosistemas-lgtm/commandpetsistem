@@ -91,14 +91,20 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ skipped: "no_whatsapp" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: canais } = await supabase
-      .from("crm_canais")
-      .select("id, identificador, status")
-      .eq("empresa_id", empresa_id).eq("tipo", "whatsapp").eq("ativo", true)
-      .order("updated_at", { ascending: false });
-    const canal = (canais ?? []).find((c: any) => c.status === "conectado") ?? (canais ?? [])[0];
-    if (!canal?.identificador) {
-      return new Response(JSON.stringify({ skipped: "no_channel" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Read the Evolution instance directly from conexoes_whatsapp (Integrações),
+    // independent of the CRM module.
+    const { data: conexao } = await supabase
+      .from("conexoes_whatsapp")
+      .select("instance_name, status")
+      .eq("empresa_id", empresa_id)
+      .maybeSingle();
+    const instanceName = (conexao as any)?.instance_name;
+    if (!instanceName) {
+      await supabase.from("esteira_notification_log").insert({
+        empresa_id, cliente_id: cliente.id, esteira_id: esteira_id ?? null, agendamento_id: agendamento_id ?? null,
+        status: "falha", erro: "Instância Evolution não configurada em Configurações → Integrações",
+      });
+      return new Response(JSON.stringify({ skipped: "no_instance" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     if (!EVOLUTION_URL || !EVOLUTION_KEY) {
       return new Response(JSON.stringify({ skipped: "no_evolution_config" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -112,7 +118,7 @@ Deno.serve(async (req) => {
       .replace(/\{servico\}/g, servico ?? "serviço")
       .replace(/\{duracao\}/g, formatDuracao(duracao_segundos ?? 0));
 
-    const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
+    const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${instanceName}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
       body: JSON.stringify({ number: numero, text: conteudo }),
@@ -125,47 +131,9 @@ Deno.serve(async (req) => {
       });
       return new Response(JSON.stringify({ error: "evolution_failed" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const evoData = await evoRes.json().catch(() => ({}));
-    const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
-    const now = new Date().toISOString();
-
-    let { data: contato } = await supabase
-      .from("crm_contatos").select("id")
-      .eq("empresa_id", empresa_id)
-      .or(numeroVariants.map((value) => `whatsapp.eq.${value},telefone.eq.${value}`).join(","))
-      .limit(1).maybeSingle();
-    if (!contato) {
-      const { data: novo } = await supabase
-        .from("crm_contatos")
-        .insert({ empresa_id, nome: cliente.nome, whatsapp: numero, telefone: numero, origem: "esteira" })
-        .select("id").single();
-      contato = novo;
-    }
-
-    let { data: conversa } = await supabase
-      .from("crm_conversas").select("id")
-      .eq("empresa_id", empresa_id).eq("contato_id", contato!.id).eq("canal_id", canal.id)
-      .order("updated_at", { ascending: false }).limit(1).maybeSingle();
-    if (!conversa) {
-      const { data: nova } = await supabase
-        .from("crm_conversas")
-        .insert({ empresa_id, contato_id: contato!.id, canal_id: canal.id, status: "aberta", ultima_mensagem: conteudo, ultima_mensagem_em: now })
-        .select("id").single();
-      conversa = nova;
-    }
-
-    await supabase.from("crm_mensagens").insert({
-      empresa_id, conversa_id: conversa!.id, tipo: "texto", direcao: "saida",
-      conteudo, status: "enviado", remetente_nome: "🐾 Esteira de Banho",
-      identificador_externo: externalId, enviada_em: now,
-    });
-    await supabase.from("crm_conversas").update({
-      ultima_mensagem: conteudo, ultima_mensagem_em: now,
-    }).eq("id", conversa!.id);
-
     await supabase.from("esteira_notification_log").insert({
       empresa_id, cliente_id: cliente.id, esteira_id: esteira_id ?? null, agendamento_id: agendamento_id ?? null,
-      conversa_id: conversa!.id, status: "enviado",
+      status: "enviado",
     });
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
