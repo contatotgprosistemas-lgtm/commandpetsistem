@@ -125,7 +125,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const setHoraBanhoDefault = (time: string) => {
     setHoraBanhoPorPet(prev => ({ ...prev, _default: time }));
   };
-  const [frequency, setFrequency] = useState<"semanal" | "quinzenal">("semanal");
+  const [frequency, setFrequency] = useState<"semanal" | "quinzenal" | "mensal">("semanal");
   const currentWeekNumber = getISOWeek(new Date());
   const currentWeekParity: "par" | "impar" = currentWeekNumber % 2 === 0 ? "par" : "impar";
   const [weekParity, setWeekParity] = useState<"par" | "impar">(currentWeekParity);
@@ -160,6 +160,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const showHorarioBanho = selectedPlan ? isBanhoService(selectedPlan.name) : false;
   const showFrequency = showHorarioBanho || showHorarios;
   const isQuinzenal = showFrequency && frequency === "quinzenal";
+  const isMensal = showFrequency && planType === "package" && frequency === "mensal";
   const contractDurationMonths = selectedPlan?.min_loyalty_months ? Number(selectedPlan.min_loyalty_months) : null;
 
   // Calculate end date as last day of the month of startDate
@@ -176,6 +177,17 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const biweeklyCount = isQuinzenal ? biweeklyDates.length : 0;
   const hasThreeOccurrences = isQuinzenal && biweeklyDates.length >= 3;
 
+  // Monthly date calculation: first occurrence of selected weekday on/after startDate within month
+  const monthlyDate = useMemo(() => {
+    if (!isMensal || plannedDays.length !== 1) return null as Date | null;
+    let current = new Date(startDateObj);
+    while (!isBefore(endOfMonth, current)) {
+      if (getDay(current) === plannedDays[0]) return new Date(current);
+      current = addDays(current, 1);
+    }
+    return null;
+  }, [isMensal, plannedDays, startDate]);
+
   // Price per session for biweekly (base price = 2 sessions)
   const pricePerSession = roundUpMoney(priceContracted / 2);
 
@@ -191,6 +203,10 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     } else {
       proportionalInfo = `${biweeklyDates.length} banho(s) quinzenal(is) na semana ${weekParity === "par" ? "par" : "ímpar"}`;
     }
+  } else if (isMensal) {
+    proportionalInfo = monthlyDate
+      ? `1 banho mensal previsto em ${format(monthlyDate, "dd/MM")}`
+      : "Selecione um dia da semana para o banho mensal";
   } else if (!isFirstDay && plannedDays.length > 0) {
     const totalDaysInMonth = countWeekdaysInMonth(startDateObj.getFullYear(), startDateObj.getMonth(), plannedDays);
     const remainingDays = countWeekdaysInRange(startDateObj, endOfMonth, plannedDays);
@@ -203,7 +219,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const finalPrice = roundUpMoney(Math.max(0, proportionalPrice - Number(discount || 0)));
 
   function toggleDay(day: number) {
-    if (isQuinzenal) {
+    if (isQuinzenal || isMensal) {
       // For biweekly, only allow one day
       setPlannedDays(prev => prev.includes(day) ? [] : [day]);
     } else {
@@ -282,6 +298,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     if (!clienteId || !selectedId) { toast.error("Selecione cliente e plano/pacote"); return; }
     if (selectedPetIds.length === 0) { toast.error("Selecione ao menos um pet"); return; }
     if (isQuinzenal && plannedDays.length !== 1) { toast.error("Selecione exatamente 1 dia da semana para quinzenal"); return; }
+    if (isMensal && plannedDays.length !== 1) { toast.error("Selecione exatamente 1 dia da semana para mensal"); return; }
     if (showHorarioBanho) {
       const hasAnyConflict = Object.values(banhoConflictsPerPet).some(c => c.length > 0);
       if (hasAnyConflict) {
@@ -310,7 +327,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
         price_contracted: priceContracted, discount_amount: Number(discount || 0),
         final_price: finalPrice, auto_renew: autoRenew,
         notes, status: "ativo", planned_days: plannedDays,
-        frequency: isQuinzenal ? "quinzenal" : "semanal",
+        frequency: isQuinzenal ? "quinzenal" : isMensal ? "mensal" : "semanal",
         extra_session_policy: null,
         week_parity: isQuinzenal ? weekParity : null,
       };
@@ -336,8 +353,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       const vencimentoDate = new Date(vencYear, vencMonth, diaVenc);
       const vencimentoStr = format(vencimentoDate, "yyyy-MM-dd");
 
-      const descFreq = isQuinzenal ? " (quinzenal)" : "";
-      const descProp = !isFirstDay && !isQuinzenal ? " (proporcional)" : "";
+      const descFreq = isQuinzenal ? " (quinzenal)" : isMensal ? " (mensal)" : "";
+      const descProp = !isFirstDay && !isQuinzenal && !isMensal ? " (proporcional)" : "";
       const descExtra = isQuinzenal && hasThreeOccurrences ? ` (+${biweeklyDates.length - 2} sessão(ões) extra)` : "";
       const descricaoFatura = `${planType === "plan" ? "Plano" : "Pacote"}: ${selectedPlan?.name} - ${petNome}${descFreq}${descProp}${descExtra}`;
 
@@ -409,7 +426,34 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       } catch { /* noop */ }
 
       // Generate agendamentos
-      if (isQuinzenal && plannedDays.length === 1) {
+      if (isMensal && plannedDays.length === 1 && monthlyDate) {
+        const today = startOfDay(new Date());
+        const tipoServico = selectedPlan?.name || "Pacote";
+        const agendamentos: any[] = [];
+        if (!isBefore(monthlyDate, today)) {
+          const horaBase = showHorarioBanho ? getHoraBanho(petId) : "07:00";
+          const ag: any = {
+            empresa_id: empresaId,
+            cliente_id: clienteId,
+            pet_id: petId,
+            tipo_servico: tipoServico,
+            data_hora: format(monthlyDate, "yyyy-MM-dd") + "T" + horaBase + ":00-03:00",
+            status: "agendado",
+            subscription_id: subscriptionId,
+            notas: "Gerado automaticamente pelo pacote (mensal)",
+            ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
+          };
+          if (showHorarios) {
+            if (transportMode === "ambos" || transportMode === "buscar") ag.hora_prevista_buscar = horaBuscar;
+            if (transportMode === "ambos" || transportMode === "levar") ag.hora_prevista_levar = horaLevar;
+          }
+          agendamentos.push(ag);
+        }
+        if (agendamentos.length > 0) {
+          await supabase.from("agendamentos").insert(agendamentos as any);
+        }
+        totalAgendamentos += agendamentos.length;
+      } else if (isQuinzenal && plannedDays.length === 1) {
         const today = startOfDay(new Date());
         const tipoServico = selectedPlan?.name || "Pacote";
 
@@ -597,6 +641,9 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
                 <SelectContent>
                   <SelectItem value="semanal">Semanal</SelectItem>
                   <SelectItem value="quinzenal">Quinzenal (a cada 14 dias)</SelectItem>
+                  {planType === "package" && (
+                    <SelectItem value="mensal">Mensal (1x no mês)</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -661,9 +708,12 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
           )}
 
           <div className="space-y-2">
-            <Label>{isQuinzenal ? "Dia da semana (quinzenal)" : "Dias de uso na semana"}</Label>
+            <Label>{isQuinzenal ? "Dia da semana (quinzenal)" : isMensal ? "Dia da semana (mensal)" : "Dias de uso na semana"}</Label>
             {isQuinzenal && (
               <p className="text-xs text-muted-foreground">Selecione apenas 1 dia — o banho será a cada 14 dias neste dia da semana</p>
+            )}
+            {isMensal && (
+              <p className="text-xs text-muted-foreground">Selecione apenas 1 dia — o banho será 1 vez no mês neste dia da semana</p>
             )}
             <div className="flex flex-wrap gap-2">
               {DIAS_SEMANA.map(dia => {
@@ -693,9 +743,21 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
             <p className="text-xs text-muted-foreground">
               {isQuinzenal
                 ? `${plannedDays.length} dia selecionado — ${biweeklyDates.length} ocorrência(s) no mês`
+                : isMensal
+                ? `${plannedDays.length} dia selecionado — ${monthlyDate ? "1 ocorrência" : "nenhuma ocorrência"} no mês`
                 : `${plannedDays.length} dia(s) — reservas serão criadas automaticamente`}
             </p>
           </div>
+
+          {/* Monthly preview */}
+          {isMensal && monthlyDate && (
+            <div className="rounded-md bg-muted p-3 space-y-2">
+              <p className="text-xs font-medium text-foreground">Data prevista:</p>
+              <span className="text-xs px-2 py-1 rounded-md border bg-primary/10 text-primary border-primary/30 inline-block">
+                {format(monthlyDate, "dd/MM/yyyy")}
+              </span>
+            </div>
+          )}
 
           {/* Biweekly preview of dates */}
           {isQuinzenal && biweeklyDates.length > 0 && (
