@@ -368,14 +368,37 @@ export default function PlanosPacotesPage() {
         {/* CONTRATAÇÕES TAB */}
         <TabsContent value="contratações">
           <div className="flex items-center justify-between mt-4 mb-3 gap-2 flex-wrap">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar contratação..."
-                value={searchContratacao}
-                onChange={e => setSearchContratacao(e.target.value)}
-                className="pl-9 h-9"
-              />
+            <div className="flex items-center gap-2 flex-wrap flex-1">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar contratação..."
+                  value={searchContratacao}
+                  onChange={e => setSearchContratacao(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
+              <Select value={tipoFilterContratacao} onValueChange={(v: any) => setTipoFilterContratacao(v)}>
+                <SelectTrigger className="w-[200px] h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="banho">Pacote de Banho</SelectItem>
+                  <SelectItem value="escola">Plano de Escola</SelectItem>
+                  <SelectItem value="taxipet">Plano de TaxiPet</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilterContratacao} onValueChange={(v: any) => setStatusFilterContratacao(v)}>
+                <SelectTrigger className="w-[180px] h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="ativo">Ativos</SelectItem>
+                  <SelectItem value="vencendo">Vencendo em 7 dias</SelectItem>
+                  <SelectItem value="vencido">Vencidos</SelectItem>
+                  <SelectItem value="pausado">Pausados</SelectItem>
+                  <SelectItem value="cancelado">Cancelados</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground">{filteredSubscriptions.length} contratação(ões)</span>
             </div>
             <Button size="sm" className="gap-1" onClick={() => setContratacaoOpen(true)}>
               <Plus className="h-4 w-4" />Nova Contratação
