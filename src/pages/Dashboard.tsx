@@ -521,8 +521,8 @@ export default function Dashboard() {
     return d >= today && d < tomorrow && b.status !== "cancelado";
   });
   const transportHoje = [...transportBookingsHoje, ...agendamentosTransporteHoje.map(a => ({
-    id: a.id, scheduled_date: format(new Date(a.data_hora), "yyyy-MM-dd"),
-    scheduled_pickup_time: format(new Date(a.data_hora), "HH:mm"), trip_type: a.tipo_servico,
+    id: a.id, scheduled_date: (a.data_hora as string).split("T")[0].split(" ")[0],
+    scheduled_pickup_time: extractTimeBR(a.data_hora), trip_type: a.tipo_servico,
     status: a.status, final_price: a.valor || 0, cliente_nome: a.cliente?.nome || "—",
     pet_nome: a.pet?.nome || "—", driver_nome: null, type_nome: a.tipo_servico, source: "agendamento",
   }))];

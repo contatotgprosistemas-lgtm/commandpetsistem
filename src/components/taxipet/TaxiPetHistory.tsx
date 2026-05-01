@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
+import { extractTimeBR } from "@/lib/utils";
 
 const TRANSPORT_FILTER = "tipo_servico.ilike.%taxi%,tipo_servico.ilike.%transport%,tipo_servico.ilike.%leva%";
 
@@ -67,8 +68,8 @@ export default function TaxiPetHistory() {
       }));
 
       const agItems: UnifiedBooking[] = (ag || []).map((a: any) => ({
-        id: a.id, scheduled_date: format(new Date(a.data_hora), "yyyy-MM-dd"),
-        scheduled_pickup_time: format(new Date(a.data_hora), "HH:mm:ss"),
+        id: a.id, scheduled_date: (a.data_hora as string).split("T")[0].split(" ")[0],
+        scheduled_pickup_time: extractTimeBR(a.data_hora),
         trip_type: a.tipo_servico, status: a.status,
         final_price: Number(a.valor || 0), payment_status: "pendente",
         notes: a.notas, cliente_nome: a.clientes?.nome || "—",
