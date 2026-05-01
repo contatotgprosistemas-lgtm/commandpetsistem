@@ -31,6 +31,27 @@ function fmtBRLShort(v: number) {
   return `R$ ${v.toFixed(0)}`;
 }
 
+// Converte string digitada (ex: "83500", "83.500,00", "83500,5") em número
+function parseBRLInput(s: string): number {
+  if (!s) return 0;
+  // remove tudo que não é dígito
+  const digits = s.replace(/\D/g, "");
+  if (!digits) return 0;
+  // últimos 2 dígitos = centavos
+  const n = parseInt(digits, 10) / 100;
+  return isFinite(n) ? n : 0;
+}
+// Formata número para exibição com R$ no input
+function formatBRLInput(n: number): string {
+  if (!isFinite(n) || n === 0) return "";
+  return n.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
   "Jul", "Ago", "Set", "Out", "Nov", "Dez",
