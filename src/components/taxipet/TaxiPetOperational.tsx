@@ -679,7 +679,17 @@ function SortableRouteItem({
   );
 }
 
-function BookingCard({ b, onAdvance, isTerminal }: { b: UnifiedBooking; onAdvance: (b: UnifiedBooking) => void; isTerminal: (s: string) => boolean; }) {
+function BookingCard({
+  b,
+  onAdvance,
+  onEditTime,
+  isTerminal,
+}: {
+  b: UnifiedBooking;
+  onAdvance: (b: UnifiedBooking) => void;
+  onEditTime: (b: UnifiedBooking, leg: Leg | undefined, newTime: string) => void;
+  isTerminal: (s: string) => boolean;
+}) {
   const sv = statusVariant(b.status);
   const phone = b.cliente_whatsapp || b.cliente_telefone;
   const preferred =
@@ -716,9 +726,11 @@ function BookingCard({ b, onAdvance, isTerminal }: { b: UnifiedBooking; onAdvanc
             <MapPin className="h-3 w-3 shrink-0" /><span className="truncate">{b.cliente_endereco}</span>
           </a>
         )}
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <Clock className="h-3 w-3" /> {time}
-        </div>
+        <TimeEditor
+          time={time}
+          onSave={(t) => onEditTime(b, b.leg, t)}
+          compact
+        />
         {b.type_nome && <div className="text-muted-foreground">🚗 {b.type_nome}</div>}
         <div className="flex items-center justify-between pt-2 border-t">
           <span className="font-medium">R$ {b.final_price.toFixed(2)}</span>
@@ -730,5 +742,80 @@ function BookingCard({ b, onAdvance, isTerminal }: { b: UnifiedBooking; onAdvanc
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/* --- Editor inline de horário --- */
+function TimeEditor({
+  time,
+  onSave,
+  compact = false,
+}: {
+  time: string;
+  onSave: (t: string) => void;
+  compact?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const initial = /^\d{2}:\d{2}$/.test(time) ? time : "";
+  const [value, setValue] = useState(initial);
+
+  useEffect(() => {
+    setValue(initial);
+  }, [initial]);
+
+  const handleSave = () => {
+    if (!/^\d{2}:\d{2}$/.test(value)) return;
+    onSave(value);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <div className={`flex items-center gap-1 ${compact ? "text-muted-foreground" : "text-xs text-muted-foreground"}`}>
+        <Clock className="h-3 w-3" />
+        <span className={compact ? "" : "font-medium text-foreground"}>{time}</span>
+        <PopoverTrigger asChild>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 ml-0.5"
+            title="Editar horário"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Pencil className="h-3 w-3" />
+          </Button>
+        </PopoverTrigger>
+      </div>
+      <PopoverContent className="w-56 p-3" align="end">
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-foreground">Ajustar horário</p>
+          <Input
+            type="time"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="h-8 text-sm"
+            autoFocus
+          />
+          <div className="flex justify-end gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs"
+              onClick={() => setOpen(false)}
+            >
+              <X className="h-3 w-3 mr-1" /> Cancelar
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              onClick={handleSave}
+              disabled={!/^\d{2}:\d{2}$/.test(value)}
+            >
+              <Check className="h-3 w-3 mr-1" /> Salvar
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
