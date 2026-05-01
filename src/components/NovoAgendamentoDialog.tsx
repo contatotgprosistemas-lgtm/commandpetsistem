@@ -273,6 +273,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       supabase.from("baias").select("id, nome, capacidade_pets").eq("ativa", true).order("nome").then(({ data }) => { if (data) setBaias(data); });
     } else {
       setServicosExtras([]);
+      setExtraTaxiDates([]);
+      setAgendarMaisDatas(false);
     }
   }, [open]);
 
