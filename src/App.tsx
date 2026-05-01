@@ -45,6 +45,7 @@ import OperacionalAgendaPage from "@/pages/operacional/OperacionalAgendaPage";
 import OperacionalClientesPage from "@/pages/operacional/OperacionalClientesPage";
 import OperacionalPetsPage from "@/pages/operacional/OperacionalPetsPage";
 import OperacionalPontoPage from "@/pages/operacional/OperacionalPontoPage";
+import OperacionalTaxiPetPage from "@/pages/operacional/OperacionalTaxiPetPage";
 import { OperacionalLayout } from "@/components/operacional/OperacionalLayout";
 import { OperacionalProtectedRoute } from "@/components/operacional/OperacionalProtectedRoute";
 
@@ -372,6 +373,7 @@ const App = () => (
               <Route index element={<OperacionalDashboard />} />
               <Route path="agenda" element={<OperacionalAgendaPage />} />
               <Route path="reservas" element={<ReservasPage />} />
+              <Route path="taxipet" element={<OperacionalTaxiPetPage />} />
               <Route path="clientes" element={<OperacionalClientesPage />} />
               <Route path="pets" element={<OperacionalPetsPage />} />
               <Route path="ponto" element={<OperacionalPontoPage />} />

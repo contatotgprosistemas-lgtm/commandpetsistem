@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, CalendarDays, Users, PawPrint, LogOut, Menu, X, Clock, CalendarCheck } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, PawPrint, LogOut, Menu, X, Clock, CalendarCheck, Car } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useOperationalAuth } from "@/hooks/useOperationalAuth";
@@ -12,6 +12,7 @@ const navItems = [
   { path: "/operacional", label: "Dashboard", icon: LayoutDashboard },
   { path: "/operacional/agenda", label: "Agenda", icon: CalendarDays },
   { path: "/operacional/reservas", label: "Reservas", icon: CalendarCheck },
+  { path: "/operacional/taxipet", label: "TaxiPet", icon: Car },
   { path: "/operacional/clientes", label: "Clientes", icon: Users },
   { path: "/operacional/pets", label: "Pets", icon: PawPrint },
   { path: "/operacional/ponto", label: "Ponto", icon: Clock },
