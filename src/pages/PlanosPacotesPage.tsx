@@ -100,6 +100,21 @@ export default function PlanosPacotesPage() {
     const newStatus = actionTarget.action === "pause" ? "pausado" : actionTarget.action === "cancel" ? "cancelado" : actionTarget.action === "reactivate" ? "ativo" : "ativo";
     await supabase.from("customer_pet_subscriptions" as any).update({ status: newStatus }).eq("id", actionTarget.id);
 
+    // Excluir agendamentos futuros vinculados quando pausar ou cancelar
+    if (actionTarget.action === "pause" || actionTarget.action === "cancel") {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const { error: errAg, count } = await supabase
+        .from("agendamentos")
+        .delete({ count: "exact" })
+        .eq("subscription_id", actionTarget.id)
+        .gte("data_hora", today);
+      if (errAg) {
+        console.error("Erro ao excluir agendamentos:", errAg);
+      } else if (count && count > 0) {
+        toast.info(`${count} agendamento(s) futuro(s) excluído(s)`);
+      }
+    }
+
     // Log event
     await supabase.from("subscription_events" as any).insert({
       empresa_id: empresaId, subscription_id: actionTarget.id,
