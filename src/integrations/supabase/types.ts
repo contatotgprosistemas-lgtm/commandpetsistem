@@ -988,7 +988,9 @@ export type Database = {
           empresa_id: string
           id: string
           observacao_baixa: string | null
+          parent_conta_id: string | null
           status: string
+          tipo_fatura: string
           transport_booking_id: string | null
           updated_at: string
           valor: number
@@ -1009,7 +1011,9 @@ export type Database = {
           empresa_id: string
           id?: string
           observacao_baixa?: string | null
+          parent_conta_id?: string | null
           status?: string
+          tipo_fatura?: string
           transport_booking_id?: string | null
           updated_at?: string
           valor: number
@@ -1030,7 +1034,9 @@ export type Database = {
           empresa_id?: string
           id?: string
           observacao_baixa?: string | null
+          parent_conta_id?: string | null
           status?: string
+          tipo_fatura?: string
           transport_booking_id?: string | null
           updated_at?: string
           valor?: number
@@ -1059,6 +1065,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_receber_parent_conta_id_fkey"
+            columns: ["parent_conta_id"]
+            isOneToOne: false
+            referencedRelation: "contas_receber"
             referencedColumns: ["id"]
           },
           {
@@ -3896,6 +3909,10 @@ export type Database = {
           mensagem_geracao: string | null
           mensagem_pre_vencimento: string | null
           mensagem_vencimento: string | null
+          multa_atraso_descricao: string
+          multa_atraso_enabled: boolean
+          multa_atraso_mensagem: string | null
+          multa_atraso_valor: number
           updated_at: string
         }
         Insert: {
@@ -3915,6 +3932,10 @@ export type Database = {
           mensagem_geracao?: string | null
           mensagem_pre_vencimento?: string | null
           mensagem_vencimento?: string | null
+          multa_atraso_descricao?: string
+          multa_atraso_enabled?: boolean
+          multa_atraso_mensagem?: string | null
+          multa_atraso_valor?: number
           updated_at?: string
         }
         Update: {
@@ -3934,6 +3955,10 @@ export type Database = {
           mensagem_geracao?: string | null
           mensagem_pre_vencimento?: string | null
           mensagem_vencimento?: string | null
+          multa_atraso_descricao?: string
+          multa_atraso_enabled?: boolean
+          multa_atraso_mensagem?: string | null
+          multa_atraso_valor?: number
           updated_at?: string
         }
         Relationships: [
