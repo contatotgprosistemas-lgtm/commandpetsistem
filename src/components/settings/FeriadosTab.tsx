@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, CalendarDays, Sparkles, Loader2 } from "lucide-react";
-import { formatDateBR, parseLocalDate } from "@/lib/utils";
+import { formatDateBR } from "@/lib/utils";
 
 type Feriado = {
   id: string;
@@ -262,7 +262,7 @@ export function FeriadosTab() {
             <TableBody>
               {sorted.map((f) => (
                 <TableRow key={f.id}>
-                  <TableCell>{formatDateBR(parseLocalDate(f.data))}</TableCell>
+                  <TableCell>{formatDateBR(f.data)}</TableCell>
                   <TableCell>{f.descricao}</TableCell>
                   <TableCell>
                     <Badge variant={f.tipo === "nacional" ? "secondary" : "outline"}>
