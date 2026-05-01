@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { usePlanoContasItens } from "@/hooks/usePlanoContasItens";
 
 interface Props {
   open: boolean;
@@ -36,6 +37,8 @@ export function EditarContaReceberDialog({ open, onOpenChange, onSuccess, conta 
   const [saving, setSaving] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
   const [bancos, setBancos] = useState<any[]>([]);
+  const planoContasItens = usePlanoContasItens(profile?.empresa_id, open);
+  const planoContasReceita = planoContasItens.filter((p) => p.tipo === "receita");
 
   const [form, setForm] = useState({
     cliente_id: "",
@@ -144,8 +147,26 @@ export function EditarContaReceberDialog({ open, onOpenChange, onSuccess, conta 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <Label>Categoria</Label>
-              <Input value={form.categoria} onChange={e => setForm({ ...form, categoria: e.target.value })} placeholder="Ex: Serviços, Planos..." />
+              <Label>Plano de Contas</Label>
+              <Select value={form.categoria} onValueChange={v => setForm({ ...form, categoria: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {planoContasReceita.length === 0 ? (
+                    <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                      Nenhuma conta de receita cadastrada. Cadastre em Financeiro › Plano de Contas.
+                    </div>
+                  ) : (
+                    <>
+                      {form.categoria && !planoContasReceita.some(p => p.nome === form.categoria) && (
+                        <SelectItem value={form.categoria}>{form.categoria} (atual)</SelectItem>
+                      )}
+                      {planoContasReceita.map(p => (
+                        <SelectItem key={p.nome} value={p.nome}>{p.nome}</SelectItem>
+                      ))}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label>Banco</Label>
