@@ -51,14 +51,15 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { empresa_id, cliente, fatura, tipo: tipoIn, mensagem_override, dias_atraso, dias_restantes } = body as {
+    const { empresa_id, cliente, fatura, tipo: tipoIn, mensagem_override, dias_atraso, dias_restantes, valor_multa } = body as {
       empresa_id: string;
       cliente: { id: string; nome: string; whatsapp?: string | null; telefone?: string | null };
       fatura: { id?: string | null; descricao: string; valor: number; vencimento: string };
-      tipo?: "geracao" | "pre_vencimento" | "vencimento" | "atraso";
+      tipo?: "geracao" | "pre_vencimento" | "vencimento" | "atraso" | "multa_atraso";
       mensagem_override?: string;
       dias_atraso?: number;
       dias_restantes?: number;
+      valor_multa?: number;
     };
     const tipo = tipoIn ?? "geracao";
 
@@ -78,7 +79,7 @@ Deno.serve(async (req) => {
 
     const { data: cfg } = await supabase
       .from("invoice_notification_config")
-      .select("enabled, mensagem, enabled_geracao, mensagem_geracao, enabled_pre_vencimento, mensagem_pre_vencimento, enabled_vencimento, mensagem_vencimento, enabled_atraso, mensagem_atraso")
+      .select("enabled, mensagem, enabled_geracao, mensagem_geracao, enabled_pre_vencimento, mensagem_pre_vencimento, enabled_vencimento, mensagem_vencimento, enabled_atraso, mensagem_atraso, multa_atraso_enabled, multa_atraso_mensagem")
       .eq("empresa_id", empresa_id)
       .maybeSingle();
     // master switch
@@ -91,6 +92,7 @@ Deno.serve(async (req) => {
       pre_vencimento: cfg?.enabled_pre_vencimento,
       vencimento: cfg?.enabled_vencimento,
       atraso: cfg?.enabled_atraso,
+      multa_atraso: cfg?.multa_atraso_enabled,
     };
     if (cfg && perTypeEnabled[tipo] === false) {
       return new Response(JSON.stringify({ skipped: "type_disabled" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -119,8 +121,11 @@ Deno.serve(async (req) => {
       pre_vencimento: cfg?.mensagem_pre_vencimento,
       vencimento: cfg?.mensagem_vencimento,
       atraso: cfg?.mensagem_atraso,
+      multa_atraso: cfg?.multa_atraso_mensagem,
     };
-    const fallback = "Olá {nome}! Sua fatura *{descricao}* no valor de *R$ {valor}* tem vencimento em *{vencimento}*.";
+    const fallbackMulta = "Olá {primeiro_nome}! Sua fatura *{descricao}* venceu e foi gerada uma multa de *R$ {valor_multa}*. O pagamento deve ser feito junto com a fatura original. 🐾";
+    const fallbackPadrao = "Olá {nome}! Sua fatura *{descricao}* no valor de *R$ {valor}* tem vencimento em *{vencimento}*.";
+    const fallback = tipo === "multa_atraso" ? fallbackMulta : fallbackPadrao;
     const template = (mensagem_override ?? perTypeTemplate[tipo] ?? cfg?.mensagem ?? fallback) as string;
     const conteudo = template
       .replace(/\{nome\}/g, cliente.nome ?? "")
@@ -129,7 +134,8 @@ Deno.serve(async (req) => {
       .replace(/\{valor\}/g, Number(fatura.valor).toFixed(2).replace(".", ","))
       .replace(/\{vencimento\}/g, formatDateBR(fatura.vencimento))
       .replace(/\{dias_atraso\}/g, String(dias_atraso ?? ""))
-      .replace(/\{dias_restantes\}/g, String(dias_restantes ?? ""));
+      .replace(/\{dias_restantes\}/g, String(dias_restantes ?? ""))
+      .replace(/\{valor_multa\}/g, valor_multa != null ? Number(valor_multa).toFixed(2).replace(".", ",") : "");
 
     const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
       method: "POST",
