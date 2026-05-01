@@ -39,8 +39,9 @@ export function formatDateBRCustom(
 export function extractTimeBR(ts: string | null | undefined): string {
   if (!ts) return "";
   const s = ts.replace(" ", "T");
+  // Aceita offset Z, +HH, -HH, +HH:MM, -HHMM, etc.
   const m = s.match(
-    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2})?(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/,
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2})?(?:\.\d+)?(Z|[+-]\d{2}(?::?\d{2})?)?$/,
   );
   if (!m) return s.split("T")[1]?.slice(0, 5) || "";
   const [, , , , hhStr, mmStr, off] = m;
@@ -48,12 +49,15 @@ export function extractTimeBR(ts: string | null | undefined): string {
   const mm = parseInt(mmStr, 10);
   if (off && off !== "") {
     let offMin = 0;
-    if (off === "Z") offMin = 0;
-    else {
-      const om = off.match(/([+-])(\d{2}):?(\d{2})/);
+    if (off === "Z") {
+      offMin = 0;
+    } else {
+      const om = off.match(/([+-])(\d{2})(?::?(\d{2}))?/);
       if (om) {
         const sign = om[1] === "-" ? -1 : 1;
-        offMin = sign * (parseInt(om[2], 10) * 60 + parseInt(om[3], 10));
+        const oh = parseInt(om[2], 10);
+        const om2 = om[3] ? parseInt(om[3], 10) : 0;
+        offMin = sign * (oh * 60 + om2);
       }
     }
     // Converte horário gravado para UTC e em seguida para -03:00 (BRT)
