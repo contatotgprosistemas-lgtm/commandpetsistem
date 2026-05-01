@@ -4012,6 +4012,7 @@ export type Database = {
           id: string
           mes: number
           observacao: string | null
+          realizado_manual: number | null
           updated_at: string
           valor_meta: number
         }
@@ -4022,6 +4023,7 @@ export type Database = {
           id?: string
           mes: number
           observacao?: string | null
+          realizado_manual?: number | null
           updated_at?: string
           valor_meta?: number
         }
@@ -4032,6 +4034,7 @@ export type Database = {
           id?: string
           mes?: number
           observacao?: string | null
+          realizado_manual?: number | null
           updated_at?: string
           valor_meta?: number
         }

@@ -41,6 +41,7 @@ interface Meta {
   ano: number;
   mes: number;
   valor_meta: number;
+  realizado_manual?: number | null;
 }
 
 export function MetasFaturamentoCard() {
@@ -54,6 +55,8 @@ export function MetasFaturamentoCard() {
   const [realizadoMap, setRealizadoMap] = useState<Record<number, number>>({});
   // valores em string para edição amigável
   const [draft, setDraft] = useState<Record<number, string>>({});
+  // valores manuais de "realizado" (para meses anteriores ao uso do sistema)
+  const [draftReal, setDraftReal] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (!empresaId) return;
@@ -79,11 +82,14 @@ export function MetasFaturamentoCard() {
       const mts = (metasRes.data || []) as Meta[];
       setMetas(mts);
       const d: Record<number, string> = {};
+      const dr: Record<number, string> = {};
       for (let m = 1; m <= 12; m++) {
         const found = mts.find((x) => x.mes === m);
         d[m] = found ? String(found.valor_meta) : "";
+        dr[m] = found && found.realizado_manual != null ? String(found.realizado_manual) : "";
       }
       setDraft(d);
+      setDraftReal(dr);
 
       const realMap: Record<number, number> = {};
       ((movsRes.data || []) as any[]).forEach((mv) => {
@@ -103,7 +109,15 @@ export function MetasFaturamentoCard() {
       const draftNum = draftRaw === "" ? NaN : Number(draftRaw);
       const savedMeta = Number(metas.find((m) => m.mes === mes)?.valor_meta ?? 0);
       const meta = isFinite(draftNum) ? draftNum : savedMeta;
-      const realizado = realizadoMap[mes] ?? 0;
+      // realizado: usa manual se houver (preferência), senão movimentações reais
+      const realRaw = (draftReal[mes] ?? "").toString().replace(",", ".").trim();
+      const realNum = realRaw === "" ? NaN : Number(realRaw);
+      const savedManual = metas.find((m) => m.mes === mes)?.realizado_manual;
+      const realizado = isFinite(realNum)
+        ? realNum
+        : savedManual != null
+          ? Number(savedManual)
+          : (realizadoMap[mes] ?? 0);
       const diff = realizado - meta;
       const pct = meta > 0 ? (realizado / meta) * 100 : 0;
       return {
@@ -115,7 +129,7 @@ export function MetasFaturamentoCard() {
         pct,
       };
     });
-  }, [metas, realizadoMap, draft]);
+  }, [metas, realizadoMap, draft, draftReal]);
 
   const totals = useMemo(() => {
     const meta = chartData.reduce((s, d) => s + (Number(d.meta) || 0), 0);
@@ -131,11 +145,15 @@ export function MetasFaturamentoCard() {
     const rows = Array.from({ length: 12 }, (_, i) => {
       const mes = i + 1;
       const valor = parseFloat((draft[mes] || "0").toString().replace(",", "."));
+      const realRaw = (draftReal[mes] ?? "").toString().replace(",", ".").trim();
+      const realParsed = realRaw === "" ? null : parseFloat(realRaw);
       return {
         empresa_id: empresaId,
         ano,
         mes,
         valor_meta: isFinite(valor) && valor >= 0 ? valor : 0,
+        realizado_manual:
+          realParsed != null && isFinite(realParsed) && realParsed >= 0 ? realParsed : null,
       };
     });
 
@@ -266,7 +284,20 @@ export function MetasFaturamentoCard() {
                         {isFuture ? (
                           <span className="text-muted-foreground">—</span>
                         ) : (
-                          fmtBRL(row.realizado)
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={draftReal[row.mes] ?? ""}
+                              onChange={(e) =>
+                                setDraftReal((d) => ({ ...d, [row.mes]: e.target.value }))
+                              }
+                              className="h-8 w-32"
+                              placeholder={fmtBRL(realizadoMap[row.mes] ?? 0)}
+                              title="Deixe em branco para usar o valor automático das movimentações"
+                            />
+                          </div>
                         )}
                       </td>
                       <td
