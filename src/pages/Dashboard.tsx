@@ -1308,6 +1308,12 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
         const mapsUrl = clientEndereco
           ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clientEndereco)}`
           : null;
+        const legLabel = item.leg === "buscar" ? "Buscar" : item.leg === "levar" ? "Levar" : null;
+        const legColor = item.leg === "buscar"
+          ? "bg-amber-100 text-amber-800 border-amber-200"
+          : item.leg === "levar"
+          ? "bg-violet-100 text-violet-800 border-violet-200"
+          : "bg-sky-100 text-sky-800 border-sky-200";
         const tripLabel = item.trip_type === "ida" ? "Ida" : item.trip_type === "volta" ? "Volta" : "Ida e Volta";
         const st = statusMap[item.status] || { label: item.status, color: "bg-muted text-muted-foreground" };
 
@@ -1333,8 +1339,17 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 flex-wrap">
                 <Car className="h-3 w-3 shrink-0" />
                 <span>{item.transport_type?.name ?? "Transporte"}</span>
-                <span>·</span>
-                <span>{tripLabel}</span>
+                {legLabel ? (
+                  <>
+                    <span>·</span>
+                    <Badge variant="outline" className={`text-[10px] ${legColor}`}>{legLabel}</Badge>
+                  </>
+                ) : (
+                  <>
+                    <span>·</span>
+                    <span>{tripLabel}</span>
+                  </>
+                )}
                 {mapsUrl && (
                   <>
                     <span>|</span>
