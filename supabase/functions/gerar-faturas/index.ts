@@ -424,7 +424,7 @@ Deno.serve(async (req) => {
             empresa_id: g.empresa_id,
             descricao: it.descricao,
             valor: it.valor,
-            tipo: "principal",
+            tipo: /5º banho/i.test(it.descricao) ? "extra" : "principal",
           })),
         );
       }
