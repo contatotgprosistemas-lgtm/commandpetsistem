@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MetricCard } from "@/components/MetricCard";
 import { Car, CheckCircle, Clock, XCircle, Users, DollarSign, TrendingUp, MapPin } from "lucide-react";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, differenceInCalendarDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const TRANSPORT_FILTER = "tipo_servico.ilike.%taxi%,tipo_servico.ilike.%transport%,tipo_servico.ilike.%leva%";
@@ -12,17 +12,19 @@ export default function TaxiPetDashboard() {
   const { profile } = useAuth();
   const [stats, setStats] = useState({
     totalMonth: 0, completed: 0, cancelled: 0, inProgress: 0,
-    scheduled: 0, activeDrivers: 0, revenueMonth: 0, avgPerDay: 0,
+    scheduled: 0, activeDrivers: 0, revenueMonth: 0, avgPerWeek: 0,
   });
 
   useEffect(() => {
     if (!profile?.empresa_id) return;
     const now = new Date();
-    const start = format(startOfMonth(now), "yyyy-MM-dd");
-    const end = format(endOfMonth(now), "yyyy-MM-dd");
+    const startDate = startOfMonth(now);
+    const endDate = endOfMonth(now);
+    const start = format(startDate, "yyyy-MM-dd");
+    const end = format(endDate, "yyyy-MM-dd");
 
     const load = async () => {
-      const [{ data: bookings }, { data: drivers }, { data: agendamentos }, { data: faturas }] = await Promise.all([
+      const [{ data: bookings }, { data: drivers }, { data: agendamentos }, { data: taxiPlans }] = await Promise.all([
         supabase.from("transport_bookings")
           .select("status, final_price, scheduled_date")
           .eq("empresa_id", profile.empresa_id!)
@@ -35,17 +37,18 @@ export default function TaxiPetDashboard() {
           .gte("data_hora", `${start}T00:00:00`)
           .lte("data_hora", `${end}T23:59:59`)
           .or(TRANSPORT_FILTER),
-        supabase.from("contas_receber")
-          .select("valor, valor_pago, status")
+        // Receita = soma de assinaturas ativas de planos TaxiPet vigentes neste mês
+        supabase.from("customer_pet_subscriptions")
+          .select("final_price, price_contracted, status, start_date, end_date, service_plans!inner(name)")
           .eq("empresa_id", profile.empresa_id!)
-          .gte("vencimento", start)
-          .lte("vencimento", end)
-          .or("categoria.eq.TaxiPet,descricao.ilike.%taxipet%,descricao.ilike.%taxi pet%,descricao.ilike.%transporte pet%"),
+          .ilike("service_plans.name", "%taxi%")
+          .lte("start_date", end)
+          .or(`end_date.is.null,end_date.gte.${start}`),
       ]);
 
       const b = bookings || [];
       const ag = agendamentos || [];
-      const fr = faturas || [];
+      const plans = (taxiPlans as any[]) || [];
 
       const agMapped = ag.map((a) => ({
         status: a.status === "concluido" ? "finalizada" : a.status === "cancelado" ? "cancelada" : a.status === "agendado" ? "agendada" : a.status,
@@ -57,13 +60,15 @@ export default function TaxiPetDashboard() {
         ...agMapped,
       ];
 
-      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      // Receita do mês = soma dos planos TaxiPet contratados vigentes (exclui cancelados)
+      const receitaPlanos = plans
+        .filter((p) => p.status !== "cancelado" && p.status !== "cancelled")
+        .reduce((sum, p) => sum + Number(p.final_price ?? p.price_contracted ?? 0), 0);
 
-      // Receita = faturas pagas + faturas pendentes (valor total das faturas TaxiPet)
-      const receitaFaturas = fr.reduce((sum, f) => {
-        if (f.status === "pago") return sum + Number(f.valor_pago || f.valor || 0);
-        return sum + Number(f.valor || 0);
-      }, 0);
+      // Média de viagens por semana no mês corrente
+      const daysInMonth = differenceInCalendarDays(endDate, startDate) + 1;
+      const weeksInMonth = daysInMonth / 7;
+      const avgPerWeek = weeksInMonth > 0 ? Number((all.length / weeksInMonth).toFixed(1)) : 0;
 
       const finalizados = all.filter((x) => ["finalizada", "concluido", "entregue"].includes(x.status)).length;
       const cancelados = all.filter((x) => ["cancelada", "cancelado", "nao_realizada"].includes(x.status)).length;
@@ -77,8 +82,8 @@ export default function TaxiPetDashboard() {
         inProgress: emAndamento,
         scheduled: agendadas,
         activeDrivers: drivers?.length || 0,
-        revenueMonth: receitaFaturas,
-        avgPerDay: daysInMonth > 0 ? Number((all.length / daysInMonth).toFixed(1)) : 0,
+        revenueMonth: receitaPlanos,
+        avgPerWeek,
       });
     };
     load();
@@ -94,7 +99,7 @@ export default function TaxiPetDashboard() {
     { title: "Finalizadas", value: String(stats.completed), icon: <CheckCircle className="h-5 w-5" />, accent: "emerald" },
     { title: "Canceladas", value: String(stats.cancelled), icon: <XCircle className="h-5 w-5" />, accent: "amber" },
     { title: "Motoristas Ativos", value: String(stats.activeDrivers), icon: <Users className="h-5 w-5" />, accent: "violet" },
-    { title: "Média / Dia", value: String(stats.avgPerDay), icon: <TrendingUp className="h-5 w-5" />, accent: "violet" },
+    { title: "Média / Semana", value: String(stats.avgPerWeek), icon: <TrendingUp className="h-5 w-5" />, accent: "violet" },
   ];
 
   return (
