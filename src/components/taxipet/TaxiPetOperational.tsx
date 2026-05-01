@@ -12,6 +12,42 @@ import {
   Sun, Moon, Bath, Navigation2, Home, Hash,
 } from "lucide-react";
 import { format } from "date-fns";
+
+/**
+ * Extrai "HH:mm" de uma string ISO/timestamptz vinda do Postgres
+ * sem passar por `new Date()`, preservando o horário local salvo.
+ * Aceita "2026-05-29T10:00:00+00:00", "2026-05-29 10:00:00+00", "2026-05-29T07:00:00-03:00".
+ */
+function extractTimeFromTs(ts: string | null | undefined): string {
+  if (!ts) return "";
+  // Normaliza separador
+  const s = ts.replace(" ", "T");
+  // Pega offset, se houver
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2})?(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/);
+  if (!m) return s.split("T")[1]?.slice(0, 5) || "";
+  const [, , , , hhStr, mmStr, off] = m;
+  let hh = parseInt(hhStr, 10);
+  const mm = parseInt(mmStr, 10);
+  // Converte para UTC-3 (Brasil)
+  if (off && off !== "") {
+    let offMin = 0;
+    if (off === "Z") offMin = 0;
+    else {
+      const om = off.match(/([+-])(\d{2}):?(\d{2})/);
+      if (om) {
+        const sign = om[1] === "-" ? -1 : 1;
+        offMin = sign * (parseInt(om[2], 10) * 60 + parseInt(om[3], 10));
+      }
+    }
+    // converter horário "como gravado" para UTC e depois para -03:00
+    const totalMin = hh * 60 + mm - offMin + (-3 * 60);
+    const norm = ((totalMin % 1440) + 1440) % 1440;
+    hh = Math.floor(norm / 60);
+    const mmF = norm % 60;
+    return `${String(hh).padStart(2, "0")}:${String(mmF).padStart(2, "0")}`;
+  }
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
 import { toast } from "sonner";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent,
@@ -134,7 +170,7 @@ export default function TaxiPetOperational() {
 
     const agendamentoBookings: UnifiedBooking[] = (ag || []).map((item: any) => ({
       id: item.id, status: item.status, scheduled_date: date,
-      scheduled_pickup_time: format(new Date(item.data_hora), "HH:mm:ss"),
+      scheduled_pickup_time: extractTimeFromTs(item.data_hora),
       trip_type: item.tipo_servico, notes: item.notas, special_instructions: null,
       driver_id: null, final_price: Number(item.valor || 0),
       cliente_nome: item.clientes?.nome || "—",
