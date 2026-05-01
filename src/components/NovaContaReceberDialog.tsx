@@ -15,6 +15,7 @@ import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { usePlanoContasItens } from "@/hooks/usePlanoContasItens";
 
 interface Props {
   open: boolean;
@@ -27,6 +28,8 @@ export function NovaContaReceberDialog({ open, onOpenChange, onSuccess }: Props)
   const [saving, setSaving] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
   const [bancos, setBancos] = useState<any[]>([]);
+  const planoContasItens = usePlanoContasItens(profile?.empresa_id, open);
+  const planoContasReceita = planoContasItens.filter((p) => p.tipo === "receita");
 
   const [form, setForm] = useState({
     numero: "",
@@ -143,7 +146,20 @@ export function NovaContaReceberDialog({ open, onOpenChange, onSuccess }: Props)
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label>Plano de Contas <span className="text-destructive">*</span></Label>
-              <Input value={form.plano_contas} onChange={e => setForm({ ...form, plano_contas: e.target.value })} placeholder="Ex: Serviços, Vendas..." />
+              <Select value={form.plano_contas} onValueChange={v => setForm({ ...form, plano_contas: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {planoContasReceita.length === 0 ? (
+                    <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                      Nenhuma conta de receita cadastrada. Cadastre em Financeiro › Plano de Contas.
+                    </div>
+                  ) : (
+                    planoContasReceita.map(p => (
+                      <SelectItem key={p.nome} value={p.nome}>{p.nome}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label>Banco</Label>
