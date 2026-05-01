@@ -70,6 +70,8 @@ interface Agendamento {
   subscription_id: string | null;
   data_entrada: string | null;
   hora_entrada: string | null;
+  hora_prevista_buscar: string | null;
+  hora_prevista_levar: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string; foto_url: string | null } | null;
   cliente: { id: string; nome: string; whatsapp: string | null; telefone?: string | null; endereco?: string | null; foto_url: string | null } | null;
 }
@@ -167,7 +169,7 @@ export default function Dashboard() {
     const [{ data }, { data: bookings }] = await Promise.all([
       supabase
         .from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url)")
+        .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, hora_prevista_buscar, hora_prevista_levar, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url)")
         .order("data_hora", { ascending: true }),
       supabase
         .from("transport_bookings")
@@ -521,12 +523,35 @@ export default function Dashboard() {
     const d = startOfDay(new Date(b.scheduled_date + "T00:00:00"));
     return d >= today && d < tomorrow && b.status !== "cancelado";
   });
-  const transportHoje = [
-    ...transportBookingsHoje,
-    ...agendamentosTransporteHoje.map(a => ({
-      id: a.id,
+  const transportFromBookings: any[] = [];
+  transportBookingsHoje.forEach((b: any) => {
+    const trip = (b.trip_type || "").toLowerCase();
+    const base = { ...b, source: "transport" };
+    if (trip === "ida_volta") {
+      transportFromBookings.push({ ...base, id: `${b.id}:buscar`, leg: "buscar" });
+      transportFromBookings.push({ ...base, id: `${b.id}:levar`, leg: "levar" });
+    } else {
+      const leg = trip === "ida" || trip.includes("busca") || trip.includes("coleta")
+        ? "buscar"
+        : trip === "volta" || trip.includes("leva") || trip.includes("entreg")
+        ? "levar"
+        : "outro";
+      transportFromBookings.push({ ...base, leg });
+    }
+  });
+  const transportFromAg: any[] = [];
+  agendamentosTransporteHoje.forEach(a => {
+    const buscar = (a.hora_prevista_buscar || "").toString().slice(0, 5);
+    const levar = (a.hora_prevista_levar || "").toString().slice(0, 5);
+    const fallback = extractTimeBR(a.data_hora);
+    const tipo = (a.tipo_servico || "").toLowerCase();
+    const baseLeg = tipo.includes("busca") || tipo.includes("coleta")
+      ? "buscar"
+      : tipo.includes("leva") || tipo.includes("entreg")
+      ? "levar"
+      : "outro";
+    const base = {
       scheduled_date: (a.data_hora as string).split("T")[0].split(" ")[0],
-      scheduled_pickup_time: extractTimeBR(a.data_hora),
       trip_type: a.tipo_servico,
       status: a.status,
       final_price: a.valor || 0,
@@ -535,8 +560,15 @@ export default function Dashboard() {
       driver: null,
       transport_type: { name: a.tipo_servico },
       source: "agendamento",
-    })),
-  ].sort((x: any, y: any) => {
+    };
+    if (buscar || levar) {
+      if (buscar) transportFromAg.push({ ...base, id: `${a.id}:buscar`, scheduled_pickup_time: buscar, leg: "buscar" });
+      if (levar) transportFromAg.push({ ...base, id: `${a.id}:levar`, scheduled_pickup_time: levar, leg: "levar" });
+    } else {
+      transportFromAg.push({ ...base, id: a.id, scheduled_pickup_time: fallback, leg: baseLeg });
+    }
+  });
+  const transportHoje = [...transportFromBookings, ...transportFromAg].sort((x: any, y: any) => {
     const tx = (x.scheduled_pickup_time || "").toString().slice(0, 5);
     const ty = (y.scheduled_pickup_time || "").toString().slice(0, 5);
     if (tx && ty) return tx.localeCompare(ty);
@@ -1276,6 +1308,12 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
         const mapsUrl = clientEndereco
           ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clientEndereco)}`
           : null;
+        const legLabel = item.leg === "buscar" ? "Buscar" : item.leg === "levar" ? "Levar" : null;
+        const legColor = item.leg === "buscar"
+          ? "bg-amber-100 text-amber-800 border-amber-200"
+          : item.leg === "levar"
+          ? "bg-violet-100 text-violet-800 border-violet-200"
+          : "bg-sky-100 text-sky-800 border-sky-200";
         const tripLabel = item.trip_type === "ida" ? "Ida" : item.trip_type === "volta" ? "Volta" : "Ida e Volta";
         const st = statusMap[item.status] || { label: item.status, color: "bg-muted text-muted-foreground" };
 
@@ -1301,8 +1339,17 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 flex-wrap">
                 <Car className="h-3 w-3 shrink-0" />
                 <span>{item.transport_type?.name ?? "Transporte"}</span>
-                <span>·</span>
-                <span>{tripLabel}</span>
+                {legLabel ? (
+                  <>
+                    <span>·</span>
+                    <Badge variant="outline" className={`text-[10px] ${legColor}`}>{legLabel}</Badge>
+                  </>
+                ) : (
+                  <>
+                    <span>·</span>
+                    <span>{tripLabel}</span>
+                  </>
+                )}
                 {mapsUrl && (
                   <>
                     <span>|</span>
