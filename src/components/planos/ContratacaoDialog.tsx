@@ -303,6 +303,12 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     if (selectedPetIds.length === 0) { toast.error("Selecione ao menos um pet"); return; }
     if (isQuinzenal && plannedDays.length !== 1) { toast.error("Selecione exatamente 1 dia da semana para quinzenal"); return; }
     if (isMensal && plannedDays.length !== 1) { toast.error("Selecione exatamente 1 dia da semana para mensal"); return; }
+    if (isHotel) {
+      if (!hotelDataBuscar || !hotelDataLevar) { toast.error("Informe as datas de busca e entrega"); return; }
+      const b = new Date(hotelDataBuscar + "T00:00:00");
+      const l = new Date(hotelDataLevar + "T00:00:00");
+      if (isBefore(l, b)) { toast.error("A data de entrega deve ser igual ou posterior à data de busca"); return; }
+    }
     if (showHorarioBanho) {
       const hasAnyConflict = Object.values(banhoConflictsPerPet).some(c => c.length > 0);
       if (hasAnyConflict) {
@@ -587,6 +593,9 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setPlannedDays([]);
     setHoraBuscar("08:00");
     setHoraLevar("17:00");
+    setHotelDataBuscar(format(new Date(), "yyyy-MM-dd"));
+    setHotelDataLevar(format(addDays(new Date(), 2), "yyyy-MM-dd"));
+    setTransportMode("ambos");
     setHoraBanhoPorPet({});
     setFrequency("semanal");
     setWeekParity(currentWeekParity);
