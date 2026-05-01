@@ -53,6 +53,7 @@ type PeriodKey = "manha_buscar" | "tarde_levar" | "banho_buscar" | "banho_levar"
 
 type UnifiedBooking = {
   id: string; status: string; scheduled_date: string; scheduled_pickup_time: string | null;
+  scheduled_dropoff_time: string | null;
   trip_type: string; notes: string | null; special_instructions: string | null;
   driver_id: string | null; final_price: number;
   cliente_nome: string; cliente_whatsapp: string | null; cliente_telefone: string | null; cliente_endereco: string | null;
@@ -119,7 +120,7 @@ export default function TaxiPetOperational() {
       const tn = item.transport_types?.name || item.trip_type || "";
       return {
         id: item.id, status: item.status, scheduled_date: item.scheduled_date,
-        scheduled_pickup_time: item.scheduled_pickup_time, trip_type: item.trip_type,
+        scheduled_pickup_time: item.scheduled_pickup_time, scheduled_dropoff_time: item.scheduled_dropoff_time || null, trip_type: item.trip_type,
         notes: item.notes, special_instructions: item.special_instructions,
         driver_id: item.driver_id, final_price: Number(item.final_price || 0),
         cliente_nome: item.clientes?.nome || "—",
@@ -136,6 +137,7 @@ export default function TaxiPetOperational() {
     const agendamentoBookings: UnifiedBooking[] = (ag || []).map((item: any) => ({
       id: item.id, status: item.status, scheduled_date: date,
       scheduled_pickup_time: extractTimeBR(item.data_hora),
+      scheduled_dropoff_time: null,
       trip_type: item.tipo_servico, notes: item.notas, special_instructions: null,
       driver_id: null, final_price: Number(item.valor || 0),
       cliente_nome: item.clientes?.nome || "—",
@@ -226,10 +228,10 @@ export default function TaxiPetOperational() {
         if (ib !== -1) return 1;
         const ha = (period === "manha_buscar" || period === "banho_buscar")
           ? norm(a.hora_prevista_buscar) || norm(a.scheduled_pickup_time)
-          : norm(a.hora_prevista_levar) || norm(a.scheduled_pickup_time);
+          : norm(a.hora_prevista_levar) || norm(a.scheduled_dropoff_time) || norm(a.scheduled_pickup_time);
         const hb = (period === "manha_buscar" || period === "banho_buscar")
           ? norm(b.hora_prevista_buscar) || norm(b.scheduled_pickup_time)
-          : norm(b.hora_prevista_levar) || norm(b.scheduled_pickup_time);
+          : norm(b.hora_prevista_levar) || norm(b.scheduled_dropoff_time) || norm(b.scheduled_pickup_time);
         return ha.localeCompare(hb);
       });
     };
@@ -455,6 +457,7 @@ function SortableRouteItem({
   };
   const time =
     normalizeTime(b[timeKey]) ||
+    (timeKey === "hora_prevista_levar" ? normalizeTime(b.scheduled_dropoff_time) : "") ||
     normalizeTime(b.scheduled_pickup_time) ||
     "—";
 
