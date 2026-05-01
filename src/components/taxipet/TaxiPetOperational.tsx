@@ -213,17 +213,23 @@ export default function TaxiPetOperational() {
 
     const sortByOrder = (arr: UnifiedBooking[], period: PeriodKey) => {
       const ord = orderMap[period];
+      const norm = (v: string | null | undefined) => {
+        if (!v) return "";
+        if (/^\d{2}:\d{2}/.test(v)) return v.slice(0, 5);
+        if (v.includes("T") || v.includes(" ")) return extractTimeBR(v);
+        return v.slice(0, 5);
+      };
       return [...arr].sort((a, b) => {
         const ia = ord.indexOf(a.id); const ib = ord.indexOf(b.id);
         if (ia !== -1 && ib !== -1) return ia - ib;
         if (ia !== -1) return -1;
         if (ib !== -1) return 1;
         const ha = (period === "manha_buscar" || period === "banho_buscar")
-          ? (a.hora_prevista_buscar || a.scheduled_pickup_time || "")
-          : (a.hora_prevista_levar || a.scheduled_pickup_time || "");
+          ? norm(a.hora_prevista_buscar) || norm(a.scheduled_pickup_time)
+          : norm(a.hora_prevista_levar) || norm(a.scheduled_pickup_time);
         const hb = (period === "manha_buscar" || period === "banho_buscar")
-          ? (b.hora_prevista_buscar || b.scheduled_pickup_time || "")
-          : (b.hora_prevista_levar || b.scheduled_pickup_time || "");
+          ? norm(b.hora_prevista_buscar) || norm(b.scheduled_pickup_time)
+          : norm(b.hora_prevista_levar) || norm(b.scheduled_pickup_time);
         return ha.localeCompare(hb);
       });
     };
