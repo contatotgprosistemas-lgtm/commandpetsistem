@@ -13,12 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff, Trash2, Camera, X, Upload } from "lucide-react";
+import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff, Trash2, Camera, X, Upload, CalendarDays } from "lucide-react";
 import { PermissoesCargoPanel } from "@/components/PermissoesCargoPanel";
 import { translateAuthError } from "@/lib/authErrors";
 import { AniversariosCard } from "@/components/AniversariosCard";
 import { FaturaWhatsappCard } from "@/components/FaturaWhatsappCard";
 import { SistemaTab } from "@/components/settings/SistemaTab";
+import { FeriadosTab } from "@/components/settings/FeriadosTab";
 
 // ─── Dados da Empresa ───────────────────────────────────────────────
 function EmpresaTab() {
@@ -1048,6 +1049,7 @@ export default function SettingsPage() {
           <TabsTrigger value="empresa" className="gap-1.5"><Building2 className="h-4 w-4" /> Empresa</TabsTrigger>
           <TabsTrigger value="equipe" className="gap-1.5"><Users className="h-4 w-4" /> Equipe</TabsTrigger>
           <TabsTrigger value="sistema" className="gap-1.5"><Settings className="h-4 w-4" /> Sistema</TabsTrigger>
+          <TabsTrigger value="feriados" className="gap-1.5"><CalendarDays className="h-4 w-4" /> Feriados</TabsTrigger>
           <TabsTrigger value="notificacoes" className="gap-1.5"><Bell className="h-4 w-4" /> Notificações</TabsTrigger>
           <TabsTrigger value="seguranca" className="gap-1.5"><Shield className="h-4 w-4" /> Segurança</TabsTrigger>
           <TabsTrigger value="integracoes" className="gap-1.5"><Settings className="h-4 w-4" /> Integrações</TabsTrigger>
@@ -1057,6 +1059,7 @@ export default function SettingsPage() {
         <TabsContent value="equipe"><EquipeTab /></TabsContent>
         <TabsContent value="usuarios"><EquipeTab /></TabsContent>
         <TabsContent value="sistema"><SistemaTab /></TabsContent>
+        <TabsContent value="feriados"><FeriadosTab /></TabsContent>
         <TabsContent value="notificacoes"><NotificacoesTab /></TabsContent>
         <TabsContent value="seguranca"><SegurancaTab /></TabsContent>
         <TabsContent value="integracoes"><IntegracoesTab /></TabsContent>
