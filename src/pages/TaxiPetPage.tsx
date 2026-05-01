@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Car, Users, Truck, Calendar, Route, BarChart3, History, Settings2 } from "lucide-react";
+import { Car, Users, Truck, Calendar, Route, BarChart3, History, Settings2, Fuel } from "lucide-react";
 import TaxiPetDashboard from "@/components/taxipet/TaxiPetDashboard";
 import TaxiPetDrivers from "@/components/taxipet/TaxiPetDrivers";
 import TaxiPetVehicles from "@/components/taxipet/TaxiPetVehicles";
@@ -8,6 +8,7 @@ import TaxiPetBookings from "@/components/taxipet/TaxiPetBookings";
 import TaxiPetOperational from "@/components/taxipet/TaxiPetOperational";
 import TaxiPetHistory from "@/components/taxipet/TaxiPetHistory";
 import TaxiPetTransportTypes from "@/components/taxipet/TaxiPetTransportTypes";
+import CombustivelTab from "@/components/taxipet/CombustivelTab";
 
 export default function TaxiPetPage() {
   const [tab, setTab] = useState("dashboard");
@@ -32,6 +33,9 @@ export default function TaxiPetPage() {
           <TabsTrigger value="operational" className="gap-1.5 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Route className="h-3.5 w-3.5" /> Painel Operacional
           </TabsTrigger>
+          <TabsTrigger value="combustivel" className="gap-1.5 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Fuel className="h-3.5 w-3.5" /> Combustível & Custos
+          </TabsTrigger>
           <TabsTrigger value="bookings" className="gap-1.5 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Calendar className="h-3.5 w-3.5" /> Corridas
           </TabsTrigger>
@@ -51,6 +55,7 @@ export default function TaxiPetPage() {
 
         <TabsContent value="dashboard"><TaxiPetDashboard /></TabsContent>
         <TabsContent value="operational"><TaxiPetOperational /></TabsContent>
+        <TabsContent value="combustivel"><CombustivelTab /></TabsContent>
         <TabsContent value="bookings"><TaxiPetBookings /></TabsContent>
         <TabsContent value="drivers"><TaxiPetDrivers /></TabsContent>
         <TabsContent value="vehicles"><TaxiPetVehicles /></TabsContent>
