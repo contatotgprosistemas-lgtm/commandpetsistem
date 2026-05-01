@@ -78,12 +78,18 @@ export default function RoteirizacaoDialog({
     (async () => {
       const eid = profile.empresa_id!;
       const [{ data: emp }, { data: v }, { data: d }] = await Promise.all([
-        supabase.from("empresas").select("endereco, cidade, estado").eq("id", eid).maybeSingle(),
+        supabase.from("empresas").select("endereco, endereco_numero, cep").eq("id", eid).maybeSingle(),
         supabase.from("vehicles").select("id, model, plate, brand").eq("empresa_id", eid).eq("status", "ativo").order("model"),
         supabase.from("drivers").select("id, name").eq("empresa_id", eid).eq("status", "ativo").order("name"),
       ]);
       const e = emp as any;
-      const addr = [e?.endereco, e?.cidade, e?.estado].filter(Boolean).join(", ");
+      const base = e?.endereco ? String(e.endereco).trim() : "";
+      const num = e?.endereco_numero ? String(e.endereco_numero).trim() : "";
+      const cep = e?.cep ? String(e.cep).trim() : "";
+      const addr = [
+        num ? `${base}, ${num}` : base,
+        cep ? `CEP ${cep}` : "",
+      ].filter(Boolean).join(" - ");
       setEmpresaEndereco(addr);
       setVehicles((v as Vehicle[]) || []);
       setDrivers((d as Driver[]) || []);
