@@ -309,6 +309,14 @@ Deno.serve(async (req) => {
 
           if (!startedThisMonthOrLater) {
             const daysInMonth = new Date(year, month + 1, 0).getDate();
+            // Carrega feriados do mês para esta empresa (para pular agendamento, fatura mantém)
+            const { data: feriadosData } = await supabase
+              .from("feriados")
+              .select("data")
+              .eq("empresa_id", sub.empresa_id)
+              .gte("data", `${year}-${String(month + 1).padStart(2, "0")}-01`)
+              .lte("data", `${year}-${String(month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`);
+            const feriadosSet = new Set((feriadosData || []).map((f: any) => f.data));
             // Conta ocorrências de cada planned_day no mês e coleta a 5ª data
             const extraDates: string[] = [];
             for (const wd of plannedDays) {
@@ -333,6 +341,9 @@ Deno.serve(async (req) => {
                   subscription_id: sub.id,
                 });
                 g.total += valorExtraUnit;
+
+                // Se cair em feriado, fatura mantém mas o agendamento NÃO é criado
+                if (feriadosSet.has(extraDate)) continue;
 
                 // Cria agendamento extra (idempotente)
                 const { data: jaExiste } = await supabase
