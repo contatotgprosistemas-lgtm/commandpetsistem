@@ -284,7 +284,20 @@ export function MetasFaturamentoCard() {
                         {isFuture ? (
                           <span className="text-muted-foreground">—</span>
                         ) : (
-                          fmtBRL(row.realizado)
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={draftReal[row.mes] ?? ""}
+                              onChange={(e) =>
+                                setDraftReal((d) => ({ ...d, [row.mes]: e.target.value }))
+                              }
+                              className="h-8 w-32"
+                              placeholder={fmtBRL(realizadoMap[row.mes] ?? 0)}
+                              title="Deixe em branco para usar o valor automático das movimentações"
+                            />
+                          </div>
                         )}
                       </td>
                       <td
