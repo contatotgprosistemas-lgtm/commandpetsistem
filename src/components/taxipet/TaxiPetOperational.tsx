@@ -384,23 +384,23 @@ export default function TaxiPetOperational() {
 
     try {
       if (booking.source === "agendamento") {
-        const payload: Record<string, string> =
-          leg === "levar"
-            ? { hora_prevista_levar: timeWithSec }
-            : { hora_prevista_buscar: timeWithSec };
         const { error } = await supabase
           .from("agendamentos")
-          .update(payload)
+          .update(
+            leg === "levar"
+              ? { hora_prevista_levar: timeWithSec }
+              : { hora_prevista_buscar: timeWithSec },
+          )
           .eq("id", realId);
         if (error) throw error;
       } else {
-        const payload: Record<string, string> =
-          leg === "levar"
-            ? { scheduled_dropoff_time: timeWithSec }
-            : { scheduled_pickup_time: timeWithSec };
         const { error } = await supabase
           .from("transport_bookings")
-          .update(payload)
+          .update(
+            leg === "levar"
+              ? { scheduled_dropoff_time: timeWithSec }
+              : { scheduled_pickup_time: timeWithSec },
+          )
           .eq("id", realId);
         if (error) throw error;
       }
