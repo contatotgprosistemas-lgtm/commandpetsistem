@@ -887,8 +887,37 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
                     <RadioGroupItem value="levar" id="tm-levar" />
                     <Label htmlFor="tm-levar" className="cursor-pointer font-normal">Apenas levar</Label>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="hotel" id="tm-hotel" />
+                    <Label htmlFor="tm-hotel" className="cursor-pointer font-normal">Hotel (busca e leva em datas diferentes)</Label>
+                  </div>
                 </RadioGroup>
               </div>
+              {transportMode === "hotel" ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    O pet fica hospedado na empresa entre as duas datas. Serão gerados 2 agendamentos: um para a busca e outro para a entrega.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Data da busca</Label>
+                      <Input type="date" value={hotelDataBuscar} onChange={e => setHotelDataBuscar(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Hora da busca</Label>
+                      <Input type="time" value={horaBuscar} onChange={e => setHoraBuscar(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Data da entrega</Label>
+                      <Input type="date" value={hotelDataLevar} onChange={e => setHotelDataLevar(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Hora da entrega</Label>
+                      <Input type="time" value={horaLevar} onChange={e => setHoraLevar(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <div className="grid grid-cols-2 gap-4">
                 {(transportMode === "ambos" || transportMode === "buscar") && (
                   <div className="space-y-1.5">
@@ -903,6 +932,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
                   </div>
                 )}
               </div>
+              )}
             </div>
           )}
 
