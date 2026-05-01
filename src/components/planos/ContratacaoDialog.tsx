@@ -113,7 +113,10 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [plannedDays, setPlannedDays] = useState<number[]>([]);
   const [horaBuscar, setHoraBuscar] = useState("08:00");
   const [horaLevar, setHoraLevar] = useState("17:00");
-  const [transportMode, setTransportMode] = useState<"ambos" | "buscar" | "levar">("ambos");
+  const [transportMode, setTransportMode] = useState<"ambos" | "buscar" | "levar" | "hotel">("ambos");
+  // Hotel mode: pet fica hospedado, busca em uma data e leva em outra
+  const [hotelDataBuscar, setHotelDataBuscar] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [hotelDataLevar, setHotelDataLevar] = useState(format(addDays(new Date(), 2), "yyyy-MM-dd"));
   const [horaBanhoPorPet, setHoraBanhoPorPet] = useState<Record<string, string>>({});
   const getHoraBanho = (petId?: string) => {
     if (selectedPetIds.length <= 1) return horaBanhoPorPet["_default"] || "09:00";
@@ -158,7 +161,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const priceContracted = selectedPlan ? Number(selectedPlan.price) : 0;
   const showHorarios = selectedPlan ? isTaxiPetService(selectedPlan.name) : false;
   const showHorarioBanho = selectedPlan ? isBanhoService(selectedPlan.name) : false;
-  const showFrequency = showHorarioBanho || showHorarios;
+  const isHotel = showHorarios && transportMode === "hotel";
+  const showFrequency = (showHorarioBanho || showHorarios) && !isHotel;
   const isQuinzenal = showFrequency && frequency === "quinzenal";
   const isMensal = showFrequency && planType === "package" && frequency === "mensal";
   const contractDurationMonths = selectedPlan?.min_loyalty_months ? Number(selectedPlan.min_loyalty_months) : null;
@@ -299,6 +303,12 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     if (selectedPetIds.length === 0) { toast.error("Selecione ao menos um pet"); return; }
     if (isQuinzenal && plannedDays.length !== 1) { toast.error("Selecione exatamente 1 dia da semana para quinzenal"); return; }
     if (isMensal && plannedDays.length !== 1) { toast.error("Selecione exatamente 1 dia da semana para mensal"); return; }
+    if (isHotel) {
+      if (!hotelDataBuscar || !hotelDataLevar) { toast.error("Informe as datas de busca e entrega"); return; }
+      const b = new Date(hotelDataBuscar + "T00:00:00");
+      const l = new Date(hotelDataLevar + "T00:00:00");
+      if (isBefore(l, b)) { toast.error("A data de entrega deve ser igual ou posterior à data de busca"); return; }
+    }
     if (showHorarioBanho) {
       const hasAnyConflict = Object.values(banhoConflictsPerPet).some(c => c.length > 0);
       if (hasAnyConflict) {
@@ -426,7 +436,46 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
       } catch { /* noop */ }
 
       // Generate agendamentos
-      if (isMensal && plannedDays.length === 1 && monthlyDate) {
+      if (isHotel) {
+        const tipoServico = selectedPlan?.name || "Plano";
+        const today = startOfDay(new Date());
+        const buscarObj = new Date(hotelDataBuscar + "T00:00:00");
+        const levarObj = new Date(hotelDataLevar + "T00:00:00");
+        const agendamentos: any[] = [];
+
+        if (!isBefore(buscarObj, today)) {
+          agendamentos.push({
+            empresa_id: empresaId,
+            cliente_id: clienteId,
+            pet_id: petId,
+            tipo_servico: tipoServico,
+            data_hora: hotelDataBuscar + "T" + horaBuscar + ":00-03:00",
+            status: "agendado",
+            subscription_id: subscriptionId,
+            notas: `Hotel - busca (hospedagem até ${format(levarObj, "dd/MM/yyyy")})`,
+            hora_prevista_buscar: horaBuscar,
+            ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
+          });
+        }
+        if (!isBefore(levarObj, today)) {
+          agendamentos.push({
+            empresa_id: empresaId,
+            cliente_id: clienteId,
+            pet_id: petId,
+            tipo_servico: tipoServico,
+            data_hora: hotelDataLevar + "T" + horaLevar + ":00-03:00",
+            status: "agendado",
+            subscription_id: subscriptionId,
+            notas: `Hotel - leva (hospedado desde ${format(buscarObj, "dd/MM/yyyy")})`,
+            hora_prevista_levar: horaLevar,
+            ...(selectedBanhistaId ? { atendente_id: selectedBanhistaId } : {}),
+          });
+        }
+        if (agendamentos.length > 0) {
+          await supabase.from("agendamentos").insert(agendamentos as any);
+        }
+        totalAgendamentos += agendamentos.length;
+      } else if (isMensal && plannedDays.length === 1 && monthlyDate) {
         const today = startOfDay(new Date());
         const tipoServico = selectedPlan?.name || "Pacote";
         const agendamentos: any[] = [];
@@ -544,6 +593,9 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
     setPlannedDays([]);
     setHoraBuscar("08:00");
     setHoraLevar("17:00");
+    setHotelDataBuscar(format(new Date(), "yyyy-MM-dd"));
+    setHotelDataLevar(format(addDays(new Date(), 2), "yyyy-MM-dd"));
+    setTransportMode("ambos");
     setHoraBanhoPorPet({});
     setFrequency("semanal");
     setWeekParity(currentWeekParity);
@@ -844,8 +896,37 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
                     <RadioGroupItem value="levar" id="tm-levar" />
                     <Label htmlFor="tm-levar" className="cursor-pointer font-normal">Apenas levar</Label>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="hotel" id="tm-hotel" />
+                    <Label htmlFor="tm-hotel" className="cursor-pointer font-normal">Hotel (busca e leva em datas diferentes)</Label>
+                  </div>
                 </RadioGroup>
               </div>
+              {transportMode === "hotel" ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    O pet fica hospedado na empresa entre as duas datas. Serão gerados 2 agendamentos: um para a busca e outro para a entrega.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Data da busca</Label>
+                      <Input type="date" value={hotelDataBuscar} onChange={e => setHotelDataBuscar(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Hora da busca</Label>
+                      <Input type="time" value={horaBuscar} onChange={e => setHoraBuscar(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Data da entrega</Label>
+                      <Input type="date" value={hotelDataLevar} onChange={e => setHotelDataLevar(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Hora da entrega</Label>
+                      <Input type="time" value={horaLevar} onChange={e => setHoraLevar(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <div className="grid grid-cols-2 gap-4">
                 {(transportMode === "ambos" || transportMode === "buscar") && (
                   <div className="space-y-1.5">
@@ -860,6 +941,7 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
                   </div>
                 )}
               </div>
+              )}
             </div>
           )}
 
