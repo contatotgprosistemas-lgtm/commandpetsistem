@@ -50,6 +50,7 @@ const statusVariant = (s: string): { className: string } => {
 
 type Source = "transport" | "agendamento";
 type PeriodKey = "manha_buscar" | "tarde_levar" | "banho_buscar" | "banho_levar";
+type Leg = "buscar" | "levar" | "outro";
 
 type UnifiedBooking = {
   id: string; status: string; scheduled_date: string; scheduled_pickup_time: string | null;
@@ -64,6 +65,7 @@ type UnifiedBooking = {
   hora_prevista_levar: string | null;
   is_escola: boolean;
   is_banho: boolean;
+  leg?: Leg;
 };
 
 const onlyDigits = (s: string) => (s || "").replace(/\D/g, "");
@@ -240,7 +242,49 @@ export default function TaxiPetOperational() {
   const grouped = useMemo(() => {
     const escola = filtered.filter((b) => b.is_escola);
     const banho = filtered.filter((b) => b.is_banho && !b.is_escola);
-    const outras = filtered.filter((b) => !b.is_escola && !b.is_banho);
+    const outrasRaw = filtered.filter((b) => !b.is_escola && !b.is_banho);
+
+    // Expande cada booking em legs (buscar/levar) — espelha a lógica do Dashboard,
+    // garantindo a mesma contagem de corridas.
+    const outras: UnifiedBooking[] = [];
+    outrasRaw.forEach((b) => {
+      const trip = (b.trip_type || "").toLowerCase();
+      const buscar = normalizeTime(b.hora_prevista_buscar);
+      const levar = normalizeTime(b.hora_prevista_levar) || normalizeTime(b.scheduled_dropoff_time);
+      const isIdaVolta =
+        trip === "ida_volta" || (!!buscar && !!levar);
+
+      if (isIdaVolta) {
+        outras.push({ ...b, id: `${b.id}:buscar`, leg: "buscar" });
+        outras.push({ ...b, id: `${b.id}:levar`, leg: "levar" });
+      } else if (buscar) {
+        outras.push({ ...b, leg: "buscar" });
+      } else if (levar) {
+        outras.push({ ...b, leg: "levar" });
+      } else {
+        const baseLeg: Leg =
+          trip === "ida" || trip.includes("busca") || trip.includes("coleta")
+            ? "buscar"
+            : trip === "volta" || trip.includes("leva") || trip.includes("entreg")
+            ? "levar"
+            : "outro";
+        outras.push({ ...b, leg: baseLeg });
+      }
+    });
+    outras.sort((a, b) => {
+      const ta =
+        a.leg === "levar"
+          ? getBookingDisplayTime(a, "hora_prevista_levar")
+          : getBookingDisplayTime(a, "hora_prevista_buscar");
+      const tb =
+        b.leg === "levar"
+          ? getBookingDisplayTime(b, "hora_prevista_levar")
+          : getBookingDisplayTime(b, "hora_prevista_buscar");
+      if (ta && tb) return ta.localeCompare(tb);
+      if (ta) return -1;
+      if (tb) return 1;
+      return 0;
+    });
 
     // Escola: divide manhã / tarde com base nos horários previstos do agendamento (se houver),
     // senão usa o scheduled_pickup_time.
@@ -385,6 +429,7 @@ export default function TaxiPetOperational() {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Car className="h-4 w-4 text-muted-foreground" /> Outras corridas
+            <Badge variant="outline" className="text-[10px] ml-1">{grouped.outras.length}</Badge>
           </h3>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {grouped.outras.map((b) => (
