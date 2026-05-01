@@ -234,6 +234,46 @@ export default function PlanosPacotesPage() {
   });
 
   function statusBadge(status: string) {
+    return statusBadgeImpl(status);
+  }
+
+  function handleExportExcel() {
+    try {
+      const rows = filteredSubscriptions.map((s: any) => {
+        const planName = plans.find((p: any) => p.id === s.plan_id)?.name || packages.find((p: any) => p.id === s.package_id)?.name || "—";
+        const expired = isSubExpired(s.end_date) && s.status === "ativo";
+        const statusLabel = expired ? "Vencido" : (s.status ? s.status.charAt(0).toUpperCase() + s.status.slice(1) : "—");
+        return {
+          Cliente: (s.cliente as any)?.nome || "—",
+          Pet: (s.pet as any)?.nome || "—",
+          "Plano/Pacote": planName,
+          Frequência: s.frequency || "—",
+          "Valor (R$)": Number(s.final_price || 0),
+          "Desconto (R$)": Number(s.discount_amount || 0),
+          Início: s.start_date ? format(parseLocalDate(s.start_date), "dd/MM/yyyy") : "—",
+          Fim: s.end_date ? format(parseLocalDate(s.end_date), "dd/MM/yyyy") : "—",
+          "Renovação Auto": s.auto_renew ? "Sim" : "Não",
+          Status: statusLabel,
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = [
+        { wch: 28 }, { wch: 20 }, { wch: 30 }, { wch: 14 },
+        { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 12 },
+        { wch: 16 }, { wch: 12 },
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Contratações");
+      const filename = `contratacoes_${format(new Date(), "yyyy-MM-dd_HHmm")}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      toast.success(`${rows.length} contratação(ões) exportadas`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Erro ao exportar para Excel");
+    }
+  }
+
+  function statusBadgeImpl(status: string) {
     const map: Record<string, { className: string; label: string }> = {
       ativo: { className: "bg-emerald-500/15 text-emerald-600 border-0", label: "Ativo" },
       inativo: { className: "bg-muted text-muted-foreground border-0", label: "Inativo" },
