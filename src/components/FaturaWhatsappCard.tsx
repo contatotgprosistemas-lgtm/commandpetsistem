@@ -22,12 +22,15 @@ const DEFAULT_VENC =
   "Olá {primeiro_nome}!\n\nSua fatura *{descricao}* no valor de *R$ {valor}* vence *hoje ({vencimento})*.\n\nCaso já tenha efetuado o pagamento, por favor desconsidere. 🐾";
 const DEFAULT_ATRASO =
   "Olá {primeiro_nome},\n\nIdentificamos que sua fatura *{descricao}* de *R$ {valor}*, com vencimento em {vencimento}, está em atraso há {dias_atraso} dias.\n\nPor favor, regularize quando possível ou entre em contato conosco. 🐾";
+const DEFAULT_MULTA =
+  "Olá {primeiro_nome}!\n\nSua fatura *{descricao}* venceu e foi gerada uma *multa por atraso de R$ {valor_multa}*. 💸\n\nO pagamento deverá ser feito *junto com a fatura original*. Qualquer dúvida, estamos à disposição. 🐾";
 
 const TIPO_LABEL: Record<string, string> = {
   geracao: "Geração",
   pre_vencimento: "Pré-vencimento",
   vencimento: "Vencimento",
   atraso: "Atraso",
+  multa_atraso: "Multa atraso",
 };
 
 export function FaturaWhatsappCard() {
@@ -52,6 +55,12 @@ export function FaturaWhatsappCard() {
   const [enabledAtraso, setEnabledAtraso] = useState(true);
   const [msgAtraso, setMsgAtraso] = useState(DEFAULT_ATRASO);
   const [diasApos, setDiasApos] = useState<number>(2);
+
+  // multa por atraso
+  const [multaEnabled, setMultaEnabled] = useState(false);
+  const [multaValor, setMultaValor] = useState<number>(30);
+  const [multaDescricao, setMultaDescricao] = useState<string>("Multa por atraso no pagamento");
+  const [msgMulta, setMsgMulta] = useState<string>(DEFAULT_MULTA);
 
   // cadence
   const [intervalo, setIntervalo] = useState<number>(8);
@@ -81,6 +90,10 @@ export function FaturaWhatsappCard() {
         setDiasApos((data as any).dias_apos ?? 2);
         setIntervalo((data as any).intervalo_entre_envios_seg ?? 8);
         setMaxPorMin((data as any).max_envios_por_minuto ?? 6);
+        setMultaEnabled((data as any).multa_atraso_enabled ?? false);
+        setMultaValor(Number((data as any).multa_atraso_valor ?? 30));
+        setMultaDescricao((data as any).multa_atraso_descricao ?? "Multa por atraso no pagamento");
+        setMsgMulta((data as any).multa_atraso_mensagem ?? DEFAULT_MULTA);
       }
       const { data: logData } = await supabase
         .from("invoice_notification_log")
@@ -115,6 +128,10 @@ export function FaturaWhatsappCard() {
         dias_apos: diasApos,
         intervalo_entre_envios_seg: intervalo,
         max_envios_por_minuto: maxPorMin,
+        multa_atraso_enabled: multaEnabled,
+        multa_atraso_valor: multaValor,
+        multa_atraso_descricao: multaDescricao,
+        multa_atraso_mensagem: msgMulta,
       });
     setSaving(false);
     if (error) toast.error("Erro ao salvar: " + error.message);
@@ -140,6 +157,8 @@ export function FaturaWhatsappCard() {
       <code className="bg-muted px-1 rounded">{"{vencimento}"}</code>{" "}
       <code className="bg-muted px-1 rounded">{"{dias_restantes}"}</code>{" "}
       <code className="bg-muted px-1 rounded">{"{dias_atraso}"}</code>
+      {" "}
+      <code className="bg-muted px-1 rounded">{"{valor_multa}"}</code>
     </p>
   );
 
@@ -167,11 +186,12 @@ export function FaturaWhatsappCard() {
         </div>
 
         <Tabs defaultValue="geracao" className="w-full">
-          <TabsList className="grid grid-cols-4 w-full">
+          <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="geracao">Geração</TabsTrigger>
             <TabsTrigger value="pre">Pré-venc.</TabsTrigger>
             <TabsTrigger value="venc">Vencimento</TabsTrigger>
             <TabsTrigger value="atraso">Atraso</TabsTrigger>
+            <TabsTrigger value="multa">Multa</TabsTrigger>
           </TabsList>
 
           <TabsContent value="geracao" className="space-y-3 pt-3">
@@ -257,6 +277,50 @@ export function FaturaWhatsappCard() {
               disabled={!enabled || !enabledAtraso}
               className="text-sm font-mono"
             />
+            {variaveis}
+          </TabsContent>
+
+          <TabsContent value="multa" className="space-y-3 pt-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Gerar fatura de multa por atraso</Label>
+              <Switch checked={multaEnabled} onCheckedChange={setMultaEnabled} disabled={!enabled} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              No dia seguinte ao vencimento (10h BRT), o sistema gera uma fatura complementar
+              fixa para cada fatura em aberto. O cliente é obrigado a pagá-la junto com a
+              fatura original (não é possível baixar uma sem a outra).
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Valor da multa (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={multaValor}
+                  onChange={(e) => setMultaValor(Math.max(0, Number(e.target.value || 0)))}
+                  disabled={!enabled || !multaEnabled}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Descrição (aparece na fatura)</Label>
+                <Input
+                  value={multaDescricao}
+                  onChange={(e) => setMultaDescricao(e.target.value)}
+                  disabled={!enabled || !multaEnabled}
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Mensagem WhatsApp ao gerar a multa</Label>
+              <Textarea
+                value={msgMulta}
+                onChange={(e) => setMsgMulta(e.target.value)}
+                rows={7}
+                disabled={!enabled || !multaEnabled}
+                className="text-sm font-mono"
+              />
+            </div>
             {variaveis}
           </TabsContent>
         </Tabs>
