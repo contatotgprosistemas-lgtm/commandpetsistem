@@ -12,6 +12,7 @@ import {
   Sun, Moon, Bath, Navigation2, Home, Hash,
 } from "lucide-react";
 import { format } from "date-fns";
+import { extractTimeBR } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent,
@@ -134,7 +135,7 @@ export default function TaxiPetOperational() {
 
     const agendamentoBookings: UnifiedBooking[] = (ag || []).map((item: any) => ({
       id: item.id, status: item.status, scheduled_date: date,
-      scheduled_pickup_time: format(new Date(item.data_hora), "HH:mm:ss"),
+      scheduled_pickup_time: extractTimeBR(item.data_hora),
       trip_type: item.tipo_servico, notes: item.notas, special_instructions: null,
       driver_id: null, final_price: Number(item.valor || 0),
       cliente_nome: item.clientes?.nome || "—",

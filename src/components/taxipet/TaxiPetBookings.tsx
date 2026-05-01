@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash2, Search, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { extractTimeBR } from "@/lib/utils";
 
 const TRANSPORT_FILTER = "tipo_servico.ilike.%taxi%,tipo_servico.ilike.%transport%,tipo_servico.ilike.%leva%";
 
@@ -103,8 +104,8 @@ export default function TaxiPetBookings() {
       transport_type_id: null,
       driver_id: null,
       vehicle_id: null,
-      scheduled_date: format(new Date(item.data_hora), "yyyy-MM-dd"),
-      scheduled_pickup_time: format(new Date(item.data_hora), "HH:mm:ss"),
+      scheduled_date: (item.data_hora as string).split("T")[0].split(" ")[0],
+      scheduled_pickup_time: extractTimeBR(item.data_hora),
       scheduled_dropoff_time: null,
       trip_type: item.tipo_servico,
       status: item.status,

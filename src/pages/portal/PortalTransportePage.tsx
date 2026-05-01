@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Car, Clock, MapPin, CheckCircle, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
+import { extractTimeBR } from "@/lib/utils";
 
 const statusLabels: Record<string, string> = {
   agendada: "Agendada",
@@ -102,8 +103,8 @@ export default function PortalTransportePage() {
       ...(ag || []).map((a: any) => ({
         id: a.id,
         status: a.status,
-        scheduled_date: format(new Date(a.data_hora), "yyyy-MM-dd"),
-        scheduled_pickup_time: format(new Date(a.data_hora), "HH:mm:ss"),
+        scheduled_date: (a.data_hora as string).split("T")[0].split(" ")[0],
+        scheduled_pickup_time: extractTimeBR(a.data_hora),
         pet_nome: a.pets?.nome || "Pet",
         trip_type: a.tipo_servico,
         source: "agendamento" as const,
