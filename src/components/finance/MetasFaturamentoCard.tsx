@@ -106,8 +106,11 @@ export function MetasFaturamentoCard() {
       const dr: Record<number, string> = {};
       for (let m = 1; m <= 12; m++) {
         const found = mts.find((x) => x.mes === m);
-        d[m] = found ? String(found.valor_meta) : "";
-        dr[m] = found && found.realizado_manual != null ? String(found.realizado_manual) : "";
+        d[m] = found ? formatBRLInput(Number(found.valor_meta)) : "";
+        dr[m] =
+          found && found.realizado_manual != null
+            ? formatBRLInput(Number(found.realizado_manual))
+            : "";
       }
       setDraft(d);
       setDraftReal(dr);
@@ -126,15 +129,14 @@ export function MetasFaturamentoCard() {
     return Array.from({ length: 12 }, (_, i) => {
       const mes = i + 1;
       // Prefer the live draft value so totals/chart update as the user types
-      const draftRaw = (draft[mes] ?? "").toString().replace(",", ".").trim();
-      const draftNum = draftRaw === "" ? NaN : Number(draftRaw);
+      const draftStr = draft[mes] ?? "";
       const savedMeta = Number(metas.find((m) => m.mes === mes)?.valor_meta ?? 0);
-      const meta = isFinite(draftNum) ? draftNum : savedMeta;
+      const meta = draftStr.trim() === "" ? savedMeta : parseBRLInput(draftStr);
       // realizado: usa manual se houver (preferência), senão movimentações reais
-      const realRaw = (draftReal[mes] ?? "").toString().replace(",", ".").trim();
-      const realNum = realRaw === "" ? NaN : Number(realRaw);
+      const realStr = draftReal[mes] ?? "";
+      const realNum = realStr.trim() === "" ? NaN : parseBRLInput(realStr);
       const savedManual = metas.find((m) => m.mes === mes)?.realizado_manual;
-      const realizado = isFinite(realNum)
+      const realizado = isFinite(realNum) && realStr.trim() !== ""
         ? realNum
         : savedManual != null
           ? Number(savedManual)
@@ -165,9 +167,9 @@ export function MetasFaturamentoCard() {
     setSaving(true);
     const rows = Array.from({ length: 12 }, (_, i) => {
       const mes = i + 1;
-      const valor = parseFloat((draft[mes] || "0").toString().replace(",", "."));
-      const realRaw = (draftReal[mes] ?? "").toString().replace(",", ".").trim();
-      const realParsed = realRaw === "" ? null : parseFloat(realRaw);
+      const valor = parseBRLInput(draft[mes] || "");
+      const realStr = (draftReal[mes] ?? "").trim();
+      const realParsed = realStr === "" ? null : parseBRLInput(realStr);
       return {
         empresa_id: empresaId,
         ano,
