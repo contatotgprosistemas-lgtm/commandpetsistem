@@ -161,7 +161,8 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const priceContracted = selectedPlan ? Number(selectedPlan.price) : 0;
   const showHorarios = selectedPlan ? isTaxiPetService(selectedPlan.name) : false;
   const showHorarioBanho = selectedPlan ? isBanhoService(selectedPlan.name) : false;
-  const showFrequency = showHorarioBanho || showHorarios;
+  const isHotel = showHorarios && transportMode === "hotel";
+  const showFrequency = (showHorarioBanho || showHorarios) && !isHotel;
   const isQuinzenal = showFrequency && frequency === "quinzenal";
   const isMensal = showFrequency && planType === "package" && frequency === "mensal";
   const contractDurationMonths = selectedPlan?.min_loyalty_months ? Number(selectedPlan.min_loyalty_months) : null;
