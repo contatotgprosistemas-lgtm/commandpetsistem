@@ -25,6 +25,9 @@ function startOfDay(d: Date): Date {
 function endOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0);
 }
+function startOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -65,11 +68,13 @@ Deno.serve(async (req) => {
       try {
         const plan = (plans ?? []).find((p: any) => p.id === sub.plan_id);
         const pkg = (pkgs ?? []).find((p: any) => p.id === sub.package_id);
-        const validityDays = plan?.validity_days || pkg?.validity_days || 30;
         const nome = plan?.name || pkg?.name || "Plano/Pacote";
 
-        const newStart = new Date();
-        const newEnd = addDays(newStart, validityDays);
+        // Renovação sempre do 1º ao último dia do mês corrente,
+        // independentemente da validade do plano (28, 30 ou 31 dias).
+        const now = new Date();
+        const newStart = startOfMonth(now);
+        const newEnd = endOfMonth(now);
         const newStartStr = fmt(newStart);
         const newEndStr = fmt(newEnd);
 
@@ -137,8 +142,8 @@ Deno.serve(async (req) => {
                 cursor.setDate(cursor.getDate() + 1);
               }
             } else if (frequency === "quinzenal" && plannedDays.length === 1) {
-              // Every 14 days from first matching weekday, until end of new period
-              const newEndObj = startOfDay(addDays(newStart, validityDays));
+              // Quinzenal: a cada 14 dias, dentro do mês corrente
+              const newEndObj = startOfDay(monthEnd);
               const cursor = new Date(startObj);
               while (cursor.getDay() !== plannedDays[0]) {
                 cursor.setDate(cursor.getDate() + 1);
