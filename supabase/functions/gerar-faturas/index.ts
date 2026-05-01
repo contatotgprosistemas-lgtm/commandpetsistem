@@ -211,7 +211,7 @@ Deno.serve(async (req) => {
     const { data: subscriptions, error: subErr } = await supabase
       .from("customer_pet_subscriptions")
       .select(
-        "id, empresa_id, cliente_id, pet_id, plan_id, package_id, final_price, cliente:clientes(id, nome, whatsapp, telefone, dia_vencimento_fatura)",
+        "id, empresa_id, cliente_id, pet_id, plan_id, package_id, final_price, frequency, planned_days, start_date, cliente:clientes(id, nome, whatsapp, telefone, dia_vencimento_fatura)",
       )
       .eq("status", "ativo");
 
@@ -288,6 +288,81 @@ Deno.serve(async (req) => {
         };
       g.items.push({ descricao: planLabel, valor: Number(sub.final_price), subscription_id: sub.id });
       g.total += Number(sub.final_price);
+
+      // ===== 5º banho do mês =====
+      // Aplica somente para planos de banho/tosa, frequência semanal,
+      // e quando o dia planejado tem 5 ocorrências no mês corrente.
+      // Pula se a assinatura começou neste mês ou depois (primeiro ciclo de consumo).
+      try {
+        const isBanhoTosa = /(banho|tosa|grooming|hidrata|pelo)/i.test(planName);
+        const freq = (sub as any).frequency || "semanal";
+        const plannedDays: number[] = (sub as any).planned_days || [];
+        if (isBanhoTosa && freq === "semanal" && plannedDays.length > 0) {
+          const year = brtNow.getFullYear();
+          const month = brtNow.getMonth();
+          const subStart = new Date(((sub as any).start_date || "") + "T00:00:00");
+          const startedThisMonthOrLater =
+            isNaN(subStart.getTime())
+              ? false
+              : subStart.getFullYear() > year ||
+                (subStart.getFullYear() === year && subStart.getMonth() >= month);
+
+          if (!startedThisMonthOrLater) {
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            // Conta ocorrências de cada planned_day no mês e coleta a 5ª data
+            const extraDates: string[] = [];
+            for (const wd of plannedDays) {
+              const datesOfWd: Date[] = [];
+              for (let d = 1; d <= daysInMonth; d++) {
+                const dt = new Date(year, month, d);
+                if (dt.getDay() === wd) datesOfWd.push(dt);
+              }
+              if (datesOfWd.length >= 5) {
+                extraDates.push(fmtLocal(datesOfWd[4]));
+              }
+            }
+
+            if (extraDates.length > 0) {
+              const valorExtraUnit =
+                Math.round((Number(sub.final_price) / 4) * 100) / 100;
+
+              for (const extraDate of extraDates) {
+                g.items.push({
+                  descricao: `${planLabel} - 5º banho do mês (${formatDateBR(extraDate)})`,
+                  valor: valorExtraUnit,
+                  subscription_id: sub.id,
+                });
+                g.total += valorExtraUnit;
+
+                // Cria agendamento extra (idempotente)
+                const { data: jaExiste } = await supabase
+                  .from("agendamentos")
+                  .select("id")
+                  .eq("subscription_id", sub.id)
+                  .gte("data_hora", extraDate + "T00:00:00")
+                  .lte("data_hora", extraDate + "T23:59:59")
+                  .ilike("notas", "%5º banho%")
+                  .limit(1);
+                if (!jaExiste || jaExiste.length === 0) {
+                  await supabase.from("agendamentos").insert({
+                    empresa_id: sub.empresa_id,
+                    cliente_id: sub.cliente_id,
+                    pet_id: sub.pet_id,
+                    tipo_servico: planName,
+                    data_hora: `${extraDate}T07:00:00-03:00`,
+                    status: "agendado",
+                    subscription_id: sub.id,
+                    notas: "5º banho do mês - gerado automaticamente",
+                  } as any);
+                }
+              }
+            }
+          }
+        }
+      } catch (extraErr) {
+        console.error("Erro processando 5º banho para sub", sub.id, extraErr);
+      }
+
       groups.set(key, g);
     }
 
@@ -349,7 +424,7 @@ Deno.serve(async (req) => {
             empresa_id: g.empresa_id,
             descricao: it.descricao,
             valor: it.valor,
-            tipo: "principal",
+            tipo: /5º banho/i.test(it.descricao) ? "extra" : "principal",
           })),
         );
       }
