@@ -619,12 +619,27 @@ function SortableRouteItem({
 function BookingCard({ b, onAdvance, isTerminal }: { b: UnifiedBooking; onAdvance: (b: UnifiedBooking) => void; isTerminal: (s: string) => boolean; }) {
   const sv = statusVariant(b.status);
   const phone = b.cliente_whatsapp || b.cliente_telefone;
-  const time = getBookingDisplayTime(b) || "—";
+  const preferred =
+    b.leg === "buscar"
+      ? "hora_prevista_buscar"
+      : b.leg === "levar"
+      ? "hora_prevista_levar"
+      : undefined;
+  const time = getBookingDisplayTime(b, preferred) || "—";
+  const legLabel =
+    b.leg === "buscar" ? "Buscar" : b.leg === "levar" ? "Levar" : null;
   return (
     <Card>
       <CardContent className="p-4 space-y-2 text-xs">
         <div className="flex items-center justify-between">
-          <span className="font-medium text-sm">{b.pet_nome}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium text-sm">{b.pet_nome}</span>
+            {legLabel && (
+              <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                {legLabel}
+              </Badge>
+            )}
+          </div>
           <Badge variant="outline" className={`text-[10px] ${sv.className}`}>{statusLabels[b.status] || b.status}</Badge>
         </div>
         <div className="flex items-center gap-1 text-muted-foreground"><User className="h-3 w-3" /> {b.cliente_nome}</div>
