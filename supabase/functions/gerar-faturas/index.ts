@@ -309,14 +309,27 @@ Deno.serve(async (req) => {
 
           if (!startedThisMonthOrLater) {
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            // Carrega feriados do mês para esta empresa (para pular agendamento, fatura mantém)
+            // Carrega feriados / períodos fechados do mês para esta empresa
+            const monthIni = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+            const monthFim = `${year}-${String(month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
             const { data: feriadosData } = await supabase
               .from("feriados")
-              .select("data")
+              .select("data, data_fim")
               .eq("empresa_id", sub.empresa_id)
-              .gte("data", `${year}-${String(month + 1).padStart(2, "0")}-01`)
-              .lte("data", `${year}-${String(month + 1).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`);
-            const feriadosSet = new Set((feriadosData || []).map((f: any) => f.data));
+              .lte("data", monthFim);
+            const feriadosSet = new Set<string>();
+            for (const f of feriadosData || []) {
+              const ini = new Date(((f as any).data || "") + "T00:00:00");
+              const fim = (f as any).data_fim
+                ? new Date(((f as any).data_fim) + "T00:00:00")
+                : ini;
+              const cur = new Date(ini);
+              while (cur <= fim) {
+                const ds = fmtLocal(cur);
+                if (ds >= monthIni && ds <= monthFim) feriadosSet.add(ds);
+                cur.setDate(cur.getDate() + 1);
+              }
+            }
             // Conta ocorrências de cada planned_day no mês e coleta a 5ª data
             const extraDates: string[] = [];
             for (const wd of plannedDays) {
