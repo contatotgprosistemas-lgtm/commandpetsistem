@@ -119,14 +119,25 @@ Deno.serve(async (req) => {
           const todayStart = startOfDay(new Date());
           const agendamentos: any[] = [];
 
-          // Carrega feriados da empresa para o mês corrente (pular agendamentos)
+          // Carrega feriados / períodos fechados da empresa que tocam o mês corrente
           const { data: feriadosData } = await supabase
             .from("feriados")
-            .select("data")
+            .select("data, data_fim")
             .eq("empresa_id", sub.empresa_id)
-            .gte("data", newStartStr)
             .lte("data", newEndStr);
-          const feriadosSet = new Set((feriadosData || []).map((f: any) => f.data));
+          const feriadosSet = new Set<string>();
+          for (const f of feriadosData || []) {
+            const ini = new Date(((f as any).data || "") + "T00:00:00");
+            const fim = (f as any).data_fim
+              ? new Date(((f as any).data_fim) + "T00:00:00")
+              : ini;
+            const cur = new Date(ini);
+            while (cur <= fim) {
+              const ds = fmt(cur);
+              if (ds >= newStartStr && ds <= newEndStr) feriadosSet.add(ds);
+              cur.setDate(cur.getDate() + 1);
+            }
+          }
 
           if (plannedDays.length > 0) {
             if (frequency === "mensal" && plannedDays.length === 1) {

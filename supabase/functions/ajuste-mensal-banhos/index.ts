@@ -117,19 +117,29 @@ Deno.serve(async (req) => {
     const monthEndDate = new Date(year, month + 1, 0);
     const todayStart = new Date(year, today.getMonth(), today.getDate());
 
-    // Carrega feriados do mês para todas as empresas envolvidas (uma única query)
+    // Carrega feriados / períodos fechados do mês para todas as empresas envolvidas
     const empresaIds = [...new Set((subscriptions || []).map((s: any) => s.empresa_id))];
     const feriadosPorEmpresa: Record<string, Set<string>> = {};
+    const monthEndStr = fmtDate(monthEndDate);
     if (empresaIds.length > 0) {
       const { data: feriadosAll } = await supabase
         .from("feriados")
-        .select("empresa_id, data")
+        .select("empresa_id, data, data_fim")
         .in("empresa_id", empresaIds)
-        .gte("data", monthStart)
-        .lte("data", fmtDate(monthEndDate));
+        .lte("data", monthEndStr);
       for (const f of feriadosAll || []) {
-        const set = feriadosPorEmpresa[(f as any).empresa_id] ||= new Set<string>();
-        set.add((f as any).data);
+        const empId = (f as any).empresa_id;
+        const set = feriadosPorEmpresa[empId] ||= new Set<string>();
+        const ini = new Date(((f as any).data || "") + "T00:00:00");
+        const fim = (f as any).data_fim
+          ? new Date(((f as any).data_fim) + "T00:00:00")
+          : ini;
+        const cur = new Date(ini);
+        while (cur <= fim) {
+          const ds = fmtDate(cur);
+          if (ds >= monthStart && ds <= monthEndStr) set.add(ds);
+          cur.setDate(cur.getDate() + 1);
+        }
       }
     }
 

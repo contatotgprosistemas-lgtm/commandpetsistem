@@ -7,23 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, CalendarDays, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Trash2, CalendarDays, Sparkles, Loader2, CalendarRange } from "lucide-react";
 import { formatDateBR } from "@/lib/utils";
 
 type Feriado = {
   id: string;
   data: string;
+  data_fim: string | null;
   descricao: string;
   tipo: string;
 };
 
-// Feriados nacionais fixos + cálculo de Carnaval, Sexta-Feira Santa e Corpus Christi
 function calcularPascoa(year: number): Date {
   const a = year % 19;
   const b = Math.floor(year / 100);
@@ -57,7 +57,7 @@ function fmtLocal(d: Date): string {
 
 function getFeriadosNacionais(year: number): { data: string; descricao: string }[] {
   const pascoa = calcularPascoa(year);
-  const carnaval = addDaysLocal(pascoa, -47); // Terça-feira de Carnaval
+  const carnaval = addDaysLocal(pascoa, -47);
   const sextaSanta = addDaysLocal(pascoa, -2);
   const corpus = addDaysLocal(pascoa, 60);
   return [
@@ -83,7 +83,8 @@ export function FeriadosTab() {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ data: "", descricao: "" });
+  const [mode, setMode] = useState<"feriado" | "periodo">("feriado");
+  const [form, setForm] = useState({ data: "", data_fim: "", descricao: "" });
   const [year, setYear] = useState(new Date().getFullYear());
 
   async function load() {
@@ -91,11 +92,11 @@ export function FeriadosTab() {
     setLoading(true);
     const { data, error } = await supabase
       .from("feriados")
-      .select("id, data, descricao, tipo")
+      .select("id, data, data_fim, descricao, tipo")
       .eq("empresa_id", profile.empresa_id)
       .order("data", { ascending: true });
     if (error) {
-      toast({ title: "Erro ao carregar feriados", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao carregar", description: error.message, variant: "destructive" });
     } else {
       setFeriados((data || []) as Feriado[]);
     }
@@ -104,42 +105,58 @@ export function FeriadosTab() {
 
   useEffect(() => { load(); }, [profile?.empresa_id]);
 
+  function openDialog(m: "feriado" | "periodo") {
+    setMode(m);
+    setForm({ data: "", data_fim: "", descricao: "" });
+    setOpen(true);
+  }
+
   async function handleAdd() {
     if (!profile?.empresa_id) return;
     if (!form.data || !form.descricao.trim()) {
       toast({ title: "Preencha data e descrição", variant: "destructive" });
       return;
     }
+    if (mode === "periodo") {
+      if (!form.data_fim) {
+        toast({ title: "Informe a data final do período", variant: "destructive" });
+        return;
+      }
+      if (form.data_fim < form.data) {
+        toast({ title: "Data final deve ser igual ou após a inicial", variant: "destructive" });
+        return;
+      }
+    }
     setSaving(true);
     const { error } = await supabase.from("feriados").insert({
       empresa_id: profile.empresa_id,
       data: form.data,
+      data_fim: mode === "periodo" ? form.data_fim : null,
       descricao: form.descricao.trim(),
-      tipo: "manual",
+      tipo: mode === "periodo" ? "periodo" : "manual",
     });
     setSaving(false);
     if (error) {
       toast({
         title: "Erro ao salvar",
-        description: error.code === "23505" ? "Já existe feriado nesta data" : error.message,
+        description: error.code === "23505" ? "Já existe registro nesta data" : error.message,
         variant: "destructive",
       });
       return;
     }
-    toast({ title: "Feriado cadastrado" });
-    setForm({ data: "", descricao: "" });
+    toast({ title: mode === "periodo" ? "Período fechado cadastrado" : "Feriado cadastrado" });
     setOpen(false);
     load();
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Remover este feriado?")) return;
+    if (!confirm("Remover este registro?")) return;
     const { error } = await supabase.from("feriados").delete().eq("id", id);
     if (error) {
       toast({ title: "Erro ao remover", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Feriado removido" });
+    toast({ title: "Removido" });
     load();
   }
 
@@ -183,10 +200,11 @@ export function FeriadosTab() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" /> Feriados
+              <CalendarDays className="h-5 w-5" /> Feriados e dias fechados
             </CardTitle>
             <CardDescription>
-              Datas em que a empresa estará fechada. Agendamentos automáticos não serão criados nesses dias e a fatura não é afetada.
+              Datas em que a empresa estará fechada (feriados, férias, dedetização, manutenção etc.).
+              Agendamentos automáticos não serão criados nesses dias e a fatura não é afetada.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -202,27 +220,52 @@ export function FeriadosTab() {
               {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Importar nacionais
             </Button>
+            <Button variant="outline" onClick={() => openDialog("periodo")}>
+              <CalendarRange className="h-4 w-4" /> Período fechado
+            </Button>
+            <Button onClick={() => openDialog("feriado")}>
+              <Plus className="h-4 w-4" /> Novo feriado
+            </Button>
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4" /> Novo feriado</Button>
-              </DialogTrigger>
               <DialogContent
                 onPointerDownOutside={(e) => e.preventDefault()}
                 onInteractOutside={(e) => e.preventDefault()}
               >
                 <DialogHeader>
-                  <DialogTitle>Cadastrar feriado</DialogTitle>
-                  <DialogDescription>Adicione uma data em que a empresa não funcionará.</DialogDescription>
+                  <DialogTitle>
+                    {mode === "periodo" ? "Cadastrar período fechado" : "Cadastrar feriado"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {mode === "periodo"
+                      ? "Use para férias, dedetização, manutenção ou qualquer intervalo em que a empresa não funcionará."
+                      : "Adicione uma data em que a empresa não funcionará."}
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3">
-                  <div>
-                    <Label>Data</Label>
-                    <Input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} />
+                  <div className={mode === "periodo" ? "grid grid-cols-2 gap-3" : ""}>
+                    <div>
+                      <Label>{mode === "periodo" ? "Data inicial" : "Data"}</Label>
+                      <Input
+                        type="date"
+                        value={form.data}
+                        onChange={(e) => setForm({ ...form, data: e.target.value })}
+                      />
+                    </div>
+                    {mode === "periodo" && (
+                      <div>
+                        <Label>Data final</Label>
+                        <Input
+                          type="date"
+                          value={form.data_fim}
+                          onChange={(e) => setForm({ ...form, data_fim: e.target.value })}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <Label>Descrição</Label>
+                    <Label>{mode === "periodo" ? "Motivo" : "Descrição"}</Label>
                     <Input
-                      placeholder="Ex: Aniversário da cidade"
+                      placeholder={mode === "periodo" ? "Ex: Férias, Dedetização, Manutenção" : "Ex: Aniversário da cidade"}
                       value={form.descricao}
                       onChange={(e) => setForm({ ...form, descricao: e.target.value })}
                     />
@@ -247,13 +290,13 @@ export function FeriadosTab() {
           </div>
         ) : sorted.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">
-            Nenhum feriado cadastrado. Use "Importar nacionais" para começar.
+            Nenhum registro cadastrado.
           </p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Data</TableHead>
+                <TableHead>Período</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead className="w-12"></TableHead>
@@ -262,11 +305,27 @@ export function FeriadosTab() {
             <TableBody>
               {sorted.map((f) => (
                 <TableRow key={f.id}>
-                  <TableCell>{formatDateBR(f.data)}</TableCell>
+                  <TableCell>
+                    {f.data_fim && f.data_fim !== f.data
+                      ? `${formatDateBR(f.data)} → ${formatDateBR(f.data_fim)}`
+                      : formatDateBR(f.data)}
+                  </TableCell>
                   <TableCell>{f.descricao}</TableCell>
                   <TableCell>
-                    <Badge variant={f.tipo === "nacional" ? "secondary" : "outline"}>
-                      {f.tipo === "nacional" ? "Nacional" : "Manual"}
+                    <Badge
+                      variant={
+                        f.tipo === "nacional"
+                          ? "secondary"
+                          : f.tipo === "periodo"
+                            ? "default"
+                            : "outline"
+                      }
+                    >
+                      {f.tipo === "nacional"
+                        ? "Nacional"
+                        : f.tipo === "periodo"
+                          ? "Período"
+                          : "Manual"}
                     </Badge>
                   </TableCell>
                   <TableCell>
