@@ -241,6 +241,16 @@ Deno.serve(async (req) => {
         (year === today.getFullYear() && month >= today.getMonth());
       if (!isCurrentOrFutureMonth) continue;
 
+      // ✋ Skip subscriptions that started in the current month (or later).
+      // Their first month is just regular consumption — no "extra" is owed
+      // because the base price has not yet covered the standard 4 sessions.
+      const subStartForExtra = new Date(sub.start_date + "T00:00:00");
+      const startedThisMonthOrLater =
+        subStartForExtra.getFullYear() > year ||
+        (subStartForExtra.getFullYear() === year &&
+          subStartForExtra.getMonth() >= month);
+      if (startedThisMonthOrLater) continue;
+
       // Determine extra dates
       const extraDates: string[] = [];
 
