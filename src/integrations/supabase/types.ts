@@ -5403,6 +5403,50 @@ export type Database = {
           },
         ]
       }
+      taxipet_rota_ordem: {
+        Row: {
+          booking_id: string
+          created_at: string
+          data: string
+          empresa_id: string
+          id: string
+          ordem: number
+          periodo: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          data: string
+          empresa_id: string
+          id?: string
+          ordem?: number
+          periodo: string
+          source: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          data?: string
+          empresa_id?: string
+          id?: string
+          ordem?: number
+          periodo?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxipet_rota_ordem_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tipo_servico_perguntas_checklist: {
         Row: {
           ativo: boolean
