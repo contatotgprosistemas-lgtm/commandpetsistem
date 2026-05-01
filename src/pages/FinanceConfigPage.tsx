@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, CreditCard, QrCode, Wallet } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, QrCode, Wallet, AlertTriangle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 interface TaxaFinanceira {
@@ -35,6 +35,13 @@ const BANDEIRAS = ["Visa", "Mastercard", "Elo", "Amex", "Hipercard", "Outras"];
 
 export default function FinanceConfigPage() {
   const { profile } = useAuth();
+
+  // === Multa por atraso ===
+  const [multaLoading, setMultaLoading] = useState(true);
+  const [multaSaving, setMultaSaving] = useState(false);
+  const [multaEnabled, setMultaEnabled] = useState(false);
+  const [multaValor, setMultaValor] = useState<string>("30");
+  const [multaDescricao, setMultaDescricao] = useState<string>("Multa por atraso no pagamento");
 
   // === Formas de Pagamento ===
   const [formas, setFormas] = useState<FormaPagamento[]>([]);
@@ -75,7 +82,42 @@ export default function FinanceConfigPage() {
   useEffect(() => {
     fetchFormas();
     fetchTaxas();
+    fetchMulta();
   }, []);
+
+  async function fetchMulta() {
+    if (!profile?.empresa_id) { setMultaLoading(false); return; }
+    setMultaLoading(true);
+    const { data } = await supabase
+      .from("invoice_notification_config")
+      .select("multa_atraso_enabled, multa_atraso_valor, multa_atraso_descricao")
+      .eq("empresa_id", profile.empresa_id)
+      .maybeSingle();
+    if (data) {
+      setMultaEnabled((data as any).multa_atraso_enabled ?? false);
+      setMultaValor(String((data as any).multa_atraso_valor ?? 30));
+      setMultaDescricao((data as any).multa_atraso_descricao ?? "Multa por atraso no pagamento");
+    }
+    setMultaLoading(false);
+  }
+
+  async function handleSaveMulta() {
+    if (!profile?.empresa_id) { toast.error("Empresa não encontrada"); return; }
+    const valor = parseFloat(multaValor.replace(",", ".")) || 0;
+    if (valor < 0) { toast.error("Valor inválido"); return; }
+    setMultaSaving(true);
+    const { error } = await supabase
+      .from("invoice_notification_config")
+      .upsert({
+        empresa_id: profile.empresa_id,
+        multa_atraso_enabled: multaEnabled,
+        multa_atraso_valor: valor,
+        multa_atraso_descricao: multaDescricao.trim() || "Multa por atraso no pagamento",
+      });
+    setMultaSaving(false);
+    if (error) { toast.error("Erro ao salvar: " + error.message); return; }
+    toast.success("Regra de multa salva");
+  }
 
   // --- Formas de Pagamento handlers ---
   function openNewForma() {
@@ -203,6 +245,68 @@ export default function FinanceConfigPage() {
 
   return (
     <div className="space-y-8">
+      {/* === MULTA POR ATRASO === */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-warning" /> Multa por atraso
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Quando ativa, no dia seguinte ao vencimento (10h BRT) o sistema gera uma fatura
+            complementar fixa para cada fatura em aberto. O cliente é obrigado a pagar a multa
+            junto com a fatura original.
+          </p>
+        </div>
+
+        {multaLoading ? (
+          <Skeleton className="h-32 w-full rounded-lg" />
+        ) : (
+          <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Gerar fatura de multa automaticamente</p>
+                <p className="text-xs text-muted-foreground">
+                  Roda diariamente às 10h (horário de Brasília).
+                </p>
+              </div>
+              <Switch checked={multaEnabled} onCheckedChange={setMultaEnabled} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Valor da multa (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={multaValor}
+                  onChange={(e) => setMultaValor(e.target.value)}
+                  disabled={!multaEnabled}
+                  placeholder="30.00"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Descrição (aparece na fatura)</Label>
+                <Input
+                  value={multaDescricao}
+                  onChange={(e) => setMultaDescricao(e.target.value)}
+                  disabled={!multaEnabled}
+                  placeholder="Multa por atraso no pagamento"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button size="sm" onClick={handleSaveMulta} disabled={multaSaving}>
+                {multaSaving ? "Salvando..." : "Salvar regra de multa"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <Separator />
+
       {/* === FORMAS DE PAGAMENTO === */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
