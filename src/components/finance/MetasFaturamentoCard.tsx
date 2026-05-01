@@ -98,7 +98,11 @@ export function MetasFaturamentoCard() {
   const chartData = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
       const mes = i + 1;
-      const meta = metas.find((m) => m.mes === mes)?.valor_meta ?? 0;
+      // Prefer the live draft value so totals/chart update as the user types
+      const draftRaw = (draft[mes] ?? "").toString().replace(",", ".").trim();
+      const draftNum = draftRaw === "" ? NaN : Number(draftRaw);
+      const savedMeta = Number(metas.find((m) => m.mes === mes)?.valor_meta ?? 0);
+      const meta = isFinite(draftNum) ? draftNum : savedMeta;
       const realizado = realizadoMap[mes] ?? 0;
       const diff = realizado - meta;
       const pct = meta > 0 ? (realizado / meta) * 100 : 0;
@@ -106,16 +110,16 @@ export function MetasFaturamentoCard() {
         mes,
         label: MESES[i],
         meta: Number(meta),
-        realizado,
+        realizado: Number(realizado),
         diff,
         pct,
       };
     });
-  }, [metas, realizadoMap]);
+  }, [metas, realizadoMap, draft]);
 
   const totals = useMemo(() => {
-    const meta = chartData.reduce((s, d) => s + d.meta, 0);
-    const realizado = chartData.reduce((s, d) => s + d.realizado, 0);
+    const meta = chartData.reduce((s, d) => s + (Number(d.meta) || 0), 0);
+    const realizado = chartData.reduce((s, d) => s + (Number(d.realizado) || 0), 0);
     const diff = realizado - meta;
     const pct = meta > 0 ? (realizado / meta) * 100 : 0;
     return { meta, realizado, diff, pct };
