@@ -75,6 +75,49 @@ const telLink = (phone: string) => `tel:+${onlyDigits(phone).startsWith("55") ? 
 const mapsLink = (addr: string) => `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`;
 const wazeLink = (addr: string) => `https://waze.com/ul?q=${encodeURIComponent(addr)}&navigate=yes`;
 
+const normalizeTime = (v: string | null | undefined): string => {
+  if (!v) return "";
+  if (/^\d{2}:\d{2}/.test(v)) return v.slice(0, 5);
+  if (v.includes("T") || v.includes(" ")) return extractTimeBR(v);
+  return v.slice(0, 5);
+};
+
+const getBookingDisplayTime = (
+  booking: UnifiedBooking,
+  preferred?: "hora_prevista_buscar" | "hora_prevista_levar",
+): string => {
+  if (preferred === "hora_prevista_buscar") {
+    return normalizeTime(booking.hora_prevista_buscar) || normalizeTime(booking.scheduled_pickup_time);
+  }
+
+  if (preferred === "hora_prevista_levar") {
+    return (
+      normalizeTime(booking.hora_prevista_levar) ||
+      normalizeTime(booking.scheduled_dropoff_time) ||
+      normalizeTime(booking.scheduled_pickup_time)
+    );
+  }
+
+  const trip = (booking.trip_type || "").toLowerCase();
+  const preferLevar = /volta|leva|entreg/.test(trip);
+
+  if (preferLevar) {
+    return (
+      normalizeTime(booking.hora_prevista_levar) ||
+      normalizeTime(booking.scheduled_dropoff_time) ||
+      normalizeTime(booking.hora_prevista_buscar) ||
+      normalizeTime(booking.scheduled_pickup_time)
+    );
+  }
+
+  return (
+    normalizeTime(booking.hora_prevista_buscar) ||
+    normalizeTime(booking.hora_prevista_levar) ||
+    normalizeTime(booking.scheduled_pickup_time) ||
+    normalizeTime(booking.scheduled_dropoff_time)
+  );
+};
+
 function isEscola(t: string) {
   const v = (t || "").toLowerCase();
   return /(escola|creche|daycare|day\s*care|hot[eé]l\s*dia)/.test(v);
@@ -215,23 +258,17 @@ export default function TaxiPetOperational() {
 
     const sortByOrder = (arr: UnifiedBooking[], period: PeriodKey) => {
       const ord = orderMap[period];
-      const norm = (v: string | null | undefined) => {
-        if (!v) return "";
-        if (/^\d{2}:\d{2}/.test(v)) return v.slice(0, 5);
-        if (v.includes("T") || v.includes(" ")) return extractTimeBR(v);
-        return v.slice(0, 5);
-      };
       return [...arr].sort((a, b) => {
         const ia = ord.indexOf(a.id); const ib = ord.indexOf(b.id);
         if (ia !== -1 && ib !== -1) return ia - ib;
         if (ia !== -1) return -1;
         if (ib !== -1) return 1;
         const ha = (period === "manha_buscar" || period === "banho_buscar")
-          ? norm(a.hora_prevista_buscar) || norm(a.scheduled_pickup_time)
-          : norm(a.hora_prevista_levar) || norm(a.scheduled_dropoff_time) || norm(a.scheduled_pickup_time);
+          ? getBookingDisplayTime(a, "hora_prevista_buscar")
+          : getBookingDisplayTime(a, "hora_prevista_levar");
         const hb = (period === "manha_buscar" || period === "banho_buscar")
-          ? norm(b.hora_prevista_buscar) || norm(b.scheduled_pickup_time)
-          : norm(b.hora_prevista_levar) || norm(b.scheduled_dropoff_time) || norm(b.scheduled_pickup_time);
+          ? getBookingDisplayTime(b, "hora_prevista_buscar")
+          : getBookingDisplayTime(b, "hora_prevista_levar");
         return ha.localeCompare(hb);
       });
     };
