@@ -51,21 +51,26 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { empresa_id, cliente, fatura } = body as {
+    const { empresa_id, cliente, fatura, tipo: tipoIn, mensagem_override, dias_atraso, dias_restantes } = body as {
       empresa_id: string;
       cliente: { id: string; nome: string; whatsapp?: string | null; telefone?: string | null };
       fatura: { id?: string | null; descricao: string; valor: number; vencimento: string };
+      tipo?: "geracao" | "pre_vencimento" | "vencimento" | "atraso";
+      mensagem_override?: string;
+      dias_atraso?: number;
+      dias_restantes?: number;
     };
+    const tipo = tipoIn ?? "geracao";
 
     if (!empresa_id || !cliente?.id || !fatura?.descricao) {
       return new Response(JSON.stringify({ error: "empresa_id, cliente.id e fatura.descricao são obrigatórios" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Already sent for this invoice?
+    // Already sent for this invoice and this event type?
     if (fatura.id) {
       const { data: existsLog } = await supabase
         .from("invoice_notification_log")
-        .select("id").eq("conta_receber_id", fatura.id).eq("status", "enviado").limit(1);
+        .select("id").eq("conta_receber_id", fatura.id).eq("status", "enviado").eq("tipo", tipo).limit(1);
       if (existsLog && existsLog.length > 0) {
         return new Response(JSON.stringify({ skipped: "already_sent" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
@@ -73,11 +78,22 @@ Deno.serve(async (req) => {
 
     const { data: cfg } = await supabase
       .from("invoice_notification_config")
-      .select("enabled, mensagem")
+      .select("enabled, mensagem, enabled_geracao, mensagem_geracao, enabled_pre_vencimento, mensagem_pre_vencimento, enabled_vencimento, mensagem_vencimento, enabled_atraso, mensagem_atraso")
       .eq("empresa_id", empresa_id)
       .maybeSingle();
+    // master switch
     if (cfg && cfg.enabled === false) {
       return new Response(JSON.stringify({ skipped: "disabled" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    // per-type switch
+    const perTypeEnabled: Record<string, boolean | undefined> = {
+      geracao: cfg?.enabled_geracao,
+      pre_vencimento: cfg?.enabled_pre_vencimento,
+      vencimento: cfg?.enabled_vencimento,
+      atraso: cfg?.enabled_atraso,
+    };
+    if (cfg && perTypeEnabled[tipo] === false) {
+      return new Response(JSON.stringify({ skipped: "type_disabled" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const { primary: numero, variants: numeroVariants } = normalizeWhatsappNumber(cliente.whatsapp ?? cliente.telefone ?? "");
@@ -98,13 +114,22 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ skipped: "no_evolution_config" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const template = (cfg?.mensagem ?? "Olá {nome}! Sua fatura *{descricao}* no valor de *R$ {valor}* foi gerada com vencimento em *{vencimento}*.") as string;
+    const perTypeTemplate: Record<string, string | null | undefined> = {
+      geracao: cfg?.mensagem_geracao ?? cfg?.mensagem,
+      pre_vencimento: cfg?.mensagem_pre_vencimento,
+      vencimento: cfg?.mensagem_vencimento,
+      atraso: cfg?.mensagem_atraso,
+    };
+    const fallback = "Olá {nome}! Sua fatura *{descricao}* no valor de *R$ {valor}* tem vencimento em *{vencimento}*.";
+    const template = (mensagem_override ?? perTypeTemplate[tipo] ?? cfg?.mensagem ?? fallback) as string;
     const conteudo = template
       .replace(/\{nome\}/g, cliente.nome ?? "")
       .replace(/\{primeiro_nome\}/g, (cliente.nome ?? "").split(" ")[0])
       .replace(/\{descricao\}/g, fatura.descricao)
       .replace(/\{valor\}/g, Number(fatura.valor).toFixed(2).replace(".", ","))
-      .replace(/\{vencimento\}/g, formatDateBR(fatura.vencimento));
+      .replace(/\{vencimento\}/g, formatDateBR(fatura.vencimento))
+      .replace(/\{dias_atraso\}/g, String(dias_atraso ?? ""))
+      .replace(/\{dias_restantes\}/g, String(dias_restantes ?? ""));
 
     const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
       method: "POST",
@@ -159,7 +184,7 @@ Deno.serve(async (req) => {
 
     await supabase.from("invoice_notification_log").insert({
       empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
-      conversa_id: conversa!.id, status: "enviado",
+      conversa_id: conversa!.id, status: "enviado", tipo,
     });
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
