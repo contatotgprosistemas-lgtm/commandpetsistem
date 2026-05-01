@@ -440,7 +440,17 @@ function SortableRouteItem({
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
   const sv = statusVariant(b.status);
   const phone = b.cliente_whatsapp || b.cliente_telefone;
-  const time = b[timeKey] || b.scheduled_pickup_time?.slice(0, 5) || "—";
+  const normalizeTime = (v: string | null | undefined): string => {
+    if (!v) return "";
+    // Aceita "HH:mm", "HH:mm:ss", ou ISO timestamp
+    if (/^\d{2}:\d{2}/.test(v)) return v.slice(0, 5);
+    if (v.includes("T") || v.includes(" ")) return extractTimeBR(v);
+    return v.slice(0, 5);
+  };
+  const time =
+    normalizeTime(b[timeKey]) ||
+    normalizeTime(b.scheduled_pickup_time) ||
+    "—";
 
   return (
     <div
