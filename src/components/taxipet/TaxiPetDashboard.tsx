@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MetricCard } from "@/components/MetricCard";
 import { Car, CheckCircle, Clock, XCircle, Users, DollarSign, TrendingUp, MapPin } from "lucide-react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -65,43 +65,47 @@ export default function TaxiPetDashboard() {
         return sum + Number(f.valor || 0);
       }, 0);
 
+      const finalizados = all.filter((x) => ["finalizada", "concluido", "entregue"].includes(x.status)).length;
+      const cancelados = all.filter((x) => ["cancelada", "cancelado", "nao_realizada"].includes(x.status)).length;
+      const emAndamento = all.filter((x) => ["em_rota_coleta", "pet_coletado", "em_deslocamento", "em_atendimento", "aguardando_saida"].includes(x.status)).length;
+      const agendadas = all.filter((x) => ["agendada", "agendado", "confirmado"].includes(x.status)).length;
+
       setStats({
         totalMonth: all.length,
-        completed: all.filter((x) => x.status === "finalizada").length,
-        cancelled: all.filter((x) => x.status === "cancelada").length,
-        inProgress: all.filter((x) => ["em_rota_coleta", "pet_coletado", "em_deslocamento", "em_atendimento"].includes(x.status)).length,
-        scheduled: all.filter((x) => ["agendada", "agendado", "confirmado"].includes(x.status)).length,
+        completed: finalizados,
+        cancelled: cancelados,
+        inProgress: emAndamento,
+        scheduled: agendadas,
         activeDrivers: drivers?.length || 0,
         revenueMonth: receitaFaturas,
-        avgPerDay: Math.round(all.length / daysInMonth),
+        avgPerDay: daysInMonth > 0 ? Number((all.length / daysInMonth).toFixed(1)) : 0,
       });
     };
     load();
   }, [profile?.empresa_id]);
 
-  const cards = [
-    { label: "Corridas no Mês", value: stats.totalMonth, icon: Car, color: "text-primary" },
-    { label: "Finalizadas", value: stats.completed, icon: CheckCircle, color: "text-emerald-500" },
-    { label: "Em Andamento", value: stats.inProgress, icon: Clock, color: "text-amber-500" },
-    { label: "Agendadas", value: stats.scheduled, icon: MapPin, color: "text-blue-500" },
-    { label: "Canceladas", value: stats.cancelled, icon: XCircle, color: "text-destructive" },
-    { label: "Motoristas Ativos", value: stats.activeDrivers, icon: Users, color: "text-violet-500" },
-    { label: "Receita do Mês", value: stats.revenueMonth.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), icon: DollarSign, color: "text-emerald-500" },
-    { label: "Média/Dia", value: stats.avgPerDay, icon: TrendingUp, color: "text-primary" },
+  const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const cards: Array<{ title: string; value: string; icon: JSX.Element; accent: "blue"|"emerald"|"violet"|"amber" }> = [
+    { title: "Corridas no Mês", value: String(stats.totalMonth), icon: <Car className="h-5 w-5" />, accent: "blue" },
+    { title: "Receita do Mês", value: brl(stats.revenueMonth), icon: <DollarSign className="h-5 w-5" />, accent: "emerald" },
+    { title: "Em Andamento", value: String(stats.inProgress), icon: <Clock className="h-5 w-5" />, accent: "amber" },
+    { title: "Agendadas", value: String(stats.scheduled), icon: <MapPin className="h-5 w-5" />, accent: "blue" },
+    { title: "Finalizadas", value: String(stats.completed), icon: <CheckCircle className="h-5 w-5" />, accent: "emerald" },
+    { title: "Canceladas", value: String(stats.cancelled), icon: <XCircle className="h-5 w-5" />, accent: "amber" },
+    { title: "Motoristas Ativos", value: String(stats.activeDrivers), icon: <Users className="h-5 w-5" />, accent: "violet" },
+    { title: "Média / Dia", value: String(stats.avgPerDay), icon: <TrendingUp className="h-5 w-5" />, accent: "violet" },
   ];
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Dashboard Gerencial — {format(new Date(), "MMMM yyyy", { locale: ptBR })}</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="space-y-5">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-base font-semibold text-foreground">Dashboard Gerencial</h2>
+        <span className="text-xs text-muted-foreground capitalize">{format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}</span>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {cards.map((c) => (
-          <Card key={c.label}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs font-medium text-muted-foreground">{c.label}</CardTitle>
-              <c.icon className={`h-4 w-4 ${c.color}`} />
-            </CardHeader>
-            <CardContent><div className="text-xl font-bold">{c.value}</div></CardContent>
-          </Card>
+          <MetricCard key={c.title} title={c.title} value={c.value} icon={c.icon} accent={c.accent} />
         ))}
       </div>
     </div>
