@@ -326,13 +326,24 @@ export default function TaxiPetOperational() {
     };
   }, [filtered, orderMap]);
 
-  const summary = {
-    total: filtered.length,
-    coleta: filtered.filter((b) => ["agendada", "aguardando_saida", "em_rota_coleta", "agendado", "confirmado"].includes(b.status)).length,
-    andamento: filtered.filter((b) => ["em_rota_coleta", "pet_coletado", "em_deslocamento", "em_atendimento"].includes(b.status)).length,
-    finalizadas: filtered.filter((b) => ["finalizada", "concluido", "entregue"].includes(b.status)).length,
-    canceladas: filtered.filter((b) => ["cancelada", "cancelado", "nao_realizada"].includes(b.status)).length,
-  };
+  const operationalItems = useMemo(
+    () => [
+      ...grouped.manha_buscar,
+      ...grouped.tarde_levar,
+      ...grouped.banho_buscar,
+      ...grouped.banho_levar,
+      ...grouped.outras,
+    ],
+    [grouped],
+  );
+
+  const summary = useMemo(() => ({
+    total: operationalItems.length,
+    coleta: operationalItems.filter((b) => ["agendada", "aguardando_saida", "em_rota_coleta", "agendado", "confirmado"].includes(b.status)).length,
+    andamento: operationalItems.filter((b) => ["em_rota_coleta", "pet_coletado", "em_deslocamento", "em_atendimento"].includes(b.status)).length,
+    finalizadas: operationalItems.filter((b) => ["finalizada", "concluido", "entregue"].includes(b.status)).length,
+    canceladas: operationalItems.filter((b) => ["cancelada", "cancelado", "nao_realizada"].includes(b.status)).length,
+  }), [operationalItems]);
 
   const persistOrder = async (period: PeriodKey, ids: { id: string; source: Source }[]) => {
     if (!profile?.empresa_id) return;
