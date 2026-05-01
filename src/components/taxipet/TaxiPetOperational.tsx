@@ -10,6 +10,7 @@ import { MetricCard } from "@/components/MetricCard";
 import {
   Car, Clock, CheckCircle, MapPin, User, ArrowRight, Phone, GripVertical,
   Sun, Moon, Bath, Navigation2, Home, Hash, Pencil, Check, X,
+  Route as RouteIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { extractTimeBR } from "@/lib/utils";
@@ -22,6 +23,7 @@ import {
   SortableContext, verticalListSortingStrategy, arrayMove, useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import RoteirizacaoDialog, { RouteStop } from "./RoteirizacaoDialog";
 
 const TRANSPORT_FILTER = "tipo_servico.ilike.%taxi%,tipo_servico.ilike.%transport%,tipo_servico.ilike.%leva%";
 
@@ -139,6 +141,7 @@ export default function TaxiPetOperational() {
   const [orderMap, setOrderMap] = useState<Record<PeriodKey, string[]>>({
     manha_buscar: [], tarde_levar: [], banho_buscar: [], banho_levar: [],
   });
+  const [routeDialog, setRouteDialog] = useState<null | "buscar" | "levar">(null);
 
   const load = async () => {
     if (!profile?.empresa_id) return;
@@ -346,6 +349,47 @@ export default function TaxiPetOperational() {
     canceladas: operationalItems.filter((b) => ["cancelada", "cancelado", "nao_realizada"].includes(b.status)).length,
   }), [operationalItems]);
 
+  // Constrói as paradas (RouteStop) para um determinado tipo: "buscar" ou "levar".
+  // Junta as 4 seções (escola manhã/tarde, banho ida/volta) + outras corridas.
+  const buildStopsFor = (tipo: "buscar" | "levar"): RouteStop[] => {
+    const buscarItems: UnifiedBooking[] = [
+      ...grouped.manha_buscar,
+      ...grouped.banho_buscar,
+      ...grouped.outras.filter((b) => b.leg === "buscar"),
+    ];
+    const levarItems: UnifiedBooking[] = [
+      ...grouped.tarde_levar,
+      ...grouped.banho_levar,
+      ...grouped.outras.filter((b) => b.leg === "levar"),
+    ];
+    const items = tipo === "buscar" ? buscarItems : levarItems;
+    const isTerminalStatus = (s: string) =>
+      ["finalizada", "concluido", "entregue", "cancelada", "cancelado", "nao_realizada"].includes(s);
+    const filteredItems = items.filter((b) => !isTerminalStatus(b.status));
+    const tk: "hora_prevista_buscar" | "hora_prevista_levar" =
+      tipo === "buscar" ? "hora_prevista_buscar" : "hora_prevista_levar";
+    const seen = new Set<string>();
+    const stops: RouteStop[] = [];
+    filteredItems.forEach((b) => {
+      const realId = b.id.includes(":") ? b.id.split(":")[0] : b.id;
+      const dedupKey = `${b.source}-${realId}-${tipo}`;
+      if (seen.has(dedupKey)) return;
+      seen.add(dedupKey);
+      stops.push({
+        id: b.id,
+        realId,
+        source: b.source,
+        pet_nome: b.pet_nome,
+        cliente_nome: b.cliente_nome,
+        cliente_endereco: b.cliente_endereco,
+        time: getBookingDisplayTime(b, tk) || "",
+        final_price: Number(b.final_price) || 0,
+      });
+    });
+    stops.sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
+    return stops;
+  };
+
   const persistOrder = async (period: PeriodKey, ids: { id: string; source: Source }[]) => {
     if (!profile?.empresa_id) return;
     const eid = profile.empresa_id;
@@ -422,6 +466,24 @@ export default function TaxiPetOperational() {
             {drivers.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2 ml-auto">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 border-amber-500/40 text-amber-700 hover:bg-amber-500/10"
+            onClick={() => setRouteDialog("buscar")}
+          >
+            <RouteIcon className="h-3.5 w-3.5" /> Roteirizar Coletas
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 border-violet-500/40 text-violet-700 hover:bg-violet-500/10"
+            onClick={() => setRouteDialog("levar")}
+          >
+            <RouteIcon className="h-3.5 w-3.5" /> Roteirizar Entregas
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -505,6 +567,14 @@ export default function TaxiPetOperational() {
           </CardContent>
         </Card>
       )}
+
+      <RoteirizacaoDialog
+        open={routeDialog !== null}
+        onOpenChange={(v) => !v && setRouteDialog(null)}
+        tipo={routeDialog || "buscar"}
+        paradas={routeDialog ? buildStopsFor(routeDialog) : []}
+        data={date}
+      />
     </div>
   );
 }

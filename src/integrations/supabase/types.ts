@@ -726,6 +726,44 @@ export type Database = {
           },
         ]
       }
+      combustivel_precos: {
+        Row: {
+          created_at: string
+          data_referencia: string
+          empresa_id: string
+          id: string
+          preco_litro: number
+          tipo_combustivel: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_referencia?: string
+          empresa_id: string
+          id?: string
+          preco_litro: number
+          tipo_combustivel: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_referencia?: string
+          empresa_id?: string
+          id?: string
+          preco_litro?: number
+          tipo_combustivel?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combustivel_precos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conexoes_whatsapp: {
         Row: {
           created_at: string
@@ -5480,6 +5518,103 @@ export type Database = {
           },
         ]
       }
+      taxipet_roteirizacoes: {
+        Row: {
+          consumo_km_litro_usado: number | null
+          created_at: string
+          custo_combustivel: number | null
+          data: string
+          destino_endereco: string | null
+          driver_id: string | null
+          empresa_id: string
+          finalizada_em: string | null
+          id: string
+          km_estimado: number | null
+          km_real: number | null
+          litros_consumidos: number | null
+          lucro_estimado: number | null
+          observacoes: string | null
+          origem_endereco: string | null
+          paradas: Json
+          preco_litro_usado: number | null
+          receita_total: number
+          status: string
+          tipo: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          consumo_km_litro_usado?: number | null
+          created_at?: string
+          custo_combustivel?: number | null
+          data?: string
+          destino_endereco?: string | null
+          driver_id?: string | null
+          empresa_id: string
+          finalizada_em?: string | null
+          id?: string
+          km_estimado?: number | null
+          km_real?: number | null
+          litros_consumidos?: number | null
+          lucro_estimado?: number | null
+          observacoes?: string | null
+          origem_endereco?: string | null
+          paradas?: Json
+          preco_litro_usado?: number | null
+          receita_total?: number
+          status?: string
+          tipo: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          consumo_km_litro_usado?: number | null
+          created_at?: string
+          custo_combustivel?: number | null
+          data?: string
+          destino_endereco?: string | null
+          driver_id?: string | null
+          empresa_id?: string
+          finalizada_em?: string | null
+          id?: string
+          km_estimado?: number | null
+          km_real?: number | null
+          litros_consumidos?: number | null
+          lucro_estimado?: number | null
+          observacoes?: string | null
+          origem_endereco?: string | null
+          paradas?: Json
+          preco_litro_usado?: number | null
+          receita_total?: number
+          status?: string
+          tipo?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxipet_roteirizacoes_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxipet_roteirizacoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taxipet_roteirizacoes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tipo_servico_perguntas_checklist: {
         Row: {
           ativo: boolean
@@ -6058,6 +6193,7 @@ export type Database = {
           brand: string | null
           capacity: number
           color: string | null
+          consumo_km_litro: number | null
           created_at: string
           driver_id: string | null
           empresa_id: string
@@ -6066,6 +6202,7 @@ export type Database = {
           notes: string | null
           plate: string | null
           status: string
+          tipo_combustivel: string | null
           updated_at: string
           vehicle_type: string
           year: number | null
@@ -6074,6 +6211,7 @@ export type Database = {
           brand?: string | null
           capacity?: number
           color?: string | null
+          consumo_km_litro?: number | null
           created_at?: string
           driver_id?: string | null
           empresa_id: string
@@ -6082,6 +6220,7 @@ export type Database = {
           notes?: string | null
           plate?: string | null
           status?: string
+          tipo_combustivel?: string | null
           updated_at?: string
           vehicle_type?: string
           year?: number | null
@@ -6090,6 +6229,7 @@ export type Database = {
           brand?: string | null
           capacity?: number
           color?: string | null
+          consumo_km_litro?: number | null
           created_at?: string
           driver_id?: string | null
           empresa_id?: string
@@ -6098,6 +6238,7 @@ export type Database = {
           notes?: string | null
           plate?: string | null
           status?: string
+          tipo_combustivel?: string | null
           updated_at?: string
           vehicle_type?: string
           year?: number | null
