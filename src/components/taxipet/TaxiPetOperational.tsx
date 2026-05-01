@@ -485,18 +485,7 @@ function SortableRouteItem({
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
   const sv = statusVariant(b.status);
   const phone = b.cliente_whatsapp || b.cliente_telefone;
-  const normalizeTime = (v: string | null | undefined): string => {
-    if (!v) return "";
-    // Aceita "HH:mm", "HH:mm:ss", ou ISO timestamp
-    if (/^\d{2}:\d{2}/.test(v)) return v.slice(0, 5);
-    if (v.includes("T") || v.includes(" ")) return extractTimeBR(v);
-    return v.slice(0, 5);
-  };
-  const time =
-    normalizeTime(b[timeKey]) ||
-    (timeKey === "hora_prevista_levar" ? normalizeTime(b.scheduled_dropoff_time) : "") ||
-    normalizeTime(b.scheduled_pickup_time) ||
-    "—";
+  const time = getBookingDisplayTime(b, timeKey) || "—";
 
   return (
     <div
@@ -585,6 +574,7 @@ function SortableRouteItem({
 function BookingCard({ b, onAdvance, isTerminal }: { b: UnifiedBooking; onAdvance: (b: UnifiedBooking) => void; isTerminal: (s: string) => boolean; }) {
   const sv = statusVariant(b.status);
   const phone = b.cliente_whatsapp || b.cliente_telefone;
+  const time = getBookingDisplayTime(b) || "—";
   return (
     <Card>
       <CardContent className="p-4 space-y-2 text-xs">
@@ -604,7 +594,7 @@ function BookingCard({ b, onAdvance, isTerminal }: { b: UnifiedBooking; onAdvanc
           </a>
         )}
         <div className="flex items-center gap-1 text-muted-foreground">
-          <Clock className="h-3 w-3" /> {b.scheduled_pickup_time?.slice(0, 5) || "—"}
+          <Clock className="h-3 w-3" /> {time}
         </div>
         {b.type_nome && <div className="text-muted-foreground">🚗 {b.type_nome}</div>}
         <div className="flex items-center justify-between pt-2 border-t">
