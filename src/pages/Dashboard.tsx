@@ -71,7 +71,7 @@ interface Agendamento {
   data_entrada: string | null;
   hora_entrada: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string; foto_url: string | null } | null;
-  cliente: { id: string; nome: string; whatsapp: string | null; foto_url: string | null } | null;
+  cliente: { id: string; nome: string; whatsapp: string | null; telefone?: string | null; endereco?: string | null; foto_url: string | null } | null;
 }
 
 function statusColor(status: string) {
@@ -167,11 +167,11 @@ export default function Dashboard() {
     const [{ data }, { data: bookings }] = await Promise.all([
       supabase
         .from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
+        .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url)")
         .order("data_hora", { ascending: true }),
       supabase
         .from("transport_bookings")
-        .select("*, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url), transport_type:transport_types(name, color), driver:drivers(name)")
+        .select("*, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url), transport_type:transport_types(name, color), driver:drivers(name)")
         .order("scheduled_date", { ascending: true }),
     ]);
     if (data) setAgendamentos(data as any);
@@ -521,12 +521,29 @@ export default function Dashboard() {
     const d = startOfDay(new Date(b.scheduled_date + "T00:00:00"));
     return d >= today && d < tomorrow && b.status !== "cancelado";
   });
-  const transportHoje = [...transportBookingsHoje, ...agendamentosTransporteHoje.map(a => ({
-    id: a.id, scheduled_date: (a.data_hora as string).split("T")[0].split(" ")[0],
-    scheduled_pickup_time: extractTimeBR(a.data_hora), trip_type: a.tipo_servico,
-    status: a.status, final_price: a.valor || 0, cliente_nome: a.cliente?.nome || "—",
-    pet_nome: a.pet?.nome || "—", driver_nome: null, type_nome: a.tipo_servico, source: "agendamento",
-  }))];
+  const transportHoje = [
+    ...transportBookingsHoje,
+    ...agendamentosTransporteHoje.map(a => ({
+      id: a.id,
+      scheduled_date: (a.data_hora as string).split("T")[0].split(" ")[0],
+      scheduled_pickup_time: extractTimeBR(a.data_hora),
+      trip_type: a.tipo_servico,
+      status: a.status,
+      final_price: a.valor || 0,
+      pet: a.pet,
+      cliente: a.cliente,
+      driver: null,
+      transport_type: { name: a.tipo_servico },
+      source: "agendamento",
+    })),
+  ].sort((x: any, y: any) => {
+    const tx = (x.scheduled_pickup_time || "").toString().slice(0, 5);
+    const ty = (y.scheduled_pickup_time || "").toString().slice(0, 5);
+    if (tx && ty) return tx.localeCompare(ty);
+    if (tx) return -1;
+    if (ty) return 1;
+    return 0;
+  });
   const todayFormatted = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   // ===== Resumo semanal por categoria (Escola, Hotel, Banho) =====
