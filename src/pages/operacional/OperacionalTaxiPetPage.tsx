@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { format, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Car, MapPin, MessageCircle, Phone, ChevronLeft, ChevronRight, Navigation } from "lucide-react";
+import { Car, MapPin, MessageCircle, Phone, ChevronLeft, ChevronRight, Navigation, Route as RouteIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { extractTimeBR } from "@/lib/utils";
+import RoteirizacaoDialog, { RouteStop } from "@/components/taxipet/RoteirizacaoDialog";
 
 type TaxiItem = {
   id: string;
@@ -62,6 +63,9 @@ export default function OperacionalTaxiPetPage() {
   const [date, setDate] = useState<Date>(startOfDay(new Date()));
   const [items, setItems] = useState<TaxiItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [routeOpen, setRouteOpen] = useState(false);
+  const [routeTipo, setRouteTipo] = useState<"buscar" | "levar">("buscar");
+  const [routeStops, setRouteStops] = useState<RouteStop[]>([]);
 
   const dateStr = format(date, "yyyy-MM-dd");
 
@@ -171,6 +175,38 @@ export default function OperacionalTaxiPetPage() {
 
   const dateLabel = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
+  const buildStops = (tipo: "buscar" | "levar"): RouteStop[] => {
+    const isTerminal = (s: string) =>
+      ["finalizada", "concluido", "entregue", "cancelada", "cancelado", "nao_realizada"].includes(s);
+    const filtered = items.filter((it) => it.leg === tipo && !isTerminal(it.status));
+    const seen = new Set<string>();
+    const stops: RouteStop[] = [];
+    filtered.forEach((it) => {
+      const realId = it.id.includes(":") ? it.id.split(":")[0] : it.id;
+      const key = `${it.source}-${realId}-${tipo}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      stops.push({
+        id: it.id,
+        realId,
+        source: it.source,
+        pet_nome: it.pet_nome,
+        cliente_nome: it.cliente_nome,
+        cliente_endereco: it.cliente_endereco,
+        time: (it.scheduled_pickup_time || "").toString().slice(0, 5),
+        final_price: 0,
+      });
+    });
+    stops.sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
+    return stops;
+  };
+
+  const openRoute = (tipo: "buscar" | "levar") => {
+    setRouteTipo(tipo);
+    setRouteStops(buildStops(tipo));
+    setRouteOpen(true);
+  };
+
   return (
     <div className="space-y-5 pb-20 md:pb-0">
       <div className="flex items-center gap-3">
@@ -205,6 +241,15 @@ export default function OperacionalTaxiPetPage() {
         <Badge variant="secondary" className="ml-auto">
           {items.length} corrida{items.length === 1 ? "" : "s"}
         </Badge>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openRoute("buscar")}>
+          <RouteIcon className="h-3.5 w-3.5" /> Roteirizar Coletas
+        </Button>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openRoute("levar")}>
+          <RouteIcon className="h-3.5 w-3.5" /> Roteirizar Entregas
+        </Button>
       </div>
 
       {loading ? (
@@ -321,6 +366,13 @@ export default function OperacionalTaxiPetPage() {
           })}
         </div>
       )}
+      <RoteirizacaoDialog
+        open={routeOpen}
+        onOpenChange={setRouteOpen}
+        tipo={routeTipo}
+        paradas={routeStops}
+        data={dateStr}
+      />
     </div>
   );
 }
