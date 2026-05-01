@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MetricCard } from "@/components/MetricCard";
 import {
   Car, Clock, CheckCircle, MapPin, User, ArrowRight, Phone, GripVertical,
-  Sun, Moon, Bath, Navigation2, Home, Hash,
+  Sun, Moon, Bath, Navigation2, Home, Hash, Pencil, Check, X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { extractTimeBR } from "@/lib/utils";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent,
 } from "@dnd-kit/core";
@@ -367,6 +368,49 @@ export default function TaxiPetOperational() {
     toast.success("Ordem atualizada");
   };
 
+  // Atualiza o horário de um booking (respeitando a leg/origem) e recarrega.
+  const updateBookingTime = async (
+    booking: UnifiedBooking,
+    leg: Leg | undefined,
+    newTime: string,
+  ) => {
+    if (!newTime || !/^\d{2}:\d{2}$/.test(newTime)) {
+      toast.error("Horário inválido");
+      return;
+    }
+    // O id pode estar prefixado por leg expandida (":buscar" / ":levar"); usar o id original.
+    const realId = booking.id.includes(":") ? booking.id.split(":")[0] : booking.id;
+    const timeWithSec = `${newTime}:00`;
+
+    try {
+      if (booking.source === "agendamento") {
+        const payload: Record<string, string> =
+          leg === "levar"
+            ? { hora_prevista_levar: timeWithSec }
+            : { hora_prevista_buscar: timeWithSec };
+        const { error } = await supabase
+          .from("agendamentos")
+          .update(payload)
+          .eq("id", realId);
+        if (error) throw error;
+      } else {
+        const payload: Record<string, string> =
+          leg === "levar"
+            ? { scheduled_dropoff_time: timeWithSec }
+            : { scheduled_pickup_time: timeWithSec };
+        const { error } = await supabase
+          .from("transport_bookings")
+          .update(payload)
+          .eq("id", realId);
+        if (error) throw error;
+      }
+      toast.success("Horário atualizado");
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao atualizar horário");
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
@@ -396,6 +440,7 @@ export default function TaxiPetOperational() {
         period="manha_buscar"
         onReorder={handleReorder}
         onAdvance={advanceStatus}
+        onEditTime={updateBookingTime}
         isTerminal={isTerminal}
         timeKey="hora_prevista_buscar"
       />
@@ -408,6 +453,7 @@ export default function TaxiPetOperational() {
         period="tarde_levar"
         onReorder={handleReorder}
         onAdvance={advanceStatus}
+        onEditTime={updateBookingTime}
         isTerminal={isTerminal}
         timeKey="hora_prevista_levar"
       />
@@ -420,6 +466,7 @@ export default function TaxiPetOperational() {
         period="banho_buscar"
         onReorder={handleReorder}
         onAdvance={advanceStatus}
+        onEditTime={updateBookingTime}
         isTerminal={isTerminal}
         timeKey="hora_prevista_buscar"
       />
@@ -432,6 +479,7 @@ export default function TaxiPetOperational() {
         period="banho_levar"
         onReorder={handleReorder}
         onAdvance={advanceStatus}
+        onEditTime={updateBookingTime}
         isTerminal={isTerminal}
         timeKey="hora_prevista_levar"
       />
@@ -444,7 +492,7 @@ export default function TaxiPetOperational() {
           </h3>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {grouped.outras.map((b) => (
-              <BookingCard key={`${b.source}-${b.id}`} b={b} onAdvance={advanceStatus} isTerminal={isTerminal} />
+              <BookingCard key={`${b.source}-${b.id}`} b={b} onAdvance={advanceStatus} onEditTime={updateBookingTime} isTerminal={isTerminal} />
             ))}
           </div>
         </div>
@@ -466,7 +514,7 @@ export default function TaxiPetOperational() {
 /* ============================================================== */
 
 function RouteSection({
-  title, icon, accent, items, period, onReorder, onAdvance, isTerminal, timeKey,
+  title, icon, accent, items, period, onReorder, onAdvance, onEditTime, isTerminal, timeKey,
 }: {
   title: string;
   icon: JSX.Element;
@@ -475,6 +523,7 @@ function RouteSection({
   period: PeriodKey;
   onReorder: (p: PeriodKey, items: UnifiedBooking[], from: number, to: number) => void;
   onAdvance: (b: UnifiedBooking) => void;
+  onEditTime: (b: UnifiedBooking, leg: Leg | undefined, newTime: string) => void;
   isTerminal: (s: string) => boolean;
   timeKey: "hora_prevista_buscar" | "hora_prevista_levar";
 }) {
@@ -519,7 +568,7 @@ function RouteSection({
             {items.map((b, idx) => (
               <SortableRouteItem
                 key={b.id} b={b} index={idx + 1}
-                onAdvance={onAdvance} isTerminal={isTerminal} timeKey={timeKey}
+                onAdvance={onAdvance} onEditTime={onEditTime} isTerminal={isTerminal} timeKey={timeKey}
               />
             ))}
           </div>
@@ -530,10 +579,11 @@ function RouteSection({
 }
 
 function SortableRouteItem({
-  b, index, onAdvance, isTerminal, timeKey,
+  b, index, onAdvance, onEditTime, isTerminal, timeKey,
 }: {
   b: UnifiedBooking; index: number;
   onAdvance: (b: UnifiedBooking) => void;
+  onEditTime: (b: UnifiedBooking, leg: Leg | undefined, newTime: string) => void;
   isTerminal: (s: string) => boolean;
   timeKey: "hora_prevista_buscar" | "hora_prevista_levar";
 }) {
@@ -542,6 +592,7 @@ function SortableRouteItem({
   const sv = statusVariant(b.status);
   const phone = b.cliente_whatsapp || b.cliente_telefone;
   const time = getBookingDisplayTime(b, timeKey) || "—";
+  const editLeg: Leg = timeKey === "hora_prevista_levar" ? "levar" : "buscar";
 
   return (
     <div
@@ -584,9 +635,10 @@ function SortableRouteItem({
       </div>
 
       <div className="flex flex-col items-end gap-1 shrink-0">
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Clock className="h-3 w-3" /> <span className="font-medium text-foreground">{time}</span>
-        </div>
+        <TimeEditor
+          time={time}
+          onSave={(t) => onEditTime(b, editLeg, t)}
+        />
         <div className="flex items-center gap-1">
           {phone && (
             <>
