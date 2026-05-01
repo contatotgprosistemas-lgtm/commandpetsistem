@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.processar-lembretes-fatura]
 verify_jwt = false
+
+[functions.gerar-multa-atraso]
+verify_jwt = false
