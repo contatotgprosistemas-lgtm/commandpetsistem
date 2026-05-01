@@ -163,23 +163,19 @@ export default function PlanosPacotesPage() {
       .maybeSingle();
 
     const hoje = new Date();
-    let vencimento = hoje;
-    const diaVenc = cliente?.dia_vencimento_fatura;
-    if (diaVenc && diaVenc >= 1 && diaVenc <= 31) {
-      const ano = hoje.getFullYear();
-      const mes = hoje.getMonth();
-      // Dia neste mês (clamped ao último dia)
-      const ultimoDiaMesAtual = new Date(ano, mes + 1, 0).getDate();
-      const diaEsteMes = Math.min(diaVenc, ultimoDiaMesAtual);
-      const dataEsteMes = new Date(ano, mes, diaEsteMes);
-      if (dataEsteMes >= new Date(ano, mes, hoje.getDate())) {
-        vencimento = dataEsteMes;
-      } else {
-        // Já passou — próximo mês
-        const ultimoDiaMesProx = new Date(ano, mes + 2, 0).getDate();
-        const diaProxMes = Math.min(diaVenc, ultimoDiaMesProx);
-        vencimento = new Date(ano, mes + 1, diaProxMes);
-      }
+    const diaVenc = Number(cliente?.dia_vencimento_fatura) || 10;
+    const ano = hoje.getFullYear();
+    const mes = hoje.getMonth();
+    const diaHoje = hoje.getDate();
+    const ultimoDiaMesAtual = new Date(ano, mes + 1, 0).getDate();
+    const diaEsteMes = Math.min(diaVenc, ultimoDiaMesAtual);
+    let vencimento: Date;
+    if (diaEsteMes >= diaHoje) {
+      vencimento = new Date(ano, mes, diaEsteMes);
+    } else {
+      const ultimoDiaMesProx = new Date(ano, mes + 2, 0).getDate();
+      const diaProxMes = Math.min(diaVenc, ultimoDiaMesProx);
+      vencimento = new Date(ano, mes + 1, diaProxMes);
     }
 
     const { error } = await supabase.from("contas_receber").insert({
