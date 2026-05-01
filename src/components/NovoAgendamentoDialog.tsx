@@ -1100,6 +1100,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             )}
 
             {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída */}
+            {!isTaxiAvulso && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <FormField control={form.control} name="data_entrada" render={({ field }) => (
                 <FormItem>
@@ -1134,6 +1135,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 </FormItem>
               )} />
             </div>
+            )}
 
             {/* Row 3: Quarto + Diárias + Valor */}
             <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-3" : isBanho ? "grid-cols-1 sm:grid-cols-1" : "grid-cols-2")}>
