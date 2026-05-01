@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle, Search, ClipboardList, Activity } from "lucide-react";
+import { Gift, Plus, Package, Users, BarChart3, FileText, Trash2, Pause, Play, XCircle, RefreshCw, CalendarDays, DollarSign, Pencil, FileSignature, PercentCircle, Search, ClipboardList, Activity, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -400,9 +401,14 @@ export default function PlanosPacotesPage() {
               </Select>
               <span className="text-xs text-muted-foreground">{filteredSubscriptions.length} contratação(ões)</span>
             </div>
-            <Button size="sm" className="gap-1" onClick={() => setContratacaoOpen(true)}>
-              <Plus className="h-4 w-4" />Nova Contratação
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="gap-1" onClick={handleExportExcel} disabled={filteredSubscriptions.length === 0}>
+                <FileSpreadsheet className="h-4 w-4" />Exportar Excel
+              </Button>
+              <Button size="sm" className="gap-1" onClick={() => setContratacaoOpen(true)}>
+                <Plus className="h-4 w-4" />Nova Contratação
+              </Button>
+            </div>
           </div>
           {(searchContratacao || tipoFilterContratacao !== "all" || statusFilterContratacao !== "all") && filteredSubscriptions.length > 0 && (
             <div className="mb-3 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
