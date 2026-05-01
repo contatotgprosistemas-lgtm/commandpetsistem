@@ -169,6 +169,22 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     return desc.includes("hotel") || desc.includes("hospedagem") || tipo.includes("hotel") || tipo.includes("hospedagem");
   }, [servicoObj]);
 
+  // Check if service is taxi avulso type
+  const isTaxiAvulso = useMemo(() => {
+    if (!servicoObj) return false;
+    const desc = servicoObj.descricao.toLowerCase();
+    const tipo = servicoObj.tipo.toLowerCase();
+    return desc.includes("taxi") || desc.includes("táxi") || desc.includes("transporte") ||
+           tipo.includes("taxi") || tipo.includes("táxi") || tipo.includes("transporte");
+  }, [servicoObj]);
+
+  // Datas adicionais para taxi avulso (cada item: data/hora buscar + data/hora levar)
+  const [extraTaxiDates, setExtraTaxiDates] = useState<Array<{
+    data_buscar: string; hora_buscar: string;
+    data_levar: string; hora_levar: string;
+  }>>([]);
+  const [agendarMaisDatas, setAgendarMaisDatas] = useState(false);
+
   // Check if service is banho/tosa type
   const isBanho = useMemo(() => {
     if (!servicoObj) return false;
