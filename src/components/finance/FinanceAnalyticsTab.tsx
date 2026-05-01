@@ -14,6 +14,7 @@ import {
   XAxis, YAxis, Tooltip, Legend, CartesianGrid,
 } from "recharts";
 import { TrendingUp, TrendingDown, Calendar, Wallet, PiggyBank, BarChart3 } from "lucide-react";
+import { MetasFaturamentoCard } from "./MetasFaturamentoCard";
 
 const COLORS = ["#0ea5e9", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899", "#84cc16"];
 
@@ -224,6 +225,9 @@ export function FinanceAnalyticsTab() {
 
   return (
     <div className="space-y-5 mt-4">
+      {/* Metas de faturamento */}
+      <MetasFaturamentoCard />
+
       {/* Filtros */}
       <div className="bg-card border border-border rounded-xl p-4 flex flex-wrap items-end gap-3">
         <div className="space-y-1.5">
