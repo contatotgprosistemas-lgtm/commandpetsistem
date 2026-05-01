@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
       const txt = await evoRes.text();
       await supabase.from("invoice_notification_log").insert({
         empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
-        status: "falha", erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}`,
+        status: "falha", tipo, erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}`,
       });
       return new Response(JSON.stringify({ error: "evolution_failed" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
