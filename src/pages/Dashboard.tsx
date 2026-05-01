@@ -167,7 +167,7 @@ export default function Dashboard() {
     const [{ data }, { data: bookings }] = await Promise.all([
       supabase
         .from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url)")
+        .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, hora_prevista_buscar, hora_prevista_levar, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url)")
         .order("data_hora", { ascending: true }),
       supabase
         .from("transport_bookings")
@@ -521,12 +521,35 @@ export default function Dashboard() {
     const d = startOfDay(new Date(b.scheduled_date + "T00:00:00"));
     return d >= today && d < tomorrow && b.status !== "cancelado";
   });
-  const transportHoje = [
-    ...transportBookingsHoje,
-    ...agendamentosTransporteHoje.map(a => ({
-      id: a.id,
+  const transportFromBookings: any[] = [];
+  transportBookingsHoje.forEach((b: any) => {
+    const trip = (b.trip_type || "").toLowerCase();
+    const base = { ...b, source: "transport" };
+    if (trip === "ida_volta") {
+      transportFromBookings.push({ ...base, id: `${b.id}:buscar`, leg: "buscar" });
+      transportFromBookings.push({ ...base, id: `${b.id}:levar`, leg: "levar" });
+    } else {
+      const leg = trip === "ida" || trip.includes("busca") || trip.includes("coleta")
+        ? "buscar"
+        : trip === "volta" || trip.includes("leva") || trip.includes("entreg")
+        ? "levar"
+        : "outro";
+      transportFromBookings.push({ ...base, leg });
+    }
+  });
+  const transportFromAg: any[] = [];
+  agendamentosTransporteHoje.forEach(a => {
+    const buscar = (a.hora_prevista_buscar || "").toString().slice(0, 5);
+    const levar = (a.hora_prevista_levar || "").toString().slice(0, 5);
+    const fallback = extractTimeBR(a.data_hora);
+    const tipo = (a.tipo_servico || "").toLowerCase();
+    const baseLeg = tipo.includes("busca") || tipo.includes("coleta")
+      ? "buscar"
+      : tipo.includes("leva") || tipo.includes("entreg")
+      ? "levar"
+      : "outro";
+    const base = {
       scheduled_date: (a.data_hora as string).split("T")[0].split(" ")[0],
-      scheduled_pickup_time: extractTimeBR(a.data_hora),
       trip_type: a.tipo_servico,
       status: a.status,
       final_price: a.valor || 0,
@@ -535,8 +558,15 @@ export default function Dashboard() {
       driver: null,
       transport_type: { name: a.tipo_servico },
       source: "agendamento",
-    })),
-  ].sort((x: any, y: any) => {
+    };
+    if (buscar || levar) {
+      if (buscar) transportFromAg.push({ ...base, id: `${a.id}:buscar`, scheduled_pickup_time: buscar, leg: "buscar" });
+      if (levar) transportFromAg.push({ ...base, id: `${a.id}:levar`, scheduled_pickup_time: levar, leg: "levar" });
+    } else {
+      transportFromAg.push({ ...base, id: a.id, scheduled_pickup_time: fallback, leg: baseLeg });
+    }
+  });
+  const transportHoje = [...transportFromBookings, ...transportFromAg].sort((x: any, y: any) => {
     const tx = (x.scheduled_pickup_time || "").toString().slice(0, 5);
     const ty = (y.scheduled_pickup_time || "").toString().slice(0, 5);
     if (tx && ty) return tx.localeCompare(ty);
