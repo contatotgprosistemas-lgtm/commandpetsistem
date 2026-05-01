@@ -25,6 +25,7 @@ type TaxiItem = {
   cliente_endereco: string | null;
   driver_nome: string | null;
   type_nome: string;
+  leg: "buscar" | "levar" | "outro";
 };
 
 const statusMap: Record<string, { label: string; color: string }> = {
@@ -43,11 +44,17 @@ const statusMap: Record<string, { label: string; color: string }> = {
   cancelada: { label: "Cancelado", color: "bg-red-100 text-red-800" },
 };
 
-function tripLabel(t: string) {
-  if (t === "ida") return "Ida";
-  if (t === "volta") return "Volta";
-  if (t === "ida_volta") return "Ida e Volta";
-  return t;
+const legBadge: Record<TaxiItem["leg"], { label: string; color: string }> = {
+  buscar: { label: "Buscar", color: "bg-amber-100 text-amber-800 border-amber-200" },
+  levar: { label: "Levar", color: "bg-violet-100 text-violet-800 border-violet-200" },
+  outro: { label: "Transporte", color: "bg-sky-100 text-sky-800 border-sky-200" },
+};
+
+function tripToLeg(trip: string): TaxiItem["leg"] {
+  const t = (trip || "").toLowerCase();
+  if (t === "ida" || t.includes("busca") || t.includes("coleta")) return "buscar";
+  if (t === "volta" || t.includes("leva") || t.includes("entreg")) return "levar";
+  return "outro";
 }
 
 export default function OperacionalTaxiPetPage() {
@@ -76,7 +83,7 @@ export default function OperacionalTaxiPetPage() {
           .order("scheduled_pickup_time", { ascending: true }),
         supabase
           .from("agendamentos")
-          .select("id, data_hora, tipo_servico, status, pet:pets(id, nome, raca, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco)")
+          .select("id, data_hora, tipo_servico, status, hora_prevista_buscar, hora_prevista_levar, pet:pets(id, nome, raca, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco)")
           .eq("empresa_id", user.empresa_id)
           .gte("data_hora", start)
           .lt("data_hora", end)
@@ -85,43 +92,64 @@ export default function OperacionalTaxiPetPage() {
 
       if (cancelled) return;
 
-      const fromBookings: TaxiItem[] = (bookings || [])
+      const fromBookings: TaxiItem[] = [];
+      (bookings || [])
         .filter((b: any) => b.status !== "cancelada" && b.status !== "cancelado")
-        .map((b: any) => ({
-          id: b.id,
-          source: "transport",
-          scheduled_pickup_time: b.scheduled_pickup_time,
-          trip_type: b.trip_type || "",
-          status: b.status,
-          pet_nome: b.pet?.nome || "Pet",
-          pet_foto: b.pet?.foto_url || null,
-          pet_raca: b.pet?.raca || null,
-          cliente_nome: b.cliente?.nome || "—",
-          cliente_whatsapp: b.cliente?.whatsapp || null,
-          cliente_telefone: b.cliente?.telefone || null,
-          cliente_endereco: b.cliente?.endereco || null,
-          driver_nome: b.driver?.name || null,
-          type_nome: b.transport_type?.name || "Transporte",
-        }));
+        .forEach((b: any) => {
+          const base = {
+            id: b.id,
+            source: "transport" as const,
+            status: b.status,
+            pet_nome: b.pet?.nome || "Pet",
+            pet_foto: b.pet?.foto_url || null,
+            pet_raca: b.pet?.raca || null,
+            cliente_nome: b.cliente?.nome || "—",
+            cliente_whatsapp: b.cliente?.whatsapp || null,
+            cliente_telefone: b.cliente?.telefone || null,
+            cliente_endereco: b.cliente?.endereco || null,
+            driver_nome: b.driver?.name || null,
+            type_nome: b.transport_type?.name || "Transporte",
+            trip_type: b.trip_type || "",
+          };
+          const trip = (b.trip_type || "").toLowerCase();
+          if (trip === "ida_volta") {
+            fromBookings.push({ ...base, id: `${b.id}:buscar`, scheduled_pickup_time: b.scheduled_pickup_time, leg: "buscar" });
+            fromBookings.push({ ...base, id: `${b.id}:levar`, scheduled_pickup_time: b.scheduled_pickup_time, leg: "levar" });
+          } else {
+            fromBookings.push({ ...base, scheduled_pickup_time: b.scheduled_pickup_time, leg: tripToLeg(trip) });
+          }
+        });
 
-      const fromAgs: TaxiItem[] = (ags || [])
+      const fromAgs: TaxiItem[] = [];
+      (ags || [])
         .filter((a: any) => a.status !== "cancelado")
-        .map((a: any) => ({
-          id: a.id,
-          source: "agendamento",
-          scheduled_pickup_time: extractTimeBR(a.data_hora),
-          trip_type: a.tipo_servico || "",
-          status: a.status,
-          pet_nome: a.pet?.nome || "Pet",
-          pet_foto: a.pet?.foto_url || null,
-          pet_raca: a.pet?.raca || null,
-          cliente_nome: a.cliente?.nome || "—",
-          cliente_whatsapp: a.cliente?.whatsapp || null,
-          cliente_telefone: a.cliente?.telefone || null,
-          cliente_endereco: a.cliente?.endereco || null,
-          driver_nome: null,
-          type_nome: a.tipo_servico,
-        }));
+        .forEach((a: any) => {
+          const base = {
+            id: a.id,
+            source: "agendamento" as const,
+            status: a.status,
+            pet_nome: a.pet?.nome || "Pet",
+            pet_foto: a.pet?.foto_url || null,
+            pet_raca: a.pet?.raca || null,
+            cliente_nome: a.cliente?.nome || "—",
+            cliente_whatsapp: a.cliente?.whatsapp || null,
+            cliente_telefone: a.cliente?.telefone || null,
+            cliente_endereco: a.cliente?.endereco || null,
+            driver_nome: null,
+            type_nome: a.tipo_servico,
+            trip_type: a.tipo_servico || "",
+          };
+          const buscar = (a.hora_prevista_buscar || "").toString().slice(0, 5);
+          const levar = (a.hora_prevista_levar || "").toString().slice(0, 5);
+          const fallback = extractTimeBR(a.data_hora);
+
+          if (buscar || levar) {
+            if (buscar) fromAgs.push({ ...base, id: `${a.id}:buscar`, scheduled_pickup_time: buscar, leg: "buscar" });
+            if (levar) fromAgs.push({ ...base, id: `${a.id}:levar`, scheduled_pickup_time: levar, leg: "levar" });
+          } else {
+            fromAgs.push({ ...base, scheduled_pickup_time: fallback, leg: tripToLeg(a.tipo_servico) });
+          }
+        });
 
       const merged = [...fromBookings, ...fromAgs].sort((x, y) => {
         const tx = (x.scheduled_pickup_time || "").toString().slice(0, 5);
@@ -200,6 +228,7 @@ export default function OperacionalTaxiPetPage() {
             const mapsUrl = endereco ? `https://www.google.com/maps/search/?api=1&query=${enderecoEnc}` : null;
             const wazeUrl = endereco ? `https://www.waze.com/ul?q=${enderecoEnc}&navigate=yes` : null;
             const st = statusMap[it.status] || { label: it.status, color: "bg-muted text-muted-foreground" };
+            const lg = legBadge[it.leg];
 
             return (
               <div key={`${it.source}-${it.id}`} className="p-4 md:px-5 md:py-4 hover:bg-muted/30 transition-colors">
@@ -221,12 +250,6 @@ export default function OperacionalTaxiPetPage() {
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
                       <Car className="h-3.5 w-3.5 shrink-0" />
                       <span>{it.type_nome}</span>
-                      {it.trip_type && (
-                        <>
-                          <span>·</span>
-                          <span>{tripLabel(it.trip_type)}</span>
-                        </>
-                      )}
                       {it.driver_nome && (
                         <>
                           <span>·</span>
@@ -246,6 +269,7 @@ export default function OperacionalTaxiPetPage() {
                     <span className="text-base font-semibold text-foreground tabular-nums">
                       {it.scheduled_pickup_time ? it.scheduled_pickup_time.slice(0, 5) : "—"}
                     </span>
+                    <Badge variant="outline" className={`text-[10px] ${lg.color}`}>{lg.label}</Badge>
                     <Badge className={`text-[10px] ${st.color}`}>{st.label}</Badge>
                   </div>
                 </div>
