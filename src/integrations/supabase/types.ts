@@ -4004,6 +4004,47 @@ export type Database = {
           },
         ]
       }
+      metas_faturamento: {
+        Row: {
+          ano: number
+          created_at: string
+          empresa_id: string
+          id: string
+          mes: number
+          observacao: string | null
+          updated_at: string
+          valor_meta: number
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          empresa_id: string
+          id?: string
+          mes: number
+          observacao?: string | null
+          updated_at?: string
+          valor_meta?: number
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          mes?: number
+          observacao?: string | null
+          updated_at?: string
+          valor_meta?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metas_faturamento_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimentacoes: {
         Row: {
           banco: string | null
