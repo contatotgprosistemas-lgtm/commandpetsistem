@@ -113,7 +113,10 @@ export function ContratacaoDialog({ open, onOpenChange, onSuccess, empresaId }: 
   const [plannedDays, setPlannedDays] = useState<number[]>([]);
   const [horaBuscar, setHoraBuscar] = useState("08:00");
   const [horaLevar, setHoraLevar] = useState("17:00");
-  const [transportMode, setTransportMode] = useState<"ambos" | "buscar" | "levar">("ambos");
+  const [transportMode, setTransportMode] = useState<"ambos" | "buscar" | "levar" | "hotel">("ambos");
+  // Hotel mode: pet fica hospedado, busca em uma data e leva em outra
+  const [hotelDataBuscar, setHotelDataBuscar] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [hotelDataLevar, setHotelDataLevar] = useState(format(addDays(new Date(), 2), "yyyy-MM-dd"));
   const [horaBanhoPorPet, setHoraBanhoPorPet] = useState<Record<string, string>>({});
   const getHoraBanho = (petId?: string) => {
     if (selectedPetIds.length <= 1) return horaBanhoPorPet["_default"] || "09:00";
