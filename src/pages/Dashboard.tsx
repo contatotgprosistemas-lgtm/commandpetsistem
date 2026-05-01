@@ -1270,7 +1270,12 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
         const petName = item.pet?.nome ?? "Pet";
         const initials = petName.slice(0, 2).toUpperCase();
         const clientName = item.cliente?.nome ?? "—";
-        const clientWhatsapp = item.cliente?.whatsapp;
+        const clientWhatsapp = item.cliente?.whatsapp || item.cliente?.telefone;
+        const clientPhoneRaw = (clientWhatsapp || "").replace(/\D/g, "");
+        const clientEndereco = item.cliente?.endereco || "";
+        const mapsUrl = clientEndereco
+          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clientEndereco)}`
+          : null;
         const tripLabel = item.trip_type === "ida" ? "Ida" : item.trip_type === "volta" ? "Volta" : "Ida e Volta";
         const st = statusMap[item.status] || { label: item.status, color: "bg-muted text-muted-foreground" };
 
@@ -1290,15 +1295,44 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
                 {item.pet?.raca && <span className="text-xs text-muted-foreground">({item.pet.raca})</span>}
+                <span className="text-xs text-muted-foreground">·</span>
+                <span className="text-xs text-foreground/80 truncate">{clientName}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 flex-wrap">
                 <Car className="h-3 w-3 shrink-0" />
                 <span>{item.transport_type?.name ?? "Transporte"}</span>
                 <span>·</span>
                 <span>{tripLabel}</span>
-                <span>|</span>
-                <span className="truncate">{clientName}</span>
-                {clientWhatsapp && <MessageCircle className="h-3 w-3 text-emerald-500 shrink-0" />}
+                {mapsUrl && (
+                  <>
+                    <span>|</span>
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline truncate max-w-[280px]"
+                      title="Abrir no Google Maps"
+                    >
+                      <MapPin className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{clientEndereco}</span>
+                    </a>
+                  </>
+                )}
+                {clientPhoneRaw && (
+                  <>
+                    <span>|</span>
+                    <a
+                      href={`https://wa.me/${clientPhoneRaw}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-emerald-600 hover:underline"
+                      title="Abrir no WhatsApp"
+                    >
+                      <MessageCircle className="h-3 w-3" />
+                      <span>{clientWhatsapp}</span>
+                    </a>
+                  </>
+                )}
               </div>
             </div>
             <div className="text-right shrink-0">
@@ -1313,8 +1347,8 @@ function TaxiPetTodayList({ items, loading }: { items: any[]; loading: boolean }
                 R$ {Number(item.final_price).toFixed(2)}
               </span>
             )}
-            {clientWhatsapp && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" title="WhatsApp" onClick={() => window.open(`https://wa.me/${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}>
+            {clientPhoneRaw && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="WhatsApp" onClick={() => window.open(`https://wa.me/${clientPhoneRaw}`, "_blank")}>
                 <Phone className="h-3.5 w-3.5 text-emerald-600" />
               </Button>
             )}
