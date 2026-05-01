@@ -292,15 +292,18 @@ export function MetasFaturamentoCard() {
                       </td>
                       <td className="px-3 py-1.5">
                         <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
+                          type="text"
+                          inputMode="numeric"
                           value={draft[row.mes] ?? ""}
-                          onChange={(e) =>
-                            setDraft((d) => ({ ...d, [row.mes]: e.target.value }))
-                          }
-                          className="h-8 w-32"
-                          placeholder="0,00"
+                          onChange={(e) => {
+                            const n = parseBRLInput(e.target.value);
+                            setDraft((d) => ({
+                              ...d,
+                              [row.mes]: n === 0 ? "" : formatBRLInput(n),
+                            }));
+                          }}
+                          className="h-8 w-36"
+                          placeholder="R$ 0,00"
                         />
                       </td>
                       <td className="px-3 py-2 font-mono-tabular">
@@ -309,14 +312,17 @@ export function MetasFaturamentoCard() {
                         ) : (
                           <div className="flex items-center gap-2">
                             <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
+                              type="text"
+                              inputMode="numeric"
                               value={draftReal[row.mes] ?? ""}
-                              onChange={(e) =>
-                                setDraftReal((d) => ({ ...d, [row.mes]: e.target.value }))
-                              }
-                              className="h-8 w-32"
+                              onChange={(e) => {
+                                const n = parseBRLInput(e.target.value);
+                                setDraftReal((d) => ({
+                                  ...d,
+                                  [row.mes]: n === 0 ? "" : formatBRLInput(n),
+                                }));
+                              }}
+                              className="h-8 w-36"
                               placeholder={fmtBRL(realizadoMap[row.mes] ?? 0)}
                               title="Deixe em branco para usar o valor automático das movimentações"
                             />
