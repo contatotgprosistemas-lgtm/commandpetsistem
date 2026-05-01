@@ -70,6 +70,8 @@ interface Agendamento {
   subscription_id: string | null;
   data_entrada: string | null;
   hora_entrada: string | null;
+  hora_prevista_buscar: string | null;
+  hora_prevista_levar: string | null;
   pet: { id: string; nome: string; raca: string | null; especie: string; foto_url: string | null } | null;
   cliente: { id: string; nome: string; whatsapp: string | null; telefone?: string | null; endereco?: string | null; foto_url: string | null } | null;
 }
