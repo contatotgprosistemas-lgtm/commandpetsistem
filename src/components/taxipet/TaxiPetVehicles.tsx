@@ -16,10 +16,16 @@ type Vehicle = {
   id: string; brand: string | null; model: string; plate: string | null; color: string | null;
   year: number | null; capacity: number; vehicle_type: string; status: string; notes: string | null;
   driver_id: string | null;
+  consumo_km_litro: number | null;
+  tipo_combustivel: string | null;
 };
 type Driver = { id: string; name: string };
 
-const empty = { brand: "", model: "", plate: "", color: "", year: "", capacity: "4", vehicle_type: "carro", status: "ativo", notes: "", driver_id: "" };
+const empty = {
+  brand: "", model: "", plate: "", color: "", year: "", capacity: "4",
+  vehicle_type: "carro", status: "ativo", notes: "", driver_id: "",
+  consumo_km_litro: "", tipo_combustivel: "",
+};
 
 export default function TaxiPetVehicles() {
   const { profile } = useAuth();
@@ -49,6 +55,8 @@ export default function TaxiPetVehicles() {
       color: form.color || null, year: form.year ? Number(form.year) : null, capacity: Number(form.capacity) || 4,
       vehicle_type: form.vehicle_type, status: form.status, notes: form.notes || null,
       driver_id: form.driver_id && form.driver_id !== "__none__" ? form.driver_id : null,
+      consumo_km_litro: form.consumo_km_litro ? Number(form.consumo_km_litro.replace(",", ".")) : null,
+      tipo_combustivel: form.tipo_combustivel || null,
     };
     if (editing) {
       await supabase.from("vehicles").update(payload).eq("id", editing.id);
@@ -67,7 +75,14 @@ export default function TaxiPetVehicles() {
 
   const openEdit = (v: Vehicle) => {
     setEditing(v);
-    setForm({ brand: v.brand || "", model: v.model, plate: v.plate || "", color: v.color || "", year: v.year?.toString() || "", capacity: v.capacity.toString(), vehicle_type: v.vehicle_type, status: v.status, notes: v.notes || "", driver_id: v.driver_id || "" });
+    setForm({
+      brand: v.brand || "", model: v.model, plate: v.plate || "",
+      color: v.color || "", year: v.year?.toString() || "",
+      capacity: v.capacity.toString(), vehicle_type: v.vehicle_type,
+      status: v.status, notes: v.notes || "", driver_id: v.driver_id || "",
+      consumo_km_litro: v.consumo_km_litro?.toString() || "",
+      tipo_combustivel: v.tipo_combustivel || "",
+    });
     setOpen(true);
   };
 
@@ -154,6 +169,32 @@ export default function TaxiPetVehicles() {
               </Select>
             </div>
             <div className="col-span-2"><Label>Observações</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+            <div>
+              <Label>Consumo (km/L)</Label>
+              <Input
+                type="number" step="0.1"
+                placeholder="Ex: 12.5"
+                value={form.consumo_km_litro}
+                onChange={(e) => setForm({ ...form, consumo_km_litro: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Tipo de combustível</Label>
+              <Select
+                value={form.tipo_combustivel || "__none__"}
+                onValueChange={(v) => setForm({ ...form, tipo_combustivel: v === "__none__" ? "" : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Não definido</SelectItem>
+                  <SelectItem value="gasolina">Gasolina</SelectItem>
+                  <SelectItem value="etanol">Etanol</SelectItem>
+                  <SelectItem value="diesel">Diesel</SelectItem>
+                  <SelectItem value="flex">Flex</SelectItem>
+                  <SelectItem value="gnv">GNV</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter><Button onClick={handleSave}>{editing ? "Salvar" : "Cadastrar"}</Button></DialogFooter>
         </DialogContent>
