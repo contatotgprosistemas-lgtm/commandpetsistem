@@ -10,6 +10,7 @@ import { MetricCard } from "@/components/MetricCard";
 import {
   Car, Clock, CheckCircle, MapPin, User, ArrowRight, Phone, GripVertical,
   Sun, Moon, Bath, Navigation2, Home, Hash, Pencil, Check, X,
+  Route as RouteIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { extractTimeBR } from "@/lib/utils";
@@ -22,6 +23,7 @@ import {
   SortableContext, verticalListSortingStrategy, arrayMove, useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import RoteirizacaoDialog, { RouteStop } from "./RoteirizacaoDialog";
 
 const TRANSPORT_FILTER = "tipo_servico.ilike.%taxi%,tipo_servico.ilike.%transport%,tipo_servico.ilike.%leva%";
 
@@ -139,6 +141,7 @@ export default function TaxiPetOperational() {
   const [orderMap, setOrderMap] = useState<Record<PeriodKey, string[]>>({
     manha_buscar: [], tarde_levar: [], banho_buscar: [], banho_levar: [],
   });
+  const [routeDialog, setRouteDialog] = useState<null | "buscar" | "levar">(null);
 
   const load = async () => {
     if (!profile?.empresa_id) return;
