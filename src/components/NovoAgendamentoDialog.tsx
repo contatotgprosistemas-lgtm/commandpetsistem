@@ -479,13 +479,23 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         if (descontoTotal > 0) descParts.push(`-R$${descontoTotal.toFixed(2)} desc.`);
         const descricaoFatura = `${descParts.join(" ")} — ${petNames}`;
 
+        // Plano de contas é definido pelo TIPO DE SERVIÇO (DRE), nunca pela forma de pagamento
+        const tipoSvcLower = (data.tipo_servico || "").toLowerCase();
+        let planoContas = "Serviços Extras";
+        if (tipoSvcLower.includes("banho") || tipoSvcLower.includes("tosa")) planoContas = "Banho e Tosa";
+        else if (tipoSvcLower.includes("hosped") || tipoSvcLower.includes("diária") || tipoSvcLower.includes("diaria") || tipoSvcLower.includes("pernoite")) planoContas = "Hospedagem";
+        else if (tipoSvcLower.includes("daycare") || tipoSvcLower.includes("creche") || tipoSvcLower.includes("day care")) planoContas = "Day Care";
+        else if (tipoSvcLower.includes("adestr")) planoContas = "Adestramento";
+        else if (tipoSvcLower.includes("consulta") || tipoSvcLower.includes("vacin") || tipoSvcLower.includes("veterin")) planoContas = "Consultas Veterinárias";
+        else if (tipoSvcLower.includes("transporte") || tipoSvcLower.includes("taxi") || tipoSvcLower.includes("táxi")) planoContas = "Transporte Pet";
+
         const { data: insertedFatura } = await supabase.from("contas_receber").insert({
           empresa_id: empresaId,
           cliente_id: data.cliente_id,
           descricao: descricaoFatura,
           valor: totalFatura,
           vencimento: vencimentoFatura,
-          categoria: data.forma_pagamento || "A definir",
+          categoria: planoContas,
           status: "pendente",
         } as any).select("id").single();
 
