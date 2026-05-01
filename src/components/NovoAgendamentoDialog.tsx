@@ -169,6 +169,22 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
     return desc.includes("hotel") || desc.includes("hospedagem") || tipo.includes("hotel") || tipo.includes("hospedagem");
   }, [servicoObj]);
 
+  // Check if service is taxi avulso type
+  const isTaxiAvulso = useMemo(() => {
+    if (!servicoObj) return false;
+    const desc = servicoObj.descricao.toLowerCase();
+    const tipo = servicoObj.tipo.toLowerCase();
+    return desc.includes("taxi") || desc.includes("táxi") || desc.includes("transporte") ||
+           tipo.includes("taxi") || tipo.includes("táxi") || tipo.includes("transporte");
+  }, [servicoObj]);
+
+  // Datas adicionais para taxi avulso (cada item: data/hora buscar + data/hora levar)
+  const [extraTaxiDates, setExtraTaxiDates] = useState<Array<{
+    data_buscar: string; hora_buscar: string;
+    data_levar: string; hora_levar: string;
+  }>>([]);
+  const [agendarMaisDatas, setAgendarMaisDatas] = useState(false);
+
   // Check if service is banho/tosa type
   const isBanho = useMemo(() => {
     if (!servicoObj) return false;
@@ -257,6 +273,8 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       supabase.from("baias").select("id, nome, capacidade_pets").eq("ativa", true).order("nome").then(({ data }) => { if (data) setBaias(data); });
     } else {
       setServicosExtras([]);
+      setExtraTaxiDates([]);
+      setAgendarMaisDatas(false);
     }
   }, [open]);
 
@@ -529,10 +547,85 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         }
       }
 
+      // Taxi avulso: criar agendamentos adicionais para cada data extra informada
+      let extraCreatedCount = 0;
+      if (isTaxiAvulso && agendarMaisDatas && extraTaxiDates.length > 0) {
+        const validExtras = extraTaxiDates.filter(r => r.data_buscar && r.hora_buscar);
+        for (const extra of validExtras) {
+          const extraDataHora = new Date(extra.data_buscar + "T" + extra.hora_buscar + ":00");
+          const extraRows = data.pet_ids.map(pet_id => ({
+            empresa_id: empresaId,
+            cliente_id: data.cliente_id,
+            pet_id,
+            tipo_servico: data.tipo_servico,
+            data_hora: extraDataHora.toISOString(),
+            data_entrada: null,
+            hora_entrada: null,
+            data_saida_provavel: buildTs(extra.data_levar || "", extra.hora_levar || ""),
+            hora_saida_provavel: extra.hora_levar || null,
+            data_saida: null,
+            hora_saida: null,
+            baia: null,
+            valor: petUsesReplacement(pet_id) ? 0 : baseValor,
+            desconto: data.desconto ? parseFloat(data.desconto) : 0,
+            forma_pagamento: data.forma_pagamento || null,
+            notas: data.notas || null,
+          }));
+          const { error: extraErr } = await supabase.from("agendamentos").insert(extraRows as any);
+          if (extraErr) {
+            console.error("Erro ao criar agendamento extra de taxi:", extraErr);
+            continue;
+          }
+          extraCreatedCount += extraRows.length;
+
+          // Fatura própria por data extra
+          if (podeCriarFatura) {
+            const extraVencimento = isPagamentoPosterior && data.data_pagamento
+              ? data.data_pagamento
+              : extra.data_buscar;
+            const extraLineItems: { descricao: string; valor: number; tipo: string }[] = [];
+            if (valorNum > 0) {
+              for (const petId of data.pet_ids) {
+                if (petUsesReplacement(petId)) continue;
+                const petName = pets.find(p => p.id === petId)?.nome || "Pet";
+                extraLineItems.push({ descricao: `${data.tipo_servico} — ${petName} (${extra.data_buscar})`, valor: valorNum, tipo: "principal" });
+              }
+            }
+            const extraTotalBruto = extraLineItems.reduce((s, li) => s + li.valor, 0);
+            const extraTotal = Math.max(extraTotalBruto - descontoTotal, 0);
+            if (extraTotal > 0 && extraLineItems.length > 0) {
+              if (descontoTotal > 0) extraLineItems.push({ descricao: `Desconto`, valor: -descontoTotal, tipo: "desconto" });
+              const petNames = data.pet_ids.map(pid => pets.find(p => p.id === pid)?.nome).filter(Boolean).join(", ");
+              const descricaoExtraFatura = `${data.tipo_servico} (${extra.data_buscar}) — ${petNames}`;
+              const { data: insertedExtraFatura } = await supabase.from("contas_receber").insert({
+                empresa_id: empresaId,
+                cliente_id: data.cliente_id,
+                descricao: descricaoExtraFatura,
+                valor: extraTotal,
+                vencimento: extraVencimento,
+                categoria: "Transporte Pet",
+                status: "pendente",
+              } as any).select("id").single();
+              if (insertedExtraFatura?.id) {
+                await supabase.from("contas_receber_itens" as any).insert(
+                  extraLineItems.map(li => ({
+                    conta_receber_id: insertedExtraFatura.id,
+                    empresa_id: empresaId,
+                    descricao: li.descricao,
+                    valor: li.valor,
+                    tipo: li.tipo,
+                  }))
+                );
+              }
+            }
+          }
+        }
+      }
+
       toast({
         title: useRepl
           ? `Reposição utilizada! ${data.pet_ids.length} agendamento(s) criado(s) sem cobrança.`
-          : `${data.pet_ids.length} agendamento(s) criado(s) com sucesso!`,
+          : `${data.pet_ids.length + extraCreatedCount} agendamento(s) criado(s) com sucesso!`,
       });
 
       // If user wants to generate contract, open contract dialog
@@ -917,6 +1010,118 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             )}
 
             {/* Row 1: Reserva + Hora Reserva + Saída Prevista + Hr Saída Prevista */}
+            {isTaxiAvulso ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <FormField control={form.control} name="data_reserva" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data Buscar *</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value} onChange={field.onChange} placeholder="Data buscar" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_reserva" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hora Buscar *</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="data_saida_provavel" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data Levar</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Data levar" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_saida_provavel" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hora Levar</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <Checkbox
+                    id="agendar-mais-datas"
+                    checked={agendarMaisDatas}
+                    onCheckedChange={(c) => {
+                      const v = !!c;
+                      setAgendarMaisDatas(v);
+                      if (!v) setExtraTaxiDates([]);
+                    }}
+                  />
+                  <Label htmlFor="agendar-mais-datas" className="cursor-pointer text-sm">
+                    Agendar mais datas de uma vez
+                  </Label>
+                </div>
+
+                {agendarMaisDatas && (
+                  <div className="space-y-2 rounded-md border border-border p-3 bg-muted/20">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Datas adicionais</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setExtraTaxiDates(prev => [...prev, {
+                          data_buscar: "", hora_buscar: "09:00",
+                          data_levar: "", hora_levar: "18:00",
+                        }])}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar data
+                      </Button>
+                    </div>
+                    {extraTaxiDates.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Clique em "Adicionar data" para incluir mais corridas.</p>
+                    )}
+                    {extraTaxiDates.map((row, idx) => (
+                      <div key={idx} className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-end">
+                        <div>
+                          <Label className="text-xs">Data Buscar</Label>
+                          <DatePickerField
+                            value={row.data_buscar}
+                            onChange={(v) => setExtraTaxiDates(prev => prev.map((r, i) => i === idx ? { ...r, data_buscar: v } : r))}
+                            placeholder="Data buscar"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Hora Buscar</Label>
+                          <Input type="time" value={row.hora_buscar} onChange={e => setExtraTaxiDates(prev => prev.map((r, i) => i === idx ? { ...r, hora_buscar: e.target.value } : r))} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Data Levar</Label>
+                          <DatePickerField
+                            value={row.data_levar}
+                            onChange={(v) => setExtraTaxiDates(prev => prev.map((r, i) => i === idx ? { ...r, data_levar: v } : r))}
+                            placeholder="Data levar"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Hora Levar</Label>
+                          <Input type="time" value={row.hora_levar} onChange={e => setExtraTaxiDates(prev => prev.map((r, i) => i === idx ? { ...r, hora_levar: e.target.value } : r))} />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-destructive"
+                          onClick={() => setExtraTaxiDates(prev => prev.filter((_, i) => i !== idx))}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <FormField control={form.control} name="data_reserva" render={({ field }) => (
                 <FormItem>
@@ -951,6 +1156,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 </FormItem>
               )} />
             </div>
+            )}
 
             {/* Disponibilidade de horários para banho avulso */}
             {isBanho && dataReserva && (
@@ -969,6 +1175,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             )}
 
             {/* Row 2: Data Entrada + Hora Entrada + Data Saída + Hora Saída */}
+            {!isTaxiAvulso && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <FormField control={form.control} name="data_entrada" render={({ field }) => (
                 <FormItem>
@@ -1003,6 +1210,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 </FormItem>
               )} />
             </div>
+            )}
 
             {/* Row 3: Quarto + Diárias + Valor */}
             <div className={cn("grid gap-3 items-end", isHotel ? "grid-cols-2 sm:grid-cols-3" : isBanho ? "grid-cols-1 sm:grid-cols-1" : "grid-cols-2")}>
