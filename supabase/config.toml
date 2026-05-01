@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.notificar-esteira-whatsapp]
 verify_jwt = false
+
+[functions.processar-lembretes-fatura]
+verify_jwt = false
