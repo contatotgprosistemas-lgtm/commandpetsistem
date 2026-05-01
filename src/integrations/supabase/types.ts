@@ -3881,23 +3881,59 @@ export type Database = {
       invoice_notification_config: {
         Row: {
           created_at: string
+          dias_antes: number
+          dias_apos: number
           empresa_id: string
           enabled: boolean
+          enabled_atraso: boolean
+          enabled_geracao: boolean
+          enabled_pre_vencimento: boolean
+          enabled_vencimento: boolean
+          intervalo_entre_envios_seg: number
+          max_envios_por_minuto: number
           mensagem: string
+          mensagem_atraso: string | null
+          mensagem_geracao: string | null
+          mensagem_pre_vencimento: string | null
+          mensagem_vencimento: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          dias_antes?: number
+          dias_apos?: number
           empresa_id: string
           enabled?: boolean
+          enabled_atraso?: boolean
+          enabled_geracao?: boolean
+          enabled_pre_vencimento?: boolean
+          enabled_vencimento?: boolean
+          intervalo_entre_envios_seg?: number
+          max_envios_por_minuto?: number
           mensagem?: string
+          mensagem_atraso?: string | null
+          mensagem_geracao?: string | null
+          mensagem_pre_vencimento?: string | null
+          mensagem_vencimento?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          dias_antes?: number
+          dias_apos?: number
           empresa_id?: string
           enabled?: boolean
+          enabled_atraso?: boolean
+          enabled_geracao?: boolean
+          enabled_pre_vencimento?: boolean
+          enabled_vencimento?: boolean
+          intervalo_entre_envios_seg?: number
+          max_envios_por_minuto?: number
           mensagem?: string
+          mensagem_atraso?: string | null
+          mensagem_geracao?: string | null
+          mensagem_pre_vencimento?: string | null
+          mensagem_vencimento?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3920,6 +3956,7 @@ export type Database = {
           erro: string | null
           id: string
           status: string
+          tipo: string
         }
         Insert: {
           cliente_id?: string | null
@@ -3930,6 +3967,7 @@ export type Database = {
           erro?: string | null
           id?: string
           status?: string
+          tipo?: string
         }
         Update: {
           cliente_id?: string | null
@@ -3940,6 +3978,7 @@ export type Database = {
           erro?: string | null
           id?: string
           status?: string
+          tipo?: string
         }
         Relationships: [
           {

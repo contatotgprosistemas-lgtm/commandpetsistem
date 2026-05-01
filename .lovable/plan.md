@@ -1,104 +1,97 @@
-# Plano: Roteirização TaxiPet + Gestão de Combustível
+## Objetivo
 
-## 1. Roteirização (Maps / Waze) no Painel Operacional
+Enviar notificações automáticas de cobrança via WhatsApp em 4 momentos do ciclo da fatura, com mensagens editáveis e cadência (espaçamento) para reduzir risco de bloqueio do número.
 
-### Fluxo
-No `TaxiPetOperational.tsx` adicionar **2 botões** no topo do painel:
-- **🗺️ Roteirizar Coletas** (corridas "buscar")
-- **🗺️ Roteirizar Entregas** (corridas "levar")
+## Os 4 momentos (eventos)
 
-Ao clicar, abre um **dialog de roteirização** com:
+1. **Geração** — no dia em que a fatura é criada (já existe hoje, vamos manter e tratar como um dos 4 templates)
+2. **Pré-vencimento** — 3 dias antes do vencimento (lembrete amigável)
+3. **Vencimento** — no dia do vencimento (aviso firme)
+4. **Atraso** — 2 dias após o vencimento (cobrança de fatura em atraso)
 
-1. **Lista ordenada por horário** (drag-and-drop para reordenar manualmente, já temos `@dnd-kit` no projeto)
-2. Para cada parada: horário · pet · cliente · endereço · checkbox para incluir/excluir
-3. Seletor de **ponto de partida**:
-   - "Endereço da empresa" (padrão, pega do `empresas`)
-   - "Localização atual" (geolocation API)
-   - Endereço customizado
-4. Seletor de **ponto de chegada** (opcional — útil em "Levar" para retornar à empresa)
-5. Seletor de **veículo** (para vincular gasto de combustível)
-6. Seletor de **motorista**
-7. Botões finais:
-   - **Abrir no Google Maps** → URL `https://www.google.com/maps/dir/?api=1&origin=...&destination=...&waypoints=...`
-   - **Abrir no Waze** → Waze não suporta múltiplos waypoints nativamente; abre sequencialmente (primeira parada agora, demais salvas em "Roteiros recentes" via deeplinks `waze://?ll=...&navigate=yes`). Mostrar aviso e oferecer fallback "Maps".
-8. Ao confirmar, salva um registro em `taxipet_roteirizacoes` (ver schema abaixo) com a sequência usada → permite calcular consumo depois.
+Apenas faturas com `status = 'pendente'` recebem os lembretes 2/3/4. Se já foi paga, o disparo é pulado.
 
-### Componente novo
-`src/components/taxipet/RoteirizacaoDialog.tsx` — recebe `legType: "buscar" | "levar"` e a lista de paradas do dia.
+## O que vai mudar
 
-## 2. Gestão de Combustível e Custo por Rota
+### 1. Banco de dados (migração)
 
-### Novos campos em `vehicles`
-- `consumo_km_litro` (numeric) — ex: 12.5 km/L
-- `tipo_combustivel` (text) — gasolina, etanol, diesel, flex
-- `placa_observacao` já existe como `notes`
+**Estender `invoice_notification_config`** (hoje guarda 1 mensagem). Adicionar colunas para os 4 templates e configuração de cadência:
 
-### Nova tabela `combustivel_precos` (preço de combustível por empresa, atualizável)
-- `empresa_id`, `tipo_combustivel`, `preco_litro`, `data_referencia`
-- Permite histórico de preços (não sobrescreve)
+- `enabled_geracao` (bool, default true) + `mensagem_geracao` (text)
+- `enabled_pre_vencimento` (bool, default true) + `mensagem_pre_vencimento` (text) + `dias_antes` (int, default 3)
+- `enabled_vencimento` (bool, default true) + `mensagem_vencimento` (text)
+- `enabled_atraso` (bool, default true) + `mensagem_atraso` (text) + `dias_apos` (int, default 2)
+- `intervalo_entre_envios_seg` (int, default 8) — pausa entre cada mensagem dentro de um lote
+- `max_envios_por_minuto` (int, default 6) — teto adicional por empresa
 
-### Nova tabela `taxipet_roteirizacoes`
-Salva cada rota gerada:
-- `empresa_id`, `data`, `tipo` (buscar/levar)
-- `vehicle_id`, `driver_id`
-- `origem_endereco`, `destino_endereco`
-- `paradas` (jsonb — array com {booking_id, ordem, endereco, lat, lng})
-- `km_estimado` (preenchido manualmente OU via API depois)
-- `km_real` (motorista informa ao finalizar)
-- `litros_consumidos` (calculado: km_real / consumo_km_litro)
-- `custo_combustivel` (calculado: litros × preço atual do combustível do veículo)
-- `receita_total` (soma do `final_price` das corridas dessa rota)
-- `lucro_estimado` (receita − custo)
-- `status` (planejada / em_andamento / concluida)
+Manter a coluna `mensagem`/`enabled` antigas como fallback de compatibilidade.
 
-### Nova tela: aba "Combustível & Custos" no menu TaxiPet
-Em `src/pages/TaxiPetPage.tsx` adicionar aba ao lado de "Painel Operacional":
-- **Cards do mês**: Total km rodados · Litros consumidos · Custo combustível · Receita TaxiPet · **Margem (%)**
-- **Tabela de roteirizações**: data · tipo · veículo · motorista · km · litros · custo · receita · lucro
-- **Configuração de preços**: input rápido para atualizar `preco_litro` por tipo de combustível
-- **Alerta inteligente**: se margem do mês < 30%, mostra aviso "Considere reajustar preços ou rever rotas"
+**Estender `invoice_notification_log`**: adicionar coluna `tipo` (text: `geracao | pre_vencimento | vencimento | atraso`) com índice em `(empresa_id, conta_receber_id, tipo, status)` para garantir idempotência (não enviar 2x o mesmo evento para a mesma fatura).
 
-### Fluxo de finalização da rota
-Ao motorista terminar:
-1. No painel operacional, botão "Finalizar rota" no card da roteirização ativa
-2. Dialog pede: km final do velocímetro (ou km rodados direto)
-3. Sistema calcula litros e custo automaticamente, salva em `taxipet_roteirizacoes`
-4. Cards de gestão atualizam em tempo real
+### 2. Edge function nova: `processar-lembretes-fatura`
 
-## 3. Ideias extras incluídas
+Roda via cron 1x/dia (ex.: 09:00 BRT). Para cada empresa com config ativa:
 
-1. **Estimativa prévia de km via Google Distance Matrix** — opcional, exige API key. Por padrão, motorista informa km real ao final. Deixar pronto para ativar depois.
-2. **Análise por motorista**: ranking de eficiência (km/L real vs esperado) — detecta desvio de combustível.
-3. **Custo médio por corrida** = `custo_rota / nº paradas` — ajuda a precificar novos clientes.
-4. **Exportar histórico do mês em CSV** para contabilidade.
-5. **Lançamento automático em Finanças**: quando rota finaliza com custo > 0, criar `contas_pagar` na categoria "Combustível" vinculado ao veículo. (Opcional — pergunto antes de implementar.)
+1. Busca faturas em `contas_receber` com `status = 'pendente'` que se enquadrem em cada janela:
+   - **pré-vencimento**: `vencimento = hoje + dias_antes`
+   - **vencimento**: `vencimento = hoje`
+   - **atraso**: `vencimento = hoje - dias_apos`
+2. Para cada fatura, verifica em `invoice_notification_log` se já existe envio com `status='enviado'` para aquele `tipo` — se sim, pula.
+3. Envia a mensagem com **cadência**: aguarda `intervalo_entre_envios_seg` entre cada disparo (ex.: 8s) e respeita `max_envios_por_minuto`.
+4. Reaproveita toda a infra do `notificar-fatura-whatsapp` (canal, contato, conversa, log) — vamos refatorar essa função para receber um parâmetro `tipo` e a `mensagem` correta, mantendo o fluxo atual.
+
+### 3. Cron job
+
+Agendar via `pg_cron` + `pg_net` (chamando a função do Supabase com header `apikey`). Frequência: diária às 09:00 BRT (12:00 UTC).
+
+### 4. UI — `FaturaWhatsappCard.tsx`
+
+Reformular o card em **abas** (Tabs) ou seções colapsáveis, uma por evento:
+- Geração de fatura
+- 3 dias antes do vencimento (campo numérico ajustável)
+- No dia do vencimento
+- X dias após vencimento (campo numérico ajustável)
+
+Cada seção tem:
+- Switch de ativo/inativo
+- Textarea com a mensagem
+- Lista de variáveis disponíveis: `{nome}`, `{primeiro_nome}`, `{descricao}`, `{valor}`, `{vencimento}`, `{dias_atraso}` (novo, útil no template de atraso)
+
+Adicionar uma seção **"Cadência de envio"** com 2 campos:
+- Intervalo entre mensagens (segundos)
+- Máximo por minuto
+
+Manter a tab/seção de **"Últimos envios"** mostrando o `tipo` em cada linha (badge: Geração / Pré-vencimento / Vencimento / Atraso).
+
+### 5. Mensagens padrão (sugestão)
+
+- **Geração**: já existe, manter como está.
+- **Pré-vencimento**: "Olá {primeiro_nome}! 👋 Passando para lembrar que sua fatura *{descricao}* de *R$ {valor}* vence em *{vencimento}* (em 3 dias). 🐾"
+- **Vencimento**: "Olá {primeiro_nome}! Sua fatura *{descricao}* de *R$ {valor}* vence *hoje ({vencimento})*. Qualquer dúvida estamos por aqui. 🐾"
+- **Atraso**: "Olá {primeiro_nome}, identificamos que sua fatura *{descricao}* de *R$ {valor}*, com vencimento em {vencimento}, está em atraso há {dias_atraso} dias. Por favor, regularize quando possível. 🐾"
+
+## Cuidado anti-bloqueio
+
+- Cadência configurável (default 8s entre envios) já evita rajadas.
+- Idempotência via log impede reenvios duplicados.
+- Templates personalizados com `{primeiro_nome}` (já implementado) mantêm variabilidade.
+- Manter o aviso amarelo no card sobre boas práticas.
 
 ## Arquivos afetados
 
 ```text
-src/components/taxipet/TaxiPetOperational.tsx       (botões Roteirizar)
-src/components/taxipet/RoteirizacaoDialog.tsx       (NOVO)
-src/components/taxipet/CombustivelTab.tsx           (NOVO — aba gestão)
-src/components/taxipet/FinalizarRotaDialog.tsx      (NOVO — km final)
-src/pages/TaxiPetPage.tsx                           (nova aba)
-supabase migration                                   (3 alterações de schema)
+supabase/migrations/<novo>.sql           # extensão das tabelas
+supabase/functions/processar-lembretes-fatura/index.ts   # NOVO
+supabase/functions/notificar-fatura-whatsapp/index.ts    # aceita "tipo" e usa template correto
+supabase/config.toml                     # registrar nova function (verify_jwt = false p/ cron)
+src/components/FaturaWhatsappCard.tsx    # UI com 4 templates + cadência
 ```
 
-## Detalhes técnicos
+Cron job inserido via tool `insert` (não migration), conforme guideline.
 
-- **URL Google Maps com waypoints**:
-  `https://www.google.com/maps/dir/?api=1&origin=ENC&destination=ENC&waypoints=ENC|ENC|ENC&travelmode=driving`
-  Limite de 9 waypoints — se exceder, dividir em 2 abas.
-- **Waze multi-stop**: não nativo. Abrir 1ª parada e deixar lista lateral com botões "Próxima parada" para o motorista clicar manualmente.
-- **Cálculo de combustível**:
-  `litros = km_real / vehicle.consumo_km_litro`
-  `custo = litros × combustivel_precos.preco_litro` (último preço para o tipo do veículo)
-- **RLS**: todas as novas tabelas com `tenant isolation` por `empresa_id`.
+## O que NÃO muda
 
-## Pergunta antes de codar
+- O fluxo atual de envio na geração da fatura segue funcionando — ele apenas passa a usar `mensagem_geracao` (ou `mensagem` antiga como fallback) e gravar `tipo='geracao'` no log.
+- Nenhuma mudança em CRM, contas_receber ou no faturamento em si.
 
-Antes de implementar, só preciso confirmar:
-1. **Lançar custo de combustível automaticamente em Contas a Pagar?** (sim / não / só com confirmação manual)
-2. **Quer integração com Google Distance Matrix** (estimativa automática de km — exige adicionar API key) ou motorista informa km manualmente?
-
-Se preferir, posso assumir os defaults sensatos (não lança em contas a pagar automaticamente; km manual) e seguir direto.
+Posso seguir com a implementação?
