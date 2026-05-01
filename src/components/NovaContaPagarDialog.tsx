@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { usePlanoContasItens } from "@/hooks/usePlanoContasItens";
 
 interface Props {
   open: boolean;
@@ -22,6 +23,8 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
   const { profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [bancos, setBancos] = useState<any[]>([]);
+  const planoContasItens = usePlanoContasItens(profile?.empresa_id, open);
+  const planoContasDespesa = planoContasItens.filter((p) => p.tipo === "despesa");
 
   const [form, setForm] = useState({
     numero: "",
@@ -133,7 +136,20 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label>Plano de Contas <span className="text-destructive">*</span></Label>
-              <Input value={form.plano_contas} onChange={e => setForm({ ...form, plano_contas: e.target.value })} placeholder="Ex: Aluguel, Fornecedores..." />
+              <Select value={form.plano_contas} onValueChange={v => setForm({ ...form, plano_contas: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {planoContasDespesa.length === 0 ? (
+                    <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                      Nenhuma conta de despesa cadastrada. Cadastre em Financeiro › Plano de Contas.
+                    </div>
+                  ) : (
+                    planoContasDespesa.map(p => (
+                      <SelectItem key={p.nome} value={p.nome}>{p.nome}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label>Banco</Label>
