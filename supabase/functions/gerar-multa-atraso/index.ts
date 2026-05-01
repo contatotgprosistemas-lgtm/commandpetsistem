@@ -25,30 +25,24 @@ function addDays(yyyyMmDd: string, days: number): string {
   return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
 }
 
-function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
   const today = todayBR();
   const yesterday = addDays(today, -1);
-  const summary = { processed: 0, created: 0, skipped: 0, failed: 0, notified: 0 };
+  const summary = { processed: 0, created: 0, skipped: 0, failed: 0 };
 
   try {
     const { data: configs } = await admin
       .from("invoice_notification_config")
-      .select("empresa_id, enabled, multa_atraso_enabled, multa_atraso_valor, multa_atraso_descricao, intervalo_entre_envios_seg, max_envios_por_minuto");
+      .select("empresa_id, multa_atraso_enabled, multa_atraso_valor, multa_atraso_descricao");
 
     for (const cfg of configs ?? []) {
-      if (cfg.enabled === false) continue;
       if (!cfg.multa_atraso_enabled) continue;
 
       const valorMulta = Number(cfg.multa_atraso_valor ?? 30);
       const descMulta = cfg.multa_atraso_descricao ?? "Multa por atraso no pagamento";
-      const intervalo = Math.max(1, Number(cfg.intervalo_entre_envios_seg ?? 8));
-      const maxPerMin = Math.max(1, Number(cfg.max_envios_por_minuto ?? 6));
-      const minSpacingMs = Math.max(intervalo * 1000, Math.ceil(60000 / maxPerMin));
 
       // faturas vencidas ontem, ainda pendentes, do tipo normal (sem multa filha)
       const { data: faturas } = await admin
@@ -72,7 +66,7 @@ Deno.serve(async (req) => {
         if (existing && existing.length > 0) { summary.skipped++; continue; }
 
         // cria a fatura de multa (vencimento = hoje)
-        const { data: nova, error: insErr } = await admin
+        const { error: insErr } = await admin
           .from("contas_receber")
           .insert({
             empresa_id: cfg.empresa_id,
@@ -84,38 +78,10 @@ Deno.serve(async (req) => {
             status: "pendente",
             parent_conta_id: f.id,
             tipo_fatura: "multa_atraso",
-          })
-          .select("id")
-          .single();
+          });
 
-        if (insErr || !nova) { console.error("multa insert err", insErr); summary.failed++; continue; }
+        if (insErr) { console.error("multa insert err", insErr); summary.failed++; continue; }
         summary.created++;
-
-        // notifica WhatsApp
-        try {
-          const { data: cli } = await admin
-            .from("clientes").select("id, nome, whatsapp, telefone")
-            .eq("id", f.cliente_id).maybeSingle();
-          if (cli) {
-            const res = await fetch(`${SUPABASE_URL}/functions/v1/notificar-fatura-whatsapp`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
-              body: JSON.stringify({
-                empresa_id: cfg.empresa_id,
-                cliente: cli,
-                fatura: { id: nova.id, descricao: f.descricao, valor: f.valor, vencimento: f.vencimento },
-                tipo: "multa_atraso",
-                valor_multa: valorMulta,
-                dias_atraso: 1,
-              }),
-            });
-            if (res.ok) summary.notified++;
-          }
-        } catch (e) {
-          console.error("notify err", e);
-        }
-
-        await sleep(minSpacingMs);
       }
     }
 
