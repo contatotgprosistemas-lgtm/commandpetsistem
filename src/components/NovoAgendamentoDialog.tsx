@@ -935,6 +935,118 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
             )}
 
             {/* Row 1: Reserva + Hora Reserva + Saída Prevista + Hr Saída Prevista */}
+            {isTaxiAvulso ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <FormField control={form.control} name="data_reserva" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data Buscar *</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value} onChange={field.onChange} placeholder="Data buscar" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_reserva" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hora Buscar *</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="data_saida_provavel" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data Levar</FormLabel>
+                      <FormControl>
+                        <DatePickerField value={field.value || ""} onChange={field.onChange} placeholder="Data levar" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="hora_saida_provavel" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hora Levar</FormLabel>
+                      <FormControl><Input type="time" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <Checkbox
+                    id="agendar-mais-datas"
+                    checked={agendarMaisDatas}
+                    onCheckedChange={(c) => {
+                      const v = !!c;
+                      setAgendarMaisDatas(v);
+                      if (!v) setExtraTaxiDates([]);
+                    }}
+                  />
+                  <Label htmlFor="agendar-mais-datas" className="cursor-pointer text-sm">
+                    Agendar mais datas de uma vez
+                  </Label>
+                </div>
+
+                {agendarMaisDatas && (
+                  <div className="space-y-2 rounded-md border border-border p-3 bg-muted/20">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Datas adicionais</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setExtraTaxiDates(prev => [...prev, {
+                          data_buscar: "", hora_buscar: "09:00",
+                          data_levar: "", hora_levar: "18:00",
+                        }])}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar data
+                      </Button>
+                    </div>
+                    {extraTaxiDates.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Clique em "Adicionar data" para incluir mais corridas.</p>
+                    )}
+                    {extraTaxiDates.map((row, idx) => (
+                      <div key={idx} className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-end">
+                        <div>
+                          <Label className="text-xs">Data Buscar</Label>
+                          <DatePickerField
+                            value={row.data_buscar}
+                            onChange={(v) => setExtraTaxiDates(prev => prev.map((r, i) => i === idx ? { ...r, data_buscar: v } : r))}
+                            placeholder="Data buscar"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Hora Buscar</Label>
+                          <Input type="time" value={row.hora_buscar} onChange={e => setExtraTaxiDates(prev => prev.map((r, i) => i === idx ? { ...r, hora_buscar: e.target.value } : r))} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Data Levar</Label>
+                          <DatePickerField
+                            value={row.data_levar}
+                            onChange={(v) => setExtraTaxiDates(prev => prev.map((r, i) => i === idx ? { ...r, data_levar: v } : r))}
+                            placeholder="Data levar"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Hora Levar</Label>
+                          <Input type="time" value={row.hora_levar} onChange={e => setExtraTaxiDates(prev => prev.map((r, i) => i === idx ? { ...r, hora_levar: e.target.value } : r))} />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-destructive"
+                          onClick={() => setExtraTaxiDates(prev => prev.filter((_, i) => i !== idx))}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <FormField control={form.control} name="data_reserva" render={({ field }) => (
                 <FormItem>
@@ -969,6 +1081,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
                 </FormItem>
               )} />
             </div>
+            )}
 
             {/* Disponibilidade de horários para banho avulso */}
             {isBanho && dataReserva && (
