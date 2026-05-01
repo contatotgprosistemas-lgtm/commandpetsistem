@@ -547,10 +547,85 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
         }
       }
 
+      // Taxi avulso: criar agendamentos adicionais para cada data extra informada
+      let extraCreatedCount = 0;
+      if (isTaxiAvulso && agendarMaisDatas && extraTaxiDates.length > 0) {
+        const validExtras = extraTaxiDates.filter(r => r.data_buscar && r.hora_buscar);
+        for (const extra of validExtras) {
+          const extraDataHora = new Date(extra.data_buscar + "T" + extra.hora_buscar + ":00");
+          const extraRows = data.pet_ids.map(pet_id => ({
+            empresa_id: empresaId,
+            cliente_id: data.cliente_id,
+            pet_id,
+            tipo_servico: data.tipo_servico,
+            data_hora: extraDataHora.toISOString(),
+            data_entrada: null,
+            hora_entrada: null,
+            data_saida_provavel: buildTs(extra.data_levar || "", extra.hora_levar || ""),
+            hora_saida_provavel: extra.hora_levar || null,
+            data_saida: null,
+            hora_saida: null,
+            baia: null,
+            valor: petUsesReplacement(pet_id) ? 0 : baseValor,
+            desconto: data.desconto ? parseFloat(data.desconto) : 0,
+            forma_pagamento: data.forma_pagamento || null,
+            notas: data.notas || null,
+          }));
+          const { error: extraErr } = await supabase.from("agendamentos").insert(extraRows as any);
+          if (extraErr) {
+            console.error("Erro ao criar agendamento extra de taxi:", extraErr);
+            continue;
+          }
+          extraCreatedCount += extraRows.length;
+
+          // Fatura própria por data extra
+          if (podeCriarFatura) {
+            const extraVencimento = isPagamentoPosterior && data.data_pagamento
+              ? data.data_pagamento
+              : extra.data_buscar;
+            const extraLineItems: { descricao: string; valor: number; tipo: string }[] = [];
+            if (valorNum > 0) {
+              for (const petId of data.pet_ids) {
+                if (petUsesReplacement(petId)) continue;
+                const petName = pets.find(p => p.id === petId)?.nome || "Pet";
+                extraLineItems.push({ descricao: `${data.tipo_servico} — ${petName} (${extra.data_buscar})`, valor: valorNum, tipo: "principal" });
+              }
+            }
+            const extraTotalBruto = extraLineItems.reduce((s, li) => s + li.valor, 0);
+            const extraTotal = Math.max(extraTotalBruto - descontoTotal, 0);
+            if (extraTotal > 0 && extraLineItems.length > 0) {
+              if (descontoTotal > 0) extraLineItems.push({ descricao: `Desconto`, valor: -descontoTotal, tipo: "desconto" });
+              const petNames = data.pet_ids.map(pid => pets.find(p => p.id === pid)?.nome).filter(Boolean).join(", ");
+              const descricaoExtraFatura = `${data.tipo_servico} (${extra.data_buscar}) — ${petNames}`;
+              const { data: insertedExtraFatura } = await supabase.from("contas_receber").insert({
+                empresa_id: empresaId,
+                cliente_id: data.cliente_id,
+                descricao: descricaoExtraFatura,
+                valor: extraTotal,
+                vencimento: extraVencimento,
+                categoria: "Transporte Pet",
+                status: "pendente",
+              } as any).select("id").single();
+              if (insertedExtraFatura?.id) {
+                await supabase.from("contas_receber_itens" as any).insert(
+                  extraLineItems.map(li => ({
+                    conta_receber_id: insertedExtraFatura.id,
+                    empresa_id: empresaId,
+                    descricao: li.descricao,
+                    valor: li.valor,
+                    tipo: li.tipo,
+                  }))
+                );
+              }
+            }
+          }
+        }
+      }
+
       toast({
         title: useRepl
           ? `Reposição utilizada! ${data.pet_ids.length} agendamento(s) criado(s) sem cobrança.`
-          : `${data.pet_ids.length} agendamento(s) criado(s) com sucesso!`,
+          : `${data.pet_ids.length + extraCreatedCount} agendamento(s) criado(s) com sucesso!`,
       });
 
       // If user wants to generate contract, open contract dialog
