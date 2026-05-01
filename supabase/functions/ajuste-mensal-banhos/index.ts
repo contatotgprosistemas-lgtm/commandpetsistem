@@ -117,6 +117,22 @@ Deno.serve(async (req) => {
     const monthEndDate = new Date(year, month + 1, 0);
     const todayStart = new Date(year, today.getMonth(), today.getDate());
 
+    // Carrega feriados do mês para todas as empresas envolvidas (uma única query)
+    const empresaIds = [...new Set((subscriptions || []).map((s: any) => s.empresa_id))];
+    const feriadosPorEmpresa: Record<string, Set<string>> = {};
+    if (empresaIds.length > 0) {
+      const { data: feriadosAll } = await supabase
+        .from("feriados")
+        .select("empresa_id, data")
+        .in("empresa_id", empresaIds)
+        .gte("data", monthStart)
+        .lte("data", fmtDate(monthEndDate));
+      for (const f of feriadosAll || []) {
+        const set = feriadosPorEmpresa[(f as any).empresa_id] ||= new Set<string>();
+        set.add((f as any).data);
+      }
+    }
+
     for (const sub of subscriptions || []) {
       const plannedDays: number[] = sub.planned_days || [];
       if (plannedDays.length === 0) continue;
@@ -179,12 +195,16 @@ Deno.serve(async (req) => {
         ? plansMap[sub.plan_id] || "Plano"
         : packagesMap[sub.package_id] || "Pacote";
 
+      const feriadosEmp = feriadosPorEmpresa[sub.empresa_id] || new Set<string>();
+
       const toInsert: any[] = [];
       for (const date of candidates) {
         // Skip past dates and dates already scheduled
         if (date < todayStart) continue;
         const ds = fmtDate(date);
         if (existingDates.has(ds)) continue;
+        // Skip feriados (empresa fechada)
+        if (feriadosEmp.has(ds)) continue;
         // Skip if outside subscription validity
         if (subEnd && date > subEnd) continue;
         if (date < subStart) continue;
@@ -304,6 +324,11 @@ Deno.serve(async (req) => {
 
       if (extraDates.length === 0) continue;
 
+      // Filtrar datas que caem em feriados
+      const feriadosEmp2 = feriadosPorEmpresa[sub.empresa_id] || new Set<string>();
+      const extraDatesFiltradas = extraDates.filter((d) => !feriadosEmp2.has(d));
+      if (extraDatesFiltradas.length === 0) continue;
+
       const planName = sub.plan_id
         ? plansMap[sub.plan_id] || "Plano"
         : packagesMap[sub.package_id] || "Pacote";
@@ -334,7 +359,7 @@ Deno.serve(async (req) => {
       }
 
       // Create extra appointments
-      for (const extraDate of extraDates) {
+      for (const extraDate of extraDatesFiltradas) {
         await supabase.from("agendamentos").insert({
           empresa_id: sub.empresa_id,
           cliente_id: sub.cliente_id,
@@ -349,7 +374,7 @@ Deno.serve(async (req) => {
       }
 
       // Calculate proportional adjustment
-      const extraCount = extraDates.length;
+      const extraCount = extraDatesFiltradas.length;
       const valorPorSessao = Math.ceil((Number(sub.final_price) / baseSessionCount) * 100) / 100;
       const valorExtra = Math.ceil(valorPorSessao * extraCount * 100) / 100;
       const valorTotal = Math.ceil((Number(sub.final_price) + valorExtra) * 100) / 100;
