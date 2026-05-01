@@ -119,13 +119,22 @@ Deno.serve(async (req) => {
           const todayStart = startOfDay(new Date());
           const agendamentos: any[] = [];
 
+          // Carrega feriados da empresa para o mês corrente (pular agendamentos)
+          const { data: feriadosData } = await supabase
+            .from("feriados")
+            .select("data")
+            .eq("empresa_id", sub.empresa_id)
+            .gte("data", newStartStr)
+            .lte("data", newEndStr);
+          const feriadosSet = new Set((feriadosData || []).map((f: any) => f.data));
+
           if (plannedDays.length > 0) {
             if (frequency === "mensal" && plannedDays.length === 1) {
               // First occurrence of weekday in the month from newStart
               const cursor = new Date(startObj);
               while (cursor <= monthEnd) {
                 if (cursor.getDay() === plannedDays[0]) {
-                  if (cursor >= todayStart) {
+                  if (cursor >= todayStart && !feriadosSet.has(fmt(cursor))) {
                     agendamentos.push({
                       empresa_id: sub.empresa_id,
                       cliente_id: sub.cliente_id,
@@ -149,7 +158,7 @@ Deno.serve(async (req) => {
                 cursor.setDate(cursor.getDate() + 1);
               }
               while (cursor <= newEndObj) {
-                if (cursor >= todayStart) {
+                if (cursor >= todayStart && !feriadosSet.has(fmt(cursor))) {
                   agendamentos.push({
                     empresa_id: sub.empresa_id,
                     cliente_id: sub.cliente_id,
@@ -167,7 +176,11 @@ Deno.serve(async (req) => {
               // Semanal: all matching weekdays from newStart until end of month
               const cursor = new Date(startObj);
               while (cursor <= monthEnd) {
-                if (plannedDays.includes(cursor.getDay()) && cursor >= todayStart) {
+                if (
+                  plannedDays.includes(cursor.getDay()) &&
+                  cursor >= todayStart &&
+                  !feriadosSet.has(fmt(cursor))
+                ) {
                   agendamentos.push({
                     empresa_id: sub.empresa_id,
                     cliente_id: sub.cliente_id,
