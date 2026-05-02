@@ -269,10 +269,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    await supabase.from("invoice_notification_log").insert({
-      empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
-      conversa_id: conversaIdForLog, status: "enviado", tipo,
-    });
+    await supabase
+      .from("invoice_notification_log")
+      .update({
+        conversa_id: conversaIdForLog,
+        status: "enviado",
+        enviado_em: new Date().toISOString(),
+      })
+      .eq("id", lockId);
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
