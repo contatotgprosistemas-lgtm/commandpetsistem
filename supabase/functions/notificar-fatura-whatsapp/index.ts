@@ -48,6 +48,7 @@ Deno.serve(async (req) => {
     const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
     const role = (claimsData?.claims as any)?.role;
     const isServiceRole = role === "service_role" || token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    console.log("[auth] role=", role, "claimsErr=", claimsError?.message, "tokenMatch=", token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), "envLen=", (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"").length, "tokLen=", token.length);
     if (!isServiceRole && (claimsError || !claimsData?.claims?.sub)) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
