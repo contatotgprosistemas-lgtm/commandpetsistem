@@ -104,7 +104,6 @@ export default function FinancePage() {
     const { data } = await supabase
       .from("contas_receber")
       .select("id, descricao, valor, vencimento, categoria, status, cliente_id, banco, valor_pago, cliente:clientes(nome)")
-      .neq("status", "pago")
       .order("vencimento", { ascending: false });
     if (data) {
       const sorted = [...data].sort((a: any, b: any) => (a.cliente?.nome ?? "").localeCompare(b.cliente?.nome ?? ""));
