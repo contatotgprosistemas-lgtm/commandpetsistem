@@ -178,6 +178,36 @@ Deno.serve(async (req) => {
       .replace(/\{dias_restantes\}/g, String(dias_restantes ?? ""))
       .replace(/\{valor_multa\}/g, valor_multa != null ? Number(valor_multa).toFixed(2).replace(".", ",") : "");
 
+    // ========== TRAVA DETERMINÍSTICA ==========
+    // Tenta criar o registro com status='enviando' ANTES do envio.
+    // O índice único parcial (empresa_id, cliente_id, tipo, dia, status IN ('enviado','enviando'))
+    // garante que apenas UMA chamada concorrente vence — as demais recebem erro de duplicate key.
+    const { data: lockRow, error: lockErr } = await supabase
+      .from("invoice_notification_log")
+      .insert({
+        empresa_id,
+        cliente_id: cliente.id,
+        conta_receber_id: fatura.id ?? null,
+        status: "enviando",
+        tipo,
+        enviado_em: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (lockErr || !lockRow) {
+      // Conflito de unique → outra execução já está enviando ou já enviou hoje.
+      const isUnique = String(lockErr?.code ?? "") === "23505" ||
+        /duplicate key|unique/i.test(String(lockErr?.message ?? ""));
+      if (isUnique) {
+        return new Response(JSON.stringify({ skipped: "already_sent_to_contact_today" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Erro inesperado — loga mas não trava o sistema.
+      console.error("Falha ao criar lock:", lockErr);
+      return new Response(JSON.stringify({ error: "lock_failed", details: String(lockErr?.message ?? "") }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const lockId = lockRow.id;
+
     const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
@@ -185,10 +215,11 @@ Deno.serve(async (req) => {
     });
     if (!evoRes.ok) {
       const txt = await evoRes.text();
-      await supabase.from("invoice_notification_log").insert({
-        empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
-        status: "falha", tipo, erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}`,
-      });
+      // Marca o lock como falha (não bloqueia retries: índice exclui status='falha').
+      await supabase
+        .from("invoice_notification_log")
+        .update({ status: "falha", erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}` })
+        .eq("id", lockId);
       return new Response(JSON.stringify({ error: "evolution_failed" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const evoData = await evoRes.json().catch(() => ({}));
