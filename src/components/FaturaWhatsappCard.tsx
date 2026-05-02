@@ -191,6 +191,17 @@ export function FaturaWhatsappCard() {
               <Label className="text-sm font-medium">Enviar ao gerar a fatura</Label>
               <Switch checked={enabledGeracao} onCheckedChange={setEnabledGeracao} disabled={!enabled} />
             </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Horário de envio</Label>
+              <Input
+                type="time"
+                value={horaGeracao}
+                onChange={(e) => setHoraGeracao(e.target.value || "09:00")}
+                disabled={!enabled || !enabledGeracao}
+                className="w-28 h-8"
+              />
+              <span className="text-[11px] text-muted-foreground">(horário de Brasília)</span>
+            </div>
             <Textarea
               value={msgGeracao}
               onChange={(e) => setMsgGeracao(e.target.value)}
@@ -219,6 +230,17 @@ export function FaturaWhatsappCard() {
               />
               <span className="text-xs text-muted-foreground">dias antes do vencimento</span>
             </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Horário de envio</Label>
+              <Input
+                type="time"
+                value={horaPre}
+                onChange={(e) => setHoraPre(e.target.value || "09:00")}
+                disabled={!enabled || !enabledPre}
+                className="w-28 h-8"
+              />
+              <span className="text-[11px] text-muted-foreground">(horário de Brasília)</span>
+            </div>
             <Textarea
               value={msgPre}
               onChange={(e) => setMsgPre(e.target.value)}
@@ -233,6 +255,17 @@ export function FaturaWhatsappCard() {
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">No dia do vencimento</Label>
               <Switch checked={enabledVenc} onCheckedChange={setEnabledVenc} disabled={!enabled} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Horário de envio</Label>
+              <Input
+                type="time"
+                value={horaVenc}
+                onChange={(e) => setHoraVenc(e.target.value || "09:00")}
+                disabled={!enabled || !enabledVenc}
+                className="w-28 h-8"
+              />
+              <span className="text-[11px] text-muted-foreground">(horário de Brasília)</span>
             </div>
             <Textarea
               value={msgVenc}
@@ -261,6 +294,17 @@ export function FaturaWhatsappCard() {
                 className="w-20 h-8"
               />
               <span className="text-xs text-muted-foreground">dias após o vencimento</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Horário de envio</Label>
+              <Input
+                type="time"
+                value={horaAtraso}
+                onChange={(e) => setHoraAtraso(e.target.value || "09:00")}
+                disabled={!enabled || !enabledAtraso}
+                className="w-28 h-8"
+              />
+              <span className="text-[11px] text-muted-foreground">(horário de Brasília)</span>
             </div>
             <Textarea
               value={msgAtraso}
