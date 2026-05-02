@@ -235,10 +235,14 @@ Deno.serve(async (req) => {
       ? unpaidContas[0].descricao
       : `${unpaidContas.length} faturas - Venc. ${unpaidContas[0].vencimento}`;
 
-    // externalReference is limited to 100 chars by Asaas. The webhook's primary
-    // lookup is by asaas_payment_id (saved on every invoice below), so this is
-    // only a fallback. Use the first invoice id (36 chars) which always fits.
-    const externalReference = unpaidContas[0].id;
+    // externalReference is limited to 100 chars by Asaas. We use a short batch
+    // reference (e.g. "batch_ab12cd34", 14 chars) and persist it on every
+    // invoice in the lote so the webhook can settle the whole batch even if
+    // asaas_payment_id lookup fails for any reason.
+    const batchRef = unpaidContas.length > 1
+      ? `batch_${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`
+      : unpaidContas[0].id;
+    const externalReference = batchRef;
 
     const paymentRes = await fetch(`${ASAAS_BASE}/payments`, {
       method: "POST",
@@ -258,13 +262,18 @@ Deno.serve(async (req) => {
     const paymentData = await paymentRes.json();
     if (!paymentRes.ok) throw new Error(`Asaas payment error: ${JSON.stringify(paymentData)}`);
 
-    // Save asaas_payment_id and asaas_conta_id on all invoices
-    for (const c of unpaidContas) {
-      await serviceSupabase
-        .from("contas_receber")
-        .update({ asaas_payment_id: paymentData.id, asaas_conta_id: ASAAS_CONTA_ID })
-        .eq("id", c.id);
-    }
+    // Save asaas_payment_id, asaas_conta_id and the batch reference on every
+    // invoice in the lote. asaas_batch_ref is the resilient fallback for the
+    // webhook when grouping multiple faturas under a single Asaas payment.
+    const batchUpdate: Record<string, unknown> = {
+      asaas_payment_id: paymentData.id,
+      asaas_conta_id: ASAAS_CONTA_ID,
+    };
+    if (unpaidContas.length > 1) batchUpdate.asaas_batch_ref = batchRef;
+    await serviceSupabase
+      .from("contas_receber")
+      .update(batchUpdate)
+      .in("id", unpaidContas.map((c: any) => c.id));
 
     // Get PIX QR Code
     await new Promise((r) => setTimeout(r, 2000));
