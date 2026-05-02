@@ -3995,6 +3995,7 @@ export type Database = {
           enviado_em: string
           erro: string | null
           id: string
+          metadata: Json | null
           status: string
           tipo: string
         }
@@ -4006,6 +4007,7 @@ export type Database = {
           enviado_em?: string
           erro?: string | null
           id?: string
+          metadata?: Json | null
           status?: string
           tipo?: string
         }
@@ -4017,6 +4019,7 @@ export type Database = {
           enviado_em?: string
           erro?: string | null
           id?: string
+          metadata?: Json | null
           status?: string
           tipo?: string
         }

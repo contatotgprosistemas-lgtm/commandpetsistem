@@ -85,24 +85,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Anti-duplicação por contato: não envia o mesmo TIPO de notificação
-    // para o mesmo cliente em uma janela de 18h, mesmo que sejam faturas diferentes.
-    // Isso evita "spamar" o mesmo contato quando há múltiplas faturas no mesmo dia.
-    {
-      const since = new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString();
-      const { data: recentByContact } = await supabase
-        .from("invoice_notification_log")
-        .select("id")
-        .eq("empresa_id", empresa_id)
-        .eq("cliente_id", cliente.id)
-        .eq("tipo", tipo)
-        .eq("status", "enviado")
-        .gte("enviado_em", since)
-        .limit(1);
-      if (recentByContact && recentByContact.length > 0) {
-        return new Response(JSON.stringify({ skipped: "already_sent_to_contact" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-    }
+    // (a trava determinística via INSERT com status='enviando' acontece logo
+    // antes do fetch à Evolution — ver bloco mais abaixo)
 
     // Para lembretes de cobrança, só envia se a fatura ainda estiver em aberto (pendente).
     // Isso evita disparar pré-vencimento/vencimento/atraso/multa para faturas já pagas ou canceladas.
@@ -194,6 +178,36 @@ Deno.serve(async (req) => {
       .replace(/\{dias_restantes\}/g, String(dias_restantes ?? ""))
       .replace(/\{valor_multa\}/g, valor_multa != null ? Number(valor_multa).toFixed(2).replace(".", ",") : "");
 
+    // ========== TRAVA DETERMINÍSTICA ==========
+    // Tenta criar o registro com status='enviando' ANTES do envio.
+    // O índice único parcial (empresa_id, cliente_id, tipo, dia, status IN ('enviado','enviando'))
+    // garante que apenas UMA chamada concorrente vence — as demais recebem erro de duplicate key.
+    const { data: lockRow, error: lockErr } = await supabase
+      .from("invoice_notification_log")
+      .insert({
+        empresa_id,
+        cliente_id: cliente.id,
+        conta_receber_id: fatura.id ?? null,
+        status: "enviando",
+        tipo,
+        enviado_em: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (lockErr || !lockRow) {
+      // Conflito de unique → outra execução já está enviando ou já enviou hoje.
+      const isUnique = String(lockErr?.code ?? "") === "23505" ||
+        /duplicate key|unique/i.test(String(lockErr?.message ?? ""));
+      if (isUnique) {
+        return new Response(JSON.stringify({ skipped: "already_sent_to_contact_today" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Erro inesperado — loga mas não trava o sistema.
+      console.error("Falha ao criar lock:", lockErr);
+      return new Response(JSON.stringify({ error: "lock_failed", details: String(lockErr?.message ?? "") }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const lockId = lockRow.id;
+
     const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
@@ -201,10 +215,11 @@ Deno.serve(async (req) => {
     });
     if (!evoRes.ok) {
       const txt = await evoRes.text();
-      await supabase.from("invoice_notification_log").insert({
-        empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
-        status: "falha", tipo, erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}`,
-      });
+      // Marca o lock como falha (não bloqueia retries: índice exclui status='falha').
+      await supabase
+        .from("invoice_notification_log")
+        .update({ status: "falha", erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}` })
+        .eq("id", lockId);
       return new Response(JSON.stringify({ error: "evolution_failed" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const evoData = await evoRes.json().catch(() => ({}));
@@ -254,10 +269,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    await supabase.from("invoice_notification_log").insert({
-      empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
-      conversa_id: conversaIdForLog, status: "enviado", tipo,
-    });
+    await supabase
+      .from("invoice_notification_log")
+      .update({
+        conversa_id: conversaIdForLog,
+        status: "enviado",
+        enviado_em: new Date().toISOString(),
+      })
+      .eq("id", lockId);
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
