@@ -85,24 +85,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Anti-duplicação por contato: não envia o mesmo TIPO de notificação
-    // para o mesmo cliente em uma janela de 18h, mesmo que sejam faturas diferentes.
-    // Isso evita "spamar" o mesmo contato quando há múltiplas faturas no mesmo dia.
-    {
-      const since = new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString();
-      const { data: recentByContact } = await supabase
-        .from("invoice_notification_log")
-        .select("id")
-        .eq("empresa_id", empresa_id)
-        .eq("cliente_id", cliente.id)
-        .eq("tipo", tipo)
-        .eq("status", "enviado")
-        .gte("enviado_em", since)
-        .limit(1);
-      if (recentByContact && recentByContact.length > 0) {
-        return new Response(JSON.stringify({ skipped: "already_sent_to_contact" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-    }
+    // (a trava determinística via INSERT com status='enviando' acontece logo
+    // antes do fetch à Evolution — ver bloco mais abaixo)
 
     // Para lembretes de cobrança, só envia se a fatura ainda estiver em aberto (pendente).
     // Isso evita disparar pré-vencimento/vencimento/atraso/multa para faturas já pagas ou canceladas.
