@@ -1,97 +1,62 @@
+# Uma mensagem por cliente nas notificações de fatura
+
+## Problema
+
+Quando um cliente tem mais de uma fatura no mesmo dia (parcelas semanais, múltiplos pets, ciclos de plano), o sistema dispara **uma mensagem WhatsApp por fatura**, gerando 2-4 mensagens iguais para o mesmo contato. Isso aconteceu hoje, com vários clientes recebendo notificações duplicadas.
+
+A dedup atual em `notificar-fatura-whatsapp` (janela 18h por contato+tipo) não funciona porque os disparos acontecem em paralelo dentro do mesmo segundo, e todas as chamadas leem o log antes da primeira inserir.
+
 ## Objetivo
 
-Enviar notificações automáticas de cobrança via WhatsApp em 4 momentos do ciclo da fatura, com mensagens editáveis e cadência (espaçamento) para reduzir risco de bloqueio do número.
+Garantir que cada cliente receba **no máximo 1 mensagem por tipo de notificação por dia**, independentemente de quantas faturas tenha.
 
-## Os 4 momentos (eventos)
+## Mudanças
 
-1. **Geração** — no dia em que a fatura é criada (já existe hoje, vamos manter e tratar como um dos 4 templates)
-2. **Pré-vencimento** — 3 dias antes do vencimento (lembrete amigável)
-3. **Vencimento** — no dia do vencimento (aviso firme)
-4. **Atraso** — 2 dias após o vencimento (cobrança de fatura em atraso)
+### 1. `supabase/functions/gerar-faturas/index.ts`
 
-Apenas faturas com `status = 'pendente'` recebem os lembretes 2/3/4. Se já foi paga, o disparo é pulado.
+- Após criar/atualizar todas as faturas, agrupar por `cliente_id` em uma única lista.
+- Para cada cliente, escolher **uma fatura representativa** (a de maior valor ou a primeira) e disparar `notificar-fatura-whatsapp` apenas uma vez.
+- Se o cliente tiver várias faturas, a mensagem usa um descritor genérico do tipo "Suas faturas mensais foram geradas" e o valor total somado.
 
-## O que vai mudar
+### 2. `supabase/functions/processar-lembretes-fatura/index.ts`
 
-### 1. Banco de dados (migração)
+- Dentro de cada bucket (pre_vencimento, vencimento, atraso), agrupar as faturas por `cliente_id` antes do loop de envio.
+- Disparar **uma chamada** por cliente, com a fatura de maior valor como referência. Demais faturas ficam registradas no log via inserção em massa após o sucesso.
 
-**Estender `invoice_notification_config`** (hoje guarda 1 mensagem). Adicionar colunas para os 4 templates e configuração de cadência:
+### 3. `supabase/functions/notificar-fatura-whatsapp/index.ts`
 
-- `enabled_geracao` (bool, default true) + `mensagem_geracao` (text)
-- `enabled_pre_vencimento` (bool, default true) + `mensagem_pre_vencimento` (text) + `dias_antes` (int, default 3)
-- `enabled_vencimento` (bool, default true) + `mensagem_vencimento` (text)
-- `enabled_atraso` (bool, default true) + `mensagem_atraso` (text) + `dias_apos` (int, default 2)
-- `intervalo_entre_envios_seg` (int, default 8) — pausa entre cada mensagem dentro de um lote
-- `max_envios_por_minuto` (int, default 6) — teto adicional por empresa
+- Trocar a dedup probabilística (janela 18h) por uma trava determinística:
+  - Inserir o registro em `invoice_notification_log` com `status='enviando'` **antes** do envio à Evolution.
+  - Usar uma constraint única (`empresa_id, cliente_id, tipo, dia`) para que tentativas paralelas falhem no insert (vencendo a corrida).
+  - Em caso de conflito do insert, retornar `skipped: already_processing`.
+  - Após sucesso/falha, atualizar o status do registro para `enviado` ou `falha`.
 
-Manter a coluna `mensagem`/`enabled` antigas como fallback de compatibilidade.
+### 4. Migração de schema
 
-**Estender `invoice_notification_log`**: adicionar coluna `tipo` (text: `geracao | pre_vencimento | vencimento | atraso`) com índice em `(empresa_id, conta_receber_id, tipo, status)` para garantir idempotência (não enviar 2x o mesmo evento para a mesma fatura).
+Adicionar índice único parcial em `invoice_notification_log`:
 
-### 2. Edge function nova: `processar-lembretes-fatura`
-
-Roda via cron 1x/dia (ex.: 09:00 BRT). Para cada empresa com config ativa:
-
-1. Busca faturas em `contas_receber` com `status = 'pendente'` que se enquadrem em cada janela:
-   - **pré-vencimento**: `vencimento = hoje + dias_antes`
-   - **vencimento**: `vencimento = hoje`
-   - **atraso**: `vencimento = hoje - dias_apos`
-2. Para cada fatura, verifica em `invoice_notification_log` se já existe envio com `status='enviado'` para aquele `tipo` — se sim, pula.
-3. Envia a mensagem com **cadência**: aguarda `intervalo_entre_envios_seg` entre cada disparo (ex.: 8s) e respeita `max_envios_por_minuto`.
-4. Reaproveita toda a infra do `notificar-fatura-whatsapp` (canal, contato, conversa, log) — vamos refatorar essa função para receber um parâmetro `tipo` e a `mensagem` correta, mantendo o fluxo atual.
-
-### 3. Cron job
-
-Agendar via `pg_cron` + `pg_net` (chamando a função do Supabase com header `apikey`). Frequência: diária às 09:00 BRT (12:00 UTC).
-
-### 4. UI — `FaturaWhatsappCard.tsx`
-
-Reformular o card em **abas** (Tabs) ou seções colapsáveis, uma por evento:
-- Geração de fatura
-- 3 dias antes do vencimento (campo numérico ajustável)
-- No dia do vencimento
-- X dias após vencimento (campo numérico ajustável)
-
-Cada seção tem:
-- Switch de ativo/inativo
-- Textarea com a mensagem
-- Lista de variáveis disponíveis: `{nome}`, `{primeiro_nome}`, `{descricao}`, `{valor}`, `{vencimento}`, `{dias_atraso}` (novo, útil no template de atraso)
-
-Adicionar uma seção **"Cadência de envio"** com 2 campos:
-- Intervalo entre mensagens (segundos)
-- Máximo por minuto
-
-Manter a tab/seção de **"Últimos envios"** mostrando o `tipo` em cada linha (badge: Geração / Pré-vencimento / Vencimento / Atraso).
-
-### 5. Mensagens padrão (sugestão)
-
-- **Geração**: já existe, manter como está.
-- **Pré-vencimento**: "Olá {primeiro_nome}! 👋 Passando para lembrar que sua fatura *{descricao}* de *R$ {valor}* vence em *{vencimento}* (em 3 dias). 🐾"
-- **Vencimento**: "Olá {primeiro_nome}! Sua fatura *{descricao}* de *R$ {valor}* vence *hoje ({vencimento})*. Qualquer dúvida estamos por aqui. 🐾"
-- **Atraso**: "Olá {primeiro_nome}, identificamos que sua fatura *{descricao}* de *R$ {valor}*, com vencimento em {vencimento}, está em atraso há {dias_atraso} dias. Por favor, regularize quando possível. 🐾"
-
-## Cuidado anti-bloqueio
-
-- Cadência configurável (default 8s entre envios) já evita rajadas.
-- Idempotência via log impede reenvios duplicados.
-- Templates personalizados com `{primeiro_nome}` (já implementado) mantêm variabilidade.
-- Manter o aviso amarelo no card sobre boas práticas.
-
-## Arquivos afetados
-
-```text
-supabase/migrations/<novo>.sql           # extensão das tabelas
-supabase/functions/processar-lembretes-fatura/index.ts   # NOVO
-supabase/functions/notificar-fatura-whatsapp/index.ts    # aceita "tipo" e usa template correto
-supabase/config.toml                     # registrar nova function (verify_jwt = false p/ cron)
-src/components/FaturaWhatsappCard.tsx    # UI com 4 templates + cadência
+```sql
+CREATE UNIQUE INDEX IF NOT EXISTS idx_invoice_notif_unique_daily
+  ON public.invoice_notification_log (empresa_id, cliente_id, tipo, (enviado_em::date))
+  WHERE status IN ('enviado','enviando');
 ```
 
-Cron job inserido via tool `insert` (não migration), conforme guideline.
+Isso impede 2 envios do mesmo tipo para o mesmo cliente no mesmo dia, em qualquer caminho (gerar-faturas, lembretes, reenvios manuais).
 
-## O que NÃO muda
+## Detalhes técnicos
 
-- O fluxo atual de envio na geração da fatura segue funcionando — ele apenas passa a usar `mensagem_geracao` (ou `mensagem` antiga como fallback) e gravar `tipo='geracao'` no log.
-- Nenhuma mudança em CRM, contas_receber ou no faturamento em si.
+- O índice único usa `enviado_em::date` para garantir 1 por dia BRT.
+- Mensagem agregada: quando o cliente tem N>1 faturas geradas, usar template `"Olá {nome}! Foram geradas suas faturas do mês no valor total de R$ {valor_total} (próximo vencimento em {vencimento})."` em vez do template padrão `mensagem_geracao` que assume uma única fatura. O template específico fica em `cfg.mensagem_geracao_multiplas` (opcional, com fallback).
+- A `reenviar-notif-geracao` continua funcionando porque também passa pelo `notificar-fatura-whatsapp` que terá a trava única.
+- Logs do tipo `geracao` sempre vinculam a uma das faturas (a de maior valor) — as outras ficam sem log de "envio" mas com referência cruzada via `metadata.faturas_relacionadas` (campo JSON novo, opcional).
 
-Posso seguir com a implementação?
+## Não muda
+
+- Templates personalizados existentes seguem funcionando para clientes com 1 fatura.
+- A dedup por fatura+tipo continua existindo (impede reenvio da mesma fatura).
+- Cron `gerar-faturas` e `processar-lembretes-fatura` mantêm o mesmo schedule.
+
+## Validação após deploy
+
+1. Olhar `invoice_notification_log` agrupado por `cliente_id+tipo+dia` — deve ter sempre 1 linha por (cliente, tipo, dia).
+2. Verificar conversa do CRM do cliente que recebeu duplicado hoje (Plano Escola Premium 2x Semana 1/4–4/4) na próxima geração — deve receber só 1 mensagem.
