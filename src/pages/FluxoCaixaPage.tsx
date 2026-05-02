@@ -68,13 +68,11 @@ function FluxoDiario() {
     setContasPagar(cpData || []);
 
     // Saldo anterior: sum of all movimentacoes before this month
-    let qSaldo = supabase.from("movimentacoes").select("valor, tipo").lte("data_movimentacao", fimMesAnterior);
+    let qSaldo = supabase.from("movimentacoes").select("valor").lte("data_movimentacao", fimMesAnterior);
     if (banco !== "todos") qSaldo = qSaldo.eq("banco", banco);
     const { data: saldoData } = await qSaldo;
-    let saldo = 0;
-    (saldoData || []).forEach((m: any) => {
-      saldo += m.tipo === "contas_a_receber" ? Number(m.valor) : -Number(m.valor);
-    });
+    // Movimentações já guardam o sinal correto (entradas positivas, saídas negativas)
+    let saldo = (saldoData || []).reduce((s: number, m: any) => s + Number(m.valor), 0);
     // Also add bank initial balances
     if (banco === "todos") {
       saldo += bancos.reduce((s, b) => s + Number(b.saldo_inicial || 0), 0);
@@ -99,8 +97,9 @@ function FluxoDiario() {
     for (let d = 1; d <= diasNoMes; d++) {
       const dateStr = `${ano}-${String(mes).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       const dayMovs = movs.filter(m => m.data_movimentacao === dateStr);
-      const entradas = dayMovs.filter(m => m.tipo === "contas_a_receber").reduce((s, m) => s + Number(m.valor), 0);
-      const saidas = dayMovs.filter(m => m.tipo !== "contas_a_receber").reduce((s, m) => s + Number(m.valor), 0);
+      // Movimentações já guardam o sinal: entradas positivas, saídas negativas.
+      const entradas = dayMovs.filter(m => Number(m.valor) > 0).reduce((s, m) => s + Number(m.valor), 0);
+      const saidas = dayMovs.filter(m => Number(m.valor) < 0).reduce((s, m) => s + Math.abs(Number(m.valor)), 0);
       if (entradas > 0 || saidas > 0) days.push({ dia: d, entradas, saidas });
     }
     return days;
@@ -254,8 +253,9 @@ function FluxoMensal() {
         movs.forEach(mov => {
           const movDate = mov.data_movimentacao;
           if (movDate && movDate.startsWith(`${anoNum}-${mesStr}`)) {
-            if (mov.tipo === "contas_a_receber") entradas += Number(mov.valor);
-            else saidas += Number(mov.valor);
+            const v = Number(mov.valor);
+            if (v > 0) entradas += v;
+            else saidas += Math.abs(v);
           }
         });
       } else {
