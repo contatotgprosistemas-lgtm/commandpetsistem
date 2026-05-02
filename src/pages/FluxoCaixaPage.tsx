@@ -48,11 +48,6 @@ function FluxoDiario() {
     const diasNoMes = getDaysInMonth(new Date(ano, mes - 1));
     const fimMes = `${ano}-${String(mes).padStart(2, "0")}-${String(diasNoMes).padStart(2, "0")}`;
 
-    // Previous month end for saldo anterior
-    const mesAnterior = mes === 1 ? 12 : mes - 1;
-    const anoAnterior = mes === 1 ? ano - 1 : ano;
-    const fimMesAnterior = `${anoAnterior}-${String(mesAnterior).padStart(2, "0")}-${String(getDaysInMonth(new Date(anoAnterior, mesAnterior - 1))).padStart(2, "0")}`;
-
     // Fetch movimentacoes for this month (realized)
     let qMovs = supabase.from("movimentacoes").select("*").gte("data_movimentacao", inicioMes).lte("data_movimentacao", fimMes);
     if (banco !== "todos") qMovs = qMovs.eq("banco", banco);
@@ -67,20 +62,12 @@ function FluxoDiario() {
     const { data: cpData } = await supabase.from("contas_pagar").select("*").gte("vencimento", inicioMes).lte("vencimento", fimMes).eq("status", "pendente");
     setContasPagar(cpData || []);
 
-    // Saldo anterior: sum of all movimentacoes before this month
-    let qSaldo = supabase.from("movimentacoes").select("valor").lte("data_movimentacao", fimMesAnterior);
-    if (banco !== "todos") qSaldo = qSaldo.eq("banco", banco);
-    const { data: saldoData } = await qSaldo;
-    // Movimentações já guardam o sinal correto (entradas positivas, saídas negativas)
-    let saldo = (saldoData || []).reduce((s: number, m: any) => s + Number(m.valor), 0);
-    // Also add bank initial balances
-    if (banco === "todos") {
-      saldo += bancos.reduce((s, b) => s + Number(b.saldo_inicial || 0), 0);
-    } else {
-      const b = bancos.find((b: any) => b.banco === banco);
-      if (b) saldo += Number(b.saldo_inicial || 0);
-    }
-    setSaldoAnterior(saldo);
+    // Saldo anterior = saldo_atual dos bancos − soma das movimentações do mês corrente
+    // (saldo_atual já é mantido por sincronizar_saldo_bancario e respeita RLS por empresa)
+    const bancosFiltrados = banco === "todos" ? bancos : bancos.filter((b: any) => b.banco === banco);
+    const saldoAtualTotal = bancosFiltrados.reduce((s: number, b: any) => s + Number(b.saldo_atual || 0), 0);
+    const movsDoMes = (movsData || []).reduce((s: number, m: any) => s + Number(m.valor), 0);
+    setSaldoAnterior(saldoAtualTotal - movsDoMes);
     setLoading(false);
   }
 
