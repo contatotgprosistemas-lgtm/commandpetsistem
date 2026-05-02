@@ -253,8 +253,9 @@ function FluxoMensal() {
         movs.forEach(mov => {
           const movDate = mov.data_movimentacao;
           if (movDate && movDate.startsWith(`${anoNum}-${mesStr}`)) {
-            if (mov.tipo === "contas_a_receber") entradas += Number(mov.valor);
-            else saidas += Number(mov.valor);
+            const v = Number(mov.valor);
+            if (v > 0) entradas += v;
+            else saidas += Math.abs(v);
           }
         });
       } else {
