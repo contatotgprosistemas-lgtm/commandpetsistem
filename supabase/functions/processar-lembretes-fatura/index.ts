@@ -19,6 +19,21 @@ function todayBR(): string {
   return `${y}-${m}-${d}`;
 }
 
+function nowBRTMinutes(): number {
+  // current minutes-since-midnight in São Paulo (UTC-3)
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60_000;
+  const brt = new Date(utc - 3 * 60 * 60_000);
+  return brt.getHours() * 60 + brt.getMinutes();
+}
+
+function timeToMinutes(t: string | null | undefined, fallback = 9 * 60): number {
+  if (!t) return fallback;
+  const [h, m] = String(t).split(":").map(Number);
+  if (Number.isNaN(h)) return fallback;
+  return h * 60 + (Number.isNaN(m) ? 0 : m);
+}
+
 function addDays(yyyyMmDd: string, days: number): string {
   const [y, m, d] = yyyyMmDd.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
@@ -39,7 +54,7 @@ Deno.serve(async (req) => {
     // Load all empresa configs that have anything enabled
     const { data: configs } = await admin
       .from("invoice_notification_config")
-      .select("empresa_id, enabled, enabled_pre_vencimento, enabled_vencimento, enabled_atraso, dias_antes, dias_apos, intervalo_entre_envios_seg, max_envios_por_minuto");
+      .select("empresa_id, enabled, enabled_pre_vencimento, enabled_vencimento, enabled_atraso, dias_antes, dias_apos, intervalo_entre_envios_seg, max_envios_por_minuto, hora_pre_vencimento, hora_vencimento, hora_atraso");
 
     const list = configs ?? [];
     if (list.length === 0) {
@@ -53,29 +68,35 @@ Deno.serve(async (req) => {
       const maxPerMin = Math.max(1, Number(cfg.max_envios_por_minuto ?? 6));
       const minSpacingMs = Math.max(intervalo * 1000, Math.ceil(60000 / maxPerMin));
 
-      const buckets: Array<{ tipo: "pre_vencimento" | "vencimento" | "atraso"; targetDate: string; enabled: boolean; extra: Record<string, number> }> = [
+      const nowMin = nowBRTMinutes();
+      const buckets: Array<{ tipo: "pre_vencimento" | "vencimento" | "atraso"; targetDate: string; enabled: boolean; horaMin: number; extra: Record<string, number> }> = [
         {
           tipo: "pre_vencimento",
           targetDate: addDays(today, Number(cfg.dias_antes ?? 3)),
           enabled: cfg.enabled_pre_vencimento !== false,
+          horaMin: timeToMinutes((cfg as any).hora_pre_vencimento),
           extra: { dias_restantes: Number(cfg.dias_antes ?? 3) },
         },
         {
           tipo: "vencimento",
           targetDate: today,
           enabled: cfg.enabled_vencimento !== false,
+          horaMin: timeToMinutes((cfg as any).hora_vencimento),
           extra: { dias_restantes: 0 },
         },
         {
           tipo: "atraso",
           targetDate: addDays(today, -Number(cfg.dias_apos ?? 2)),
           enabled: cfg.enabled_atraso !== false,
+          horaMin: timeToMinutes((cfg as any).hora_atraso),
           extra: { dias_atraso: Number(cfg.dias_apos ?? 2) },
         },
       ];
 
       for (const b of buckets) {
         if (!b.enabled) continue;
+        // Só dispara depois do horário configurado (BRT)
+        if (nowMin < b.horaMin) { continue; }
 
         const { data: faturas } = await admin
           .from("contas_receber")
