@@ -280,11 +280,45 @@ Deno.serve(async (req) => {
     }
     const lockId = lockRow.id;
 
-    // ========== JITTER 30-60s (cadência humana) ==========
-    // Aplicado dentro do lock: enquanto este processo dorme, qualquer outra
-    // chamada concorrente bate na unique constraint e é descartada.
-    const jitterMs = SEND_JITTER_MIN_MS + Math.floor(Math.random() * (SEND_JITTER_MAX_MS - SEND_JITTER_MIN_MS));
-    await sleep(jitterMs);
+    // ========== CADÊNCIA SERIALIZADA (anti-banimento) ==========
+    // Estratégia: cada nova mensagem na fila do dia aguarda um slot baseado em
+    // quantas mensagens já estão "enviando" + "enviado" hoje na empresa.
+    // Slot N => N * (30-60s aleatório). Isso serializa disparos paralelos
+    // mesmo quando gerar-faturas dispara dezenas em fire-and-forget.
+    const { count: msgsHojeCount } = await supabase
+      .from("invoice_notification_log")
+      .select("id", { count: "exact", head: true })
+      .eq("empresa_id", empresa_id)
+      .in("status", ["enviado", "enviando"])
+      .gte("enviado_em", inicioDia)
+      .lte("enviado_em", fimDia);
+    // Posição na fila: -1 porque o próprio lock já foi inserido.
+    const slot = Math.max(0, (msgsHojeCount ?? 1) - 1);
+    const baseDelay = SEND_JITTER_MIN_MS + Math.floor(Math.random() * (SEND_JITTER_MAX_MS - SEND_JITTER_MIN_MS));
+    const totalDelayMs = slot * baseDelay;
+    // Cap em 25min para não estourar timeout de edge function (~150s + buffer).
+    // Acima disso retorna skipped — usuário pode reenviar amanhã.
+    if (totalDelayMs > 25 * 60_000) {
+      await supabase.from("invoice_notification_log").update({
+        status: "falha", erro: `Cadência: posição ${slot} excede janela do dia`,
+      }).eq("id", lockId);
+      return new Response(JSON.stringify({ skipped: "cadence_queue_full", slot, retry_tomorrow: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (totalDelayMs > 0) {
+      await sleep(totalDelayMs);
+    }
+
+    // Re-checa janela horária após o sleep (pode ter passado das 18h).
+    if (nowBRTMinutes() >= SEND_WINDOW_END_MIN) {
+      await supabase.from("invoice_notification_log").update({
+        status: "falha", erro: "Janela 18h encerrada durante a fila",
+      }).eq("id", lockId);
+      return new Response(JSON.stringify({ skipped: "window_closed_during_queue" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
       method: "POST",
