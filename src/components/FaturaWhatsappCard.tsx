@@ -41,17 +41,21 @@ export function FaturaWhatsappCard() {
   // per-event
   const [enabledGeracao, setEnabledGeracao] = useState(true);
   const [msgGeracao, setMsgGeracao] = useState(DEFAULT_GERACAO);
+  const [horaGeracao, setHoraGeracao] = useState<string>("09:00");
 
   const [enabledPre, setEnabledPre] = useState(true);
   const [msgPre, setMsgPre] = useState(DEFAULT_PRE);
   const [diasAntes, setDiasAntes] = useState<number>(3);
+  const [horaPre, setHoraPre] = useState<string>("09:00");
 
   const [enabledVenc, setEnabledVenc] = useState(true);
   const [msgVenc, setMsgVenc] = useState(DEFAULT_VENC);
+  const [horaVenc, setHoraVenc] = useState<string>("09:00");
 
   const [enabledAtraso, setEnabledAtraso] = useState(true);
   const [msgAtraso, setMsgAtraso] = useState(DEFAULT_ATRASO);
   const [diasApos, setDiasApos] = useState<number>(2);
+  const [horaAtraso, setHoraAtraso] = useState<string>("09:00");
 
   // cadence
   const [intervalo, setIntervalo] = useState<number>(8);
@@ -71,14 +75,18 @@ export function FaturaWhatsappCard() {
         setEnabled(data.enabled);
         setEnabledGeracao((data as any).enabled_geracao ?? true);
         setMsgGeracao((data as any).mensagem_geracao ?? data.mensagem ?? DEFAULT_GERACAO);
+        setHoraGeracao(((data as any).hora_geracao ?? "09:00:00").slice(0, 5));
         setEnabledPre((data as any).enabled_pre_vencimento ?? true);
         setMsgPre((data as any).mensagem_pre_vencimento ?? DEFAULT_PRE);
         setDiasAntes((data as any).dias_antes ?? 3);
+        setHoraPre(((data as any).hora_pre_vencimento ?? "09:00:00").slice(0, 5));
         setEnabledVenc((data as any).enabled_vencimento ?? true);
         setMsgVenc((data as any).mensagem_vencimento ?? DEFAULT_VENC);
+        setHoraVenc(((data as any).hora_vencimento ?? "09:00:00").slice(0, 5));
         setEnabledAtraso((data as any).enabled_atraso ?? true);
         setMsgAtraso((data as any).mensagem_atraso ?? DEFAULT_ATRASO);
         setDiasApos((data as any).dias_apos ?? 2);
+        setHoraAtraso(((data as any).hora_atraso ?? "09:00:00").slice(0, 5));
         setIntervalo((data as any).intervalo_entre_envios_seg ?? 8);
         setMaxPorMin((data as any).max_envios_por_minuto ?? 6);
       }
@@ -105,14 +113,18 @@ export function FaturaWhatsappCard() {
         mensagem: msgGeracao,
         enabled_geracao: enabledGeracao,
         mensagem_geracao: msgGeracao,
+        hora_geracao: horaGeracao,
         enabled_pre_vencimento: enabledPre,
         mensagem_pre_vencimento: msgPre,
         dias_antes: diasAntes,
+        hora_pre_vencimento: horaPre,
         enabled_vencimento: enabledVenc,
         mensagem_vencimento: msgVenc,
+        hora_vencimento: horaVenc,
         enabled_atraso: enabledAtraso,
         mensagem_atraso: msgAtraso,
         dias_apos: diasApos,
+        hora_atraso: horaAtraso,
         intervalo_entre_envios_seg: intervalo,
         max_envios_por_minuto: maxPorMin,
       });
