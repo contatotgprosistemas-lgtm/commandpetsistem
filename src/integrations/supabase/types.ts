@@ -3905,6 +3905,10 @@ export type Database = {
           enabled_geracao: boolean
           enabled_pre_vencimento: boolean
           enabled_vencimento: boolean
+          hora_atraso: string
+          hora_geracao: string
+          hora_pre_vencimento: string
+          hora_vencimento: string
           intervalo_entre_envios_seg: number
           max_envios_por_minuto: number
           mensagem: string
@@ -3928,6 +3932,10 @@ export type Database = {
           enabled_geracao?: boolean
           enabled_pre_vencimento?: boolean
           enabled_vencimento?: boolean
+          hora_atraso?: string
+          hora_geracao?: string
+          hora_pre_vencimento?: string
+          hora_vencimento?: string
           intervalo_entre_envios_seg?: number
           max_envios_por_minuto?: number
           mensagem?: string
@@ -3951,6 +3959,10 @@ export type Database = {
           enabled_geracao?: boolean
           enabled_pre_vencimento?: boolean
           enabled_vencimento?: boolean
+          hora_atraso?: string
+          hora_geracao?: string
+          hora_pre_vencimento?: string
+          hora_vencimento?: string
           intervalo_entre_envios_seg?: number
           max_envios_por_minuto?: number
           mensagem?: string
