@@ -235,8 +235,10 @@ Deno.serve(async (req) => {
       ? unpaidContas[0].descricao
       : `${unpaidContas.length} faturas - Venc. ${unpaidContas[0].vencimento}`;
 
-    // Store all invoice IDs in externalReference so the webhook can settle each one
-    const externalReference = unpaidContas.map((c: any) => c.id).join(",");
+    // externalReference is limited to 100 chars by Asaas. The webhook's primary
+    // lookup is by asaas_payment_id (saved on every invoice below), so this is
+    // only a fallback. Use the first invoice id (36 chars) which always fits.
+    const externalReference = unpaidContas[0].id;
 
     const paymentRes = await fetch(`${ASAAS_BASE}/payments`, {
       method: "POST",
