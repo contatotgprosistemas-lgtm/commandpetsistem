@@ -104,7 +104,6 @@ export default function FinancePage() {
     const { data } = await supabase
       .from("contas_receber")
       .select("id, descricao, valor, vencimento, categoria, status, cliente_id, banco, valor_pago, cliente:clientes(nome)")
-      .neq("status", "pago")
       .order("vencimento", { ascending: false });
     if (data) {
       const sorted = [...data].sort((a: any, b: any) => (a.cliente?.nome ?? "").localeCompare(b.cliente?.nome ?? ""));
@@ -483,6 +482,9 @@ function PaginationBar({ page, pageSize, total, totalPages, onPage, onPageSize }
 function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete, onDeleteBulk }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void; onDeleteBulk: (ids: string[]) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [dataInicio, setDataInicio] = useState<string>("");
+  const [dataFim, setDataFim] = useState<string>("");
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [itemsCache, setItemsCache] = useState<Record<string, { descricao: string; valor: number; tipo: string }[]>>({});
   const { sortKey, sortDir, onSort } = useSortable();
@@ -502,9 +504,19 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
   };
 
   const preFiltered = contas.filter(c => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (c.descricao?.toLowerCase().includes(q)) || (c.cliente?.nome?.toLowerCase().includes(q)) || (c.categoria?.toLowerCase().includes(q));
+    if (statusFilter !== "todos") {
+      if (statusFilter === "vencido") {
+        const venc = new Date(c.vencimento + "T00:00:00");
+        if (!(c.status === "pendente" && venc < new Date(new Date().toDateString()))) return false;
+      } else if (c.status !== statusFilter) return false;
+    }
+    if (dataInicio && c.vencimento < dataInicio) return false;
+    if (dataFim && c.vencimento > dataFim) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!((c.descricao?.toLowerCase().includes(q)) || (c.cliente?.nome?.toLowerCase().includes(q)) || (c.categoria?.toLowerCase().includes(q)))) return false;
+    }
+    return true;
   });
 
   const filtered = useMemo(() => {
@@ -523,7 +535,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   useEffect(() => { if (page > totalPages) setPage(1); }, [totalPages, page]);
-  useEffect(() => { setPage(1); }, [search, sortKey, sortDir, pageSize]);
+  useEffect(() => { setPage(1); }, [search, sortKey, sortDir, pageSize, statusFilter, dataInicio, dataFim]);
   const paginated = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
   const allSelected = paginated.length > 0 && paginated.every(c => selected.includes(c.id));
@@ -563,14 +575,32 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
           <span className="text-sm font-semibold text-foreground">Faturas</span>
           <Badge variant="secondary" className="text-[10px] font-medium rounded-full px-2 py-0">{filtered.length}</Badge>
         </div>
-        <div className="relative w-full max-w-xs">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar fatura..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9 h-9 bg-card"
-          />
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 w-36 bg-card"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos status</SelectItem>
+              <SelectItem value="pendente">Pendente</SelectItem>
+              <SelectItem value="pago">Pago</SelectItem>
+              <SelectItem value="vencido">Vencido</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="h-9 w-[150px] bg-card" placeholder="De" />
+          <Input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="h-9 w-[150px] bg-card" placeholder="Até" />
+          {(statusFilter !== "todos" || dataInicio || dataFim) && (
+            <Button size="sm" variant="ghost" className="h-9" onClick={() => { setStatusFilter("todos"); setDataInicio(""); setDataFim(""); }}>
+              Limpar
+            </Button>
+          )}
+          <div className="relative w-full max-w-[220px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar fatura..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9 h-9 bg-card"
+            />
+          </div>
         </div>
       </div>
 
