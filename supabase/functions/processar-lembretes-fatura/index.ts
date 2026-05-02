@@ -105,7 +105,17 @@ Deno.serve(async (req) => {
           .eq("status", "pendente")
           .eq("vencimento", b.targetDate);
 
+        // Agrupa por cliente: 1 mensagem por cliente, mesmo com várias faturas
+        // no mesmo bucket. Escolhe a fatura de maior valor como referência.
+        const porCliente = new Map<string, any>();
         for (const f of faturas ?? []) {
+          const atual = porCliente.get(f.cliente_id);
+          if (!atual || Number(f.valor) > Number(atual.valor)) {
+            porCliente.set(f.cliente_id, f);
+          }
+        }
+
+        for (const f of porCliente.values()) {
           summary.processed++;
 
           // skip duplicates
