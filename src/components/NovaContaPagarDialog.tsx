@@ -27,6 +27,22 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
   const planoContasItens = usePlanoContasItens(profile?.empresa_id, open);
   const planoContasDespesa = planoContasItens.filter((p) => p.tipo === "despesa");
 
+  const [form, setForm] = useState({
+    numero: "",
+    data_emissao: format(new Date(), "yyyy-MM-dd"),
+    numero_documento: "",
+    fornecedor: "",
+    tipo_documento: "",
+    plano_contas: "",
+    banco: "",
+    descricao: "",
+    valor: "",
+    parcelas: "1",
+    vencimento: "",
+    intervalo: "mensal",
+    recorrente: false,
+  });
+
   // Preview das datas de vencimento que serão geradas
   const previewDatas = useMemo(() => {
     if (!form.vencimento) return [];
@@ -47,22 +63,6 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
     }
     return datas;
   }, [form.vencimento, form.parcelas, form.intervalo, form.valor]);
-
-  const [form, setForm] = useState({
-    numero: "",
-    data_emissao: format(new Date(), "yyyy-MM-dd"),
-    numero_documento: "",
-    fornecedor: "",
-    tipo_documento: "",
-    plano_contas: "",
-    banco: "",
-    descricao: "",
-    valor: "",
-    parcelas: "1",
-    vencimento: "",
-    intervalo: "mensal",
-    recorrente: false,
-  });
 
   useEffect(() => {
     if (!open || !profile?.empresa_id) return;
