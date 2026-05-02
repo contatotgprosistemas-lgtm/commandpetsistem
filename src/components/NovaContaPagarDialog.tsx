@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useMemo } from "react";
 import { usePlanoContasItens } from "@/hooks/usePlanoContasItens";
 
 interface Props {
@@ -25,6 +26,27 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
   const [bancos, setBancos] = useState<any[]>([]);
   const planoContasItens = usePlanoContasItens(profile?.empresa_id, open);
   const planoContasDespesa = planoContasItens.filter((p) => p.tipo === "despesa");
+
+  // Preview das datas de vencimento que serão geradas
+  const previewDatas = useMemo(() => {
+    if (!form.vencimento) return [];
+    const parcelas = Math.max(1, parseInt(form.parcelas) || 1);
+    const valorTotal = parseFloat(form.valor) || 0;
+    const valorParcela = parcelas > 0 ? valorTotal / parcelas : 0;
+    const datas: { data: string; valor: number; idx: number }[] = [];
+    for (let i = 0; i < parcelas; i++) {
+      const venc = new Date(form.vencimento + "T00:00:00");
+      if (form.intervalo === "mensal") venc.setMonth(venc.getMonth() + i);
+      else if (form.intervalo === "quinzenal") venc.setDate(venc.getDate() + i * 15);
+      else if (form.intervalo === "semanal") venc.setDate(venc.getDate() + i * 7);
+      datas.push({
+        data: format(venc, "dd/MM/yyyy"),
+        valor: Math.round(valorParcela * 100) / 100,
+        idx: i + 1,
+      });
+    }
+    return datas;
+  }, [form.vencimento, form.parcelas, form.intervalo, form.valor]);
 
   const [form, setForm] = useState({
     numero: "",
@@ -204,6 +226,25 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
             {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Salvar
           </Button>
+
+          {form.recorrente && previewDatas.length > 1 && (
+            <div className="rounded-md border bg-muted/30 p-3 mt-2">
+              <div className="text-sm font-medium mb-2">
+                Datas de pagamento ({previewDatas.length} parcelas)
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-48 overflow-y-auto">
+                {previewDatas.map(d => (
+                  <div key={d.idx} className="flex items-center justify-between text-xs px-2 py-1 rounded bg-background border">
+                    <span className="text-muted-foreground">{d.idx}/{previewDatas.length}</span>
+                    <span className="font-medium">{d.data}</span>
+                    <span className="text-muted-foreground">
+                      {d.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
