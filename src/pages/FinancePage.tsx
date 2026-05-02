@@ -483,8 +483,18 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
-  const [dataInicio, setDataInicio] = useState<string>("");
-  const [dataFim, setDataFim] = useState<string>("");
+  const mesVigente = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+    return {
+      inicio: `${y}-${m}-01`,
+      fim: `${y}-${m}-${String(lastDay).padStart(2, "0")}`,
+    };
+  }, []);
+  const [dataInicio, setDataInicio] = useState<string>(mesVigente.inicio);
+  const [dataFim, setDataFim] = useState<string>(mesVigente.fim);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [itemsCache, setItemsCache] = useState<Record<string, { descricao: string; valor: number; tipo: string }[]>>({});
   const { sortKey, sortDir, onSort } = useSortable();
@@ -587,9 +597,9 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
           </Select>
           <Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="h-9 w-[150px] bg-card" placeholder="De" />
           <Input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="h-9 w-[150px] bg-card" placeholder="Até" />
-          {(statusFilter !== "todos" || dataInicio || dataFim) && (
-            <Button size="sm" variant="ghost" className="h-9" onClick={() => { setStatusFilter("todos"); setDataInicio(""); setDataFim(""); }}>
-              Limpar
+          {(statusFilter !== "todos" || dataInicio !== mesVigente.inicio || dataFim !== mesVigente.fim) && (
+            <Button size="sm" variant="ghost" className="h-9" onClick={() => { setStatusFilter("todos"); setDataInicio(mesVigente.inicio); setDataFim(mesVigente.fim); }}>
+              Mês atual
             </Button>
           )}
           <div className="relative w-full max-w-[220px]">
