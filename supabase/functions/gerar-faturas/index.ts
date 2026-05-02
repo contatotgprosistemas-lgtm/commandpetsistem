@@ -290,6 +290,9 @@ Deno.serve(async (req) => {
     let faturasCriadas = 0;
     let faturasAtualizadas = 0;
     let notificacoesCriadas = 0;
+    // Garante 1 mensagem WhatsApp por cliente nesta execução,
+    // mesmo que o cliente tenha mais de um grupo de fatura.
+    const clientesNotificados = new Set<string>();
 
     for (const [, g] of groups) {
       // Tenta achar fatura pendente já existente para mesclar
@@ -350,17 +353,22 @@ Deno.serve(async (req) => {
         );
       }
 
-      await enviarNotifFaturaWhats(
-        supabase,
-        g.empresa_id,
-        {
-          id: g.cliente.id,
-          nome: g.cliente.nome,
-          whatsapp: g.cliente.whatsapp ?? null,
-          telefone: g.cliente.telefone ?? null,
-        },
-        { id: faturaId, descricao: descricaoFatura, valor: totalFatura, vencimento: g.vencimento },
-      );
+      // Apenas 1 disparo de WhatsApp por cliente nesta execução.
+      // O notificar-fatura-whatsapp também tem trava única por (cliente, tipo, dia).
+      if (!clientesNotificados.has(g.cliente_id)) {
+        clientesNotificados.add(g.cliente_id);
+        await enviarNotifFaturaWhats(
+          supabase,
+          g.empresa_id,
+          {
+            id: g.cliente.id,
+            nome: g.cliente.nome,
+            whatsapp: g.cliente.whatsapp ?? null,
+            telefone: g.cliente.telefone ?? null,
+          },
+          { id: faturaId, descricao: descricaoFatura, valor: totalFatura, vencimento: g.vencimento },
+        );
+      }
 
       await supabase.from("customer_notifications").insert({
         empresa_id: g.empresa_id,
