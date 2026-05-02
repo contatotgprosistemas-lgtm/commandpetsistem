@@ -149,6 +149,7 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
                   <SelectItem value="boleto">Boleto</SelectItem>
                   <SelectItem value="fatura">Fatura</SelectItem>
                   <SelectItem value="recibo">Recibo</SelectItem>
+                  <SelectItem value="pagamentos">Pagamentos</SelectItem>
                   <SelectItem value="outros">Outros</SelectItem>
                 </SelectContent>
               </Select>
