@@ -182,3 +182,125 @@ async function processPayment(supabase: any, conta: any, payment: any, valorIndi
 
   console.log(`Payment processed: Invoice ${conta.id}, Value: ${valorPago}, Account: ${asaasContaLabel ?? "default"}`);
 }
+
+async function applyTransactionFee(supabase: any, contas: any[], payment: any) {
+  if (!contas || contas.length === 0) return;
+
+  const today = new Date().toISOString().split("T")[0];
+  const ref = contas[0];
+  const empresaId = ref.empresa_id;
+
+  // Evita duplicar taxa caso o webhook seja re-entregue
+  const { data: existingFee } = await supabase
+    .from("movimentacoes")
+    .select("id")
+    .eq("empresa_id", empresaId)
+    .eq("tipo", "taxa_financeira")
+    .ilike("complemento", `%Asaas ID: ${payment.id}%`)
+    .limit(1);
+  if (existingFee && existingFee.length > 0) {
+    console.log(`Fee already applied for payment ${payment.id}, skipping`);
+    return;
+  }
+
+  // Determina forma de pagamento Asaas → tipo da taxa
+  // Asaas billingType: PIX, CREDIT_CARD, BOLETO, DEBIT_CARD, UNDEFINED
+  const billingType = String(payment.billingType ?? "").toUpperCase();
+  let tipoTaxa: string | null = null;
+  if (billingType === "PIX") tipoTaxa = "pix";
+  else if (billingType === "CREDIT_CARD") tipoTaxa = "cartao_credito";
+  else if (billingType === "DEBIT_CARD") tipoTaxa = "cartao_debito";
+  else if (billingType === "BOLETO") tipoTaxa = "boleto";
+  else tipoTaxa = "pix"; // fallback razoável (a maioria dos fluxos atuais é PIX)
+
+  // Busca taxa cadastrada
+  const { data: taxa } = await supabase
+    .from("taxas_financeiras")
+    .select("percentual, valor_fixo")
+    .eq("empresa_id", empresaId)
+    .eq("ativo", true)
+    .eq("tipo", tipoTaxa)
+    .limit(1)
+    .maybeSingle();
+
+  if (!taxa) {
+    console.log(`No active fee configured for empresa ${empresaId} type ${tipoTaxa}`);
+    return;
+  }
+
+  // Valor total da transação = soma das faturas do lote
+  const valorTotal = contas.reduce(
+    (acc: number, c: any) => acc + Number(c.valor || 0),
+    0
+  );
+  const taxaValor = Math.round(
+    (Number(valorTotal) * Number(taxa.percentual) / 100 + Number(taxa.valor_fixo)) * 100
+  ) / 100;
+
+  if (taxaValor <= 0) return;
+
+  // Conta bancária Asaas (mesma lógica do processPayment)
+  let asaasContaLabel: string | null = null;
+  if (ref.asaas_conta_id) {
+    const { data: ac } = await supabase
+      .from("asaas_contas")
+      .select("label")
+      .eq("id", ref.asaas_conta_id)
+      .maybeSingle();
+    asaasContaLabel = ac?.label ?? null;
+  }
+  const bancoLabel = asaasContaLabel ? `PIX - ${asaasContaLabel}` : "PIX - Asaas";
+
+  const { data: bancos } = await supabase
+    .from("contas_bancarias")
+    .select("id, banco, titular")
+    .eq("empresa_id", empresaId);
+
+  let banco: any = null;
+  if (asaasContaLabel) {
+    banco = bancos?.find(
+      (b: any) =>
+        b.banco?.toLowerCase() === "asaas" &&
+        b.titular?.toLowerCase() === asaasContaLabel!.toLowerCase()
+    );
+  }
+  if (!banco) {
+    banco = bancos?.find((b: any) => b.banco?.toLowerCase().includes("asaas")) || bancos?.[0] || null;
+  }
+
+  // Nome do cliente (do primeiro registro do lote)
+  const { data: cliente } = await supabase
+    .from("clientes")
+    .select("nome")
+    .eq("id", ref.cliente_id)
+    .maybeSingle();
+
+  const tipoLabel =
+    tipoTaxa === "cartao_credito" ? "Cartão Crédito"
+    : tipoTaxa === "cartao_debito" ? "Cartão Débito"
+    : tipoTaxa === "pix" ? "PIX"
+    : tipoTaxa === "boleto" ? "Boleto"
+    : tipoTaxa;
+
+  const descLote = contas.length > 1
+    ? `${contas.length} faturas`
+    : ref.descricao;
+
+  await supabase.from("movimentacoes").insert({
+    empresa_id: empresaId,
+    data_movimentacao: today,
+    plano_contas: "Despesas Financeiras",
+    pessoa: cliente?.nome || "Cliente",
+    complemento: `Taxa ${tipoLabel} - ${descLote} (Asaas ID: ${payment.id})`,
+    banco: bancoLabel,
+    valor: -taxaValor,
+    tipo: "taxa_financeira",
+    conta_bancaria_id: banco?.id ?? null,
+  });
+
+  if (banco?.id) {
+    await supabase.rpc("sincronizar_saldo_bancario", { p_conta_bancaria_id: banco.id });
+  }
+
+  console.log(`Fee applied: ${tipoLabel} R$ ${taxaValor} for payment ${payment.id}`);
+}
