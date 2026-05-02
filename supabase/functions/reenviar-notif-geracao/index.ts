@@ -88,8 +88,10 @@ Deno.serve(async (req) => {
         detalhes.push({ fatura: f.id, cliente: cliente.nome, error: String(err) });
       }
 
-      // Pequeno delay para não saturar a Evolution API
-      await new Promise((r) => setTimeout(r, 500));
+      // Cadência conservadora: o notificar-fatura-whatsapp já aplica
+      // jitter 30-60s internamente, então aqui basta um espaçamento mínimo
+      // para não criar locks concorrentes.
+      await new Promise((r) => setTimeout(r, 2000));
     }
 
     return new Response(
