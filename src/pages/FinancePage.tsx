@@ -26,6 +26,8 @@ import { format, isPast, isToday } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { BaixaContaDialog } from "@/components/BaixaContaDialog";
+import { BaixaContaPagarDialog } from "@/components/BaixaContaPagarDialog";
+import { EditarContaPagarDialog } from "@/components/EditarContaPagarDialog";
 import { NovaContaBancariaDialog } from "@/components/NovaContaBancariaDialog";
 import { NovaContaReceberDialog } from "@/components/NovaContaReceberDialog";
 import { NovaContaPagarDialog } from "@/components/NovaContaPagarDialog";
