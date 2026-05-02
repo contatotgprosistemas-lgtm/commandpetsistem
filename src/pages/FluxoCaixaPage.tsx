@@ -140,7 +140,7 @@ function FluxoDiario() {
                 <TableRow key={row.dia}>
                   <TableCell className="text-sm font-medium">{row.dia}</TableCell>
                   <ValorCell value={row.entradas} />
-                  <ValorCell value={row.saidas} />
+                  <TableCell className="text-right tabular-nums text-sm text-destructive">{fmt(row.saidas)}</TableCell>
                   <ValorCell value={saldoDia} />
                   <ValorCell value={saldoAcum} />
                 </TableRow>
@@ -323,7 +323,7 @@ function FluxoMensal() {
                   <TableRow key={row.label} className={row.highlight}>
                     <TableCell className="sticky left-0 bg-card z-10 text-sm">{row.label}</TableCell>
                     {row.values.map((v, i) => (
-                      <TableCell key={i} className={`text-right tabular-nums text-sm ${v < 0 ? "text-destructive" : ""}`}>
+                      <TableCell key={i} className={`text-right tabular-nums text-sm ${row.label === "SAÍDAS" || v < 0 ? "text-destructive" : ""}`}>
                         {fmt(v)}
                       </TableCell>
                     ))}
