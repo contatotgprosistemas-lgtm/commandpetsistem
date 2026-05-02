@@ -99,8 +99,9 @@ function FluxoDiario() {
     for (let d = 1; d <= diasNoMes; d++) {
       const dateStr = `${ano}-${String(mes).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       const dayMovs = movs.filter(m => m.data_movimentacao === dateStr);
-      const entradas = dayMovs.filter(m => m.tipo === "contas_a_receber").reduce((s, m) => s + Number(m.valor), 0);
-      const saidas = dayMovs.filter(m => m.tipo !== "contas_a_receber").reduce((s, m) => s + Number(m.valor), 0);
+      // Movimentações já guardam o sinal: entradas positivas, saídas negativas.
+      const entradas = dayMovs.filter(m => Number(m.valor) > 0).reduce((s, m) => s + Number(m.valor), 0);
+      const saidas = dayMovs.filter(m => Number(m.valor) < 0).reduce((s, m) => s + Math.abs(Number(m.valor)), 0);
       if (entradas > 0 || saidas > 0) days.push({ dia: d, entradas, saidas });
     }
     return days;
