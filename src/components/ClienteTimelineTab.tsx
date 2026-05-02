@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   CalendarX, CalendarSync, DollarSign, Package, ClipboardList,
-  PawPrint, Loader2, FileText, Stethoscope
+  PawPrint, Loader2, FileText, Stethoscope, MessageCircle
 } from "lucide-react";
 
 interface Props {
@@ -17,7 +17,7 @@ interface Props {
 interface TimelineItem {
   id: string;
   date: string;
-  type: "servico" | "falta" | "troca" | "pagamento" | "fatura" | "plano" | "manejo";
+  type: "servico" | "falta" | "troca" | "pagamento" | "fatura" | "plano" | "manejo" | "mensagem";
   title: string;
   description?: string;
   badge?: { label: string; variant: "default" | "destructive" | "secondary" | "outline" };
@@ -32,6 +32,7 @@ const typeConfig: Record<string, { icon: any; color: string; label: string }> = 
   fatura: { icon: FileText, color: "text-blue-600", label: "Fatura" },
   plano: { icon: Package, color: "text-violet-600", label: "Plano/Pacote" },
   manejo: { icon: Stethoscope, color: "text-teal-600", label: "Manejo" },
+  mensagem: { icon: MessageCircle, color: "text-sky-600", label: "Mensagem" },
 };
 
 export function ClienteTimelineTab({ clienteId, empresaId }: Props) {
@@ -103,6 +104,24 @@ export function ClienteTimelineTab({ clienteId, empresaId }: Props) {
         .order("created_at", { ascending: false });
       subEvents = data || [];
     }
+
+    // 6. Mensagens enviadas (notificações de fatura)
+    const { data: mensagens } = await supabase
+      .from("invoice_notification_log" as any)
+      .select("id, tipo, status, erro, enviado_em, conta_receber_id")
+      .eq("cliente_id", clienteId)
+      .eq("empresa_id", empresaId)
+      .order("enviado_em", { ascending: false })
+      .limit(200) as { data: any[] | null };
+
+    const tipoLabel: Record<string, string> = {
+      geracao: "Geração de fatura",
+      pre_vencimento: "Pré-vencimento",
+      vencimento: "Vencimento",
+      atraso: "Atraso",
+      multa_atraso: "Multa por atraso",
+    };
+    const faturaMap = new Map((faturas || []).map((f: any) => [f.id, f]));
 
     // Map agendamentos to lookup
     const agMap = new Map((agendamentos || []).map((a: any) => [a.id, a]));
@@ -211,6 +230,26 @@ export function ClienteTimelineTab({ clienteId, empresaId }: Props) {
       });
     }
 
+    // Mensagens (notificações WhatsApp/Email enviadas)
+    for (const msg of (mensagens || [])) {
+      const fat = faturaMap.get(msg.conta_receber_id);
+      const isFalha = msg.status === "falha";
+      timeline.push({
+        id: `msg-${msg.id}`,
+        date: msg.enviado_em,
+        type: "mensagem",
+        title: tipoLabel[msg.tipo] || `Notificação (${msg.tipo})`,
+        description: isFalha
+          ? `Falha no envio${msg.erro ? `: ${msg.erro}` : ""}`
+          : fat
+            ? `Fatura: ${fat.descricao} · R$ ${Number(fat.valor).toFixed(2)}`
+            : "Mensagem enviada via WhatsApp",
+        badge: isFalha
+          ? { label: "Falha", variant: "destructive" as const }
+          : { label: "Enviada", variant: "default" as const },
+      });
+    }
+
     // Sort by date descending
     timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     setItems(timeline);
@@ -228,6 +267,7 @@ export function ClienteTimelineTab({ clienteId, empresaId }: Props) {
     { value: "fatura", label: "Faturas" },
     { value: "plano", label: "Planos" },
     { value: "manejo", label: "Manejo" },
+    { value: "mensagem", label: "Mensagens" },
   ];
 
   if (loading) {
