@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FaltaDialog } from "@/components/FaltaDialog";
 import { addToEsteiraIfApplicable } from "@/lib/esteira";
+import { formatDateTimeBR, parseLocalDate } from "@/lib/utils";
 
 const BANHO_TOSA_KEYWORDS = ["banho", "tosa", "hidratação", "hidratacao", "estética", "estetica", "grooming", "pelo"];
 
@@ -65,21 +66,36 @@ export default function BanhoTosaPage() {
 
   async function fetchAgendamentos() {
     setLoading(true);
-    // Janela ampla: do início do mês passado até 12 meses à frente.
-    // Isso evita o limite default de 1000 linhas do Supabase quando há
-    // muitos agendamentos antigos no banco e garante que o mês corrente
-    // (ex: maio inteiro) seja sempre carregado.
     const now = new Date();
     const inicio = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const fim = new Date(now.getFullYear(), now.getMonth() + 12, 1);
-    const { data } = await supabase
-      .from("agendamentos")
-      .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
-      .gte("data_hora", inicio.toISOString())
-      .lt("data_hora", fim.toISOString())
-      .order("data_hora", { ascending: true })
-      .limit(5000);
-    if (data) setAgendamentos(data as any);
+    const PAGE_SIZE = 1000;
+    const all: any[] = [];
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("agendamentos")
+        .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
+        .gte("data_hora", inicio.toISOString())
+        .lt("data_hora", fim.toISOString())
+        .order("data_hora", { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) {
+        toast.error("Erro ao carregar agendamentos: " + error.message);
+        break;
+      }
+
+      if (!data || data.length === 0) break;
+
+      all.push(...data);
+
+      if (data.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+
+    setAgendamentos(all as any);
     setLoading(false);
   }
 
@@ -156,7 +172,7 @@ export default function BanhoTosaPage() {
 
   const filteredList = useMemo(() => {
     return banhoTosaAgendamentos.filter(a => {
-      const dateMatch = format(new Date(a.data_hora), "yyyy-MM-dd") === filterDate;
+      const dateMatch = format(parseLocalDate(a.data_hora), "yyyy-MM-dd") === filterDate;
       const serviceMatch = filterService === "all" || a.tipo_servico === filterService;
       return dateMatch && serviceMatch;
     });
@@ -280,7 +296,6 @@ function BanhoTosaRow({ item, onCheckin, onEdit, onDelete, onFalta }: {
   const petBreed = item.pet?.raca;
   const clientName = item.cliente?.nome ?? "—";
   const clientWhatsapp = item.cliente?.whatsapp;
-  const dataHora = new Date(item.data_hora);
   const initials = petName.slice(0, 2).toUpperCase();
 
   return (
@@ -314,7 +329,7 @@ function BanhoTosaRow({ item, onCheckin, onEdit, onDelete, onFalta }: {
       </div>
 
       <div className="text-right shrink-0">
-        <p className="text-sm font-medium text-foreground tabular-nums">{format(dataHora, "dd/MM/yyyy HH:mm")}</p>
+        <p className="text-sm font-medium text-foreground tabular-nums">{formatDateTimeBR(item.data_hora)}</p>
         {item.notas && <p className="text-xs text-muted-foreground truncate max-w-[180px]">{item.notas}</p>}
       </div>
 
