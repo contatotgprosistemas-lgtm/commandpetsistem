@@ -68,13 +68,11 @@ function FluxoDiario() {
     setContasPagar(cpData || []);
 
     // Saldo anterior: sum of all movimentacoes before this month
-    let qSaldo = supabase.from("movimentacoes").select("valor, tipo").lte("data_movimentacao", fimMesAnterior);
+    let qSaldo = supabase.from("movimentacoes").select("valor").lte("data_movimentacao", fimMesAnterior);
     if (banco !== "todos") qSaldo = qSaldo.eq("banco", banco);
     const { data: saldoData } = await qSaldo;
-    let saldo = 0;
-    (saldoData || []).forEach((m: any) => {
-      saldo += m.tipo === "contas_a_receber" ? Number(m.valor) : -Number(m.valor);
-    });
+    // Movimentações já guardam o sinal correto (entradas positivas, saídas negativas)
+    let saldo = (saldoData || []).reduce((s: number, m: any) => s + Number(m.valor), 0);
     // Also add bank initial balances
     if (banco === "todos") {
       saldo += bancos.reduce((s, b) => s + Number(b.saldo_inicial || 0), 0);
