@@ -84,6 +84,7 @@ export default function FinancePage() {
   const { profile } = useAuth();
   const [contas, setContas] = useState<ContaReceber[]>([]);
   const [contasBancarias, setContasBancarias] = useState<any[]>([]);
+  const [totalRecebidoMes, setTotalRecebidoMes] = useState(0);
   const [loading, setLoading] = useState(true);
   const [baixaConta, setBaixaConta] = useState<{ id: string; descricao: string; valor: number } | null>(null);
   const [baixaLote, setBaixaLote] = useState<{ ids: string[]; descricao: string; valor: number } | null>(null);
@@ -120,10 +121,24 @@ export default function FinancePage() {
     if (data) setContasBancarias(data as any);
   }
 
-  useEffect(() => { fetchContas(); fetchContasBancarias(); }, []);
+  async function fetchTotalRecebidoMes() {
+    const now = new Date();
+    const inicio = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    const fim = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const fimStr = `${fim.getFullYear()}-${String(fim.getMonth() + 1).padStart(2, "0")}-${String(fim.getDate()).padStart(2, "0")}`;
+    const { data } = await supabase
+      .from("contas_receber")
+      .select("valor, valor_pago, data_baixa, status")
+      .eq("status", "pago")
+      .gte("data_baixa", inicio)
+      .lte("data_baixa", fimStr);
+    const total = (data || []).reduce((s: number, c: any) => s + Number(c.valor_pago ?? c.valor ?? 0), 0);
+    setTotalRecebidoMes(total);
+  }
+
+  useEffect(() => { fetchContas(); fetchContasBancarias(); fetchTotalRecebidoMes(); }, []);
 
   const totalReceber = contas.filter(c => c.status === "pendente").reduce((s, c) => s + c.valor, 0);
-  const totalPago = contas.filter(c => c.status === "pago").reduce((s, c) => s + c.valor, 0);
   const vencidas = contas.filter(c => c.status === "pendente" && isPast(new Date(c.vencimento)) && !isToday(new Date(c.vencimento)));
 
   return (
@@ -135,7 +150,7 @@ export default function FinancePage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Total a Receber" value={`R$ ${totalReceber.toFixed(2)}`} icon={<DollarSign className="h-4 w-4" strokeWidth={1.5} />} accent="emerald" filled />
-        <MetricCard title="Total Recebido" value={`R$ ${totalPago.toFixed(2)}`} icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />} accent="blue" filled />
+        <MetricCard title="Total Recebido (mês)" value={`R$ ${totalRecebidoMes.toFixed(2)}`} icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />} accent="blue" filled />
         <MetricCard title="Faturas Pendentes" value={String(contas.filter(c => c.status === "pendente").length)} icon={<TrendingDown className="h-4 w-4" strokeWidth={1.5} />} accent="violet" filled />
         <MetricCard title="Contas Vencidas" value={String(vencidas.length)} icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />} accent="amber" filled />
       </div>
