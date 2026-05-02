@@ -192,43 +192,52 @@ Deno.serve(async (req) => {
     const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
     const now = new Date().toISOString();
 
-    let { data: contato } = await supabase
-      .from("crm_contatos").select("id")
-      .eq("empresa_id", empresa_id)
-      .or(numeroVariants.map((value) => `whatsapp.eq.${value},telefone.eq.${value}`).join(","))
-      .limit(1).maybeSingle();
-    if (!contato) {
-      const { data: novo } = await supabase
-        .from("crm_contatos")
-        .insert({ empresa_id, nome: cliente.nome, whatsapp: numero, telefone: numero, origem: "faturamento" })
-        .select("id").single();
-      contato = novo;
-    }
+    // Registrar no CRM somente quando o canal usado é um canal do CRM (uuid existente em crm_canais).
+    let conversaIdForLog: string | null = null;
+    if (canal.id) {
+      const { data: canalCrm } = await supabase
+        .from("crm_canais").select("id").eq("id", canal.id).maybeSingle();
+      if (canalCrm) {
+        let { data: contato } = await supabase
+          .from("crm_contatos").select("id")
+          .eq("empresa_id", empresa_id)
+          .or(numeroVariants.map((value) => `whatsapp.eq.${value},telefone.eq.${value}`).join(","))
+          .limit(1).maybeSingle();
+        if (!contato) {
+          const { data: novo } = await supabase
+            .from("crm_contatos")
+            .insert({ empresa_id, nome: cliente.nome, whatsapp: numero, telefone: numero, origem: "faturamento" })
+            .select("id").single();
+          contato = novo;
+        }
 
-    let { data: conversa } = await supabase
-      .from("crm_conversas").select("id")
-      .eq("empresa_id", empresa_id).eq("contato_id", contato!.id).eq("canal_id", canal.id)
-      .order("updated_at", { ascending: false }).limit(1).maybeSingle();
-    if (!conversa) {
-      const { data: nova } = await supabase
-        .from("crm_conversas")
-        .insert({ empresa_id, contato_id: contato!.id, canal_id: canal.id, status: "aberta", ultima_mensagem: conteudo, ultima_mensagem_em: now })
-        .select("id").single();
-      conversa = nova;
-    }
+        let { data: conversa } = await supabase
+          .from("crm_conversas").select("id")
+          .eq("empresa_id", empresa_id).eq("contato_id", contato!.id).eq("canal_id", canal.id)
+          .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+        if (!conversa) {
+          const { data: nova } = await supabase
+            .from("crm_conversas")
+            .insert({ empresa_id, contato_id: contato!.id, canal_id: canal.id, status: "aberta", ultima_mensagem: conteudo, ultima_mensagem_em: now })
+            .select("id").single();
+          conversa = nova;
+        }
 
-    await supabase.from("crm_mensagens").insert({
-      empresa_id, conversa_id: conversa!.id, tipo: "texto", direcao: "saida",
-      conteudo, status: "enviado", remetente_nome: "💰 Faturamento",
-      identificador_externo: externalId, enviada_em: now,
-    });
-    await supabase.from("crm_conversas").update({
-      ultima_mensagem: conteudo, ultima_mensagem_em: now,
-    }).eq("id", conversa!.id);
+        await supabase.from("crm_mensagens").insert({
+          empresa_id, conversa_id: conversa!.id, tipo: "texto", direcao: "saida",
+          conteudo, status: "enviado", remetente_nome: "💰 Faturamento",
+          identificador_externo: externalId, enviada_em: now,
+        });
+        await supabase.from("crm_conversas").update({
+          ultima_mensagem: conteudo, ultima_mensagem_em: now,
+        }).eq("id", conversa!.id);
+        conversaIdForLog = conversa!.id;
+      }
+    }
 
     await supabase.from("invoice_notification_log").insert({
       empresa_id, cliente_id: cliente.id, conta_receber_id: fatura.id ?? null,
-      conversa_id: conversa!.id, status: "enviado", tipo,
+      conversa_id: conversaIdForLog, status: "enviado", tipo,
     });
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
