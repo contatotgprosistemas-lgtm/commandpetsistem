@@ -71,7 +71,7 @@ function FluxoDiario() {
     setLoading(false);
   }
 
-  useEffect(() => { if (bancos.length >= 0) buscar(); }, []);
+  useEffect(() => { if (bancos.length > 0) buscar(); }, [bancos.length]);
 
   const [mesStr, anoStr] = mesAno.split("/");
   const mes = parseInt(mesStr) || (now.getMonth() + 1);
