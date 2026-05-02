@@ -93,6 +93,8 @@ export default function FinancePage() {
   const [novaContaPagarOpen, setNovaContaPagarOpen] = useState(false);
   const [importReceberOpen, setImportReceberOpen] = useState(false);
   const [importPagarOpen, setImportPagarOpen] = useState(false);
+  const [contasPagarRefreshKey, setContasPagarRefreshKey] = useState(0);
+  const refreshContasPagar = () => setContasPagarRefreshKey(k => k + 1);
 
   const [editConta, setEditConta] = useState<ContaReceber | null>(null);
   const [editContaBancaria, setEditContaBancaria] = useState<any | null>(null);
@@ -285,7 +287,7 @@ export default function FinancePage() {
               Nova Conta a Pagar
             </Button>
           </div>
-          <ContasPagarContent />
+          <ContasPagarContent refreshKey={contasPagarRefreshKey} />
         </TabsContent>
 
         <TabsContent value="fluxo-de-caixa"><FluxoCaixaPage /></TabsContent>
@@ -320,7 +322,7 @@ export default function FinancePage() {
       <NovaContaPagarDialog
         open={novaContaPagarOpen}
         onOpenChange={setNovaContaPagarOpen}
-        onSuccess={() => {}}
+        onSuccess={refreshContasPagar}
       />
 
       <NovaContaBancariaDialog
@@ -338,7 +340,7 @@ export default function FinancePage() {
       <ImportContasPagarDialog
         open={importPagarOpen}
         onOpenChange={setImportPagarOpen}
-        onSuccess={() => {}}
+        onSuccess={refreshContasPagar}
       />
 
       <EditarContaReceberDialog
@@ -804,7 +806,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
   );
 }
 
-function ContasPagarContent() {
+function ContasPagarContent({ refreshKey = 0 }: { refreshKey?: number }) {
   const [contas, setContas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string[]>([]);
@@ -847,7 +849,7 @@ function ContasPagarContent() {
     setLoading(false);
   }
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [refreshKey]);
 
   const handleBulkDelete = async () => {
     for (const id of selected) {
