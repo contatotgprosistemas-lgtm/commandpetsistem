@@ -20,12 +20,19 @@ export function usePlanoContasItens(empresaId: string | undefined, enabled: bool
       .order("nome")
       .then(({ data }) => {
         if (!data) return;
-        setItems(
-          (data as any[]).map((d) => ({
-            nome: d.nome,
-            tipo: d.plano_contas_categorias?.tipo,
-          })),
-        );
+        const mapped = (data as any[]).map((d) => ({
+          nome: d.nome,
+          tipo: d.plano_contas_categorias?.tipo,
+        }));
+        const seen = new Set<string>();
+        const deduped: PlanoContasItem[] = [];
+        for (const it of mapped) {
+          const key = `${it.tipo}::${it.nome}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          deduped.push(it);
+        }
+        setItems(deduped);
       });
   }, [empresaId, enabled]);
 
