@@ -65,10 +65,20 @@ export default function BanhoTosaPage() {
 
   async function fetchAgendamentos() {
     setLoading(true);
+    // Janela ampla: do início do mês passado até 12 meses à frente.
+    // Isso evita o limite default de 1000 linhas do Supabase quando há
+    // muitos agendamentos antigos no banco e garante que o mês corrente
+    // (ex: maio inteiro) seja sempre carregado.
+    const now = new Date();
+    const inicio = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const fim = new Date(now.getFullYear(), now.getMonth() + 12, 1);
     const { data } = await supabase
       .from("agendamentos")
       .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, foto_url)")
-      .order("data_hora", { ascending: true });
+      .gte("data_hora", inicio.toISOString())
+      .lt("data_hora", fim.toISOString())
+      .order("data_hora", { ascending: true })
+      .limit(5000);
     if (data) setAgendamentos(data as any);
     setLoading(false);
   }
