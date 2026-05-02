@@ -77,6 +77,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Para lembretes de cobrança, só envia se a fatura ainda estiver em aberto (pendente).
+    // Isso evita disparar pré-vencimento/vencimento/atraso/multa para faturas já pagas ou canceladas.
+    if (fatura.id && tipo !== "geracao") {
+      const { data: contaAtual } = await supabase
+        .from("contas_receber")
+        .select("status")
+        .eq("id", fatura.id)
+        .maybeSingle();
+      if (!contaAtual) {
+        return new Response(JSON.stringify({ skipped: "fatura_not_found" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (contaAtual.status !== "pendente") {
+        return new Response(JSON.stringify({ skipped: `fatura_status_${contaAtual.status}` }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     const { data: cfg } = await supabase
       .from("invoice_notification_config")
       .select("enabled, mensagem, enabled_geracao, mensagem_geracao, enabled_pre_vencimento, mensagem_pre_vencimento, enabled_vencimento, mensagem_vencimento, enabled_atraso, mensagem_atraso, multa_atraso_enabled, multa_atraso_mensagem")
