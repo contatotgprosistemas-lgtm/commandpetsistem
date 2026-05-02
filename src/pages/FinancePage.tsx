@@ -756,6 +756,8 @@ function ContasPagarContent() {
   const { sortKey, sortDir, onSort } = useSortable();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [baixaConta, setBaixaConta] = useState<any | null>(null);
+  const [editConta, setEditConta] = useState<any | null>(null);
 
   const sorted = useMemo(() => {
     return sortData(contas, sortKey, sortDir, (item: any, key: string) => {
@@ -801,6 +803,17 @@ function ContasPagarContent() {
     fetchData();
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Excluir esta conta?")) return;
+    const { error } = await supabase.from("contas_pagar").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+      return;
+    }
+    toast.success("Conta excluída");
+    fetchData();
+  };
+
   return (
     <div className="bg-card rounded-xl border border-border/60 shadow-sm mt-4 overflow-hidden">
       {selected.length > 0 && (
@@ -838,6 +851,7 @@ function ContasPagarContent() {
               <SortableHead label="Vencimento" sortKey="vencimento" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
               <SortableHead label="Valor" sortKey="valor" currentSort={sortKey} currentDir={sortDir} onSort={onSort} className="text-right" />
               <SortableHead label="Status" sortKey="status" currentSort={sortKey} currentDir={sortDir} onSort={onSort} />
+              <TableHead className="w-12 h-11"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -860,6 +874,31 @@ function ContasPagarContent() {
                   R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </TableCell>
                 <TableCell className="py-3">{statusBadge(c.status, c.vencimento)}</TableCell>
+                <TableCell className="text-right py-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditConta(c)}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      {c.status !== "pago" && (
+                        <DropdownMenuItem onClick={() => setBaixaConta(c)}>
+                          <ArrowDownCircle className="h-4 w-4 mr-2" />
+                          Baixar
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(c.id)}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -868,6 +907,18 @@ function ContasPagarContent() {
       {!loading && sorted.length > 0 && (
         <PaginationBar page={page} pageSize={pageSize} total={sorted.length} totalPages={totalPages} onPage={setPage} onPageSize={setPageSize} />
       )}
+      <BaixaContaPagarDialog
+        conta={baixaConta}
+        open={!!baixaConta}
+        onOpenChange={(o) => !o && setBaixaConta(null)}
+        onSuccess={fetchData}
+      />
+      <EditarContaPagarDialog
+        conta={editConta}
+        open={!!editConta}
+        onOpenChange={(o) => !o && setEditConta(null)}
+        onSuccess={fetchData}
+      />
     </div>
   );
 }
