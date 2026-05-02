@@ -977,6 +977,7 @@ export type Database = {
       }
       contas_receber: {
         Row: {
+          asaas_batch_ref: string | null
           asaas_conta_id: string | null
           asaas_payment_id: string | null
           banco: string | null
@@ -1000,6 +1001,7 @@ export type Database = {
           vencimento: string
         }
         Insert: {
+          asaas_batch_ref?: string | null
           asaas_conta_id?: string | null
           asaas_payment_id?: string | null
           banco?: string | null
@@ -1023,6 +1025,7 @@ export type Database = {
           vencimento: string
         }
         Update: {
+          asaas_batch_ref?: string | null
           asaas_conta_id?: string | null
           asaas_payment_id?: string | null
           banco?: string | null

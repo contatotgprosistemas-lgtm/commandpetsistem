@@ -37,45 +37,52 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find invoices by asaas_payment_id (may be multiple for grouped payments)
+    // Resolve invoices in 3 layers:
+    // 1) by asaas_payment_id (primary, gravado em todas as faturas do lote)
+    // 2) by asaas_batch_ref (fallback de lote se externalReference for "batch_xxx")
+    // 3) by id (fallback final, quando externalReference é o UUID da fatura única)
     const asaasPaymentId = payment.id;
-    const { data: contas } = await supabase
+    const externalRef: string | null = payment.externalReference ?? null;
+
+    let contas: any[] | null = null;
+
+    const { data: byPid } = await supabase
       .from("contas_receber")
       .select("*")
       .eq("asaas_payment_id", asaasPaymentId);
+    if (byPid && byPid.length > 0) contas = byPid;
 
-    if (contas && contas.length > 0) {
-      // Process each invoice individually
-      for (const conta of contas) {
-        if (conta.status !== "pago") {
-          await processPayment(supabase, conta, payment, conta.valor);
-        }
-      }
-    } else if (payment.externalReference) {
-      // Fallback: externalReference may contain comma-separated IDs
-      const refIds = payment.externalReference.split(",").map((s: string) => s.trim()).filter(Boolean);
-      const { data: contasByRef } = await supabase
-        .from("contas_receber")
-        .select("*")
-        .in("id", refIds);
-
-      if (contasByRef && contasByRef.length > 0) {
-        for (const conta of contasByRef) {
-          if (conta.status !== "pago") {
-            await processPayment(supabase, conta, payment, conta.valor);
-          }
-        }
+    if (!contas && externalRef) {
+      if (externalRef.startsWith("batch_")) {
+        const { data: byBatch } = await supabase
+          .from("contas_receber")
+          .select("*")
+          .eq("asaas_batch_ref", externalRef);
+        if (byBatch && byBatch.length > 0) contas = byBatch;
       } else {
-        console.error("Invoice(s) not found for payment:", asaasPaymentId);
-        return new Response(JSON.stringify({ received: true, error: "Invoice not found" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        // legacy: externalReference may be a single UUID or comma-separated UUIDs
+        const refIds = externalRef.split(",").map((s: string) => s.trim()).filter(Boolean);
+        if (refIds.length > 0) {
+          const { data: byIds } = await supabase
+            .from("contas_receber")
+            .select("*")
+            .in("id", refIds);
+          if (byIds && byIds.length > 0) contas = byIds;
+        }
       }
-    } else {
-      console.error("Invoice not found for payment:", asaasPaymentId);
+    }
+
+    if (!contas || contas.length === 0) {
+      console.error("Invoice(s) not found for payment:", asaasPaymentId, "externalRef:", externalRef);
       return new Response(JSON.stringify({ received: true, error: "Invoice not found" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    for (const conta of contas) {
+      if (conta.status !== "pago") {
+        await processPayment(supabase, conta, payment, conta.valor);
+      }
     }
 
     return new Response(JSON.stringify({ received: true, processed: true }), {
