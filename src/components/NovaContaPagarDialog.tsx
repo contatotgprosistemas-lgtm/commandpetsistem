@@ -135,10 +135,11 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <Label>Plano de Contas <span className="text-destructive">*</span></Label>
-              <Select value={form.plano_contas} onValueChange={v => setForm({ ...form, plano_contas: v })}>
+              <Label>Plano de Contas</Label>
+              <Select value={form.plano_contas || "__none__"} onValueChange={v => setForm({ ...form, plano_contas: v === "__none__" ? "" : v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none__">— Nenhum —</SelectItem>
                   {planoContasDespesa.length === 0 ? (
                     <div className="px-2 py-3 text-xs text-muted-foreground text-center">
                       Nenhuma conta de despesa cadastrada. Cadastre em Financeiro › Plano de Contas.
@@ -153,9 +154,10 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
             </div>
             <div className="space-y-1">
               <Label>Banco</Label>
-              <Select value={form.banco} onValueChange={v => setForm({ ...form, banco: v })}>
+              <Select value={form.banco || "__none__"} onValueChange={v => setForm({ ...form, banco: v === "__none__" ? "" : v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none__">— Nenhum —</SelectItem>
                   {bancos.map((b: any) => <SelectItem key={b.id} value={b.banco}>{b.banco} - {b.titular}</SelectItem>)}
                 </SelectContent>
               </Select>
