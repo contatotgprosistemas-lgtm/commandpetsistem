@@ -296,101 +296,103 @@ Deno.serve(async (req) => {
     const slot = Math.max(0, (msgsHojeCount ?? 1) - 1);
     const baseDelay = SEND_JITTER_MIN_MS + Math.floor(Math.random() * (SEND_JITTER_MAX_MS - SEND_JITTER_MIN_MS));
     const totalDelayMs = slot * baseDelay;
-    // Cap em 25min para não estourar timeout de edge function (~150s + buffer).
-    // Acima disso retorna skipped — usuário pode reenviar amanhã.
-    if (totalDelayMs > 25 * 60_000) {
-      await supabase.from("invoice_notification_log").update({
-        status: "falha", erro: `Cadência: posição ${slot} excede janela do dia`,
-      }).eq("id", lockId);
-      return new Response(JSON.stringify({ skipped: "cadence_queue_full", slot, retry_tomorrow: true }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (totalDelayMs > 0) {
-      await sleep(totalDelayMs);
-    }
 
-    // Re-checa janela horária após o sleep (pode ter passado das 18h).
-    if (nowBRTMinutes() >= SEND_WINDOW_END_MIN) {
-      await supabase.from("invoice_notification_log").update({
-        status: "falha", erro: "Janela 18h encerrada durante a fila",
-      }).eq("id", lockId);
-      return new Response(JSON.stringify({ skipped: "window_closed_during_queue" }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // ========== ENVIO EM BACKGROUND ==========
+    // O sleep + envio rodam em background via EdgeRuntime.waitUntil para não
+    // estourar o timeout da edge function (slot 4+ já passa de 150s).
+    // Retornamos 200 imediatamente; o resultado fica gravado no log.
+    const enviarEmBackground = async () => {
+      try {
+        if (totalDelayMs > 0) await sleep(totalDelayMs);
 
-    const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
-      body: JSON.stringify({ number: numero, text: conteudoFinal }),
-    });
-    if (!evoRes.ok) {
-      const txt = await evoRes.text();
-      // Marca o lock como falha (não bloqueia retries: índice exclui status='falha').
-      await supabase
-        .from("invoice_notification_log")
-        .update({ status: "falha", erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}` })
-        .eq("id", lockId);
-      return new Response(JSON.stringify({ error: "evolution_failed" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const evoData = await evoRes.json().catch(() => ({}));
-    const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
-    const now = new Date().toISOString();
-
-    // Registrar no CRM somente quando o canal usado é um canal do CRM (uuid existente em crm_canais).
-    let conversaIdForLog: string | null = null;
-    if (canal.id) {
-      const { data: canalCrm } = await supabase
-        .from("crm_canais").select("id").eq("id", canal.id).maybeSingle();
-      if (canalCrm) {
-        let { data: contato } = await supabase
-          .from("crm_contatos").select("id")
-          .eq("empresa_id", empresa_id)
-          .or(numeroVariants.map((value) => `whatsapp.eq.${value},telefone.eq.${value}`).join(","))
-          .limit(1).maybeSingle();
-        if (!contato) {
-          const { data: novo } = await supabase
-            .from("crm_contatos")
-            .insert({ empresa_id, nome: cliente.nome, whatsapp: numero, telefone: numero, origem: "faturamento" })
-            .select("id").single();
-          contato = novo;
+        // Re-checa janela horária após sleep (pode ter passado das 18h).
+        if (nowBRTMinutes() >= SEND_WINDOW_END_MIN) {
+          await supabase.from("invoice_notification_log").update({
+            status: "falha", erro: "Janela 18h encerrada durante a fila",
+          }).eq("id", lockId);
+          return;
         }
 
-        let { data: conversa } = await supabase
-          .from("crm_conversas").select("id")
-          .eq("empresa_id", empresa_id).eq("contato_id", contato!.id).eq("canal_id", canal.id)
-          .order("updated_at", { ascending: false }).limit(1).maybeSingle();
-        if (!conversa) {
-          const { data: nova } = await supabase
-            .from("crm_conversas")
-            .insert({ empresa_id, contato_id: contato!.id, canal_id: canal.id, status: "aberta", ultima_mensagem: conteudo, ultima_mensagem_em: now })
-            .select("id").single();
-          conversa = nova;
-        }
-
-        await supabase.from("crm_mensagens").insert({
-          empresa_id, conversa_id: conversa!.id, tipo: "texto", direcao: "saida",
-          conteudo: conteudoFinal, status: "enviado", remetente_nome: "💰 Faturamento",
-          identificador_externo: externalId, enviada_em: now,
+        const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal!.identificador}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+          body: JSON.stringify({ number: numero, text: conteudoFinal }),
         });
-        await supabase.from("crm_conversas").update({
-          ultima_mensagem: conteudoFinal, ultima_mensagem_em: now,
-        }).eq("id", conversa!.id);
-        conversaIdForLog = conversa!.id;
+        if (!evoRes.ok) {
+          const txt = await evoRes.text();
+          await supabase.from("invoice_notification_log").update({
+            status: "falha", erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}`,
+          }).eq("id", lockId);
+          return;
+        }
+        const evoData = await evoRes.json().catch(() => ({}));
+        const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
+        const now = new Date().toISOString();
+
+        let conversaIdForLog: string | null = null;
+        if (canal!.id) {
+          const { data: canalCrm } = await supabase
+            .from("crm_canais").select("id").eq("id", canal!.id).maybeSingle();
+          if (canalCrm) {
+            let { data: contato } = await supabase
+              .from("crm_contatos").select("id")
+              .eq("empresa_id", empresa_id)
+              .or(numeroVariants.map((value) => `whatsapp.eq.${value},telefone.eq.${value}`).join(","))
+              .limit(1).maybeSingle();
+            if (!contato) {
+              const { data: novo } = await supabase
+                .from("crm_contatos")
+                .insert({ empresa_id, nome: cliente.nome, whatsapp: numero, telefone: numero, origem: "faturamento" })
+                .select("id").single();
+              contato = novo;
+            }
+
+            let { data: conversa } = await supabase
+              .from("crm_conversas").select("id")
+              .eq("empresa_id", empresa_id).eq("contato_id", contato!.id).eq("canal_id", canal!.id)
+              .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+            if (!conversa) {
+              const { data: nova } = await supabase
+                .from("crm_conversas")
+                .insert({ empresa_id, contato_id: contato!.id, canal_id: canal!.id, status: "aberta", ultima_mensagem: conteudoFinal, ultima_mensagem_em: now })
+                .select("id").single();
+              conversa = nova;
+            }
+
+            await supabase.from("crm_mensagens").insert({
+              empresa_id, conversa_id: conversa!.id, tipo: "texto", direcao: "saida",
+              conteudo: conteudoFinal, status: "enviado", remetente_nome: "💰 Faturamento",
+              identificador_externo: externalId, enviada_em: now,
+            });
+            await supabase.from("crm_conversas").update({
+              ultima_mensagem: conteudoFinal, ultima_mensagem_em: now,
+            }).eq("id", conversa!.id);
+            conversaIdForLog = conversa!.id;
+          }
+        }
+
+        await supabase.from("invoice_notification_log").update({
+          conversa_id: conversaIdForLog,
+          status: "enviado",
+          enviado_em: new Date().toISOString(),
+        }).eq("id", lockId);
+      } catch (bgErr) {
+        console.error("background send error", bgErr);
+        await supabase.from("invoice_notification_log").update({
+          status: "falha", erro: `bg: ${String((bgErr as Error).message ?? bgErr).slice(0, 300)}`,
+        }).eq("id", lockId);
       }
-    }
+    };
 
-    await supabase
-      .from("invoice_notification_log")
-      .update({
-        conversa_id: conversaIdForLog,
-        status: "enviado",
-        enviado_em: new Date().toISOString(),
-      })
-      .eq("id", lockId);
+    // @ts-ignore EdgeRuntime
+    EdgeRuntime.waitUntil(enviarEmBackground());
 
-    return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({
+      success: true,
+      queued: true,
+      slot,
+      delay_seconds: Math.round(totalDelayMs / 1000),
+    }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     console.error("notificar-fatura-whatsapp error", err);
     return new Response(JSON.stringify({ error: String((err as Error).message ?? err) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
