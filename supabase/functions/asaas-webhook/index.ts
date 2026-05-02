@@ -207,14 +207,14 @@ async function applyTransactionFee(supabase: any, contas: any[], payment: any) {
   // Asaas billingType: PIX, CREDIT_CARD, BOLETO, DEBIT_CARD, UNDEFINED
   const billingType = String(payment.billingType ?? "").toUpperCase();
   let tipoTaxa: string | null = null;
-  if (billingType === "PIX") tipoTaxa = "pix";
+  if (billingType === "PIX") tipoTaxa = "pix_asaas";
   else if (billingType === "CREDIT_CARD") tipoTaxa = "cartao_credito";
   else if (billingType === "DEBIT_CARD") tipoTaxa = "cartao_debito";
   else if (billingType === "BOLETO") tipoTaxa = "boleto";
-  else tipoTaxa = "pix"; // fallback razoável (a maioria dos fluxos atuais é PIX)
+  else tipoTaxa = "pix_asaas"; // fallback (fluxo atual é PIX via Asaas)
 
-  // Busca taxa cadastrada
-  const { data: taxa } = await supabase
+  // Busca taxa cadastrada — tenta o tipo exato, e para PIX faz fallback "pix_asaas" → "pix"
+  let { data: taxa } = await supabase
     .from("taxas_financeiras")
     .select("percentual, valor_fixo")
     .eq("empresa_id", empresaId)
@@ -222,6 +222,17 @@ async function applyTransactionFee(supabase: any, contas: any[], payment: any) {
     .eq("tipo", tipoTaxa)
     .limit(1)
     .maybeSingle();
+  if (!taxa && tipoTaxa === "pix_asaas") {
+    const { data: fallback } = await supabase
+      .from("taxas_financeiras")
+      .select("percentual, valor_fixo")
+      .eq("empresa_id", empresaId)
+      .eq("ativo", true)
+      .eq("tipo", "pix")
+      .limit(1)
+      .maybeSingle();
+    taxa = fallback;
+  }
 
   if (!taxa) {
     console.log(`No active fee configured for empresa ${empresaId} type ${tipoTaxa}`);
