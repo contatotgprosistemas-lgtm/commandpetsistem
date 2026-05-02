@@ -64,9 +64,16 @@ Deno.serve(async (req) => {
     for (const cfg of list) {
       if (cfg.enabled === false) continue;
 
-      const intervalo = Math.max(1, Number(cfg.intervalo_entre_envios_seg ?? 8));
-      const maxPerMin = Math.max(1, Number(cfg.max_envios_por_minuto ?? 6));
-      const minSpacingMs = Math.max(intervalo * 1000, Math.ceil(60000 / maxPerMin));
+      // Cadência conservadora: 30-60s entre envios, máx 2/min.
+      // (a edge function notificar-fatura-whatsapp também aplica jitter próprio)
+      const intervalo = Math.max(30, Number(cfg.intervalo_entre_envios_seg ?? 45));
+      const maxPerMin = Math.max(1, Math.min(2, Number(cfg.max_envios_por_minuto ?? 2)));
+      const baseSpacingMs = Math.max(intervalo * 1000, Math.ceil(60000 / maxPerMin));
+
+      // Janela comercial 09h-18h BRT (a notificar-fatura-whatsapp também trava).
+      if (nowBRTMinutes() < 9 * 60 || nowBRTMinutes() >= 18 * 60) {
+        continue;
+      }
 
       const nowMin = nowBRTMinutes();
       const buckets: Array<{ tipo: "pre_vencimento" | "vencimento" | "atraso"; targetDate: string; enabled: boolean; horaMin: number; extra: Record<string, number> }> = [
@@ -164,8 +171,9 @@ Deno.serve(async (req) => {
             summary.failed++;
           }
 
-          // cadência: aguarda entre disparos
-          await sleep(minSpacingMs);
+          // cadência: aguarda entre disparos com jitter ±25%
+          const jitter = Math.floor(baseSpacingMs * (Math.random() * 0.5 - 0.25));
+          await sleep(Math.max(15_000, baseSpacingMs + jitter));
         }
       }
     }
