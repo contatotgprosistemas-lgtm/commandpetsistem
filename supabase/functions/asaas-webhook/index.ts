@@ -85,6 +85,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Aplica a taxa financeira UMA VEZ POR TRANSAÇÃO (não por fatura),
+    // somando o valor total do lote. Usa a primeira fatura como referência
+    // de empresa/cliente/conta bancária.
+    try {
+      await applyTransactionFee(supabase, contas, payment);
+    } catch (e) {
+      console.error("Erro ao aplicar taxa financeira:", e);
+    }
+
     return new Response(JSON.stringify({ received: true, processed: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
