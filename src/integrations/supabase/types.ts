@@ -6504,6 +6504,17 @@ export type Database = {
         }
         Returns: Json
       }
+      efetuar_baixa_conta_pagar: {
+        Args: {
+          p_banco_id: string
+          p_banco_nome: string
+          p_conta_id: string
+          p_data_baixa: string
+          p_observacao?: string
+          p_valor_pago: number
+        }
+        Returns: Json
+      }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
