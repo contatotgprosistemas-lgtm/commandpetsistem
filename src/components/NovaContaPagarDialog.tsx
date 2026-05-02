@@ -48,7 +48,7 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
     if (!form.vencimento) return [];
     const parcelas = Math.max(1, parseInt(form.parcelas) || 1);
     const valorTotal = parseFloat(form.valor) || 0;
-    const valorParcela = parcelas > 0 ? valorTotal / parcelas : 0;
+    const valorParcela = form.recorrente ? valorTotal : (parcelas > 0 ? valorTotal / parcelas : 0);
     const datas: { data: string; valor: number; idx: number }[] = [];
     for (let i = 0; i < parcelas; i++) {
       const venc = new Date(form.vencimento + "T00:00:00");
@@ -62,7 +62,7 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
       });
     }
     return datas;
-  }, [form.vencimento, form.parcelas, form.intervalo, form.valor]);
+  }, [form.vencimento, form.parcelas, form.intervalo, form.valor, form.recorrente]);
 
   useEffect(() => {
     if (!open || !profile?.empresa_id) return;
@@ -83,7 +83,7 @@ export function NovaContaPagarDialog({ open, onOpenChange, onSuccess }: Props) {
     setSaving(true);
     const parcelas = Math.max(1, parseInt(form.parcelas) || 1);
     const valorTotal = parseFloat(form.valor);
-    const valorParcela = valorTotal / parcelas;
+    const valorParcela = form.recorrente ? valorTotal : valorTotal / parcelas;
 
     const inserts = [];
     for (let i = 0; i < parcelas; i++) {
