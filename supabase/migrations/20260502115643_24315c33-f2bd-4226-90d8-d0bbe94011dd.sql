@@ -1,0 +1,2 @@
+ALTER TABLE public.contas_receber ADD COLUMN IF NOT EXISTS asaas_batch_ref text;
+CREATE INDEX IF NOT EXISTS idx_contas_receber_asaas_batch_ref ON public.contas_receber(asaas_batch_ref) WHERE asaas_batch_ref IS NOT NULL;
