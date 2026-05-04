@@ -5452,6 +5452,13 @@ export type Database = {
         Args: { p_movimentacao_id: string }
         Returns: Json
       }
+      get_contract_signing_token: {
+        Args: { p_contract_id: string }
+        Returns: {
+          signing_token: string
+          token_expires_at: string
+        }[]
+      }
       get_empresa_logo: { Args: { p_empresa_id: string }; Returns: string }
       get_empresa_modulos_flags: {
         Args: { p_empresa_id: string }
@@ -5466,6 +5473,10 @@ export type Database = {
       }
       get_operational_empresa_id: { Args: never; Returns: string }
       get_operational_user_id: { Args: never; Returns: string }
+      get_or_create_cliente_edit_token: {
+        Args: { p_cliente_id: string }
+        Returns: string
+      }
       get_own_cargo: { Args: never; Returns: string }
       get_perguntas_checklist_for_cliente: {
         Args: never

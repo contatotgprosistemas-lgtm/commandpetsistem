@@ -66,7 +66,8 @@ Deno.serve(async (req) => {
     });
 
     if (authError) {
-      return new Response(JSON.stringify({ error: authError.message }), {
+      console.error("atualizar-email-usuario auth error", authError);
+      return new Response(JSON.stringify({ error: "Não foi possível atualizar o e-mail." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -80,7 +81,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("atualizar-email-usuario error", err);
+    return new Response(JSON.stringify({ error: "Erro interno ao processar a solicitação." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

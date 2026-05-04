@@ -119,7 +119,8 @@ Deno.serve(async (req) => {
       }
     );
   } catch (err) {
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), {
+    console.error("consulta-contato error", err);
+    return new Response(JSON.stringify({ error: "Erro interno ao processar a solicitação." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

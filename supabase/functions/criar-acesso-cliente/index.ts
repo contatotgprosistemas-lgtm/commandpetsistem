@@ -116,8 +116,9 @@ Deno.serve(async (req) => {
         (createErr as any).code === "email_exists";
 
       if (!isDuplicate) {
+        console.error("criar-acesso-cliente create error", createErr);
         return new Response(
-          JSON.stringify({ error: createErr.message }),
+          JSON.stringify({ error: "Falha ao criar acesso para o cliente." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -193,8 +194,9 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("criar-acesso-cliente error", err);
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: "Erro interno ao processar a solicitação." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

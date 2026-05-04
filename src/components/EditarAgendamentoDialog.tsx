@@ -503,7 +503,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
       sent_at: new Date().toISOString(),
       created_by: profile.id,
       token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    }).select("id, signing_token").single();
+    }).select("id").single();
 
     if (error || !contract) {
       toast({ title: "Erro ao gerar contrato", variant: "destructive" });
@@ -518,7 +518,17 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
       description: `Contrato gerado a partir do agendamento (${contratoDialog.agendamento.tipo_servico})`,
     });
 
-    const link = await createContractShareLink((contract as any).signing_token, profile.empresa_id, window.location.origin);
+    const { data: tokenRows } = await supabase.rpc(
+      "get_contract_signing_token" as any,
+      { p_contract_id: contract.id }
+    );
+    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    if (!tk) {
+      toast({ title: "Token de assinatura indisponível", variant: "destructive" });
+      setContratoDialog(prev => prev ? { ...prev, loading: false } : null);
+      return;
+    }
+    const link = await createContractShareLink(tk, profile.empresa_id, window.location.origin);
     setContratoDialog(prev => prev ? { ...prev, loading: false, createdLink: link } : null);
     toast({ title: "Contrato gerado com sucesso!" });
   }

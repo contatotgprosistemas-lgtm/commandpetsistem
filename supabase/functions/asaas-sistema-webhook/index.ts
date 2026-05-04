@@ -15,7 +15,14 @@ Deno.serve(async (req) => {
 
     const { data: config } = await service.from("sistema_asaas_config").select("webhook_token").maybeSingle();
     const token = req.headers.get("asaas-access-token") || req.headers.get("x-webhook-token");
-    if (config?.webhook_token && token !== config.webhook_token) {
+    if (!config?.webhook_token) {
+      // Fail closed: refuse webhook traffic until token is configured.
+      return new Response(JSON.stringify({ error: "Webhook not configured" }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!token || token !== config.webhook_token) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
 
@@ -45,7 +52,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
   } catch (e) {
-    console.error(e);
+    console.error("asaas-sistema-webhook error:", e);
     return new Response(JSON.stringify({ error: "Erro interno" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

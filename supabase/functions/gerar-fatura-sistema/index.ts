@@ -162,14 +162,47 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // --- Authentication: either CRON_SECRET (server-to-server) or super_admin JWT ---
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const provided = req.headers.get("x-cron-secret");
+    const authHeader = req.headers.get("Authorization");
+    let isAuthorized = false;
+
+    if (cronSecret && provided && provided === cronSecret) {
+      isAuthorized = true;
+    } else if (authHeader?.startsWith("Bearer ")) {
+      const anonClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const jwt = authHeader.replace("Bearer ", "");
+      const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(jwt);
+      if (!claimsErr && claimsData?.claims?.sub) {
+        const callerId = claimsData.claims.sub as string;
+        const { data: roles } = await service
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", callerId);
+        if ((roles || []).some((r: any) => r.role === "super_admin")) {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ error: "Não autorizado" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: config } = await service.from("sistema_asaas_config").select("*").maybeSingle();
 
     let empresaIds: string[] | null = null;
     let competencia = new Date();
     competencia.setDate(1);
 
-    // Optional auth path: super admin manual trigger for one empresa
-    const authHeader = req.headers.get("Authorization");
     let body: any = {};
     try { body = await req.json(); } catch {}
 
@@ -214,7 +247,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error(e);
+    console.error("gerar-fatura-sistema error:", e);
     return new Response(JSON.stringify({ error: "Erro interno" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

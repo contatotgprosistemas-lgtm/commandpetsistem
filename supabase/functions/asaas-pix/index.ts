@@ -206,7 +206,10 @@ Deno.serve(async (req) => {
         }),
       });
       const customerData = await customerRes.json();
-      if (!customerRes.ok) throw new Error(`Asaas customer error: ${JSON.stringify(customerData)}`);
+      if (!customerRes.ok) {
+        console.error("Asaas customer error:", customerData);
+        throw new Error("Falha ao registrar cliente no provedor de pagamento.");
+      }
       return customerData.id as string;
     };
 
@@ -260,7 +263,10 @@ Deno.serve(async (req) => {
       }),
     });
     const paymentData = await paymentRes.json();
-    if (!paymentRes.ok) throw new Error(`Asaas payment error: ${JSON.stringify(paymentData)}`);
+    if (!paymentRes.ok) {
+      console.error("Asaas payment error:", paymentData);
+      throw new Error("Falha ao gerar cobrança no provedor de pagamento.");
+    }
 
     // Save asaas_payment_id, asaas_conta_id and the batch reference on every
     // invoice in the lote. asaas_batch_ref is the resilient fallback for the
@@ -293,9 +299,8 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("Error:", error);
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: msg }), {
+    console.error("asaas-pix error:", error);
+    return new Response(JSON.stringify({ error: "Erro interno ao processar pagamento." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

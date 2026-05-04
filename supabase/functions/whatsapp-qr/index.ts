@@ -182,6 +182,6 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "Ação inválida" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("whatsapp-qr error", e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: "Erro interno ao processar a solicitação." }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

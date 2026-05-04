@@ -85,8 +85,9 @@ Deno.serve(async (req) => {
     });
 
     if (linkError || !linkData) {
+      console.error("impersonate-user link error", linkError);
       return new Response(
-        JSON.stringify({ error: linkError?.message || "Erro ao gerar link de acesso" }),
+        JSON.stringify({ error: "Erro ao gerar link de acesso" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -100,7 +101,8 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("impersonate-user error", err);
+    return new Response(JSON.stringify({ error: "Erro interno ao processar a solicitação." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

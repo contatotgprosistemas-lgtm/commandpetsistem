@@ -385,13 +385,20 @@ export default function ContratosPage() {
       content_hash: contentHash,
       created_by: profile.id,
       token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    }).select("id, signing_token").single();
+    }).select("id").single();
 
     if (error) {
       console.error("Erro ao inserir contrato:", error);
       toast.error(`Erro ao criar contrato: ${error.message}`);
       return;
     }
+
+    // signing_token is sensitive — fetch via SECURITY DEFINER RPC.
+    const { data: tokenRows } = await supabase.rpc(
+      "get_contract_signing_token" as any,
+      { p_contract_id: inserted!.id }
+    );
+    const insertedToken: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
 
     // Auto-sign by company if signature is configured
     let autoSigned = false;
@@ -405,11 +412,11 @@ export default function ContratosPage() {
       const responsavel = (empresa?.assinatura_responsavel || "").trim();
       const hasSignature = !!empresa?.assinatura_url && !!responsavel;
 
-      if (hasSignature && inserted?.signing_token) {
+      if (hasSignature && insertedToken) {
         const { error: signErr } = await supabase.functions.invoke("sign-contract", {
           body: {
             action: "sign",
-            signing_token: inserted.signing_token,
+            signing_token: insertedToken,
             signer_name: responsavel,
             signer_user_agent: navigator.userAgent,
             signer_device: "Auto (configuração)",
@@ -528,7 +535,13 @@ export default function ContratosPage() {
       throw error || new Error("Empresa não encontrada");
     }
 
-    return createContractShareLink(contract.signing_token, profile.empresa_id, window.location.origin);
+    const { data: tokenRows } = await supabase.rpc(
+      "get_contract_signing_token" as any,
+      { p_contract_id: contract.id }
+    );
+    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    if (!tk) throw new Error("Token de assinatura indisponível");
+    return createContractShareLink(tk, profile.empresa_id, window.location.origin);
   }
 
   async function copyLink(contract: Contract) {
@@ -581,10 +594,21 @@ export default function ContratosPage() {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const contentHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 
+    const { data: tokenRows } = await supabase.rpc(
+      "get_contract_signing_token" as any,
+      { p_contract_id: companySignContract.id }
+    );
+    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    if (!tk) {
+      toast.error("Token de assinatura indisponível");
+      setCompanySigning(false);
+      return;
+    }
+
     const { data: result, error: signErr } = await supabase.functions.invoke("sign-contract", {
       body: {
         action: "sign",
-        signing_token: companySignContract.signing_token,
+        signing_token: tk,
         signer_name: companySignerName.trim(),
         signer_user_agent: ua,
         signer_device: "Desktop",

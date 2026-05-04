@@ -80,26 +80,12 @@ export function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: 
     if (!cliente?.id || !cliente?.empresa_id) return;
     setGeneratingLink(true);
     try {
-      // Garante que existe um edit_token
-      let token: string | null = cliente.edit_token || null;
-      if (!token) {
-        const novo = (crypto as any).randomUUID();
-        const { error: updErr } = await supabase
-          .from("clientes")
-          .update({ edit_token: novo } as any)
-          .eq("id", cliente.id);
-        if (updErr) throw updErr;
-        token = novo;
-      } else {
-        // Recarrega para garantir consistência
-        const { data, error } = await supabase
-          .from("clientes")
-          .select("edit_token")
-          .eq("id", cliente.id)
-          .maybeSingle();
-        if (error) throw error;
-        token = (data as any)?.edit_token || token;
-      }
+      // Edit tokens are sensitive: fetched/created via SECURITY DEFINER RPC (admin/gerente only).
+      const { data: token, error: rpcErr } = await supabase.rpc(
+        "get_or_create_cliente_edit_token" as any,
+        { p_cliente_id: cliente.id }
+      );
+      if (rpcErr || !token) throw rpcErr || new Error("Não foi possível gerar o link");
       const link = `${window.location.origin}/cadastro/${cliente.empresa_id}?edit=${token}`;
       setEditLink(link);
     } catch (err: any) {
