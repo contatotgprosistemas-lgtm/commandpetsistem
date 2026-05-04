@@ -85,12 +85,11 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
 
     if (isBatch) {
       // Batch: call efetuar_baixa for each invoice individually
-      // Discount in batch mode: if "%", apply per invoice; if absolute value, distribute proportionally
+      // Discount in batch mode: % aplicado em cada fatura; valor absoluto consumido das primeiras faturas
       const trimmedDesc = valorDescontoRaw.trim();
       const isPercent = trimmedDesc.endsWith("%");
       const pctValue = isPercent ? (parseFloat(trimmedDesc.replace("%", "")) || 0) : 0;
-      const totalDescontoAbs = !isPercent ? (parseFloat(trimmedDesc) || 0) : 0;
-      const totalBase = conta?.valor || 0;
+      let descontoRestante = !isPercent ? (parseFloat(trimmedDesc) || 0) : 0;
       let hasError = false;
 
       for (const contaId of contaIds!) {
@@ -106,8 +105,9 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
         let descontoFatura = 0;
         if (isPercent) {
           descontoFatura = Math.round(invoiceData.valor * pctValue) / 100;
-        } else if (totalDescontoAbs > 0 && totalBase > 0) {
-          descontoFatura = Math.round((totalDescontoAbs * (invoiceData.valor / totalBase)) * 100) / 100;
+        } else if (descontoRestante > 0) {
+          descontoFatura = Math.min(descontoRestante, invoiceData.valor);
+          descontoRestante = Math.round((descontoRestante - descontoFatura) * 100) / 100;
         }
         const valorPagoFatura = Math.max(0, invoiceData.valor - descontoFatura);
 
@@ -223,7 +223,7 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
                 {valorDescontoRaw.trim().endsWith("%")
                   ? `Será aplicado ${valorDescontoRaw.trim()} sobre o valor de cada fatura.`
                   : valorDescontoCalculado > 0
-                    ? `Desconto total R$ ${valorDescontoCalculado.toFixed(2)} será distribuído proporcionalmente entre as faturas.`
+                    ? `Desconto total de R$ ${valorDescontoCalculado.toFixed(2)} será aplicado sobre o valor total.`
                     : "Use sufixo % para percentual (ex: 5%) ou valor absoluto em R$ (será rateado)."}
               </p>
             </div>
