@@ -28,13 +28,15 @@ Deno.serve(async (req) => {
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const callerId = claimsData.claims.sub as string;
 
     const { cliente_id, email, senha } = await req.json();
     if (!cliente_id || !email || !senha) {
@@ -45,6 +47,26 @@ Deno.serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // Verify caller has admin/gerente role and shares empresa with target client
+    const { data: callerProfile } = await adminClient
+      .from("profiles")
+      .select("empresa_id")
+      .eq("user_id", callerId)
+      .maybeSingle();
+    const { data: callerRoles } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerId);
+    const roles = (callerRoles ?? []).map((r: any) => r.role);
+    const isSuperAdmin = roles.includes("super_admin");
+    const isAdminOrManager = roles.includes("admin") || roles.includes("gerente");
+    if (!isSuperAdmin && !isAdminOrManager) {
+      return new Response(
+        JSON.stringify({ error: "Apenas administradores podem criar acesso ao portal." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Get cliente data
     const { data: cliente, error: clienteErr } = await adminClient
@@ -57,6 +79,14 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Cliente não encontrado" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Enforce same-empresa scope (super_admin bypasses)
+    if (!isSuperAdmin && cliente.empresa_id !== callerProfile?.empresa_id) {
+      return new Response(
+        JSON.stringify({ error: "Cliente não pertence à sua empresa." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

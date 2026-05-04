@@ -38,6 +38,29 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Validate webhook authenticity via shared secret registered with Evolution
+    const expectedSecret = Deno.env.get("EVOLUTION_WEBHOOK_SECRET");
+    if (expectedSecret) {
+      const provided =
+        req.headers.get("apikey") ||
+        req.headers.get("x-webhook-secret") ||
+        req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ||
+        "";
+      if (provided !== expectedSecret) {
+        console.warn("Evolution webhook: invalid or missing secret");
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      console.error("EVOLUTION_WEBHOOK_SECRET not configured - rejecting webhook");
+      return new Response(JSON.stringify({ error: "Webhook not configured" }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = await req.json();
     const event: string = body.event ?? body.type ?? "";
     const instance: string = body.instance ?? body.instanceName ?? body?.data?.instance ?? "";

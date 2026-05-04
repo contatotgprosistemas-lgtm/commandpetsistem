@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
         ? customInstance.toLowerCase().replace(/[^a-z0-9_-]/g, "_")
         : `crm_${empresaId.slice(0, 8)}_${crypto.randomUUID().slice(0, 8)}`;
       const webhookUrl = `${SUPABASE_URL}/functions/v1/evolution-webhook`;
+      const webhookSecret = Deno.env.get("EVOLUTION_WEBHOOK_SECRET") ?? "";
 
       let evoRes: Response;
       try {
@@ -98,6 +99,7 @@ Deno.serve(async (req) => {
             byEvents: false,
             base64: true,
             events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE", "QRCODE_UPDATED"],
+            headers: webhookSecret ? { apikey: webhookSecret } : undefined,
           },
         }),
         }, serverUrl, apiKey);

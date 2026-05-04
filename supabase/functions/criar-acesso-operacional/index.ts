@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const callerId = claimsData.claims.sub as string;
 
     const { nome, email, senha, empresa_id, cargo } = await req.json();
     if (!nome || !email || !senha || !empresa_id) {
@@ -47,6 +48,43 @@ Deno.serve(async (req) => {
 
     const finalCargo = cargo || "operacional";
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // Caller must belong to the target empresa, OR be a super_admin
+    const { data: callerProfile } = await adminClient
+      .from("profiles")
+      .select("empresa_id")
+      .eq("user_id", callerId)
+      .maybeSingle();
+
+    const { data: callerRoles } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerId);
+    const roles = (callerRoles ?? []).map((r: any) => r.role);
+    const isSuperAdmin = roles.includes("super_admin");
+    const isAdminOrManager = roles.includes("admin") || roles.includes("gerente");
+
+    if (!isSuperAdmin) {
+      if (!isAdminOrManager) {
+        return new Response(
+          JSON.stringify({ error: "Apenas administradores podem criar acessos." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (callerProfile?.empresa_id !== empresa_id) {
+        return new Response(
+          JSON.stringify({ error: "Empresa inválida." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      // Non-super-admins cannot create admin or super_admin accounts
+      if (finalCargo === "admin" || finalCargo === "super_admin") {
+        return new Response(
+          JSON.stringify({ error: "Você não pode criar contas com este nível de acesso." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     // Create auth user with email pre-confirmed
     const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
