@@ -307,6 +307,13 @@ Deno.serve(async (req) => {
     const lockId = lockRow.id;
 
     try {
+      // ========== JITTER ANTI-BANIMENTO ==========
+      // Aguarda 30-60s aleatórios ANTES de chamar a Evolution.
+      // O lock determinístico já foi criado acima (status='enviando'),
+      // então execuções concorrentes são bloqueadas durante esta espera.
+      const jitterMs = SEND_JITTER_MIN_MS + Math.floor(Math.random() * (SEND_JITTER_MAX_MS - SEND_JITTER_MIN_MS));
+      await sleep(jitterMs);
+
       const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
