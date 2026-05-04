@@ -230,15 +230,20 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
           });
         }
 
-        // Occurrence notification (new or updated with occurrence)
-        if (respostas["ocorrencia"] === "sim" && respostas["ocorrencia_detalhes"]?.trim()) {
-          await supabase.from("customer_notifications").insert({
-            empresa_id: empresaId,
-            cliente_id: petData.cliente_id,
-            title: `⚠️ Ocorrência — ${petName}`,
-            message: respostas["ocorrencia_detalhes"].trim(),
-            type: "ocorrencia",
-          });
+        // Occurrence notification — para qualquer pergunta de ocorrência respondida "sim"
+        for (const p of perguntasConfig) {
+          if (!isOcorrenciaQuestion(p.label)) continue;
+          const ans = (respostas[p.key] || "").toLowerCase();
+          const det = (respostas[`${p.key}_detalhes`] || "").trim();
+          if (ans === "sim" && det) {
+            await supabase.from("customer_notifications").insert({
+              empresa_id: empresaId,
+              cliente_id: petData.cliente_id,
+              title: `⚠️ Ocorrência — ${petName}`,
+              message: det,
+              type: "ocorrencia",
+            });
+          }
         }
       }
       toast.success("Boletim diário salvo!");
