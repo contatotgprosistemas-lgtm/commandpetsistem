@@ -82,19 +82,53 @@ Deno.serve(async (req) => {
 
     const lista = faturas ?? [];
 
+    // Agrupa por cliente — UMA notificação por cliente, mesmo que tenha
+    // várias faturas pendentes na janela.
+    const porCliente = new Map<string, any[]>();
+    for (const f of lista) {
+      const cid = (f as any).cliente_id;
+      if (!cid) continue;
+      if (!porCliente.has(cid)) porCliente.set(cid, []);
+      porCliente.get(cid)!.push(f);
+    }
+    const grupos = Array.from(porCliente.values());
+
+    const fmtBR = (s: string) => {
+      if (!s) return "";
+      const [y, m, d] = String(s).split("T")[0].split("-");
+      return `${d}/${m}/${y}`;
+    };
+    const fmtBRL = (n: number) => Number(n).toFixed(2).replace(".", ",");
+
     const work = async () => {
-      for (const f of lista) {
+      for (const grupo of grupos) {
+      const f = grupo[0];
       const { data: existsLog } = await supabase
         .from("invoice_notification_log")
         .select("id")
-        .eq("conta_receber_id", f.id)
+        .eq("cliente_id", f.cliente_id)
         .eq("status", "enviado")
         .eq("tipo", "geracao")
+        .gte("enviado_em", since)
         .limit(1);
       if (existsLog && existsLog.length > 0) { pulados++; continue; }
 
       const cliente = (f as any).clientes;
       if (!cliente?.whatsapp && !cliente?.telefone) { pulados++; continue; }
+
+      // Monta mensagem consolidada quando o cliente tem +1 fatura.
+      const totalValor = grupo.reduce((s, x) => s + Number(x.valor || 0), 0);
+      const primeiroNome = (cliente.nome ?? "").split(" ")[0] || "tudo bem";
+      let mensagem_override: string | undefined = undefined;
+      if (grupo.length > 1) {
+        const linhas = grupo
+          .map((x) => `• *${x.descricao}* — R$ ${fmtBRL(Number(x.valor))} (venc. ${fmtBR(x.vencimento)})`)
+          .join("\n");
+        mensagem_override =
+          `Olá ${primeiroNome}! Foram geradas *${grupo.length} faturas* para você:\n\n` +
+          `${linhas}\n\n` +
+          `Total: *R$ ${fmtBRL(totalValor)}*. 🐾`;
+      }
 
       try {
         const res = await fetch(`${SUPA_URL.replace(/\/$/, "")}/functions/v1/notificar-fatura-whatsapp`, {
@@ -114,20 +148,21 @@ Deno.serve(async (req) => {
             },
             fatura: {
               id: f.id,
-              descricao: f.descricao,
-              valor: Number(f.valor),
+              descricao: grupo.length > 1 ? `${grupo.length} faturas` : f.descricao,
+              valor: totalValor,
               vencimento: f.vencimento,
             },
             tipo: "geracao",
+            ...(mensagem_override ? { mensagem_override } : {}),
           }),
         });
         const txt = await res.text();
         if (res.ok) {
           enviados++;
-          detalhes.push({ fatura: f.id, cliente: cliente.nome, status: "ok", body: txt.slice(0, 100) });
+          detalhes.push({ cliente: cliente.nome, faturas: grupo.length, status: "ok", body: txt.slice(0, 100) });
         } else {
           falhas++;
-          detalhes.push({ fatura: f.id, cliente: cliente.nome, status: res.status, body: txt.slice(0, 200) });
+          detalhes.push({ cliente: cliente.nome, faturas: grupo.length, status: res.status, body: txt.slice(0, 200) });
         }
       } catch (err) {
         falhas++;
@@ -139,7 +174,7 @@ Deno.serve(async (req) => {
       // para não criar locks concorrentes.
       await new Promise((r) => setTimeout(r, 2000));
       }
-      console.log("reenviar-notif-geracao concluído", { total: lista.length, enviados, pulados, falhas });
+      console.log("reenviar-notif-geracao concluído", { total_faturas: lista.length, total_clientes: grupos.length, enviados, pulados, falhas });
     };
 
     // @ts-ignore EdgeRuntime is available in Supabase Edge Runtime
@@ -151,7 +186,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ scheduled: true, total: lista.length, message: "Reenvio iniciado em background com cadência conservadora." }),
+      JSON.stringify({ scheduled: true, total_faturas: lista.length, total_clientes: grupos.length, message: "Reenvio iniciado em background — uma notificação por cliente." }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 202 },
     );
   } catch (err) {
