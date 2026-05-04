@@ -9,6 +9,26 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Não autorizado" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const callerClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Não autorizado" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const callerId = claimsData.claims.sub as string;
+
     const { campanha_id } = await req.json();
     if (!campanha_id) {
       return new Response(JSON.stringify({ error: "campanha_id obrigatório" }), {
@@ -24,6 +44,19 @@ Deno.serve(async (req) => {
     const { data: campanha, error: campErr } = await supabase
       .from("crm_campanhas").select("*").eq("id", campanha_id).single();
     if (campErr || !campanha) throw new Error("Campanha não encontrada");
+
+    // Caller must belong to the campaign's empresa (or be super_admin)
+    const { data: callerProfile } = await supabase
+      .from("profiles").select("empresa_id").eq("user_id", callerId).maybeSingle();
+    const { data: callerRoles } = await supabase
+      .from("user_roles").select("role").eq("user_id", callerId);
+    const roles = (callerRoles ?? []).map((r: any) => r.role);
+    const isSuperAdmin = roles.includes("super_admin");
+    if (!isSuperAdmin && callerProfile?.empresa_id !== campanha.empresa_id) {
+      return new Response(JSON.stringify({ error: "Acesso negado" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!campanha.canal_id) throw new Error("Canal não definido");
 
