@@ -321,30 +321,6 @@ const App = () => (
             {/* Operacional auth */}
             <Route path="/operacional/login" element={<OperacionalLoginPage />} />
 
-            {/* CRM module (fullscreen, sidebar interna própria) */}
-            <Route
-              path="/crm"
-              element={
-                <ProtectedRoute>
-                  <CRMLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<CRMDashboard />} />
-              <Route path="conversas" element={<CRMConversasPage />} />
-              <Route path="contatos" element={<CRMContatosPage />} />
-              <Route path="pipeline" element={<CRMPipelinePage />} />
-              <Route path="tarefas" element={<CRMTarefasPage />} />
-              <Route path="automacao" element={<CRMAutomacaoPage />} />
-              <Route path="campanhas" element={<CRMCampanhasPage />} />
-              <Route path="canais" element={<CRMCanaisPage />} />
-              <Route path="integracoes" element={<CRMIntegracoesPage />} />
-              <Route path="analytics" element={<CRMAnalyticsPage />} />
-              <Route path="sla" element={<CRMSLAPage />} />
-              <Route path="templates" element={<CRMTemplatesPage />} />
-              <Route path="configuracoes" element={<CRMConfiguracoesPage />} />
-            </Route>
-
             {/* Operacional portal (protected) */}
             <Route
               path="/operacional"
