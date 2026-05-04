@@ -3,6 +3,8 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
+import { useEmpresaModulos } from "@/hooks/useEmpresaModulos";
+import { isRouteAllowed } from "@/lib/modulos";
 import logoDefault from "@/assets/logo.png";
 import {
   LayoutDashboard,
@@ -39,6 +41,7 @@ export function AppSidebar() {
 
   const { isSuperAdmin, signOut, profile } = useAuth();
   const { logoUrl: empresaLogo } = useEmpresaLogo(logoDefault);
+  const modulos = useEmpresaModulos();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -75,6 +78,16 @@ export function AppSidebar() {
     { icon: FileSignature, label: "Contratos", path: "/contratos" },
     { icon: Receipt, label: "Notas Fiscais", path: "/notas-fiscais" },
   ];
+
+  // Filter operational/finance items by contracted modules (skip for super admin – it sees nothing here anyway).
+  const filterByModules = (items: MenuItem[]) =>
+    items.filter((it) => isRouteAllowed(it.path, modulos));
+  const operacionalVisible = filterByModules(operacionalItems);
+  const financasVisible = filterByModules(financasItems);
+
+  const showDashboard = !isSuperAdmin;
+  const showOperacional = !isSuperAdmin && operacionalVisible.length > 0;
+  const showFinancas = !isSuperAdmin && financasVisible.length > 0;
 
   const bottomItems = [
     ...(isSuperAdmin
@@ -212,10 +225,10 @@ export function AppSidebar() {
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
-        {renderNavItem({ icon: LayoutDashboard, label: "Dashboard", path: "/" })}
+        {showDashboard && renderNavItem({ icon: LayoutDashboard, label: "Dashboard", path: "/" })}
 
-        {renderSubmenu("Operacional", Wrench, operacionalItems, isOperacionalActive, operacionalOpen, setOperacionalOpen)}
-        {renderSubmenu("Finanças", Wallet, financasItems, isFinancasActive, financasOpen, setFinancasOpen)}
+        {showOperacional && renderSubmenu("Operacional", Wrench, operacionalVisible, isOperacionalActive, operacionalOpen, setOperacionalOpen)}
+        {showFinancas && renderSubmenu("Finanças", Wallet, financasVisible, isFinancasActive, financasOpen, setFinancasOpen)}
 
         <div className="pt-2 mt-2 border-t border-sidebar-border/40 space-y-0.5">
           {bottomItems.map(renderNavItem)}
