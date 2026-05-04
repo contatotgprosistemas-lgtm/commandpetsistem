@@ -629,7 +629,243 @@ export default function SuperAdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Empresas & Módulos Tab */}
+        <TabsContent value="empresas">
+          <Card className="mb-4">
+            <CardContent className="p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Buscar empresa..." className="pl-9" value={searchEmpresas} onChange={(e) => setSearchEmpresas(e.target.value)} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Empresas e Módulos Contratados ({empresas.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Empresa</TableHead>
+                      <TableHead>Módulos Contratados</TableHead>
+                      <TableHead className="text-right">Valor Mensal</TableHead>
+                      <TableHead>Início</TableHead>
+                      <TableHead className="w-[100px]">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {empresas
+                      .filter((e) => !searchEmpresas || e.nome.toLowerCase().includes(searchEmpresas.toLowerCase()))
+                      .map((e) => {
+                        const todos = e.modulo_banho_tosa && e.modulo_hotel_creche && e.modulo_ponto;
+                        const algum = e.modulo_banho_tosa || e.modulo_hotel_creche || e.modulo_ponto;
+                        return (
+                          <TableRow key={e.id}>
+                            <TableCell className="font-medium">{e.nome}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {todos ? (
+                                  <Badge className="bg-primary/10 text-primary border-primary/20">Combo Completo</Badge>
+                                ) : (
+                                  <>
+                                    {e.modulo_banho_tosa && <Badge variant="secondary">Banho e Tosa</Badge>}
+                                    {e.modulo_hotel_creche && <Badge variant="secondary">Hotel e Creche</Badge>}
+                                    {e.modulo_ponto && <Badge variant="secondary">Ponto Digital</Badge>}
+                                    {!algum && <span className="text-xs text-muted-foreground">Nenhum módulo ativo</span>}
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              R$ {Number(e.valor_mensal).toFixed(2).replace(".", ",")}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {e.data_inicio
+                                ? (() => { const [y, m, d] = e.data_inicio!.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString("pt-BR"); })()
+                                : "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm" className="gap-1" onClick={() => setEditEmpresa(e)}>
+                                <Pencil className="h-4 w-4" />
+                                Editar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    {empresas.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          Nenhuma empresa cadastrada
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      <EditarModulosDialog
+        empresa={editEmpresa}
+        open={!!editEmpresa}
+        onClose={() => setEditEmpresa(null)}
+        onSaved={() => { setEditEmpresa(null); fetchProfiles(); }}
+      />
     </div>
+  );
+}
+
+function EditarModulosDialog({
+  empresa,
+  open,
+  onClose,
+  onSaved,
+}: {
+  empresa: EmpresaModuloRow | null;
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [banho, setBanho] = useState(false);
+  const [hotel, setHotel] = useState(false);
+  const [ponto, setPonto] = useState(false);
+  const [valor, setValor] = useState<string>("");
+  const [valorOverride, setValorOverride] = useState(false);
+  const [dataInicio, setDataInicio] = useState<string>("");
+  const [observacao, setObservacao] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (empresa) {
+      setBanho(empresa.modulo_banho_tosa);
+      setHotel(empresa.modulo_hotel_creche);
+      setPonto(empresa.modulo_ponto);
+      const calc = calcularValorMensal({
+        banho_tosa: empresa.modulo_banho_tosa,
+        hotel_creche: empresa.modulo_hotel_creche,
+        ponto: empresa.modulo_ponto,
+      });
+      const isOverride = Math.abs(calc - Number(empresa.valor_mensal)) > 0.01;
+      setValorOverride(isOverride);
+      setValor(Number(empresa.valor_mensal || calc).toFixed(2));
+      setDataInicio(empresa.data_inicio || new Date().toISOString().slice(0, 10));
+      setObservacao(empresa.observacao || "");
+    }
+  }, [empresa]);
+
+  const valorCalculado = calcularValorMensal({ banho_tosa: banho, hotel_creche: hotel, ponto });
+  const valorFinal = valorOverride ? Number(valor || 0) : valorCalculado;
+  const isCombo = banho && hotel && ponto;
+
+  const salvar = async () => {
+    if (!empresa) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("empresa_modulos")
+      .upsert({
+        empresa_id: empresa.id,
+        modulo_banho_tosa: banho,
+        modulo_hotel_creche: hotel,
+        modulo_ponto: ponto,
+        valor_mensal: valorFinal,
+        data_inicio: dataInicio || new Date().toISOString().slice(0, 10),
+        observacao: observacao || null,
+      });
+    setSaving(false);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Módulos atualizados com sucesso!" });
+    onSaved();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogHeader>
+          <DialogTitle>Editar módulos — {empresa?.nome}</DialogTitle>
+          <DialogDescription>
+            Selecione quais módulos esta empresa contratou. O valor mensal é calculado automaticamente.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-3 rounded-lg border p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Checkbox id="m1" checked={banho} onCheckedChange={(v) => setBanho(!!v)} />
+                <Label htmlFor="m1" className="font-medium cursor-pointer">Módulo 1 — Banho e Tosa</Label>
+              </div>
+              <span className="text-sm text-muted-foreground tabular-nums">R$ {MODULO_PRECOS.banho_tosa.toFixed(2)}/mês</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Checkbox id="m2" checked={hotel} onCheckedChange={(v) => setHotel(!!v)} />
+                <Label htmlFor="m2" className="font-medium cursor-pointer">Módulo 2 — Hotel e Creche</Label>
+              </div>
+              <span className="text-sm text-muted-foreground tabular-nums">R$ {MODULO_PRECOS.hotel_creche.toFixed(2)}/mês</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Checkbox id="m3" checked={ponto} onCheckedChange={(v) => setPonto(!!v)} />
+                <Label htmlFor="m3" className="font-medium cursor-pointer">Módulo 3 — Sistema Ponto</Label>
+              </div>
+              <span className="text-sm text-muted-foreground tabular-nums">R$ {MODULO_PRECOS.ponto.toFixed(2)}/mês</span>
+            </div>
+            <div className="text-xs text-muted-foreground pt-2 border-t">
+              Módulos 1 e 2 incluem TaxiPet e Financeiro. Combo Completo (1+2+3) por R$ {MODULO_PRECOS.combo_completo.toFixed(2)}/mês.
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="data-inicio">Data de início</Label>
+              <Input id="data-inicio" type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="valor-mensal">Valor mensal (R$)</Label>
+              <Input
+                id="valor-mensal"
+                type="number"
+                step="0.01"
+                value={valorOverride ? valor : valorCalculado.toFixed(2)}
+                disabled={!valorOverride}
+                onChange={(e) => setValor(e.target.value)}
+              />
+              <label className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground cursor-pointer">
+                <Checkbox checked={valorOverride} onCheckedChange={(v) => setValorOverride(!!v)} />
+                Sobrescrever valor manualmente
+              </label>
+            </div>
+          </div>
+
+          {isCombo && !valorOverride && (
+            <div className="text-xs text-primary bg-primary/5 border border-primary/20 rounded p-2">
+              Aplicado preço promocional <strong>Combo Completo</strong>: R$ {MODULO_PRECOS.combo_completo.toFixed(2)}/mês.
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="obs">Observação (opcional)</Label>
+            <Input id="obs" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={salvar} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
