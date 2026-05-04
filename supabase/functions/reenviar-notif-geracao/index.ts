@@ -134,13 +134,17 @@ Deno.serve(async (req) => {
             tipo: "geracao",
           }),
         });
-        const txt = await res.text();
-        if (res.ok) {
+        const payload = await res.json().catch(() => null);
+        const bodyPreview = JSON.stringify(payload ?? {}).slice(0, 200);
+        if (res.ok && payload?.success) {
           enviados++;
-          detalhes.push({ cliente: cliente.nome, faturas: grupo.length, status: "ok", body: txt.slice(0, 100) });
+          detalhes.push({ cliente: cliente.nome, faturas: grupo.length, status: "ok", body: bodyPreview });
+        } else if (res.ok) {
+          pulados++;
+          detalhes.push({ cliente: cliente.nome, faturas: grupo.length, status: "skipped", body: bodyPreview });
         } else {
           falhas++;
-          detalhes.push({ cliente: cliente.nome, faturas: grupo.length, status: res.status, body: txt.slice(0, 200) });
+          detalhes.push({ cliente: cliente.nome, faturas: grupo.length, status: res.status, body: bodyPreview });
         }
       } catch (err) {
         falhas++;

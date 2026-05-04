@@ -448,7 +448,7 @@ Deno.serve(async (req) => {
           const cli: any = cliente;
           if (cli?.whatsapp) {
             const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/notificar-fatura-whatsapp`;
-            fetch(fnUrl, {
+            const res = await fetch(fnUrl, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -459,7 +459,12 @@ Deno.serve(async (req) => {
                 cliente: { id: sub.cliente_id, nome: cli.nome, whatsapp: cli.whatsapp },
                 fatura: { id: novaFatura?.id ?? null, descricao: descricaoFatura, valor: valorExtra, vencimento: vencStr },
               }),
-            }).catch(() => {});
+            });
+
+            if (!res.ok) {
+              const txt = await res.text();
+              console.error("notificar-fatura-whatsapp falhou no ajuste mensal:", res.status, txt.slice(0, 300));
+            }
           }
         } catch { /* noop */ }
       }
