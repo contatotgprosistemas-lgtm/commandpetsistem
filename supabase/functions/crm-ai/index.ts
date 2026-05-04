@@ -39,6 +39,18 @@ Deno.serve(async (req) => {
     const { action, conversa_id } = await req.json();
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
+    // Multi-tenant guard: ensure caller belongs to the same empresa as the conversation
+    const userId = claims.claims.sub;
+    const { data: profile } = await admin.from("profiles").select("empresa_id").eq("user_id", userId).maybeSingle();
+    const empresaId = profile?.empresa_id;
+    if (!empresaId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: conv } = await admin.from("crm_conversas").select("empresa_id").eq("id", conversa_id).maybeSingle();
+    if (!conv || conv.empresa_id !== empresaId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const { data: msgs } = await admin.from("crm_mensagens")
       .select("direcao, conteudo, enviada_em")
       .eq("conversa_id", conversa_id)

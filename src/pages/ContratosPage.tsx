@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -866,7 +867,7 @@ export default function ContratosPage() {
               margin: 0;
             }
           `}</style>
-          <div className="contract-preview bg-muted/30 rounded-lg p-6 border prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: previewContract?.content || "" }} />
+          <div className="contract-preview bg-muted/30 rounded-lg p-6 border prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewContract?.content || "") }} />
           {previewContract?.content_hash && (
             <div className="text-xs text-muted-foreground border-t pt-2">
               <strong>Hash SHA-256:</strong> {previewContract.content_hash}

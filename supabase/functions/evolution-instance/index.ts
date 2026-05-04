@@ -40,6 +40,27 @@ async function safeJson(res: Response): Promise<any> {
   }
 }
 
+function isAllowedServerUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:") return false;
+    const host = u.hostname.toLowerCase();
+    // Block localhost, private/link-local ranges, and metadata endpoints
+    if (["localhost", "0.0.0.0", "metadata.google.internal"].includes(host)) return false;
+    if (host === "169.254.169.254" || host.startsWith("169.254.")) return false;
+    if (host.startsWith("127.") || host.startsWith("10.") || host.startsWith("192.168.")) return false;
+    // 172.16.0.0/12
+    const m = host.match(/^172\.(\d+)\./);
+    if (m && Number(m[1]) >= 16 && Number(m[1]) <= 31) return false;
+    // Block plain IP literals to avoid bypass tricks; require DNS hostname
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) return false;
+    if (host.includes(":")) return false; // IPv6 literal
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -76,6 +97,15 @@ Deno.serve(async (req) => {
       }
       if (!serverUrl) {
         return new Response(JSON.stringify({ error: "URL do servidor Evolution obrigatória" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (!isAllowedServerUrl(serverUrl)) {
+        return new Response(JSON.stringify({ error: "URL do servidor Evolution inválida. Use uma URL HTTPS pública." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Restrict creation to admin/gerente/super_admin
+      const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", userId);
+      const allowed = (roles ?? []).some((r: any) => ["admin", "gerente", "super_admin"].includes(r.role));
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: "Apenas administradores podem criar canais" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (!apiKey) {
         return new Response(JSON.stringify({ error: "API Key obrigatória" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
