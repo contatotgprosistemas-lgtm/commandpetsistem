@@ -274,9 +274,54 @@ function NovaVendaDialog({ open, onOpenChange, empresaId, onSaved }: {
     }));
 
     const { error: itensErr } = await supabase.from("vendas_produtos_itens").insert(itensPayload);
-    setSaving(false);
     if (itensErr) { toast.error("Erro ao salvar itens da venda."); return; }
-    toast.success("Venda finalizada com sucesso!");
+
+    // Se for pagamento posterior, gera fatura em contas a receber
+    const isPosterior = /posterior|fiado|prazo|faturar/i.test(formaPagamento);
+    if (isPosterior) {
+      if (!clienteId) {
+        setSaving(false);
+        toast.error("Selecione um cliente para vendas com pagamento posterior.");
+        return;
+      }
+      const hoje = new Date().toISOString().slice(0, 10);
+      const descricaoFatura = itens.map(i => `${i.quantidade}x ${i.descricao}`).join(", ").slice(0, 250);
+      const { data: fatura, error: faturaErr } = await supabase.from("contas_receber").insert({
+        empresa_id: empresaId,
+        cliente_id: clienteId,
+        descricao: descricaoFatura || "Venda PDV",
+        valor: valorFinal,
+        vencimento: hoje,
+        status: "pendente",
+        categoria: "Venda PDV",
+      }).select("id").single();
+      if (faturaErr || !fatura) {
+        setSaving(false);
+        toast.error("Venda salva, mas falhou ao gerar a fatura: " + (faturaErr?.message || ""));
+        return;
+      }
+      const itensFatura = itens.map(i => ({
+        conta_receber_id: fatura.id,
+        empresa_id: empresaId,
+        descricao: `${i.quantidade}x ${i.descricao}`,
+        valor: i.subtotal,
+        tipo: i.produto_id ? "produto" : "servico",
+      }));
+      await supabase.from("contas_receber_itens").insert(itensFatura);
+      if ((parseFloat(desconto) || 0) > 0) {
+        await supabase.from("contas_receber_itens").insert({
+          conta_receber_id: fatura.id,
+          empresa_id: empresaId,
+          descricao: "Desconto",
+          valor: -(parseFloat(desconto) || 0),
+          tipo: "desconto",
+        });
+      }
+      toast.success("Venda finalizada e fatura gerada!");
+    } else {
+      toast.success("Venda finalizada com sucesso!");
+    }
+    setSaving(false);
     setItens([]);
     setDesconto("0");
     setCupomFiscal("");
