@@ -3335,6 +3335,53 @@ export type Database = {
         }
         Relationships: []
       }
+      empresa_modulos: {
+        Row: {
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          empresa_id: string
+          modulo_banho_tosa: boolean
+          modulo_hotel_creche: boolean
+          modulo_ponto: boolean
+          observacao: string | null
+          updated_at: string
+          valor_mensal: number
+        }
+        Insert: {
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          empresa_id: string
+          modulo_banho_tosa?: boolean
+          modulo_hotel_creche?: boolean
+          modulo_ponto?: boolean
+          observacao?: string | null
+          updated_at?: string
+          valor_mensal?: number
+        }
+        Update: {
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          empresa_id?: string
+          modulo_banho_tosa?: boolean
+          modulo_hotel_creche?: boolean
+          modulo_ponto?: boolean
+          observacao?: string | null
+          updated_at?: string
+          valor_mensal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empresa_modulos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresas: {
         Row: {
           assinatura_responsavel: string | null
@@ -5015,6 +5062,7 @@ export type Database = {
           empresa_id: string | null
           id: string
           nome: string
+          signup_source: string | null
           status: string
           updated_at: string
           user_id: string
@@ -5028,6 +5076,7 @@ export type Database = {
           empresa_id?: string | null
           id?: string
           nome: string
+          signup_source?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -5041,6 +5090,7 @@ export type Database = {
           empresa_id?: string | null
           id?: string
           nome?: string
+          signup_source?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -6524,6 +6574,17 @@ export type Database = {
         Returns: Json
       }
       get_empresa_logo: { Args: { p_empresa_id: string }; Returns: string }
+      get_empresa_modulos_flags: {
+        Args: { p_empresa_id: string }
+        Returns: {
+          data_fim: string
+          data_inicio: string
+          modulo_banho_tosa: boolean
+          modulo_hotel_creche: boolean
+          modulo_ponto: boolean
+          valor_mensal: number
+        }[]
+      }
       get_operational_empresa_id: { Args: never; Returns: string }
       get_operational_user_id: { Args: never; Returns: string }
       get_own_cargo: { Args: never; Returns: string }
