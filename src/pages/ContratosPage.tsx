@@ -594,10 +594,21 @@ export default function ContratosPage() {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const contentHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 
+    const { data: tokenRows } = await supabase.rpc(
+      "get_contract_signing_token" as any,
+      { p_contract_id: companySignContract.id }
+    );
+    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    if (!tk) {
+      toast.error("Token de assinatura indisponível");
+      setCompanySigning(false);
+      return;
+    }
+
     const { data: result, error: signErr } = await supabase.functions.invoke("sign-contract", {
       body: {
         action: "sign",
-        signing_token: companySignContract.signing_token,
+        signing_token: tk,
         signer_name: companySignerName.trim(),
         signer_user_agent: ua,
         signer_device: "Desktop",
