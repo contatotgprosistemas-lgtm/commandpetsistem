@@ -119,6 +119,7 @@ export default function PortalPagamentosPage() {
   const [selectedGrupo, setSelectedGrupo] = useState<GrupoFatura | null>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [itensPorFatura, setItensPorFatura] = useState<Record<string, Array<{ id: string; descricao: string; valor: number; tipo: string | null }>>>({});
   const [pixProgress, setPixProgress] = useState({ current: 0, total: 0 });
   const [pixError, setPixError] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -283,6 +284,21 @@ export default function PortalPagamentosPage() {
       else next.add(key);
       return next;
     });
+  };
+
+  const carregarItens = async (faturaId: string) => {
+    if (itensPorFatura[faturaId]) return;
+    const { data } = await supabase
+      .from("contas_receber_itens")
+      .select("id, descricao, valor, tipo")
+      .eq("conta_receber_id", faturaId)
+      .order("created_at", { ascending: true });
+    setItensPorFatura(prev => ({ ...prev, [faturaId]: (data as any[]) ?? [] }));
+  };
+
+  const toggleExpandFatura = (grupo: GrupoFatura, key: string) => {
+    toggleExpand(key);
+    grupo.faturas.forEach(f => carregarItens(f.id));
   };
 
   if (clienteLoading || loading) {
