@@ -1,8 +1,10 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmpresaModulos } from "@/hooks/useEmpresaModulos";
+import { isRouteAllowed } from "@/lib/modulos";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, LogOut, ShieldAlert } from "lucide-react";
+import { Clock, LogOut, ShieldAlert, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 function PendingApprovalScreen() {
@@ -36,6 +38,8 @@ function PendingApprovalScreen() {
 
 export function ProtectedRoute({ children, requireAdmin }: { children: React.ReactNode; requireAdmin?: boolean }) {
   const { user, loading, isSuperAdmin, isApproved } = useAuth();
+  const modulos = useEmpresaModulos();
+  const location = useLocation();
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
@@ -58,6 +62,11 @@ export function ProtectedRoute({ children, requireAdmin }: { children: React.Rea
 
   if (requireAdmin && !isSuperAdmin) {
     return <Navigate to="/" replace />;
+  }
+
+  // Module gating — super admin always passes
+  if (!isSuperAdmin && modulos.loaded && !isRouteAllowed(location.pathname, modulos)) {
+    return <ModuleLockedScreen />;
   }
 
   return <>{children}</>;
@@ -85,6 +94,30 @@ function ClienteBlockedScreen() {
           <Button onClick={handleLogout} className="gap-2">
             <LogOut className="h-4 w-4" />
             Ir para o Portal do Cliente
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ModuleLockedScreen() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+      <Card className="max-w-md w-full text-center">
+        <CardHeader>
+          <div className="mx-auto h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+            <Lock className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <CardTitle className="text-xl">Módulo não contratado</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">
+            Este recurso faz parte de um módulo que ainda não está incluído no plano da sua empresa.
+            Entre em contato com o administrador do sistema para liberar o acesso.
+          </p>
+          <Button variant="outline" onClick={() => (window.location.href = "/")}>
+            Voltar
           </Button>
         </CardContent>
       </Card>
