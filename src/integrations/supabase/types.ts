@@ -929,6 +929,7 @@ export type Database = {
         Row: {
           categoria: string | null
           created_at: string
+          desconto: number
           descricao: string
           empresa_id: string
           fornecedor: string
@@ -942,6 +943,7 @@ export type Database = {
         Insert: {
           categoria?: string | null
           created_at?: string
+          desconto?: number
           descricao: string
           empresa_id: string
           fornecedor: string
@@ -955,6 +957,7 @@ export type Database = {
         Update: {
           categoria?: string | null
           created_at?: string
+          desconto?: number
           descricao?: string
           empresa_id?: string
           fornecedor?: string
