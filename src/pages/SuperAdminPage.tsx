@@ -67,13 +67,23 @@ export default function SuperAdminPage() {
     setLoading(true);
     const [profilesRes, clientRolesRes, clientesRes, empresasRes, modulosRes] = await Promise.all([
       supabase.from("profiles").select("*, empresas(nome_empresa)").order("created_at", { ascending: false }),
-      supabase.from("user_roles").select("user_id").eq("role", "cliente"),
+      supabase.from("user_roles").select("user_id, role"),
       supabase.from("clientes").select("user_id, empresa_id, empresas(nome_empresa)").not("user_id", "is", null),
       supabase.from("empresas").select("id, nome_empresa, created_at").order("nome_empresa"),
       supabase.from("empresa_modulos").select("*"),
     ]);
     if (!profilesRes.error && profilesRes.data) {
-      const cIds = new Set((clientRolesRes.data || []).map((r: any) => r.user_id));
+      // Only treat as "portal client" users that have ONLY the 'cliente' role
+      // (no system role like admin/gerente/atendente/operacional/banhista/financeiro).
+      const rolesByUser = new Map<string, Set<string>>();
+      (clientRolesRes.data || []).forEach((r: any) => {
+        if (!rolesByUser.has(r.user_id)) rolesByUser.set(r.user_id, new Set());
+        rolesByUser.get(r.user_id)!.add(r.role);
+      });
+      const cIds = new Set<string>();
+      rolesByUser.forEach((rs, uid) => {
+        if (rs.has("cliente") && rs.size === 1) cIds.add(uid);
+      });
       setClientUserIds(cIds);
 
       // Build map of user_id -> empresa name from clientes table
@@ -205,6 +215,19 @@ export default function SuperAdminPage() {
       toast({ title: data?.error || "Erro ao excluir usuário", variant: "destructive" });
     } else {
       toast({ title: "Usuário excluído com sucesso!" });
+      fetchProfiles();
+    }
+  };
+
+  const deleteEmpresa = async (empresaId: string, nome: string) => {
+    toast({ title: "Excluindo empresa...", description: nome });
+    const { data, error } = await supabase.functions.invoke("excluir-empresa", {
+      body: { empresa_id: empresaId },
+    });
+    if (error || data?.error) {
+      toast({ title: data?.error || "Erro ao excluir empresa", variant: "destructive" });
+    } else {
+      toast({ title: `Empresa ${nome} excluída`, description: `${data?.usuarios_excluidos ?? 0} usuário(s) removido(s)` });
       fetchProfiles();
     }
   };
@@ -689,10 +712,37 @@ export default function SuperAdminPage() {
                                 : "—"}
                             </TableCell>
                             <TableCell>
-                              <Button variant="ghost" size="sm" className="gap-1" onClick={() => setEditEmpresa(e)}>
-                                <Pencil className="h-4 w-4" />
-                                Editar
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" className="gap-1" onClick={() => setEditEmpresa(e)}>
+                                  <Pencil className="h-4 w-4" />
+                                  Editar
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="gap-1 text-destructive hover:text-destructive">
+                                      <Trash2 className="h-4 w-4" />
+                                      Excluir
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir empresa {e.nome}?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta ação é irreversível. Todos os dados desta empresa (clientes, pets, agendamentos, financeiro, contratos, usuários do sistema, etc.) serão removidos permanentemente.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={() => deleteEmpresa(e.id, e.nome)}
+                                      >
+                                        Excluir definitivamente
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
