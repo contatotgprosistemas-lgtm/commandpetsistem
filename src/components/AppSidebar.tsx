@@ -32,6 +32,7 @@ import {
   Wallet,
   Wrench,
   Sparkles,
+  Bell,
 } from "lucide-react";
 
 type MenuItem = { icon: any; label: string; path: string };
@@ -69,7 +70,7 @@ export function AppSidebar() {
   ];
 
   // --- Módulo Finanças ---
-  const financasPaths = ["/financeiro", "/contratos", "/notas-fiscais"];
+  const financasPaths = ["/financeiro", "/contratos", "/notas-fiscais", "/notificacoes-whatsapp"];
   const isFinancasActive = financasPaths.includes(location.pathname);
   const [financasOpen, setFinancasOpen] = useState(isFinancasActive);
 
@@ -77,6 +78,7 @@ export function AppSidebar() {
     { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
     { icon: FileSignature, label: "Contratos", path: "/contratos" },
     { icon: Receipt, label: "Notas Fiscais", path: "/notas-fiscais" },
+    { icon: Bell, label: "Notif. WhatsApp", path: "/notificacoes-whatsapp" },
   ];
 
   // Filter operational/finance items by contracted modules (skip for super admin – it sees nothing here anyway).
