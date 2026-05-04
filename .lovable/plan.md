@@ -1,62 +1,77 @@
-# Uma mensagem por cliente nas notificações de fatura
+## 1. Sidebar — esconder menus no perfil Super Admin
 
-## Problema
+`src/components/AppSidebar.tsx`: quando `isSuperAdmin` for true, esconder os itens **Dashboard**, **Operacional** (e seus submenus) e **Finanças** (e seus submenus). Manter apenas: **Leads do Site**, **Super Admin**, **Configurações** e o botão sair. (Comportamento dos demais perfis fica inalterado.)
 
-Quando um cliente tem mais de uma fatura no mesmo dia (parcelas semanais, múltiplos pets, ciclos de plano), o sistema dispara **uma mensagem WhatsApp por fatura**, gerando 2-4 mensagens iguais para o mesmo contato. Isso aconteceu hoje, com vários clientes recebendo notificações duplicadas.
+## 2. Regras de aprovação no Painel Super Admin
 
-A dedup atual em `notificar-fatura-whatsapp` (janela 18h por contato+tipo) não funciona porque os disparos acontecem em paralelo dentro do mesmo segundo, e todas as chamadas leem o log antes da primeira inserir.
+Hoje a aba "Pendentes" lista qualquer `profile` com `aprovado=false`. Vamos restringir para listar **apenas usuários criados pelo botão "Criar conta"** (signup público da landing/SignupPage), que são os únicos que abrem uma nova `empresa`.
 
-## Objetivo
+Mecanismo:
+- Adicionar coluna `profiles.signup_source TEXT` (`'self_signup' | 'admin_invite' | null`).
+- Atualizar `public.handle_new_user()` para gravar `signup_source = 'self_signup'` quando o cadastro vier com `empresa` no metadata (caso atual de criação por signup público); demais entradas ficam `null`.
+- Atualizar a edge function `criar-acesso-operacional` para garantir que funcionários criados por admins entrem com `signup_source = 'admin_invite'` (já entram em `operational_users`, mas se gerar profile, marcar como invite).
+- Em `SuperAdminPage.tsx`, a aba "Pendentes" passa a filtrar por `signup_source === 'self_signup' && !aprovado`.
 
-Garantir que cada cliente receba **no máximo 1 mensagem por tipo de notificação por dia**, independentemente de quantas faturas tenha.
+Aba "Portal do Cliente" continua isolada (já separa por user_roles=cliente).
 
-## Mudanças
+Adicionar nova aba **"Funcionários (operacional)"** agrupada por empresa, lendo `operational_users` com `empresas.nome_empresa`. Apenas leitura (sem aprovação) — só para gestão/visualização. A aba **Portal do Cliente** passa a exibir agrupado por empresa.
 
-### 1. `supabase/functions/gerar-faturas/index.ts`
+## 3. Módulos do sistema por empresa
 
-- Após criar/atualizar todas as faturas, agrupar por `cliente_id` em uma única lista.
-- Para cada cliente, escolher **uma fatura representativa** (a de maior valor ou a primeira) e disparar `notificar-fatura-whatsapp` apenas uma vez.
-- Se o cliente tiver várias faturas, a mensagem usa um descritor genérico do tipo "Suas faturas mensais foram geradas" e o valor total somado.
+Criar tabela `public.empresa_modulos`:
+- `empresa_id uuid PK FK empresas`
+- `modulo_banho_tosa boolean default false`
+- `modulo_hotel_creche boolean default false`
+- `modulo_ponto boolean default false`
+- `valor_mensal numeric` (calculado/registrado)
+- `data_inicio date`, `data_fim date null`, `observacao text`
+- timestamps
 
-### 2. `supabase/functions/processar-lembretes-fatura/index.ts`
+RLS:
+- Super admin: full read/write.
+- Admin/gerente da empresa: read-only do próprio empresa_id.
 
-- Dentro de cada bucket (pre_vencimento, vencimento, atraso), agrupar as faturas por `cliente_id` antes do loop de envio.
-- Disparar **uma chamada** por cliente, com a fatura de maior valor como referência. Demais faturas ficam registradas no log via inserção em massa após o sucesso.
+Função helper `public.get_empresa_modulos(p_empresa_id uuid)` retorna jsonb com flags (definer, search_path public, REVOKE EXECUTE de anon).
 
-### 3. `supabase/functions/notificar-fatura-whatsapp/index.ts`
+Mapeamento de módulos → rotas (frontend, em `src/lib/modulos.ts`):
+- `banho_tosa`: `/banho-tosa`, `/esteira-banho`, `/agenda`, `/planos-pacotes`
+- `hotel_creche`: `/reservas`, `/agenda`, `/planos-pacotes`
+- `compartilhado` (qualquer m1 ou m2): `/clientes`, `/pets`, `/servicos`, `/produtos`, `/`(dashboard)
+- `m1 || m2`: `/taxipet`, `/financeiro`, `/contratos`, `/notas-fiscais`
+- `ponto`: `/ponto`
 
-- Trocar a dedup probabilística (janela 18h) por uma trava determinística:
-  - Inserir o registro em `invoice_notification_log` com `status='enviando'` **antes** do envio à Evolution.
-  - Usar uma constraint única (`empresa_id, cliente_id, tipo, dia`) para que tentativas paralelas falhem no insert (vencendo a corrida).
-  - Em caso de conflito do insert, retornar `skipped: already_processing`.
-  - Após sucesso/falha, atualizar o status do registro para `enviado` ou `falha`.
+Hook `useEmpresaModulos()` carrega as flags da empresa atual (cache via React Query). `AppSidebar` filtra cada item conforme as flags. `ProtectedRoute` redireciona quando rota não está autorizada para os módulos contratados.
 
-### 4. Migração de schema
+Super admin sempre tem acesso (passa direto).
 
-Adicionar índice único parcial em `invoice_notification_log`:
+## 4. Tela de gestão de contratações (Super Admin)
 
-```sql
-CREATE UNIQUE INDEX IF NOT EXISTS idx_invoice_notif_unique_daily
-  ON public.invoice_notification_log (empresa_id, cliente_id, tipo, (enviado_em::date))
-  WHERE status IN ('enviado','enviando');
+Nova aba **"Empresas & Módulos"** dentro de `SuperAdminPage.tsx`:
+- Lista todas as empresas (`empresas`) com colunas: Empresa, Módulos contratados (chips), Valor mensal, Início, Ações.
+- Botão **Editar** abre dialog com checkboxes (Banho e Tosa R$ 97, Hotel e Creche R$ 127, Ponto R$ 89). Quando os 3 estiverem marcados, valor é fixado em **R$ 247 (Combo Completo)**, caso contrário soma dos selecionados. Permite override manual do valor e data de início.
+- Salva em `empresa_modulos` (upsert).
+
+Tabela de preços (constante em `src/lib/modulos.ts`):
+```ts
+export const MODULO_PRECOS = {
+  banho_tosa: 97,
+  hotel_creche: 127,
+  ponto: 89,
+  combo_completo: 247,
+};
 ```
-
-Isso impede 2 envios do mesmo tipo para o mesmo cliente no mesmo dia, em qualquer caminho (gerar-faturas, lembretes, reenvios manuais).
 
 ## Detalhes técnicos
 
-- O índice único usa `enviado_em::date` para garantir 1 por dia BRT.
-- Mensagem agregada: quando o cliente tem N>1 faturas geradas, usar template `"Olá {nome}! Foram geradas suas faturas do mês no valor total de R$ {valor_total} (próximo vencimento em {vencimento})."` em vez do template padrão `mensagem_geracao` que assume uma única fatura. O template específico fica em `cfg.mensagem_geracao_multiplas` (opcional, com fallback).
-- A `reenviar-notif-geracao` continua funcionando porque também passa pelo `notificar-fatura-whatsapp` que terá a trava única.
-- Logs do tipo `geracao` sempre vinculam a uma das faturas (a de maior valor) — as outras ficam sem log de "envio" mas com referência cruzada via `metadata.faturas_relacionadas` (campo JSON novo, opcional).
+- Migrations:
+  1. `ALTER TABLE profiles ADD COLUMN signup_source text;`
+  2. `CREATE TABLE empresa_modulos (...)` + RLS + triggers updated_at.
+  3. Reescreve `handle_new_user` para popular `signup_source`.
+  4. Backfill: `UPDATE profiles SET signup_source='self_signup' WHERE empresa_id IS NOT NULL AND cargo='admin'` (heurística para usuários antigos que viraram admin via signup).
+- Atualiza `criar-acesso-operacional` se gravar profile (provavelmente não grava — confirmar antes; caso só insira em operational_users, nada a fazer).
+- Sidebar: dois ramos — `isSuperAdmin` mostra só admin/leads/config; demais perfis filtram itens via `useEmpresaModulos`.
+- Rotas guarda: novo wrapper `<ModuleGuard required="banho_tosa" />` em `App.tsx` ou checagem em `ProtectedRoute`.
 
-## Não muda
-
-- Templates personalizados existentes seguem funcionando para clientes com 1 fatura.
-- A dedup por fatura+tipo continua existindo (impede reenvio da mesma fatura).
-- Cron `gerar-faturas` e `processar-lembretes-fatura` mantêm o mesmo schedule.
-
-## Validação após deploy
-
-1. Olhar `invoice_notification_log` agrupado por `cliente_id+tipo+dia` — deve ter sempre 1 linha por (cliente, tipo, dia).
-2. Verificar conversa do CRM do cliente que recebeu duplicado hoje (Plano Escola Premium 2x Semana 1/4–4/4) na próxima geração — deve receber só 1 mensagem.
+## Itens fora de escopo desta entrega
+- Cobrança automática mensal das mensalidades (apenas registra valor, não gera fatura automática neste passo).
+- Período de teste / trial.
