@@ -1010,18 +1010,25 @@ function EvolutionApiPanel() {
             )}
 
             <div className="flex flex-wrap justify-end gap-2">
-              {status !== "conectado" ? (
-                <Button onClick={() => callAction("connect")} disabled={working}>
-                  {working ? <Loader2 className="h-4 w-4 animate-spin" /> : qr ? "Gerar novo QR" : "Conectar WhatsApp"}
-                </Button>
-              ) : (
+              <Button variant="ghost" onClick={() => callAction("status")} disabled={working}>
+                {working ? <Loader2 className="h-4 w-4 animate-spin" /> : "Atualizar status"}
+              </Button>
+              {status === "conectado" ? (
                 <Button variant="outline" onClick={() => callAction("disconnect")} disabled={working}>
                   {working ? <Loader2 className="h-4 w-4 animate-spin" /> : "Desconectar"}
                 </Button>
+              ) : (
+                <>
+                  {(status === "conectando" || qr) && (
+                    <Button variant="outline" onClick={() => callAction("disconnect")} disabled={working}>
+                      Cancelar
+                    </Button>
+                  )}
+                  <Button onClick={() => callAction("connect")} disabled={working}>
+                    {working ? <Loader2 className="h-4 w-4 animate-spin" /> : qr ? "Gerar novo QR" : "Conectar WhatsApp"}
+                  </Button>
+                </>
               )}
-              <Button variant="ghost" onClick={() => callAction("status")} disabled={working}>
-                Atualizar status
-              </Button>
             </div>
           </>
         )}

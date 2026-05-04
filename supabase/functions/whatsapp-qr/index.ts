@@ -71,36 +71,34 @@ Deno.serve(async (req) => {
     }
 
     if (action === "connect") {
-      // Create or reuse instance and return QR
+      // Always start clean: delete any existing instance for this empresa, then create fresh.
       let row = await loadRow();
       let instanceName: string = row?.instance_name || `petcontrol_${empresaId.slice(0, 8)}`;
       instanceName = instanceName.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
 
-      // Try to fetch state first
-      const stateRes = await evoFetch(`/instance/connectionState/${instanceName}`);
-      const stateData = await safeJson(stateRes);
-      const exists = stateRes.ok && !stateData?._nonJson && (stateData?.instance || stateData?.state);
+      // Best-effort cleanup of previous instance (ignore errors)
+      try { await evoFetch(`/instance/logout/${instanceName}`, { method: "DELETE" }); } catch {}
+      try { await evoFetch(`/instance/delete/${instanceName}`, { method: "DELETE" }); } catch {}
 
-      let qr: string | null = null;
+      const createRes = await evoFetch("/instance/create", {
+        method: "POST",
+        body: JSON.stringify({
+          instanceName,
+          qrcode: true,
+          integration: "WHATSAPP-BAILEYS",
+        }),
+      });
+      const createData = await safeJson(createRes);
+      if (!createRes.ok || createData?._nonJson) {
+        const msg = createData?._nonJson
+          ? `Resposta inválida do servidor WhatsApp (HTTP ${createRes.status}).`
+          : (createData?.message || createData?.error || `HTTP ${createRes.status}`);
+        return new Response(JSON.stringify({ error: msg, details: createData }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      let qr: string | null = createData?.qrcode?.base64 ?? createData?.qrcode?.code ?? null;
 
-      if (!exists) {
-        // Create instance
-        const createRes = await evoFetch("/instance/create", {
-          method: "POST",
-          body: JSON.stringify({
-            instanceName,
-            qrcode: true,
-            integration: "WHATSAPP-BAILEYS",
-          }),
-        });
-        const createData = await safeJson(createRes);
-        if (!createRes.ok || createData?._nonJson) {
-          const msg = createData?._nonJson ? `Resposta inválida (HTTP ${createRes.status}).` : (createData?.message || createData?.error || `HTTP ${createRes.status}`);
-          return new Response(JSON.stringify({ error: msg, details: createData }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-        qr = createData?.qrcode?.base64 ?? createData?.qrcode?.code ?? null;
-      } else {
-        // Trigger connect to fetch QR
+      // If create didn't return a QR, ask /connect for one
+      if (!qr) {
         const qrRes = await evoFetch(`/instance/connect/${instanceName}`);
         const qrData = await safeJson(qrRes);
         qr = qrData?.base64 ?? qrData?.qrcode?.base64 ?? qrData?.code ?? null;
@@ -144,11 +142,14 @@ Deno.serve(async (req) => {
         const info = Array.isArray(infoData) ? infoData[0] : infoData;
         const owner = info?.instance?.owner ?? info?.owner;
         if (owner) numero = String(owner).split("@")[0];
-      } else if (state === "connecting" || state === "close") {
+      } else if (state === "connecting") {
+        // Awaiting QR scan – keep current QR, do not regenerate (avoids loop)
         novoStatus = "conectando";
-        const qrRes = await evoFetch(`/instance/connect/${inst}`);
-        const qrData = await safeJson(qrRes);
-        qr = qrData?.base64 ?? qrData?.qrcode?.base64 ?? qrData?.code ?? qr;
+      } else if (state === "close") {
+        // Instance exists but disconnected from WhatsApp – treat as desconectado
+        novoStatus = "desconectado";
+        qr = null;
+        numero = null;
       }
 
       await admin.from("conexoes_whatsapp").update({
@@ -164,8 +165,15 @@ Deno.serve(async (req) => {
     if (action === "disconnect") {
       const row = await loadRow();
       if (row?.instance_name) {
-        await evoFetch(`/instance/logout/${row.instance_name}`, { method: "DELETE" });
-        await admin.from("conexoes_whatsapp").update({ status: "desconectado", session_data: { qr: null }, numero: null }).eq("id", row.id);
+        // Logout AND delete the instance so a future connect starts fresh
+        try { await evoFetch(`/instance/logout/${row.instance_name}`, { method: "DELETE" }); } catch {}
+        try { await evoFetch(`/instance/delete/${row.instance_name}`, { method: "DELETE" }); } catch {}
+        await admin.from("conexoes_whatsapp").update({
+          status: "desconectado",
+          session_data: { qr: null },
+          numero: null,
+          instance_name: null,
+        }).eq("id", row.id);
       }
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
