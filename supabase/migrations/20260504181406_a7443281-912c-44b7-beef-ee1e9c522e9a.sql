@@ -1,0 +1,1 @@
+UPDATE public.invoice_notification_config SET enabled = false, updated_at = now() WHERE empresa_id = '88bd5393-4aa9-4cc6-b9b7-9f040d78943b';
