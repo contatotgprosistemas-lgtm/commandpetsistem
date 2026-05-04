@@ -297,8 +297,6 @@ export function AppSidebar() {
           <img src={empresaLogo} alt="Logo" className="h-7 w-7 rounded-md object-cover" />
           <span className="text-sm font-semibold text-sidebar-foreground tracking-tight truncate">PetControl</span>
         </header>
-        {/* Spacer for fixed top bar */}
-        <div className="md:hidden h-12 shrink-0" />
       </>
     );
   }
