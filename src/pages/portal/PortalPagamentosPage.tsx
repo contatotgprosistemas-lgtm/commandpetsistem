@@ -360,25 +360,46 @@ export default function PortalPagamentosPage() {
                   </div>
                 </div>
 
-                {/* Expandable detail for grouped invoices */}
-                {hasMultiple && (
-                  <button
-                    onClick={() => toggleExpand(key)}
-                    className="flex items-center gap-1 mt-2 text-xs text-primary hover:underline"
-                  >
-                    {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                    {isExpanded ? "Ocultar detalhes" : "Ver detalhes das faturas"}
-                  </button>
-                )}
+                {/* Expandable detail */}
+                <button
+                  onClick={() => toggleExpandFatura(grupo, key)}
+                  className="flex items-center gap-1 mt-2 text-xs text-primary hover:underline"
+                >
+                  {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {isExpanded ? "Ocultar detalhes" : "Ver detalhes da fatura"}
+                </button>
 
-                {isExpanded && hasMultiple && (
-                  <div className="mt-3 space-y-1.5 border-t border-border pt-3">
-                    {grupo.faturas.map(f => (
-                      <div key={f.id} className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground truncate flex-1">{f.descricao}</span>
-                        <span className="font-medium text-foreground ml-2">R$ {(f.valor_pago ?? f.valor).toFixed(2)}</span>
-                      </div>
-                    ))}
+                {isExpanded && (
+                  <div className="mt-3 space-y-3 border-t border-border pt-3">
+                    {grupo.faturas.map(f => {
+                      const itens = itensPorFatura[f.id];
+                      return (
+                        <div key={f.id} className="space-y-1.5">
+                          {hasMultiple && (
+                            <div className="flex items-center justify-between text-xs font-medium">
+                              <span className="text-foreground truncate flex-1">{f.descricao}</span>
+                              <span className="text-foreground ml-2">R$ {(f.valor_pago ?? f.valor).toFixed(2)}</span>
+                            </div>
+                          )}
+                          {itens === undefined ? (
+                            <p className="text-[11px] text-muted-foreground italic">Carregando itens...</p>
+                          ) : itens.length === 0 ? (
+                            <p className="text-[11px] text-muted-foreground italic">Sem detalhamento de itens.</p>
+                          ) : (
+                            <div className="space-y-1 pl-2 border-l-2 border-border">
+                              {itens.map(it => (
+                                <div key={it.id} className="flex items-center justify-between text-[11px]">
+                                  <span className="text-muted-foreground truncate flex-1">{it.descricao}</span>
+                                  <span className={`ml-2 ${Number(it.valor) < 0 ? "text-emerald-600" : "text-foreground"}`}>
+                                    R$ {Number(it.valor).toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
