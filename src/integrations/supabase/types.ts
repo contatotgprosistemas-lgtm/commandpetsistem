@@ -988,6 +988,7 @@ export type Database = {
           cliente_id: string | null
           created_at: string
           data_baixa: string | null
+          desconto: number
           descricao: string
           empresa_id: string
           id: string
@@ -1012,6 +1013,7 @@ export type Database = {
           cliente_id?: string | null
           created_at?: string
           data_baixa?: string | null
+          desconto?: number
           descricao: string
           empresa_id: string
           id?: string
@@ -1036,6 +1038,7 @@ export type Database = {
           cliente_id?: string | null
           created_at?: string
           data_baixa?: string | null
+          desconto?: number
           descricao?: string
           empresa_id?: string
           id?: string
