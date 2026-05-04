@@ -80,19 +80,41 @@ export function EditarContaReceberDialog({ open, onOpenChange, onSuccess, conta 
     }
     setSaving(true);
 
+    const valorBruto = parseFloat(form.valor) || 0;
+    const desconto = parseFloat(form.desconto) || 0;
+    const valorLiquido = Math.max(0, valorBruto - desconto);
+
     const { error } = await supabase
       .from("contas_receber")
       .update({
         cliente_id: form.cliente_id || null,
         descricao: form.descricao || "Conta a receber",
-        valor: parseFloat(form.valor),
-        desconto: parseFloat(form.desconto) || 0,
+        valor: valorLiquido,
+        desconto: desconto,
         vencimento: form.vencimento,
         categoria: form.categoria || null,
         banco: form.banco || null,
         status: form.status,
       })
       .eq("id", conta.id);
+
+    // Adiciona/atualiza item de desconto para refletir no detalhamento
+    if (!error && conta) {
+      await supabase
+        .from("contas_receber_itens")
+        .delete()
+        .eq("conta_receber_id", conta.id)
+        .eq("tipo", "desconto");
+      if (desconto > 0) {
+        await supabase.from("contas_receber_itens").insert({
+          conta_receber_id: conta.id,
+          empresa_id: profile?.empresa_id,
+          descricao: "Desconto aplicado",
+          valor: -desconto,
+          tipo: "desconto",
+        });
+      }
+    }
 
     setSaving(false);
     if (error) { toast.error("Erro ao atualizar: " + error.message); return; }
