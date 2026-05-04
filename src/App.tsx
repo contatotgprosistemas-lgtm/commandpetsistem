@@ -22,6 +22,7 @@ import PlanosPacotesPage from "@/pages/PlanosPacotesPage";
 import TaxiPetPage from "@/pages/TaxiPetPage";
 import ContratosPage from "@/pages/ContratosPage";
 import NotasFiscaisPage from "@/pages/NotasFiscaisPage";
+import NotificacoesWhatsappPage from "@/pages/NotificacoesWhatsappPage";
 import BanhoTosaPage from "@/pages/BanhoTosaPage";
 import EsteiraBanhoPage from "@/pages/EsteiraBanhoPage";
 import ReservasPage from "@/pages/ReservasPage";
