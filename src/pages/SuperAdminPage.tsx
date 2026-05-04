@@ -699,10 +699,37 @@ export default function SuperAdminPage() {
                                 : "—"}
                             </TableCell>
                             <TableCell>
-                              <Button variant="ghost" size="sm" className="gap-1" onClick={() => setEditEmpresa(e)}>
-                                <Pencil className="h-4 w-4" />
-                                Editar
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" className="gap-1" onClick={() => setEditEmpresa(e)}>
+                                  <Pencil className="h-4 w-4" />
+                                  Editar
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="gap-1 text-destructive hover:text-destructive">
+                                      <Trash2 className="h-4 w-4" />
+                                      Excluir
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir empresa {e.nome}?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta ação é irreversível. Todos os dados desta empresa (clientes, pets, agendamentos, financeiro, contratos, usuários do sistema, etc.) serão removidos permanentemente.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={() => deleteEmpresa(e.id, e.nome)}
+                                      >
+                                        Excluir definitivamente
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
