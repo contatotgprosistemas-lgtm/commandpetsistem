@@ -34,7 +34,7 @@ export default function PortalContratosPage() {
   useEffect(() => {
     supabase
       .from("contracts")
-      .select("id, title, content, status, signing_token, signed_at, created_at")
+      .select("id, title, content, status, signed_at, created_at")
       .in("status", ["enviado", "assinado"])
       .order("created_at", { ascending: false })
       .then(({ data }) => {
@@ -43,8 +43,14 @@ export default function PortalContratosPage() {
       });
   }, []);
 
-  function goToSign(contract: Contract) {
-    window.open(`/assinar/${contract.signing_token}`, "_blank");
+  async function goToSign(contract: Contract) {
+    const { data: tokenRows } = await supabase.rpc(
+      "get_contract_signing_token" as any,
+      { p_contract_id: contract.id }
+    );
+    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    if (!tk) return;
+    window.open(`/assinar/${tk}`, "_blank");
   }
 
   return (
