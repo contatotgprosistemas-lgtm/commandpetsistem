@@ -1,0 +1,1 @@
+ALTER TABLE public.contas_receber ADD COLUMN IF NOT EXISTS desconto numeric NOT NULL DEFAULT 0;
