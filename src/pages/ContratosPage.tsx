@@ -19,7 +19,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ContractTimelineDialog } from "@/components/contracts/ContractTimelineDialog";
 import { RichTextEditor } from "@/components/contracts/RichTextEditor";
-import { createContractShareLink } from "@/lib/contract-links";
+import { createContractShareLink, extractContractSigningToken } from "@/lib/contract-links";
 
 interface Template {
   id: string;
@@ -398,7 +398,7 @@ export default function ContratosPage() {
       "get_contract_signing_token" as any,
       { p_contract_id: inserted!.id }
     );
-    const insertedToken: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    const insertedToken = extractContractSigningToken(tokenRows);
 
     // Auto-sign by company if signature is configured
     let autoSigned = false;
@@ -539,7 +539,7 @@ export default function ContratosPage() {
       "get_contract_signing_token" as any,
       { p_contract_id: contract.id }
     );
-    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    const tk = extractContractSigningToken(tokenRows);
     if (!tk) throw new Error("Token de assinatura indisponível");
     return createContractShareLink(tk, profile.empresa_id, window.location.origin);
   }
@@ -598,7 +598,7 @@ export default function ContratosPage() {
       "get_contract_signing_token" as any,
       { p_contract_id: companySignContract.id }
     );
-    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    const tk = extractContractSigningToken(tokenRows);
     if (!tk) {
       toast.error("Token de assinatura indisponível");
       setCompanySigning(false);

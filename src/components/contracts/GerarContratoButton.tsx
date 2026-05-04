@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { FileSignature, Loader2, Copy, ExternalLink } from "lucide-react";
-import { createContractShareLink } from "@/lib/contract-links";
+import { createContractShareLink, extractContractSigningToken } from "@/lib/contract-links";
 import { buildHospedagemContractValues, replaceContractPlaceholders } from "@/lib/contract-placeholders";
 
 interface Props {
@@ -220,7 +220,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
         "get_contract_signing_token" as any,
         { p_contract_id: contract.id }
       );
-      const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+      const tk = extractContractSigningToken(tokenRows);
       if (!tk) throw new Error("Token de assinatura indisponível");
       const link = await createContractShareLink(tk, profile.empresa_id, window.location.origin);
       setCreatedLink(link);

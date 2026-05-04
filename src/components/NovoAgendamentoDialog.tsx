@@ -23,7 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { createContractShareLink } from "@/lib/contract-links";
+import { createContractShareLink, extractContractSigningToken } from "@/lib/contract-links";
 import { buildHospedagemContractValues, replaceContractPlaceholders } from "@/lib/contract-placeholders";
 import { useBanhoAvailability } from "@/hooks/useBanhoAvailability";
 import { BanhoTimeSlotPicker } from "@/components/planos/BanhoTimeSlotPicker";
@@ -837,7 +837,7 @@ export function NovoAgendamentoDialog({ onSuccess }: { onSuccess?: () => void })
       "get_contract_signing_token" as any,
       { p_contract_id: contract.id }
     );
-    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    const tk = extractContractSigningToken(tokenRows);
     if (!tk) {
       toast({ title: "Token de assinatura indisponível", variant: "destructive" });
       setContratoDialog(prev => prev ? { ...prev, loading: false } : null);
