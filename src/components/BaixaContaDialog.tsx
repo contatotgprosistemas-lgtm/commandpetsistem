@@ -207,6 +207,16 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
                 R$ {Number(conta?.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </p>
               <p className="text-xs text-muted-foreground mt-1">{contaIds!.length} faturas serão baixadas individualmente com seus respectivos valores</p>
+              {valorDescontoCalculado > 0 && (
+                <div className="mt-2 pt-2 border-t border-border space-y-0.5">
+                  <p className="text-xs text-muted-foreground">
+                    Desconto: <span className="font-medium text-destructive">- R$ {valorDescontoCalculado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                  </p>
+                  <p className="text-sm font-semibold text-emerald-600">
+                    Total com desconto: R$ {Math.max(0, (conta?.valor || 0) - valorDescontoCalculado).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
