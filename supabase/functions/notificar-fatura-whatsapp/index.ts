@@ -319,50 +319,8 @@ Deno.serve(async (req) => {
         const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
         const now = new Date().toISOString();
 
-        let conversaIdForLog: string | null = null;
-        if (canal!.id) {
-          const { data: canalCrm } = await supabase
-            .from("crm_canais").select("id").eq("id", canal!.id).maybeSingle();
-          if (canalCrm) {
-            let { data: contato } = await supabase
-              .from("crm_contatos").select("id")
-              .eq("empresa_id", empresa_id)
-              .or(numeroVariants.map((value) => `whatsapp.eq.${value},telefone.eq.${value}`).join(","))
-              .limit(1).maybeSingle();
-            if (!contato) {
-              const { data: novo } = await supabase
-                .from("crm_contatos")
-                .insert({ empresa_id, nome: cliente.nome, whatsapp: numero, telefone: numero, origem: "faturamento" })
-                .select("id").single();
-              contato = novo;
-            }
-
-            let { data: conversa } = await supabase
-              .from("crm_conversas").select("id")
-              .eq("empresa_id", empresa_id).eq("contato_id", contato!.id).eq("canal_id", canal!.id)
-              .order("updated_at", { ascending: false }).limit(1).maybeSingle();
-            if (!conversa) {
-              const { data: nova } = await supabase
-                .from("crm_conversas")
-                .insert({ empresa_id, contato_id: contato!.id, canal_id: canal!.id, status: "aberta", ultima_mensagem: conteudoFinal, ultima_mensagem_em: now })
-                .select("id").single();
-              conversa = nova;
-            }
-
-            await supabase.from("crm_mensagens").insert({
-              empresa_id, conversa_id: conversa!.id, tipo: "texto", direcao: "saida",
-              conteudo: conteudoFinal, status: "enviado", remetente_nome: "💰 Faturamento",
-              identificador_externo: externalId, enviada_em: now,
-            });
-            await supabase.from("crm_conversas").update({
-              ultima_mensagem: conteudoFinal, ultima_mensagem_em: now,
-            }).eq("id", conversa!.id);
-            conversaIdForLog = conversa!.id;
-          }
-        }
-
+        void externalId;
         await supabase.from("invoice_notification_log").update({
-          conversa_id: conversaIdForLog,
           status: "enviado",
           enviado_em: new Date().toISOString(),
         }).eq("id", lockId);
