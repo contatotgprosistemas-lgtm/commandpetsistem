@@ -129,9 +129,10 @@ Deno.serve(async (req) => {
     // (a trava determinística via INSERT com status='enviando' acontece logo
     // antes do fetch à Evolution — ver bloco mais abaixo)
 
-    // Para lembretes de cobrança, só envia se a fatura ainda estiver em aberto (pendente).
-    // Isso evita disparar pré-vencimento/vencimento/atraso/multa para faturas já pagas ou canceladas.
-    if (fatura.id && tipo !== "geracao") {
+    // Só envia se a fatura ainda estiver em aberto (pendente).
+    // Vale para TODOS os tipos — inclusive "geracao" — para evitar
+    // notificar faturas já pagas/canceladas em reenvios manuais.
+    if (fatura.id) {
       const { data: contaAtual } = await supabase
         .from("contas_receber")
         .select("status")
