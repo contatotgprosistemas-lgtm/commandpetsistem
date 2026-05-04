@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaLogoById } from "@/hooks/useEmpresaLogo";
 import { Button } from "@/components/ui/button";
@@ -305,7 +306,7 @@ export default function ContractSignPage() {
             `}</style>
             <div
               className="contract-content prose prose-sm max-w-none leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: contract?.content || "" }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contract?.content || "") }}
             />
           </CardContent>
         </Card>
