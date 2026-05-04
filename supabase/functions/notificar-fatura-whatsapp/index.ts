@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ skipped: "type_disabled" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { primary: numero, variants: numeroVariants } = normalizeWhatsappNumber(cliente.whatsapp ?? cliente.telefone ?? "");
+    const { primary: numero } = normalizeWhatsappNumber(cliente.whatsapp ?? cliente.telefone ?? "");
     if (!numero) {
       return new Response(JSON.stringify({ skipped: "no_whatsapp" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -240,6 +240,21 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ========== RECUPERA TRAVAS ANTIGAS ==========
+    // Se uma execução antiga morreu antes de concluir, libera o contato para retry.
+    const staleThreshold = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    await supabase
+      .from("invoice_notification_log")
+      .update({
+        status: "falha",
+        erro: "Envio interrompido antes da confirmação da API",
+      })
+      .eq("empresa_id", empresa_id)
+      .eq("cliente_id", cliente.id)
+      .eq("tipo", tipo)
+      .eq("status", "enviando")
+      .lt("enviado_em", staleThreshold);
+
     // ========== TRAVA DETERMINÍSTICA ==========
     // Tenta criar o registro com status='enviando' ANTES do envio.
     // O índice único parcial (empresa_id, cliente_id, tipo, dia, status IN ('enviado','enviando'))
@@ -270,77 +285,53 @@ Deno.serve(async (req) => {
     }
     const lockId = lockRow.id;
 
-    // ========== CADÊNCIA SERIALIZADA (anti-banimento) ==========
-    // Estratégia: cada nova mensagem na fila do dia aguarda um slot baseado em
-    // quantas mensagens já estão "enviando" + "enviado" hoje na empresa.
-    // Slot N => N * (30-60s aleatório). Isso serializa disparos paralelos
-    // mesmo quando gerar-faturas dispara dezenas em fire-and-forget.
-    const { count: msgsHojeCount } = await supabase
-      .from("invoice_notification_log")
-      .select("id", { count: "exact", head: true })
-      .eq("empresa_id", empresa_id)
-      .in("status", ["enviado", "enviando"])
-      .gte("enviado_em", inicioDia)
-      .lte("enviado_em", fimDia);
-    // Posição na fila: -1 porque o próprio lock já foi inserido.
-    const slot = Math.max(0, (msgsHojeCount ?? 1) - 1);
-    const baseDelay = SEND_JITTER_MIN_MS + Math.floor(Math.random() * (SEND_JITTER_MAX_MS - SEND_JITTER_MIN_MS));
-    const totalDelayMs = slot * baseDelay;
+    try {
+      const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal.identificador}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
+        body: JSON.stringify({ number: numero, text: conteudoFinal }),
+      });
 
-    // ========== ENVIO EM BACKGROUND ==========
-    // O sleep + envio rodam em background via EdgeRuntime.waitUntil para não
-    // estourar o timeout da edge function (slot 4+ já passa de 150s).
-    // Retornamos 200 imediatamente; o resultado fica gravado no log.
-    const enviarEmBackground = async () => {
-      try {
-        if (totalDelayMs > 0) await sleep(totalDelayMs);
-
-        // Re-checa janela horária após sleep (pode ter passado das 18h).
-        if (nowBRTMinutes() >= SEND_WINDOW_END_MIN) {
-          await supabase.from("invoice_notification_log").update({
-            status: "falha", erro: "Janela 18h encerrada durante a fila",
-          }).eq("id", lockId);
-          return;
-        }
-
-        const evoRes = await fetch(`${EVOLUTION_URL.replace(/\/$/, "")}/message/sendText/${canal!.identificador}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", apikey: EVOLUTION_KEY },
-          body: JSON.stringify({ number: numero, text: conteudoFinal }),
-        });
-        if (!evoRes.ok) {
-          const txt = await evoRes.text();
-          await supabase.from("invoice_notification_log").update({
-            status: "falha", erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}`,
-          }).eq("id", lockId);
-          return;
-        }
-        const evoData = await evoRes.json().catch(() => ({}));
-        const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
-        const now = new Date().toISOString();
-
-        void externalId;
+      if (!evoRes.ok) {
+        const txt = await evoRes.text();
         await supabase.from("invoice_notification_log").update({
-          status: "enviado",
-          enviado_em: new Date().toISOString(),
+          status: "falha",
+          erro: `Evolution ${evoRes.status}: ${txt.slice(0, 300)}`,
         }).eq("id", lockId);
-      } catch (bgErr) {
-        console.error("background send error", bgErr);
-        await supabase.from("invoice_notification_log").update({
-          status: "falha", erro: `bg: ${String((bgErr as Error).message ?? bgErr).slice(0, 300)}`,
-        }).eq("id", lockId);
+
+        return new Response(JSON.stringify({
+          error: "evolution_failed",
+          details: txt.slice(0, 300),
+        }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-    };
 
-    // @ts-ignore EdgeRuntime
-    EdgeRuntime.waitUntil(enviarEmBackground());
+      const evoData = await evoRes.json().catch(() => ({}));
+      const externalId = evoData?.key?.id ?? evoData?.messageId ?? null;
 
-    return new Response(JSON.stringify({
-      success: true,
-      queued: true,
-      slot,
-      delay_seconds: Math.round(totalDelayMs / 1000),
-    }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      await supabase.from("invoice_notification_log").update({
+        status: "enviado",
+        enviado_em: new Date().toISOString(),
+        erro: null,
+        metadata: externalId ? { evolution_message_id: externalId } : undefined,
+      }).eq("id", lockId);
+
+      return new Response(JSON.stringify({
+        success: true,
+        sent: true,
+        message_id: externalId,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    } catch (sendErr) {
+      console.error("send error", sendErr);
+      await supabase.from("invoice_notification_log").update({
+        status: "falha",
+        erro: `send: ${String((sendErr as Error).message ?? sendErr).slice(0, 300)}`,
+      }).eq("id", lockId);
+
+      return new Response(JSON.stringify({
+        error: "send_failed",
+        details: String((sendErr as Error).message ?? sendErr),
+      }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
   } catch (err) {
     console.error("notificar-fatura-whatsapp error", err);
     return new Response(JSON.stringify({ error: String((err as Error).message ?? err) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
