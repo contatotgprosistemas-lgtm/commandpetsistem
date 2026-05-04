@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
+import DOMPurify from "dompurify";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
@@ -833,7 +834,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
                 <Label className="shrink-0">Pré-visualização do contrato</Label>
                 <div
                   className="border rounded-md p-4 mt-1 flex-1 min-h-0 overflow-y-auto bg-white text-foreground prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: contratoDialog.content }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contratoDialog.content) }}
                 />
               </div>
               <div className="flex justify-end gap-2 shrink-0">
