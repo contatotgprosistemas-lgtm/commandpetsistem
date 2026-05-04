@@ -672,15 +672,15 @@ export default function Dashboard() {
 
       {/* Agenda section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="min-w-0">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
               AÇÕES DE HOJE
               <span className="text-sm font-normal text-muted-foreground">Todos</span>
             </h2>
             <p className="text-xs text-muted-foreground capitalize">{todayFormatted}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <EstouChegandoMapDialog />
             <OrcamentoDialog />
             <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
@@ -1184,11 +1184,12 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
         const initials = petName.slice(0, 2).toUpperCase();
         const clientWhatsapp = item.cliente?.whatsapp;
         return (
-          <div key={item.id} className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+          <div key={item.id} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-3 md:px-5 py-3 hover:bg-muted/30 transition-colors">
+            <div className="flex items-center gap-3 md:contents">
             {onToggleSelect && (
               <Checkbox checked={selectedIds?.has(item.id) ?? false} onCheckedChange={() => onToggleSelect(item.id)} className="shrink-0" />
             )}
-            <div className="flex items-center gap-1 -space-x-2">
+            <div className="flex items-center gap-1 -space-x-2 shrink-0">
               <Avatar className="h-11 w-11 border-2 border-card z-10">
                 {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}
                 <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
@@ -1199,7 +1200,7 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
               </Avatar>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <ServicoIcon tipo={item.tipo_servico} />
                 <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
                 {(() => {
@@ -1219,15 +1220,16 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
                   <Pencil className="h-3 w-3" />
                 </button>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 flex-wrap">
                 <span>{item.tipo_servico}</span>
                 <span>|</span>
                 <span className="truncate">{item.cliente?.nome ?? "—"}</span>
                 {clientWhatsapp && <MessageCircle className="h-3 w-3 text-emerald-500 shrink-0" />}
               </div>
             </div>
-            <div className="text-right shrink-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Saída prevista</p>
+            </div>
+            <div className="md:text-right shrink-0 flex md:block items-center gap-2 pl-12 md:pl-0">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Saída prevista:</p>
               <p className="text-sm font-medium text-foreground tabular-nums">
                 {(() => {
                   if (!item.data_saida_provavel) return "—";
@@ -1245,7 +1247,7 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
                 })()}
               </p>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 flex-wrap pl-12 md:pl-0">
               {clientWhatsapp && (
                 <Button variant="ghost" size="icon" className="h-7 w-7" title="Abrir WhatsApp Web" onClick={() => window.open(`https://web.whatsapp.com/send?phone=${clientWhatsapp.replace(/\D/g, "")}`, "_blank")}>
                   <WhatsAppIcon className="h-4 w-4 text-emerald-600" />
