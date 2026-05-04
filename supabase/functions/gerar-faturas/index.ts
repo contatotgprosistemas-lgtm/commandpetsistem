@@ -59,13 +59,12 @@ async function enviarNotifFaturaWhats(
   try {
     // Delega para a edge function unificada (que já trata conexoes_whatsapp,
     // crm_canais, dedup, tipos, multa, e logging em invoice_notification_log).
-    // IMPORTANTE: fire-and-forget — a função-alvo aplica jitter de 30-60s
-    // por mensagem (cadência anti-banimento WhatsApp), então NÃO esperamos
-    // a resposta para não estourar o timeout desta função em lotes grandes.
+    // IMPORTANTE: aguardamos a resposta para garantir que o envio foi de fato
+    // processado e não fique preso em status intermediário.
     const SUPA_URL = Deno.env.get("SUPABASE_URL") ?? "";
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     if (!SUPA_URL || !SERVICE_KEY) return;
-    fetch(`${SUPA_URL.replace(/\/$/, "")}/functions/v1/notificar-fatura-whatsapp`, {
+    const res = await fetch(`${SUPA_URL.replace(/\/$/, "")}/functions/v1/notificar-fatura-whatsapp`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,14 +77,15 @@ async function enviarNotifFaturaWhats(
         fatura,
         tipo: "geracao",
       }),
-    }).then(async (res) => {
-      if (!res.ok) {
-        const txt = await res.text();
-        console.error("notificar-fatura-whatsapp falhou:", res.status, txt.slice(0, 300));
-      } else {
-        await res.text();
-      }
-    }).catch((err) => console.error("notif fire-and-forget error", err));
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error("notificar-fatura-whatsapp falhou:", res.status, txt.slice(0, 300));
+      return;
+    }
+
+    await res.text();
   } catch (err) {
     console.error("enviarNotifFaturaWhats error", err);
   }
