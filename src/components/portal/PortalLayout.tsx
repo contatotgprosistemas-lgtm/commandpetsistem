@@ -19,6 +19,7 @@ import {
   ClipboardCheck,
   Car,
   Navigation,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoTgPro from "@/assets/logo-tgpro.jpeg";
@@ -63,6 +64,7 @@ const allNavItems = [
   { path: "/portal/galeria", label: "Galeria", icon: Camera, beta: false },
   { path: "/portal/manejo", label: "Boletim Diário", icon: Stethoscope, beta: false },
   { path: "/portal/checklist", label: "Checklist", icon: ClipboardCheck, beta: false },
+  { path: "/portal/ocorrencias", label: "Ocorrências", icon: AlertTriangle, beta: false },
   { path: "/portal/conta", label: "Minha Conta", icon: User, beta: false },
 ];
 

@@ -68,6 +68,7 @@ import PortalManejoPage from "@/pages/portal/PortalManejoPage";
 import PortalChecklistPage from "@/pages/portal/PortalChecklistPage";
 import PortalTransportePage from "@/pages/portal/PortalTransportePage";
 import PortalEstouChegandoPage from "@/pages/portal/PortalEstouChegandoPage";
+import PortalOcorrenciasPage from "@/pages/portal/PortalOcorrenciasPage";
 
 
 const queryClient = new QueryClient();
@@ -119,6 +120,7 @@ const App = () => (
               <Route path="galeria" element={<PortalFeedPage />} />
               <Route path="manejo" element={<PortalManejoPage />} />
               <Route path="checklist" element={<PortalChecklistPage />} />
+              <Route path="ocorrencias" element={<PortalOcorrenciasPage />} />
               <Route path="conta" element={<PortalContaPage />} />
             </Route>
 

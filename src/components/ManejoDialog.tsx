@@ -229,7 +229,7 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
             cliente_id: petData.cliente_id,
             title: `⚠️ Ocorrência — ${petName}`,
             message: respostas["ocorrencia_detalhes"].trim(),
-            type: "alerta",
+            type: "ocorrencia",
           });
         }
       }

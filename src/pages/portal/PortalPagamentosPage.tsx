@@ -119,6 +119,7 @@ export default function PortalPagamentosPage() {
   const [selectedGrupo, setSelectedGrupo] = useState<GrupoFatura | null>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [itensPorFatura, setItensPorFatura] = useState<Record<string, Array<{ id: string; descricao: string; valor: number; tipo: string | null }>>>({});
   const [pixProgress, setPixProgress] = useState({ current: 0, total: 0 });
   const [pixError, setPixError] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -285,6 +286,21 @@ export default function PortalPagamentosPage() {
     });
   };
 
+  const carregarItens = async (faturaId: string) => {
+    if (itensPorFatura[faturaId]) return;
+    const { data } = await supabase
+      .from("contas_receber_itens")
+      .select("id, descricao, valor, tipo")
+      .eq("conta_receber_id", faturaId)
+      .order("created_at", { ascending: true });
+    setItensPorFatura(prev => ({ ...prev, [faturaId]: (data as any[]) ?? [] }));
+  };
+
+  const toggleExpandFatura = (grupo: GrupoFatura, key: string) => {
+    toggleExpand(key);
+    grupo.faturas.forEach(f => carregarItens(f.id));
+  };
+
   if (clienteLoading || loading) {
     return (
       <div className="space-y-4">
@@ -344,25 +360,46 @@ export default function PortalPagamentosPage() {
                   </div>
                 </div>
 
-                {/* Expandable detail for grouped invoices */}
-                {hasMultiple && (
-                  <button
-                    onClick={() => toggleExpand(key)}
-                    className="flex items-center gap-1 mt-2 text-xs text-primary hover:underline"
-                  >
-                    {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                    {isExpanded ? "Ocultar detalhes" : "Ver detalhes das faturas"}
-                  </button>
-                )}
+                {/* Expandable detail */}
+                <button
+                  onClick={() => toggleExpandFatura(grupo, key)}
+                  className="flex items-center gap-1 mt-2 text-xs text-primary hover:underline"
+                >
+                  {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {isExpanded ? "Ocultar detalhes" : "Ver detalhes da fatura"}
+                </button>
 
-                {isExpanded && hasMultiple && (
-                  <div className="mt-3 space-y-1.5 border-t border-border pt-3">
-                    {grupo.faturas.map(f => (
-                      <div key={f.id} className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground truncate flex-1">{f.descricao}</span>
-                        <span className="font-medium text-foreground ml-2">R$ {(f.valor_pago ?? f.valor).toFixed(2)}</span>
-                      </div>
-                    ))}
+                {isExpanded && (
+                  <div className="mt-3 space-y-3 border-t border-border pt-3">
+                    {grupo.faturas.map(f => {
+                      const itens = itensPorFatura[f.id];
+                      return (
+                        <div key={f.id} className="space-y-1.5">
+                          {hasMultiple && (
+                            <div className="flex items-center justify-between text-xs font-medium">
+                              <span className="text-foreground truncate flex-1">{f.descricao}</span>
+                              <span className="text-foreground ml-2">R$ {(f.valor_pago ?? f.valor).toFixed(2)}</span>
+                            </div>
+                          )}
+                          {itens === undefined ? (
+                            <p className="text-[11px] text-muted-foreground italic">Carregando itens...</p>
+                          ) : itens.length === 0 ? (
+                            <p className="text-[11px] text-muted-foreground italic">Sem detalhamento de itens.</p>
+                          ) : (
+                            <div className="space-y-1 pl-2 border-l-2 border-border">
+                              {itens.map(it => (
+                                <div key={it.id} className="flex items-center justify-between text-[11px]">
+                                  <span className="text-muted-foreground truncate flex-1">{it.descricao}</span>
+                                  <span className={`ml-2 ${Number(it.valor) < 0 ? "text-emerald-600" : "text-foreground"}`}>
+                                    R$ {Number(it.valor).toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
