@@ -102,7 +102,7 @@ export default function OperacionalAgendaPage() {
 
       {agendamentos.length === 0 ? (
         <Card className="rounded-xl">
-          <CardContent className="p-6 text-center text-muted-foreground">
+          <CardContent className="p-3 md:p-6 text-center text-muted-foreground">
             Nenhum agendamento para hoje.
           </CardContent>
         </Card>

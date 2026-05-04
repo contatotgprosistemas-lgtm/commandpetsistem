@@ -415,7 +415,7 @@ export default function OperacionalPontoPage() {
 
       {/* Live Clock */}
       <Card>
-        <CardContent className="p-6 text-center">
+        <CardContent className="p-3 md:p-6 text-center">
           <p className="text-4xl font-mono font-bold text-foreground tracking-wider">
             {format(currentTime, "HH:mm:ss")}
           </p>

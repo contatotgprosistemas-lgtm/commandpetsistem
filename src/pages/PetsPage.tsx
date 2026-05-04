@@ -91,7 +91,7 @@ export default function PetsPage() {
   const onSearchChange = (v: string) => { setSearchQuery(v); setPage(1); };
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px]">
+    <div className="p-3 md:p-6 space-y-6 max-w-[1400px]">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Pets</h1>

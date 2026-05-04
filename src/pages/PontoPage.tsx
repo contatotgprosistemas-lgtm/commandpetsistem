@@ -300,7 +300,7 @@ export default function PontoPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6 p-3 md:p-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Clock className="h-6 w-6 text-primary" />
