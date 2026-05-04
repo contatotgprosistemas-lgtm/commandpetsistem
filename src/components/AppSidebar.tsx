@@ -76,7 +76,6 @@ export function AppSidebar() {
     { icon: ShoppingBag, label: "Produtos", path: "/produtos" },
     { icon: Gift, label: "Planos e Pacotes", path: "/planos-pacotes" },
     { icon: Car, label: "TaxiPet", path: "/taxipet" },
-    { icon: Clock, label: "Ponto", path: "/ponto" },
   ];
 
   // --- Módulo Finanças ---
@@ -87,8 +86,6 @@ export function AppSidebar() {
   const financasItems: MenuItem[] = [
     { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
     { icon: FileSignature, label: "Contratos", path: "/contratos" },
-    { icon: Receipt, label: "Notas Fiscais", path: "/notas-fiscais" },
-    { icon: Bell, label: "Notif. WhatsApp", path: "/notificacoes-whatsapp" },
   ];
 
   // Filter operational/finance items by contracted modules (skip for super admin – it sees nothing here anyway).
