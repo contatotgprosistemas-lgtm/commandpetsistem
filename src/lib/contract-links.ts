@@ -1,5 +1,35 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export function extractContractSigningToken(tokenResponse: unknown): string | null {
+  if (!tokenResponse) return null;
+
+  if (typeof tokenResponse === "string") {
+    return tokenResponse.trim() || null;
+  }
+
+  if (Array.isArray(tokenResponse)) {
+    for (const row of tokenResponse) {
+      if (row && typeof row === "object" && "signing_token" in row) {
+        const token = (row as { signing_token?: unknown }).signing_token;
+        if (typeof token === "string" && token.trim()) {
+          return token;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  if (typeof tokenResponse === "object" && "signing_token" in tokenResponse) {
+    const token = (tokenResponse as { signing_token?: unknown }).signing_token;
+    if (typeof token === "string" && token.trim()) {
+      return token;
+    }
+  }
+
+  return null;
+}
+
 export async function createContractShareLink(
   signingToken: string,
   empresaId: string,
