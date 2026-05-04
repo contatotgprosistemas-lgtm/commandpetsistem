@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Save, Receipt, Copy, ExternalLink, QrCode } from "lucide-react";
-import { formatDateBR, parseLocalDate } from "@/lib/utils";
+import { formatDateBR } from "@/lib/utils";
 
 function fmtMoney(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -97,7 +97,7 @@ export function FaturaTab() {
           <div>
             <Label className="text-xs text-muted-foreground">Próximo vencimento</Label>
             <div className="text-2xl font-semibold">
-              {proxima ? formatDateBR(parseLocalDate(proxima.vencimento)) : "—"}
+              {proxima ? formatDateBR(proxima.vencimento) : "—"}
             </div>
           </div>
           <div>
@@ -154,7 +154,7 @@ export function FaturaTab() {
                 {faturas.map((f) => (
                   <TableRow key={f.id}>
                     <TableCell>{f.competencia.slice(0, 7).split("-").reverse().join("/")}</TableCell>
-                    <TableCell>{formatDateBR(parseLocalDate(f.vencimento))}</TableCell>
+                    <TableCell>{formatDateBR(f.vencimento)}</TableCell>
                     <TableCell>{fmtMoney(Number(f.valor))}</TableCell>
                     <TableCell>{statusBadge(f.status)}</TableCell>
                     <TableCell className="text-right space-x-2">
@@ -226,7 +226,7 @@ export function FaturaTab() {
               )}
               <div className="text-sm text-muted-foreground text-center">
                 Valor: <strong>{fmtMoney(Number(pixDialog.valor))}</strong> · Vence em{" "}
-                {formatDateBR(parseLocalDate(pixDialog.vencimento))}
+                {formatDateBR(pixDialog.vencimento)}
               </div>
             </div>
           )}
