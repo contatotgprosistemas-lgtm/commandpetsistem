@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { extractContractSigningToken } from "@/lib/contract-links";
 
 interface Contract {
   id: string;
@@ -48,7 +49,7 @@ export default function PortalContratosPage() {
       "get_contract_signing_token" as any,
       { p_contract_id: contract.id }
     );
-    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    const tk = extractContractSigningToken(tokenRows);
     if (!tk) return;
     window.open(`/assinar/${tk}`, "_blank");
   }
