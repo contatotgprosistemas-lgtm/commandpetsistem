@@ -49,12 +49,18 @@ Deno.serve(async (req) => {
     ];
     for (const t of noActionTables) {
       const { error } = await admin.from(t).delete().eq("empresa_id", empresa_id);
-      if (error) return json({ error: `Falha ao limpar ${t}: ${error.message}` }, 400);
+      if (error) {
+        console.error(`excluir-empresa: falha ao limpar ${t}`, error);
+        return json({ error: "Falha ao limpar dados da empresa." }, 400);
+      }
     }
 
     // 3) Delete empresa (cascades the rest)
     const { error: delErr } = await admin.from("empresas").delete().eq("id", empresa_id);
-    if (delErr) return json({ error: delErr.message }, 400);
+    if (delErr) {
+      console.error("excluir-empresa delete error", delErr);
+      return json({ error: "Falha ao excluir a empresa." }, 400);
+    }
 
     // 4) Delete the auth users (profiles already cascaded)
     for (const uid of userIds) {
@@ -63,7 +69,8 @@ Deno.serve(async (req) => {
 
     return json({ success: true, usuarios_excluidos: userIds.size });
   } catch (err: any) {
-    return json({ error: err.message }, 500);
+    console.error("excluir-empresa error", err);
+    return json({ error: "Erro interno ao processar a solicitação." }, 500);
   }
 });
 
