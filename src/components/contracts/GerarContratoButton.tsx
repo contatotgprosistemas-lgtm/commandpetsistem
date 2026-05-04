@@ -192,7 +192,7 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
       sent_at: new Date().toISOString(),
       created_by: profile.id,
       token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    }).select("id, signing_token").single();
+    }).select("id").single();
 
     if (error || !contract) {
       toast.error("Erro ao gerar contrato");
@@ -216,7 +216,13 @@ export function GerarContratoButton({ agendamento, variant = "ghost", size = "ic
     });
 
     try {
-      const link = await createContractShareLink((contract as any).signing_token, profile.empresa_id, window.location.origin);
+      const { data: tokenRows } = await supabase.rpc(
+        "get_contract_signing_token" as any,
+        { p_contract_id: contract.id }
+      );
+      const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+      if (!tk) throw new Error("Token de assinatura indisponível");
+      const link = await createContractShareLink(tk, profile.empresa_id, window.location.origin);
       setCreatedLink(link);
     } catch (linkError) {
       console.error("Short link error:", linkError);
