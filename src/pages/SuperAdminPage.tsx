@@ -781,6 +781,10 @@ export default function SuperAdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="cobranca">
+          <CobrancaSaasTab empresas={empresas} />
+        </TabsContent>
       </Tabs>
 
       <EditarModulosDialog
