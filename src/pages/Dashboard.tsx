@@ -1085,11 +1085,12 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
   const initials = petName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors">
+    <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-3 md:px-5 py-3 hover:bg-muted/30 transition-colors">
+      <div className="flex items-center gap-3 md:contents">
       {onToggleSelect && (
         <Checkbox checked={!!selected} onCheckedChange={onToggleSelect} className="shrink-0" />
       )}
-      <div className="flex items-center gap-1 -space-x-2">
+      <div className="flex items-center gap-1 -space-x-2 shrink-0">
         <Avatar className="h-11 w-11 border-2 border-card z-10">
           {item.pet?.foto_url && <AvatarImage src={item.pet.foto_url} alt={petName} />}
           <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">{initials}</AvatarFallback>
@@ -1100,14 +1101,14 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
         </Avatar>
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-sm text-foreground truncate">{petName}</span>
           {petBreed && <span className="text-xs text-muted-foreground">({petBreed})</span>}
           <button onClick={() => onEdit?.(item)} className="h-5 w-5 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground/50 hover:text-primary transition-colors" title="Editar">
             <Pencil className="h-3 w-3" />
           </button>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 flex-wrap">
           <ServicoIcon tipo={item.tipo_servico} />
           <span>{item.tipo_servico}</span>
           {item.subscription_id && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">Plano</Badge>}
@@ -1116,12 +1117,13 @@ function AgendamentoRow({ item, showCheckin, onCheckin, onEdit, showDelete, onDe
           {clientWhatsapp && <MessageCircle className="h-3 w-3 text-emerald-500 shrink-0" />}
         </div>
       </div>
-      <div className="text-right shrink-0">
-        <p className="text-sm font-medium text-foreground tabular-nums">{format(dataHora, "dd/MM/yyyy HH:mm")}</p>
-        {item.notas && <p className="text-xs text-muted-foreground truncate max-w-[180px]">{item.notas}</p>}
       </div>
-      <div className="flex items-center gap-1 shrink-0 ml-2"><StatusDot status={item.status} /></div>
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="md:text-right shrink-0 pl-12 md:pl-0">
+        <p className="text-sm font-medium text-foreground tabular-nums">{format(dataHora, "dd/MM/yyyy HH:mm")}</p>
+        {item.notas && <p className="text-xs text-muted-foreground truncate max-w-[260px]">{item.notas}</p>}
+      </div>
+      <div className="flex items-center gap-1 shrink-0 md:ml-2 pl-12 md:pl-0"><StatusDot status={item.status} /></div>
+      <div className="flex items-center gap-1 shrink-0 flex-wrap pl-12 md:pl-0">
         {showCheckin && item.status !== "na_empresa" && item.status !== "concluido" && item.status !== "falta" && !["taxipet", "taxi pet", "transporte", "taxi-pet"].includes(item.tipo_servico.toLowerCase()) && (
           <>
             <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => onCheckin?.(item)}>
