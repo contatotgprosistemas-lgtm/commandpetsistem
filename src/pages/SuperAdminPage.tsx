@@ -566,9 +566,22 @@ export default function SuperAdminPage() {
         <TabsContent value="clientes">
           <Card className="mb-4">
             <CardContent className="p-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar cliente por nome ou email..." className="pl-9" value={searchClientes} onChange={(e) => setSearchClientes(e.target.value)} />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Buscar cliente por nome ou email..." className="pl-9" value={searchClientes} onChange={(e) => setSearchClientes(e.target.value)} />
+                </div>
+                <Select value={filterEmpresaCliente} onValueChange={setFilterEmpresaCliente}>
+                  <SelectTrigger className="w-[260px]">
+                    <SelectValue placeholder="Empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as empresas</SelectItem>
+                    {empresas.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
@@ -596,6 +609,7 @@ export default function SuperAdminPage() {
                     <TableBody>
                       {clientProfiles
                         .filter((p) => {
+                          if (filterEmpresaCliente !== "todas" && p.empresa_id !== filterEmpresaCliente) return false;
                           if (!searchClientes) return true;
                           const s = searchClientes.toLowerCase();
                           return p.nome.toLowerCase().includes(s) || (p.email || "").toLowerCase().includes(s);
