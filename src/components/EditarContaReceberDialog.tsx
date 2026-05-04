@@ -29,6 +29,7 @@ interface Props {
     status: string;
     cliente_id?: string | null;
     banco?: string | null;
+    desconto?: number | null;
   } | null;
 }
 
@@ -44,6 +45,7 @@ export function EditarContaReceberDialog({ open, onOpenChange, onSuccess, conta 
     cliente_id: "",
     descricao: "",
     valor: "",
+    desconto: "",
     vencimento: "",
     categoria: "",
     banco: "",
@@ -62,6 +64,7 @@ export function EditarContaReceberDialog({ open, onOpenChange, onSuccess, conta 
         cliente_id: conta.cliente_id || "",
         descricao: conta.descricao || "",
         valor: String(conta.valor),
+        desconto: String(conta.desconto ?? ""),
         vencimento: conta.vencimento || "",
         categoria: conta.categoria || "",
         banco: conta.banco || "",
@@ -83,6 +86,7 @@ export function EditarContaReceberDialog({ open, onOpenChange, onSuccess, conta 
         cliente_id: form.cliente_id || null,
         descricao: form.descricao || "Conta a receber",
         valor: parseFloat(form.valor),
+        desconto: parseFloat(form.desconto) || 0,
         vencimento: form.vencimento,
         categoria: form.categoria || null,
         banco: form.banco || null,
@@ -143,6 +147,21 @@ export function EditarContaReceberDialog({ open, onOpenChange, onSuccess, conta 
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Desconto (R$)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.desconto}
+              onChange={e => setForm({ ...form, desconto: e.target.value })}
+              placeholder="0,00"
+            />
+            <p className="text-xs text-muted-foreground">
+              Líquido: {((parseFloat(form.valor) || 0) - (parseFloat(form.desconto) || 0)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
