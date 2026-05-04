@@ -20,6 +20,14 @@ function isMealQuestion(label: string): boolean {
   return /(cafe da manha|cafe-da-manha|almoco|almocou|janta|jantar|refeicao|comeu|alimentac)/.test(n);
 }
 
+function isOcorrenciaQuestion(label: string): boolean {
+  const n = (label || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return /ocorrenc/.test(n);
+}
+
 interface ManejoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
