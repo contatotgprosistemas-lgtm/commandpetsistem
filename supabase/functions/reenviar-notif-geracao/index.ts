@@ -93,13 +93,6 @@ Deno.serve(async (req) => {
     }
     const grupos = Array.from(porCliente.values());
 
-    const fmtBR = (s: string) => {
-      if (!s) return "";
-      const [y, m, d] = String(s).split("T")[0].split("-");
-      return `${d}/${m}/${y}`;
-    };
-    const fmtBRL = (n: number) => Number(n).toFixed(2).replace(".", ",");
-
     const work = async () => {
       for (const grupo of grupos) {
       const f = grupo[0];
@@ -115,20 +108,6 @@ Deno.serve(async (req) => {
 
       const cliente = (f as any).clientes;
       if (!cliente?.whatsapp && !cliente?.telefone) { pulados++; continue; }
-
-      // Monta mensagem consolidada quando o cliente tem +1 fatura.
-      const totalValor = grupo.reduce((s, x) => s + Number(x.valor || 0), 0);
-      const primeiroNome = (cliente.nome ?? "").split(" ")[0] || "tudo bem";
-      let mensagem_override: string | undefined = undefined;
-      if (grupo.length > 1) {
-        const linhas = grupo
-          .map((x) => `• *${x.descricao}* — R$ ${fmtBRL(Number(x.valor))} (venc. ${fmtBR(x.vencimento)})`)
-          .join("\n");
-        mensagem_override =
-          `Olá ${primeiroNome}! Foram geradas *${grupo.length} faturas* para você:\n\n` +
-          `${linhas}\n\n` +
-          `Total: *R$ ${fmtBRL(totalValor)}*. 🐾`;
-      }
 
       try {
         const res = await fetch(`${SUPA_URL.replace(/\/$/, "")}/functions/v1/notificar-fatura-whatsapp`, {
@@ -148,12 +127,11 @@ Deno.serve(async (req) => {
             },
             fatura: {
               id: f.id,
-              descricao: grupo.length > 1 ? `${grupo.length} faturas` : f.descricao,
-              valor: totalValor,
+              descricao: f.descricao,
+              valor: Number(f.valor),
               vencimento: f.vencimento,
             },
             tipo: "geracao",
-            ...(mensagem_override ? { mensagem_override } : {}),
           }),
         });
         const txt = await res.text();
