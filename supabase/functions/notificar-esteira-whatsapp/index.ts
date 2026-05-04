@@ -139,6 +139,6 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     console.error("notificar-esteira-whatsapp error", err);
-    return new Response(JSON.stringify({ error: String((err as Error).message ?? err) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: "Erro interno ao processar a solicitação." }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

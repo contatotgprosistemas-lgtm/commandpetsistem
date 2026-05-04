@@ -107,7 +107,8 @@ Deno.serve(async (req) => {
 
     const { error: deleteErr } = await adminClient.auth.admin.deleteUser(user_id);
     if (deleteErr) {
-      return new Response(JSON.stringify({ error: deleteErr.message }), {
+      console.error("excluir-usuario delete error", deleteErr);
+      return new Response(JSON.stringify({ error: "Falha ao excluir o usuário." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -118,7 +119,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("excluir-usuario error", err);
+    return new Response(JSON.stringify({ error: "Erro interno ao processar a solicitação." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
