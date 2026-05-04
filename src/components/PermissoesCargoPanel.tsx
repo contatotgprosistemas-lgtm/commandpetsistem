@@ -26,10 +26,6 @@ interface ModuleConfig {
 const MODULES: ModuleConfig[] = [
   // Geral
   { key: "dashboard", label: "Dashboard" },
-  // Comercial
-  { key: "crm", label: "CRM WhatsApp", group: "Comercial" },
-  { key: "kanban", label: "Pipeline Vendas", group: "Comercial" },
-  { key: "chatbot", label: "Chatbot", group: "Comercial" },
   // Operacional
   { key: "agenda", label: "Agenda", group: "Operacional" },
   { key: "reservas", label: "Reservas", group: "Operacional" },
@@ -41,11 +37,9 @@ const MODULES: ModuleConfig[] = [
   { key: "produtos", label: "Produtos", group: "Operacional" },
   { key: "planos", label: "Planos e Pacotes", group: "Operacional" },
   { key: "taxipet", label: "TaxiPet", group: "Operacional" },
-  { key: "ponto", label: "Ponto", group: "Operacional" },
   // Finanças
   { key: "financeiro", label: "Financeiro", group: "Finanças" },
   { key: "contratos", label: "Contratos", group: "Finanças" },
-  { key: "notas_fiscais", label: "Notas Fiscais", group: "Finanças" },
   // Sistema
   { key: "configuracoes", label: "Configurações", group: "Sistema" },
 ];
