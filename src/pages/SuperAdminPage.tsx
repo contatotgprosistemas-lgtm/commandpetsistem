@@ -16,6 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Pencil, Building2 } from "lucide-react";
 import { calcularValorMensal, MODULO_PRECOS } from "@/lib/modulos";
+import { CobrancaSaasTab } from "@/components/superadmin/CobrancaSaasTab";
+import { Receipt } from "lucide-react";
 
 interface ProfileRow {
   id: string;
@@ -350,6 +352,10 @@ export default function SuperAdminPage() {
             <Building2 className="h-4 w-4" />
             Empresas & Módulos
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{empresas.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="cobranca" className="gap-2">
+            <Receipt className="h-4 w-4" />
+            Cobrança SaaS
           </TabsTrigger>
         </TabsList>
 
@@ -774,6 +780,10 @@ export default function SuperAdminPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="cobranca">
+          <CobrancaSaasTab empresas={empresas} />
         </TabsContent>
       </Tabs>
 

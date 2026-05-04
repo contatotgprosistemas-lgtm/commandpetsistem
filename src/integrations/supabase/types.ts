@@ -2119,6 +2119,7 @@ export type Database = {
           created_at: string
           data_fim: string | null
           data_inicio: string
+          dia_vencimento_fatura: number
           empresa_id: string
           modulo_banho_tosa: boolean
           modulo_hotel_creche: boolean
@@ -2131,6 +2132,7 @@ export type Database = {
           created_at?: string
           data_fim?: string | null
           data_inicio?: string
+          dia_vencimento_fatura?: number
           empresa_id: string
           modulo_banho_tosa?: boolean
           modulo_hotel_creche?: boolean
@@ -2143,6 +2145,7 @@ export type Database = {
           created_at?: string
           data_fim?: string | null
           data_inicio?: string
+          dia_vencimento_fatura?: number
           empresa_id?: string
           modulo_banho_tosa?: boolean
           modulo_hotel_creche?: boolean
@@ -2410,6 +2413,74 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faturas_sistema: {
+        Row: {
+          asaas_charge_id: string | null
+          asaas_invoice_url: string | null
+          boleto_url: string | null
+          competencia: string
+          created_at: string
+          data_pagamento: string | null
+          empresa_id: string
+          forma_pagamento: string | null
+          id: string
+          linha_digitavel_boleto: string | null
+          observacao: string | null
+          pix_copia_cola: string | null
+          pix_qr_code: string | null
+          status: string
+          updated_at: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          asaas_charge_id?: string | null
+          asaas_invoice_url?: string | null
+          boleto_url?: string | null
+          competencia: string
+          created_at?: string
+          data_pagamento?: string | null
+          empresa_id: string
+          forma_pagamento?: string | null
+          id?: string
+          linha_digitavel_boleto?: string | null
+          observacao?: string | null
+          pix_copia_cola?: string | null
+          pix_qr_code?: string | null
+          status?: string
+          updated_at?: string
+          valor: number
+          vencimento: string
+        }
+        Update: {
+          asaas_charge_id?: string | null
+          asaas_invoice_url?: string | null
+          boleto_url?: string | null
+          competencia?: string
+          created_at?: string
+          data_pagamento?: string | null
+          empresa_id?: string
+          forma_pagamento?: string | null
+          id?: string
+          linha_digitavel_boleto?: string | null
+          observacao?: string | null
+          pix_copia_cola?: string | null
+          pix_qr_code?: string | null
+          status?: string
+          updated_at?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faturas_sistema_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
             referencedColumns: ["id"]
           },
         ]
@@ -4191,6 +4262,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sistema_asaas_config: {
+        Row: {
+          ambiente: string
+          api_key: string | null
+          boleto_habilitado: boolean
+          created_at: string
+          id: string
+          pix_habilitado: boolean
+          updated_at: string
+          webhook_token: string | null
+        }
+        Insert: {
+          ambiente?: string
+          api_key?: string | null
+          boleto_habilitado?: boolean
+          created_at?: string
+          id?: string
+          pix_habilitado?: boolean
+          updated_at?: string
+          webhook_token?: string | null
+        }
+        Update: {
+          ambiente?: string
+          api_key?: string | null
+          boleto_habilitado?: boolean
+          created_at?: string
+          id?: string
+          pix_habilitado?: boolean
+          updated_at?: string
+          webhook_token?: string | null
+        }
+        Relationships: []
       }
       subscription_events: {
         Row: {
