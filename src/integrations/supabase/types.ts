@@ -1823,6 +1823,48 @@ export type Database = {
           },
         ]
       }
+      crm_canal_secrets: {
+        Row: {
+          api_key: string
+          canal_id: string
+          created_at: string
+          empresa_id: string
+          server_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          canal_id: string
+          created_at?: string
+          empresa_id: string
+          server_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          canal_id?: string
+          created_at?: string
+          empresa_id?: string
+          server_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_canal_secrets_canal_id_fkey"
+            columns: ["canal_id"]
+            isOneToOne: true
+            referencedRelation: "crm_canais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_canal_secrets_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_contato_tag_links: {
         Row: {
           contato_id: string
