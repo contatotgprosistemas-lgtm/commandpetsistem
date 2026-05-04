@@ -97,7 +97,7 @@ export function CobrancaSaasTab({ empresas }: { empresas: any[] }) {
     }
   }
 
-  const empresaNome = (id: string) => empresas.find((e) => e.id === id)?.nome_empresa || "—";
+  const empresaNome = (id: string) => empresas.find((e) => e.id === id)?.nome || "—";
 
   const faturasFiltradas = faturas.filter((f) => {
     if (filterEmpresa !== "todas" && f.empresa_id !== filterEmpresa) return false;
@@ -180,7 +180,7 @@ export function CobrancaSaasTab({ empresas }: { empresas: any[] }) {
               <SelectContent>
                 <SelectItem value="todas">Todas as empresas</SelectItem>
                 {empresas.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>{e.nome_empresa}</SelectItem>
+                  <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -207,7 +207,7 @@ export function CobrancaSaasTab({ empresas }: { empresas: any[] }) {
               <SelectContent>
                 <SelectItem value="todas">Todas as empresas</SelectItem>
                 {empresas.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>{e.nome_empresa}</SelectItem>
+                  <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
