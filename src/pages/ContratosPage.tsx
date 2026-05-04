@@ -535,7 +535,13 @@ export default function ContratosPage() {
       throw error || new Error("Empresa não encontrada");
     }
 
-    return createContractShareLink(contract.signing_token, profile.empresa_id, window.location.origin);
+    const { data: tokenRows } = await supabase.rpc(
+      "get_contract_signing_token" as any,
+      { p_contract_id: contract.id }
+    );
+    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    if (!tk) throw new Error("Token de assinatura indisponível");
+    return createContractShareLink(tk, profile.empresa_id, window.location.origin);
   }
 
   async function copyLink(contract: Contract) {
