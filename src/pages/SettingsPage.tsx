@@ -13,13 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff, Trash2, Camera, X, Upload, CalendarDays } from "lucide-react";
+import { Building2, Users, Bell, Shield, Settings, Loader2, Save, UserPlus, Eye, EyeOff, Trash2, Camera, X, Upload, CalendarDays, Receipt } from "lucide-react";
 import { PermissoesCargoPanel } from "@/components/PermissoesCargoPanel";
 import { translateAuthError } from "@/lib/authErrors";
 import { AniversariosCard } from "@/components/AniversariosCard";
 import { FaturaWhatsappCard } from "@/components/FaturaWhatsappCard";
 import { SistemaTab } from "@/components/settings/SistemaTab";
 import { FeriadosTab } from "@/components/settings/FeriadosTab";
+import { FaturaTab } from "@/components/settings/FaturaTab";
 
 // ─── Dados da Empresa ───────────────────────────────────────────────
 function EmpresaTab() {
@@ -1053,6 +1054,7 @@ export default function SettingsPage() {
           <TabsTrigger value="notificacoes" className="gap-1.5"><Bell className="h-4 w-4" /> Notificações</TabsTrigger>
           <TabsTrigger value="seguranca" className="gap-1.5"><Shield className="h-4 w-4" /> Segurança</TabsTrigger>
           <TabsTrigger value="integracoes" className="gap-1.5"><Settings className="h-4 w-4" /> Integrações</TabsTrigger>
+          <TabsTrigger value="fatura" className="gap-1.5"><Receipt className="h-4 w-4" /> Fatura</TabsTrigger>
         </TabsList>
 
         <TabsContent value="empresa"><EmpresaTab /></TabsContent>
@@ -1063,6 +1065,7 @@ export default function SettingsPage() {
         <TabsContent value="notificacoes"><NotificacoesTab /></TabsContent>
         <TabsContent value="seguranca"><SegurancaTab /></TabsContent>
         <TabsContent value="integracoes"><IntegracoesTab /></TabsContent>
+        <TabsContent value="fatura"><FaturaTab /></TabsContent>
       </Tabs>
     </div>
   );
