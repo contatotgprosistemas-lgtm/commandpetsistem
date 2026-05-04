@@ -59,6 +59,7 @@ export default function SuperAdminPage() {
   const [filterCargo, setFilterCargo] = useState("todos");
   const [filterStatus, setFilterStatus] = useState("todos");
   const [searchClientes, setSearchClientes] = useState("");
+  const [filterEmpresaCliente, setFilterEmpresaCliente] = useState("todas");
   const [searchEmpresas, setSearchEmpresas] = useState("");
   const [empresas, setEmpresas] = useState<EmpresaModuloRow[]>([]);
   const [editEmpresa, setEditEmpresa] = useState<EmpresaModuloRow | null>(null);
