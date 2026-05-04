@@ -13,7 +13,43 @@ Deno.serve(async (req) => {
   try {
     const SUPA_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Require authenticated caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const authClient = createClient(SUPA_URL, ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await authClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = claimsData.claims.sub as string;
+
     const supabase = createClient(SUPA_URL, SERVICE_KEY);
+
+    // Resolve caller's empresa_id and role
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("empresa_id, cargo")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const callerEmpresaId = profile?.empresa_id ?? null;
+    const cargo = (profile?.cargo ?? "").toLowerCase();
+    const isPrivileged = ["admin", "gerente", "super_admin"].includes(cargo);
+    if (!callerEmpresaId || !isPrivileged) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const body = await req.json().catch(() => ({}));
     const empresa_id: string = body.empresa_id;
@@ -21,6 +57,13 @@ Deno.serve(async (req) => {
     if (!empresa_id) {
       return new Response(JSON.stringify({ error: "empresa_id required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Tenant isolation
+    if (empresa_id !== callerEmpresaId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
