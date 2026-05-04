@@ -181,7 +181,7 @@ export default function BanhoTosaPage() {
   const todayFormatted = format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
   return (
-    <div className="p-6 space-y-5 max-w-[1400px]">
+    <div className="p-3 md:p-6 space-y-5 max-w-[1400px]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Scissors className="h-6 w-6 text-primary" />

@@ -14,7 +14,7 @@ export default function TaxiPetPage() {
   const [tab, setTab] = useState("dashboard");
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 md:p-6 space-y-6">
       <div className="flex items-center gap-3">
         <div className="h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
           <Car className="h-6 w-6" />

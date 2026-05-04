@@ -143,7 +143,7 @@ export default function FinancePage() {
   const vencidas = contas.filter(c => c.status === "pendente" && isPast(new Date(c.vencimento)) && !isToday(new Date(c.vencimento)));
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px]">
+    <div className="p-3 md:p-6 space-y-6 max-w-[1400px]">
       <div>
         <h1 className="text-lg font-semibold text-foreground">Financeiro</h1>
         <p className="text-sm text-muted-foreground">Visão geral financeira</p>

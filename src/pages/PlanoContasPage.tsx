@@ -230,7 +230,7 @@ export default function PlanoContasPage() {
   const isEmpty = categorias.length === 0;
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px]">
+    <div className="p-3 md:p-6 space-y-6 max-w-[1400px]">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Plano de Contas</h1>

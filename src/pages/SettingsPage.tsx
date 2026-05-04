@@ -1043,7 +1043,7 @@ export default function SettingsPage() {
   const defaultTab = searchParams.get("tab") || "empresa";
 
   return (
-    <div className="p-6 space-y-6 max-w-[900px]">
+    <div className="p-3 md:p-6 space-y-6 max-w-[900px]">
       <div>
         <h1 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Settings className="h-5 w-5 text-primary" />

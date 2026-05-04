@@ -32,7 +32,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="flex min-h-screen w-full bg-background">
       {user && <AppSidebar />}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pt-12 md:pt-0 min-w-0">
         {children}
       </main>
     </div>
