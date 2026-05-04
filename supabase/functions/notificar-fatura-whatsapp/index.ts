@@ -126,6 +126,26 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Anti-duplicidade por cliente: se já enviamos QUALQUER notificação deste
+    // tipo para este cliente nos últimos 7 dias, não envia de novo — mesmo
+    // que seja uma fatura diferente. Evita o cenário de gerar várias faturas
+    // no mês e o cliente receber um lembrete por fatura.
+    {
+      const seteDiasAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: dupLog } = await supabase
+        .from("invoice_notification_log")
+        .select("id")
+        .eq("empresa_id", empresa_id)
+        .eq("cliente_id", cliente.id)
+        .eq("tipo", tipo)
+        .eq("status", "enviado")
+        .gte("enviado_em", seteDiasAtras)
+        .limit(1);
+      if (dupLog && dupLog.length > 0) {
+        return new Response(JSON.stringify({ skipped: "already_sent_to_client_recently" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     // (a trava determinística via INSERT com status='enviando' acontece logo
     // antes do fetch à Evolution — ver bloco mais abaixo)
 
