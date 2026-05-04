@@ -11,6 +11,11 @@ import { toast } from "@/hooks/use-toast";
 import { Users, UserCheck, UserX, Search, Loader2, Shield, Activity, CheckCircle, XCircle, Clock, Trash2, LogIn, PawPrint } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Pencil, Building2 } from "lucide-react";
+import { calcularValorMensal, MODULO_PRECOS } from "@/lib/modulos";
 
 interface ProfileRow {
   id: string;
@@ -23,6 +28,7 @@ interface ProfileRow {
   created_at: string;
   user_id: string;
   empresa_nome: string | null;
+  signup_source: string | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -40,13 +46,18 @@ export default function SuperAdminPage() {
   const [filterCargo, setFilterCargo] = useState("todos");
   const [filterStatus, setFilterStatus] = useState("todos");
   const [searchClientes, setSearchClientes] = useState("");
+  const [searchEmpresas, setSearchEmpresas] = useState("");
+  const [empresas, setEmpresas] = useState<EmpresaModuloRow[]>([]);
+  const [editEmpresa, setEditEmpresa] = useState<EmpresaModuloRow | null>(null);
 
   const fetchProfiles = async () => {
     setLoading(true);
-    const [profilesRes, clientRolesRes, clientesRes] = await Promise.all([
+    const [profilesRes, clientRolesRes, clientesRes, empresasRes, modulosRes] = await Promise.all([
       supabase.from("profiles").select("*, empresas(nome_empresa)").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id").eq("role", "cliente"),
       supabase.from("clientes").select("user_id, empresa_id, empresas(nome_empresa)").not("user_id", "is", null),
+      supabase.from("empresas").select("id, nome_empresa, created_at").order("nome_empresa"),
+      supabase.from("empresa_modulos").select("*"),
     ]);
     if (!profilesRes.error && profilesRes.data) {
       const cIds = new Set((clientRolesRes.data || []).map((r: any) => r.user_id));
@@ -64,7 +75,29 @@ export default function SuperAdminPage() {
         profilesRes.data.map((p: any) => ({
           ...p,
           empresa_nome: p.empresas?.nome_empresa || clienteEmpresaMap.get(p.user_id) || null,
+          signup_source: p.signup_source ?? null,
         })) as ProfileRow[]
+      );
+    }
+    if (!empresasRes.error && empresasRes.data) {
+      const moduloMap = new Map<string, any>();
+      (modulosRes.data || []).forEach((m: any) => moduloMap.set(m.empresa_id, m));
+      setEmpresas(
+        empresasRes.data.map((e: any) => {
+          const m = moduloMap.get(e.id);
+          return {
+            id: e.id,
+            nome: e.nome_empresa,
+            created_at: e.created_at,
+            modulo_banho_tosa: m?.modulo_banho_tosa ?? false,
+            modulo_hotel_creche: m?.modulo_hotel_creche ?? false,
+            modulo_ponto: m?.modulo_ponto ?? false,
+            valor_mensal: Number(m?.valor_mensal ?? 0),
+            data_inicio: m?.data_inicio ?? null,
+            data_fim: m?.data_fim ?? null,
+            observacao: m?.observacao ?? null,
+          };
+        })
       );
     }
     setLoading(false);
@@ -175,7 +208,11 @@ export default function SuperAdminPage() {
     }
   };
 
-  const pendingProfiles = profiles.filter((p) => !p.aprovado && p.status !== "bloqueado");
+  // Apenas usuários criados via "Criar conta" (signup público) precisam de aprovação.
+  // Funcionários criados por admins entram já aprovados (aprovado=true).
+  const pendingProfiles = profiles.filter(
+    (p) => p.signup_source === "self_signup" && !p.aprovado && p.status !== "bloqueado"
+  );
   const approvedProfiles = profiles.filter((p) => p.aprovado);
 
   const filtered = approvedProfiles.filter((p) => {
@@ -271,6 +308,11 @@ export default function SuperAdminPage() {
             <PawPrint className="h-4 w-4" />
             Portal do Cliente
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{clientProfiles.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="empresas" className="gap-2">
+            <Building2 className="h-4 w-4" />
+            Empresas & Módulos
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{empresas.length}</Badge>
           </TabsTrigger>
         </TabsList>
 
