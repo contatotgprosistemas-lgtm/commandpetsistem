@@ -64,6 +64,11 @@ export function ProtectedRoute({ children, requireAdmin }: { children: React.Rea
     return <Navigate to="/" replace />;
   }
 
+  // Super admin lands on /admin instead of the operational dashboard
+  if (isSuperAdmin && location.pathname === "/") {
+    return <Navigate to="/admin" replace />;
+  }
+
   // Module gating — super admin always passes
   if (!isSuperAdmin && modulos.loaded && !isRouteAllowed(location.pathname, modulos)) {
     return <ModuleLockedScreen />;
