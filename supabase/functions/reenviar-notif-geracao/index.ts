@@ -80,7 +80,10 @@ Deno.serve(async (req) => {
     let enviados = 0, pulados = 0, falhas = 0;
     const detalhes: any[] = [];
 
-    for (const f of faturas ?? []) {
+    const lista = faturas ?? [];
+
+    const work = async () => {
+      for (const f of lista) {
       const { data: existsLog } = await supabase
         .from("invoice_notification_log")
         .select("id")
@@ -135,11 +138,21 @@ Deno.serve(async (req) => {
       // jitter 30-60s internamente, então aqui basta um espaçamento mínimo
       // para não criar locks concorrentes.
       await new Promise((r) => setTimeout(r, 2000));
+      }
+      console.log("reenviar-notif-geracao concluído", { total: lista.length, enviados, pulados, falhas });
+    };
+
+    // @ts-ignore EdgeRuntime is available in Supabase Edge Runtime
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(work());
+    } else {
+      work();
     }
 
     return new Response(
-      JSON.stringify({ total: faturas?.length ?? 0, enviados, pulados, falhas, detalhes: detalhes.slice(0, 20) }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+      JSON.stringify({ scheduled: true, total: lista.length, message: "Reenvio iniciado em background com cadência conservadora." }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 202 },
     );
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
