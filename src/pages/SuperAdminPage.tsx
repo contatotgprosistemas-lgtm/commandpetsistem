@@ -31,6 +31,19 @@ interface ProfileRow {
   signup_source: string | null;
 }
 
+interface EmpresaModuloRow {
+  id: string;
+  nome: string;
+  created_at: string;
+  modulo_banho_tosa: boolean;
+  modulo_hotel_creche: boolean;
+  modulo_ponto: boolean;
+  valor_mensal: number;
+  data_inicio: string | null;
+  data_fim: string | null;
+  observacao: string | null;
+}
+
 const statusColors: Record<string, string> = {
   ativo: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   suspenso: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
