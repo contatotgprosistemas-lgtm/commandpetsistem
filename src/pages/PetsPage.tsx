@@ -203,8 +203,8 @@ export default function PetsPage() {
           })}
         </div>
       ) : (
-        <div className="bg-card rounded-lg shadow-card">
-        <div className="grid grid-cols-[1fr_1fr_1fr_80px_80px_80px] px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="bg-card rounded-lg shadow-card overflow-x-auto">
+        <div className="grid grid-cols-[minmax(160px,1fr)_minmax(120px,1fr)_minmax(160px,1fr)_80px_80px_80px] min-w-[760px] px-3 md:px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wider">
           <span>Pet</span>
           <span>Raça</span>
           <span>Tutor</span>
@@ -216,7 +216,7 @@ export default function PetsPage() {
           {paged.map(p => {
             const palette = colorFromString(p.nome || p.id);
             return (
-              <div key={p.id} className="grid grid-cols-[1fr_1fr_1fr_80px_80px_80px] px-5 py-3 items-center hover:bg-muted/50 transition-colors">
+              <div key={p.id} className="grid grid-cols-[minmax(160px,1fr)_minmax(120px,1fr)_minmax(160px,1fr)_80px_80px_80px] min-w-[760px] px-3 md:px-5 py-3 items-center hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8 border border-border shrink-0">
                     {(p as any).foto_url && <AvatarImage src={(p as any).foto_url} alt={p.nome} />}
