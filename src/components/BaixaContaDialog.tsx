@@ -85,8 +85,12 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
 
     if (isBatch) {
       // Batch: call efetuar_baixa for each invoice individually
-      const vJuros = parseFloat(valorJuros) || 0;
-      const vDesconto = valorDescontoCalculado;
+      // Discount in batch mode: if "%", apply per invoice; if absolute value, distribute proportionally
+      const trimmedDesc = valorDescontoRaw.trim();
+      const isPercent = trimmedDesc.endsWith("%");
+      const pctValue = isPercent ? (parseFloat(trimmedDesc.replace("%", "")) || 0) : 0;
+      const totalDescontoAbs = !isPercent ? (parseFloat(trimmedDesc) || 0) : 0;
+      const totalBase = conta?.valor || 0;
       let hasError = false;
 
       for (const contaId of contaIds!) {
@@ -99,14 +103,22 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
 
         if (!invoiceData) continue;
 
+        let descontoFatura = 0;
+        if (isPercent) {
+          descontoFatura = Math.round(invoiceData.valor * pctValue) / 100;
+        } else if (totalDescontoAbs > 0 && totalBase > 0) {
+          descontoFatura = Math.round((totalDescontoAbs * (invoiceData.valor / totalBase)) * 100) / 100;
+        }
+        const valorPagoFatura = Math.max(0, invoiceData.valor - descontoFatura);
+
         const { data, error } = await supabase.rpc("efetuar_baixa", {
           p_conta_id: contaId,
           p_data_baixa: dataBaixa,
           p_banco_id: selectedBank.id,
           p_banco_nome: banco,
-          p_valor_pago: invoiceData.valor,
+          p_valor_pago: valorPagoFatura,
           p_valor_juros: 0,
-          p_valor_desconto: 0,
+          p_valor_desconto: descontoFatura,
           p_observacao: observacao || null,
           p_forma_pagamento: formaPagamento || null,
         });
@@ -195,6 +207,25 @@ export function BaixaContaDialog({ conta, contaIds, open, onOpenChange, onSucces
                 R$ {Number(conta?.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </p>
               <p className="text-xs text-muted-foreground mt-1">{contaIds!.length} faturas serão baixadas individualmente com seus respectivos valores</p>
+            </div>
+          )}
+
+          {isBatch && (
+            <div>
+              <Label>Desconto (aplicado a cada fatura)</Label>
+              <Input
+                type="text"
+                placeholder="Ex: 10 (R$) ou 5%"
+                value={valorDescontoRaw}
+                onChange={e => setValorDescontoRaw(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {valorDescontoRaw.trim().endsWith("%")
+                  ? `Será aplicado ${valorDescontoRaw.trim()} sobre o valor de cada fatura.`
+                  : valorDescontoCalculado > 0
+                    ? `Desconto total R$ ${valorDescontoCalculado.toFixed(2)} será distribuído proporcionalmente entre as faturas.`
+                    : "Use sufixo % para percentual (ex: 5%) ou valor absoluto em R$ (será rateado)."}
+              </p>
             </div>
           )}
 
