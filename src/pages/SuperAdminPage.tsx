@@ -67,13 +67,23 @@ export default function SuperAdminPage() {
     setLoading(true);
     const [profilesRes, clientRolesRes, clientesRes, empresasRes, modulosRes] = await Promise.all([
       supabase.from("profiles").select("*, empresas(nome_empresa)").order("created_at", { ascending: false }),
-      supabase.from("user_roles").select("user_id").eq("role", "cliente"),
+      supabase.from("user_roles").select("user_id, role"),
       supabase.from("clientes").select("user_id, empresa_id, empresas(nome_empresa)").not("user_id", "is", null),
       supabase.from("empresas").select("id, nome_empresa, created_at").order("nome_empresa"),
       supabase.from("empresa_modulos").select("*"),
     ]);
     if (!profilesRes.error && profilesRes.data) {
-      const cIds = new Set((clientRolesRes.data || []).map((r: any) => r.user_id));
+      // Only treat as "portal client" users that have ONLY the 'cliente' role
+      // (no system role like admin/gerente/atendente/operacional/banhista/financeiro).
+      const rolesByUser = new Map<string, Set<string>>();
+      (clientRolesRes.data || []).forEach((r: any) => {
+        if (!rolesByUser.has(r.user_id)) rolesByUser.set(r.user_id, new Set());
+        rolesByUser.get(r.user_id)!.add(r.role);
+      });
+      const cIds = new Set<string>();
+      rolesByUser.forEach((rs, uid) => {
+        if (rs.has("cliente") && rs.size === 1) cIds.add(uid);
+      });
       setClientUserIds(cIds);
 
       // Build map of user_id -> empresa name from clientes table
