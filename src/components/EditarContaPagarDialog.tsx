@@ -41,12 +41,15 @@ export function EditarContaPagarDialog({ conta, open, onOpenChange, onSuccess }:
   const handleSave = async () => {
     if (!conta) return;
     setSaving(true);
+    const valorBruto = parseFloat(form.valor) || 0;
+    const desconto = parseFloat(form.desconto) || 0;
+    const valorLiquido = Math.max(0, valorBruto - desconto);
     const { error } = await supabase.from("contas_pagar").update({
       fornecedor: form.fornecedor,
       descricao: form.descricao,
       categoria: form.categoria || null,
-      valor: parseFloat(form.valor) || 0,
-      desconto: parseFloat(form.desconto) || 0,
+      valor: valorLiquido,
+      desconto: desconto,
       vencimento: form.vencimento,
     }).eq("id", conta.id);
     setSaving(false);
