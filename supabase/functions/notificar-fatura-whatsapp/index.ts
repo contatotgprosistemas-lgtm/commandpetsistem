@@ -181,16 +181,6 @@ Deno.serve(async (req) => {
     if (conexao?.instance_name && (conexao as any).status === "conectado") {
       canal = { id: (conexao as any).id, identificador: (conexao as any).instance_name };
     }
-    // 2) Fallback: canal do CRM
-    if (!canal) {
-      const { data: canais } = await supabase
-        .from("crm_canais")
-        .select("id, identificador, status")
-        .eq("empresa_id", empresa_id).eq("tipo", "whatsapp").eq("ativo", true)
-        .order("updated_at", { ascending: false });
-      const c = (canais ?? []).find((x: any) => x.status === "conectado") ?? (canais ?? [])[0];
-      if (c?.identificador) canal = { id: c.id, identificador: c.identificador };
-    }
     if (!canal?.identificador) {
       return new Response(JSON.stringify({ skipped: "no_channel" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
