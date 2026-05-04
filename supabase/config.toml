@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.gerar-multa-atraso]
 verify_jwt = false
+
+[functions.asaas-sistema-webhook]
+verify_jwt = false
