@@ -219,6 +219,19 @@ export default function SuperAdminPage() {
     }
   };
 
+  const deleteEmpresa = async (empresaId: string, nome: string) => {
+    toast({ title: "Excluindo empresa...", description: nome });
+    const { data, error } = await supabase.functions.invoke("excluir-empresa", {
+      body: { empresa_id: empresaId },
+    });
+    if (error || data?.error) {
+      toast({ title: data?.error || "Erro ao excluir empresa", variant: "destructive" });
+    } else {
+      toast({ title: `Empresa ${nome} excluída`, description: `${data?.usuarios_excluidos ?? 0} usuário(s) removido(s)` });
+      fetchProfiles();
+    }
+  };
+
   const impersonateUser = async (userId: string, nome: string) => {
     toast({ title: "Gerando acesso...", description: `Acessando conta de ${nome}` });
     const { data, error } = await supabase.functions.invoke("impersonate-user", {
