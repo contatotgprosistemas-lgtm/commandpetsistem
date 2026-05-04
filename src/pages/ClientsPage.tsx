@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { NovoClienteDialog } from "@/components/NovoClienteDialog";
 import { ImportContatosDialog } from "@/components/ImportContatosDialog";
 import { EditarClienteDialog } from "@/components/EditarClienteDialog";
-import { Search, Phone, Mail, Trash2, Users, Link2, MessageCircle, Pencil, KeyRound, Loader2, Download, ChevronLeft, ChevronRight, LayoutGrid, List as ListIcon } from "lucide-react";
+import { Search, Phone, Mail, Trash2, Users, Link2, Pencil, KeyRound, Loader2, Download, ChevronLeft, ChevronRight, LayoutGrid, List as ListIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -293,15 +293,6 @@ export default function ClientsPage() {
                           <KeyRound className="h-3.5 w-3.5" strokeWidth={1.5} />
                         </button>
                       )}
-                      {c.whatsapp && (
-                        <button
-                          onClick={() => navigate(`/crm?phone=${encodeURIComponent(c.whatsapp || "")}`)}
-                          className="h-7 w-7 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
-                          title="Abrir conversa no CRM"
-                        >
-                          <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.5} />
-                        </button>
-                      )}
                     </div>
                     <div className="flex gap-1">
                       <button
@@ -383,15 +374,6 @@ export default function ClientsPage() {
                   >
                     <Pencil className="h-3.5 w-3.5" strokeWidth={1.5} />
                   </button>
-                  {c.whatsapp && (
-                    <button
-                      onClick={() => navigate(`/crm?phone=${encodeURIComponent(c.whatsapp || "")}`)}
-                      className="h-7 w-7 rounded hover:bg-primary/10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
-                      title="Abrir conversa no CRM"
-                    >
-                      <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    </button>
-                  )}
                   <button
                     onClick={() => handleDelete(c.id, c.nome)}
                     className="h-7 w-7 rounded hover:bg-destructive/10 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"

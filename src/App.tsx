@@ -68,22 +68,6 @@ import PortalChecklistPage from "@/pages/portal/PortalChecklistPage";
 import PortalTransportePage from "@/pages/portal/PortalTransportePage";
 import PortalEstouChegandoPage from "@/pages/portal/PortalEstouChegandoPage";
 
-// CRM module
-import { CRMLayout } from "@/components/crm/CRMLayout";
-import CRMDashboard from "@/pages/crm/CRMDashboard";
-import CRMPlaceholder from "@/pages/crm/CRMPlaceholder";
-import CRMConversasPage from "@/pages/crm/CRMConversasPage";
-import CRMCanaisPage from "@/pages/crm/CRMCanaisPage";
-import CRMContatosPage from "@/pages/crm/CRMContatosPage";
-import CRMPipelinePage from "@/pages/crm/CRMPipelinePage";
-import CRMTarefasPage from "@/pages/crm/CRMTarefasPage";
-import CRMAutomacaoPage from "@/pages/crm/CRMAutomacaoPage";
-import CRMCampanhasPage from "@/pages/crm/CRMCampanhasPage";
-import CRMAnalyticsPage from "@/pages/crm/CRMAnalyticsPage";
-import CRMTemplatesPage from "@/pages/crm/CRMTemplatesPage";
-import CRMSLAPage from "@/pages/crm/CRMSLAPage";
-import CRMConfiguracoesPage from "@/pages/crm/CRMConfiguracoesPage";
-import CRMIntegracoesPage from "@/pages/crm/CRMIntegracoesPage";
 
 const queryClient = new QueryClient();
 
@@ -336,30 +320,6 @@ const App = () => (
 
             {/* Operacional auth */}
             <Route path="/operacional/login" element={<OperacionalLoginPage />} />
-
-            {/* CRM module (fullscreen, sidebar interna própria) */}
-            <Route
-              path="/crm"
-              element={
-                <ProtectedRoute>
-                  <CRMLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<CRMDashboard />} />
-              <Route path="conversas" element={<CRMConversasPage />} />
-              <Route path="contatos" element={<CRMContatosPage />} />
-              <Route path="pipeline" element={<CRMPipelinePage />} />
-              <Route path="tarefas" element={<CRMTarefasPage />} />
-              <Route path="automacao" element={<CRMAutomacaoPage />} />
-              <Route path="campanhas" element={<CRMCampanhasPage />} />
-              <Route path="canais" element={<CRMCanaisPage />} />
-              <Route path="integracoes" element={<CRMIntegracoesPage />} />
-              <Route path="analytics" element={<CRMAnalyticsPage />} />
-              <Route path="sla" element={<CRMSLAPage />} />
-              <Route path="templates" element={<CRMTemplatesPage />} />
-              <Route path="configuracoes" element={<CRMConfiguracoesPage />} />
-            </Route>
 
             {/* Operacional portal (protected) */}
             <Route
