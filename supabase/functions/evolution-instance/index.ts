@@ -154,9 +154,17 @@ Deno.serve(async (req) => {
         provedor: "evolution",
         identificador: instanceName,
         status: "conectando",
-        config: { qr, instance: instanceName, server_url: serverUrl, api_key: apiKey },
+        config: { qr, instance: instanceName, server_url: serverUrl },
       }).select().single();
       if (error) throw error;
+
+      // Store API key in private secrets table (service role only)
+      await admin.from("crm_canal_secrets").upsert({
+        canal_id: canal.id,
+        empresa_id: empresaId,
+        api_key: apiKey,
+        server_url: serverUrl,
+      });
 
       return new Response(JSON.stringify({ canal, qr }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -170,7 +178,8 @@ Deno.serve(async (req) => {
       const inst = canal.identificador;
       const cfg = (canal.config as any) || {};
       const baseUrl = cfg.server_url as string | undefined;
-      const apiKey = cfg.api_key as string | undefined;
+      const { data: secret } = await admin.from("crm_canal_secrets").select("api_key, server_url").eq("canal_id", canalId).maybeSingle();
+      const apiKey = secret?.api_key as string | undefined;
 
       let stateRes: Response;
       try {
@@ -219,7 +228,8 @@ Deno.serve(async (req) => {
       const { data: canal } = await admin.from("crm_canais").select("identificador, config").eq("id", canalId).eq("empresa_id", empresaId).maybeSingle();
       if (canal) {
         const cfg = (canal.config as any) || {};
-        await evoFetch(`/instance/logout/${canal.identificador}`, { method: "DELETE" }, cfg.server_url, cfg.api_key);
+        const { data: secret } = await admin.from("crm_canal_secrets").select("api_key").eq("canal_id", canalId).maybeSingle();
+        await evoFetch(`/instance/logout/${canal.identificador}`, { method: "DELETE" }, cfg.server_url, secret?.api_key);
         await admin.from("crm_canais").update({ status: "desconectado" }).eq("id", canalId);
       }
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -230,7 +240,8 @@ Deno.serve(async (req) => {
       const { data: canal } = await admin.from("crm_canais").select("identificador, config").eq("id", canalId).eq("empresa_id", empresaId).maybeSingle();
       if (canal) {
         const cfg = (canal.config as any) || {};
-        await evoFetch(`/instance/delete/${canal.identificador}`, { method: "DELETE" }, cfg.server_url, cfg.api_key);
+        const { data: secret } = await admin.from("crm_canal_secrets").select("api_key").eq("canal_id", canalId).maybeSingle();
+        await evoFetch(`/instance/delete/${canal.identificador}`, { method: "DELETE" }, cfg.server_url, secret?.api_key);
         await admin.from("crm_canais").delete().eq("id", canalId);
       }
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

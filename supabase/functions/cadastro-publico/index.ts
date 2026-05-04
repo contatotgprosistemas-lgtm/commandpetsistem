@@ -95,7 +95,8 @@ Deno.serve(async (req) => {
         .update(clientePayload)
         .eq("id", existing.id);
       if (updErr) {
-        return new Response(JSON.stringify({ error: "Erro ao atualizar: " + updErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        console.error("cadastro-publico update error:", updErr);
+        return new Response(JSON.stringify({ error: "Erro ao atualizar cadastro. Tente novamente." }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       clienteId = existing.id;
       returnedToken = edit_token;
@@ -115,8 +116,9 @@ Deno.serve(async (req) => {
         .single();
 
       if (clienteError) {
+        console.error("cadastro-publico insert error:", clienteError);
         return new Response(
-          JSON.stringify({ error: "Erro ao cadastrar cliente: " + clienteError.message }),
+          JSON.stringify({ error: "Erro ao cadastrar cliente. Tente novamente." }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -162,8 +164,9 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("cadastro-publico unhandled error:", err);
     return new Response(
-      JSON.stringify({ error: "Erro interno: " + (err as Error).message }),
+      JSON.stringify({ error: "Erro interno. Tente novamente." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
