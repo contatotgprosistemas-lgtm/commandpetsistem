@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -52,11 +52,9 @@ export function AppSidebar() {
   const location = useLocation();
 
   // Close mobile drawer on route change
-  const prevPath = useState(location.pathname);
-  if (mobileOpen && prevPath[0] !== location.pathname) {
+  useEffect(() => {
     setMobileOpen(false);
-    prevPath[1](location.pathname);
-  }
+  }, [location.pathname]);
 
   // --- Módulo Operacional ---
   const operacionalPaths = [
