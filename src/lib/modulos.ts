@@ -41,6 +41,7 @@ export const ROUTE_MODULES: Record<string, Array<keyof ModuloFlags> | null> = {
   "/financeiro": ["banho_tosa", "hotel_creche"],
   "/contratos": ["banho_tosa", "hotel_creche"],
   "/notas-fiscais": ["banho_tosa", "hotel_creche"],
+  "/notificacoes-whatsapp": ["banho_tosa", "hotel_creche"],
   "/leads": null,
   "/admin": null,
   "/configuracoes": null,
