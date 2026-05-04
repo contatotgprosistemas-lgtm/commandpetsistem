@@ -12,6 +12,32 @@ serve(async (req) => {
   }
 
   try {
+    // Require authenticated caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await authClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = claimsData.claims.sub as string;
+
     const { contract_id } = await req.json();
     if (!contract_id) {
       return new Response(JSON.stringify({ error: "contract_id required" }), {
@@ -20,9 +46,30 @@ serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Resolve caller's empresa_id (profiles or operational_users)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("empresa_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    let callerEmpresaId: string | null = profile?.empresa_id ?? null;
+    if (!callerEmpresaId) {
+      const { data: opUser } = await supabase
+        .from("operational_users")
+        .select("empresa_id")
+        .eq("user_id", userId)
+        .eq("ativo", true)
+        .maybeSingle();
+      callerEmpresaId = opUser?.empresa_id ?? null;
+    }
+    if (!callerEmpresaId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Get contract
     const { data: contract, error: cErr } = await supabase
@@ -34,6 +81,14 @@ serve(async (req) => {
     if (cErr || !contract) {
       return new Response(JSON.stringify({ error: "Contract not found" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Tenant isolation: caller must belong to the same empresa as the contract
+    if (contract.empresa_id !== callerEmpresaId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
