@@ -278,14 +278,14 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
                   {p.tipo === "texto" && <Textarea className="text-sm min-h-[60px]" value={respostas[p.key] || ""} onChange={e => setResposta(p.key, e.target.value)} />}
                 </div>
               </div>
-              {/* Show occurrence details field when "Ocorrência?" is answered "sim" */}
-              {p.key === "ocorrencia" && respostas["ocorrencia"] === "sim" && (
+              {/* Show occurrence details field when an "Ocorrência?" question is answered "sim" */}
+              {isOcorrenciaQuestion(p.label) && (respostas[p.key] || "").toLowerCase() === "sim" && (
                 <div className="px-2 pb-3">
                   <Textarea
                     className="text-sm min-h-[80px] border-destructive/50"
                     placeholder="Descreva a ocorrência em detalhes..."
-                    value={respostas["ocorrencia_detalhes"] || ""}
-                    onChange={e => setResposta("ocorrencia_detalhes", e.target.value)}
+                    value={respostas[`${p.key}_detalhes`] || ""}
+                    onChange={e => setResposta(`${p.key}_detalhes`, e.target.value)}
                   />
                 </div>
               )}
