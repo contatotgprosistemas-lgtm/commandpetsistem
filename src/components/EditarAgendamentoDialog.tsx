@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
-import { createContractShareLink } from "@/lib/contract-links";
+import { createContractShareLink, extractContractSigningToken } from "@/lib/contract-links";
 import { buildHospedagemContractValues, replaceContractPlaceholders } from "@/lib/contract-placeholders";
 
 const schema = z.object({
@@ -522,7 +522,7 @@ export function EditarAgendamentoDialog({ agendamento, open, onOpenChange, onSuc
       "get_contract_signing_token" as any,
       { p_contract_id: contract.id }
     );
-    const tk: string | null = (tokenRows as any)?.[0]?.signing_token ?? null;
+    const tk = extractContractSigningToken(tokenRows);
     if (!tk) {
       toast({ title: "Token de assinatura indisponível", variant: "destructive" });
       setContratoDialog(prev => prev ? { ...prev, loading: false } : null);
