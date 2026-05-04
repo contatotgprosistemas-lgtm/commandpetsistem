@@ -20,6 +20,14 @@ function isMealQuestion(label: string): boolean {
   return /(cafe da manha|cafe-da-manha|almoco|almocou|janta|jantar|refeicao|comeu|alimentac)/.test(n);
 }
 
+function isOcorrenciaQuestion(label: string): boolean {
+  const n = (label || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return /ocorrenc/.test(n);
+}
+
 interface ManejoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -222,15 +230,20 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
           });
         }
 
-        // Occurrence notification (new or updated with occurrence)
-        if (respostas["ocorrencia"] === "sim" && respostas["ocorrencia_detalhes"]?.trim()) {
-          await supabase.from("customer_notifications").insert({
-            empresa_id: empresaId,
-            cliente_id: petData.cliente_id,
-            title: `⚠️ Ocorrência — ${petName}`,
-            message: respostas["ocorrencia_detalhes"].trim(),
-            type: "ocorrencia",
-          });
+        // Occurrence notification — para qualquer pergunta de ocorrência respondida "sim"
+        for (const p of perguntasConfig) {
+          if (!isOcorrenciaQuestion(p.label)) continue;
+          const ans = (respostas[p.key] || "").toLowerCase();
+          const det = (respostas[`${p.key}_detalhes`] || "").trim();
+          if (ans === "sim" && det) {
+            await supabase.from("customer_notifications").insert({
+              empresa_id: empresaId,
+              cliente_id: petData.cliente_id,
+              title: `⚠️ Ocorrência — ${petName}`,
+              message: det,
+              type: "ocorrencia",
+            });
+          }
         }
       }
       toast.success("Boletim diário salvo!");
@@ -270,14 +283,14 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
                   {p.tipo === "texto" && <Textarea className="text-sm min-h-[60px]" value={respostas[p.key] || ""} onChange={e => setResposta(p.key, e.target.value)} />}
                 </div>
               </div>
-              {/* Show occurrence details field when "Ocorrência?" is answered "sim" */}
-              {p.key === "ocorrencia" && respostas["ocorrencia"] === "sim" && (
+              {/* Show occurrence details field when an "Ocorrência?" question is answered "sim" */}
+              {isOcorrenciaQuestion(p.label) && (respostas[p.key] || "").toLowerCase() === "sim" && (
                 <div className="px-2 pb-3">
                   <Textarea
                     className="text-sm min-h-[80px] border-destructive/50"
                     placeholder="Descreva a ocorrência em detalhes..."
-                    value={respostas["ocorrencia_detalhes"] || ""}
-                    onChange={e => setResposta("ocorrencia_detalhes", e.target.value)}
+                    value={respostas[`${p.key}_detalhes`] || ""}
+                    onChange={e => setResposta(`${p.key}_detalhes`, e.target.value)}
                   />
                 </div>
               )}
