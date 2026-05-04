@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { useEmpresaModulos } from "@/hooks/useEmpresaModulos";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 import { isRouteAllowed } from "@/lib/modulos";
 import logoDefault from "@/assets/logo.png";
 import {
@@ -38,13 +41,22 @@ import {
 type MenuItem = { icon: any; label: string; path: string };
 
 export function AppSidebar() {
+  const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const { isSuperAdmin, signOut, profile } = useAuth();
   const { logoUrl: empresaLogo } = useEmpresaLogo(logoDefault);
   const modulos = useEmpresaModulos();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Close mobile drawer on route change
+  const prevPath = useState(location.pathname);
+  if (mobileOpen && prevPath[0] !== location.pathname) {
+    setMobileOpen(false);
+    prevPath[1](location.pathname);
+  }
 
   // --- Módulo Operacional ---
   const operacionalPaths = [
@@ -202,9 +214,9 @@ export function AppSidebar() {
     );
   };
 
-  return (
+  const sidebarBody = (
     <motion.aside
-      animate={{ width: collapsed ? 60 : 232 }}
+      animate={{ width: isMobile ? 232 : (collapsed ? 60 : 232) }}
       transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
       className="h-screen bg-sidebar flex flex-col border-r border-sidebar-border sticky top-0 z-30 overflow-hidden"
     >
@@ -266,4 +278,30 @@ export function AppSidebar() {
       </div>
     </motion.aside>
   );
+
+  if (isMobile) {
+    return (
+      <>
+        {/* Top bar mobile */}
+        <header className="md:hidden fixed top-0 inset-x-0 h-12 bg-sidebar border-b border-sidebar-border z-40 flex items-center px-3 gap-2">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <button className="p-2 -ml-2 text-sidebar-foreground">
+                <Menu className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-[232px] bg-sidebar border-sidebar-border">
+              {sidebarBody}
+            </SheetContent>
+          </Sheet>
+          <img src={empresaLogo} alt="Logo" className="h-7 w-7 rounded-md object-cover" />
+          <span className="text-sm font-semibold text-sidebar-foreground tracking-tight truncate">PetControl</span>
+        </header>
+        {/* Spacer for fixed top bar */}
+        <div className="md:hidden h-12 shrink-0" />
+      </>
+    );
+  }
+
+  return sidebarBody;
 }
