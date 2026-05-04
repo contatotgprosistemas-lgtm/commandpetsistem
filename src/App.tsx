@@ -223,6 +223,17 @@ const App = () => (
             />
 
             <Route
+              path="/notificacoes-whatsapp"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <NotificacoesWhatsappPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/financeiro"
               element={
                 <ProtectedRoute>
