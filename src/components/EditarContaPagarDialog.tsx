@@ -20,6 +20,7 @@ export function EditarContaPagarDialog({ conta, open, onOpenChange, onSuccess }:
     descricao: "",
     categoria: "",
     valor: "",
+    desconto: "",
     vencimento: "",
   });
   const [saving, setSaving] = useState(false);
@@ -31,6 +32,7 @@ export function EditarContaPagarDialog({ conta, open, onOpenChange, onSuccess }:
         descricao: conta.descricao || "",
         categoria: conta.categoria || "",
         valor: String(conta.valor ?? ""),
+        desconto: String(conta.desconto ?? ""),
         vencimento: conta.vencimento || "",
       });
     }
@@ -44,6 +46,7 @@ export function EditarContaPagarDialog({ conta, open, onOpenChange, onSuccess }:
       descricao: form.descricao,
       categoria: form.categoria || null,
       valor: parseFloat(form.valor) || 0,
+      desconto: parseFloat(form.desconto) || 0,
       vencimento: form.vencimento,
     }).eq("id", conta.id);
     setSaving(false);
@@ -84,6 +87,20 @@ export function EditarContaPagarDialog({ conta, open, onOpenChange, onSuccess }:
               <Label>Vencimento</Label>
               <Input type="date" value={form.vencimento} onChange={e => setForm({ ...form, vencimento: e.target.value })} />
             </div>
+          </div>
+          <div>
+            <Label>Desconto (R$)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.desconto}
+              onChange={e => setForm({ ...form, desconto: e.target.value })}
+              placeholder="0,00"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Valor a abater do total da conta. Líquido: {((parseFloat(form.valor) || 0) - (parseFloat(form.desconto) || 0)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            </p>
           </div>
           <Button onClick={handleSave} disabled={saving} className="w-full">
             {saving ? "Salvando..." : "Salvar"}
