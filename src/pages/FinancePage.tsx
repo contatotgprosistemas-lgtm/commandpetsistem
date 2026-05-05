@@ -481,7 +481,7 @@ function PaginationBar({ page, pageSize, total, totalPages, onPage, onPageSize }
   );
 }
 
-function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete, onDeleteBulk }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void; onDeleteBulk: (ids: string[]) => void }) {
+function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, onDividir, onDelete, onDeleteBulk, onTotalChanged }: { contas: ContaReceber[]; loading: boolean; onBaixar: (c: ContaReceber) => void; onBaixarLote: (items: ContaReceber[]) => void; onEdit: (c: ContaReceber) => void; onDividir: (c: ContaReceber) => void; onDelete: (id: string) => void; onDeleteBulk: (ids: string[]) => void; onTotalChanged?: (contaId: string, total: number) => void }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
