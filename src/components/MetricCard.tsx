@@ -12,10 +12,10 @@ interface MetricCardProps {
 }
 
 const accentStyles: Record<string, { bg: string; text: string; border: string; gradient: string }> = {
-  blue: { bg: "bg-sky-500/10", text: "text-sky-600", border: "border-t-sky-500", gradient: "from-sky-500 to-blue-600" },
-  emerald: { bg: "bg-emerald-500/10", text: "text-emerald-600", border: "border-t-emerald-500", gradient: "from-emerald-500 to-teal-600" },
-  violet: { bg: "bg-violet-500/10", text: "text-violet-600", border: "border-t-violet-500", gradient: "from-violet-500 to-fuchsia-600" },
-  amber: { bg: "bg-amber-500/10", text: "text-amber-600", border: "border-t-amber-500", gradient: "from-amber-500 to-orange-600" },
+  blue: { bg: "bg-sky-500", text: "text-white", border: "border-l-sky-500", gradient: "from-sky-500 via-sky-600 to-blue-700" },
+  emerald: { bg: "bg-emerald-500", text: "text-white", border: "border-l-emerald-500", gradient: "from-emerald-500 via-emerald-600 to-teal-700" },
+  violet: { bg: "bg-violet-500", text: "text-white", border: "border-l-violet-500", gradient: "from-violet-500 via-purple-600 to-fuchsia-700" },
+  amber: { bg: "bg-amber-500", text: "text-white", border: "border-l-amber-500", gradient: "from-amber-500 via-orange-500 to-orange-700" },
 };
 
 export function MetricCard({ title, value, change, changeType = "neutral", icon, accent, filled }: MetricCardProps) {
@@ -25,19 +25,20 @@ export function MetricCard({ title, value, change, changeType = "neutral", icon,
   if (filled && a) {
     return (
       <div className={cn(
-        "relative overflow-hidden rounded-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-200",
-        "bg-gradient-to-br text-white", a.gradient
+        "group relative overflow-hidden rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-default",
+        "bg-gradient-to-br text-white ring-1 ring-white/10", a.gradient
       )}>
-        <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/20 blur-2xl group-hover:bg-white/30 transition-colors" />
+        <div className="absolute -bottom-12 -left-8 h-28 w-28 rounded-full bg-black/10 blur-3xl" />
         <div className="relative flex items-center justify-between mb-4">
-          <span className="text-xs font-medium text-white/80 uppercase tracking-wider">{title}</span>
-          <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-white/20 text-white">
+          <span className="text-[11px] font-semibold text-white/90 uppercase tracking-widest">{title}</span>
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-white/25 text-white backdrop-blur-sm ring-1 ring-white/30 shadow-md">
             {icon}
           </div>
         </div>
-        <div className="relative font-mono-tabular text-2xl font-semibold tracking-tight">{value}</div>
+        <div className="relative font-mono-tabular text-3xl font-bold tracking-tight drop-shadow-sm">{value}</div>
         {change && (
-          <p className="relative text-xs mt-1.5 font-medium text-white/80">{change}</p>
+          <p className="relative text-xs mt-2 font-medium text-white/85">{change}</p>
         )}
       </div>
     );
@@ -45,21 +46,21 @@ export function MetricCard({ title, value, change, changeType = "neutral", icon,
 
   return (
     <div className={cn(
-      "bg-card rounded-xl p-5 shadow-card border border-border/60 hover:shadow-card-hover transition-all duration-200",
-      a && `border-t-2 ${a.border}`
+      "group bg-card rounded-2xl p-5 shadow-card border border-border/60 hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-300",
+      a && `border-l-4 ${a.border}`
     )}>
       <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</span>
+        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">{title}</span>
         <div className={cn(
-          "h-9 w-9 rounded-lg flex items-center justify-center",
-          a ? `${a.bg} ${a.text}` : "bg-primary/8 text-primary"
+          "h-10 w-10 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform",
+          a ? `${a.bg} ${a.text}` : "bg-primary text-primary-foreground"
         )}>
           {icon}
         </div>
       </div>
-      <div className="font-mono-tabular text-2xl font-semibold text-foreground tracking-tight">{value}</div>
+      <div className="font-mono-tabular text-3xl font-bold text-foreground tracking-tight">{value}</div>
       {change && (
-        <p className={`text-xs mt-1.5 font-medium ${changeColor}`}>{change}</p>
+        <p className={`text-xs mt-2 font-medium ${changeColor}`}>{change}</p>
       )}
     </div>
   );
