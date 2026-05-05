@@ -519,7 +519,25 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
       .from("contas_receber_itens" as any)
       .select("id, descricao, valor, tipo")
       .eq("conta_receber_id", contaId);
-    setItemsCache(prev => ({ ...prev, [contaId]: (data as any) || [] }));
+    const items = (data as any[]) || [];
+    setItemsCache(prev => ({ ...prev, [contaId]: items }));
+    return items;
+  };
+
+  const recalcContaTotal = async (contaId: string) => {
+    const items = await refreshItems(contaId);
+    const total = items
+      .filter((i: any) => i.tipo !== "pagamento")
+      .reduce((s: number, i: any) => s + Number(i.valor || 0), 0);
+    const { error } = await supabase
+      .from("contas_receber")
+      .update({ valor: total })
+      .eq("id", contaId);
+    if (error) {
+      toast.error("Erro ao atualizar total da fatura");
+      return;
+    }
+    setContas(prev => prev.map(c => c.id === contaId ? { ...c, valor: total } as any : c));
   };
 
   const handleEditItem = async (contaId: string, item: { id: string; descricao: string; valor: number; tipo: string }) => {
@@ -541,7 +559,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
       return;
     }
     toast.success("Item atualizado");
-    await refreshItems(contaId);
+    await recalcContaTotal(contaId);
   };
 
   const handleDeleteItem = async (contaId: string, itemId: string) => {
@@ -555,7 +573,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
       return;
     }
     toast.success("Item excluído");
-    await refreshItems(contaId);
+    await recalcContaTotal(contaId);
   };
 
   const preFiltered = contas.filter(c => {
