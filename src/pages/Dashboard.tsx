@@ -107,6 +107,7 @@ export default function Dashboard() {
   const [massCheckinLoading, setMassCheckinLoading] = useState(false);
   const [faturamentoData, setFaturamentoData] = useState<{ dia: string; pendente: number; pago: number }[]>([]);
   const [faturamentoTotal, setFaturamentoTotal] = useState({ pendente: 0, pago: 0 });
+  const [despesasPagas, setDespesasPagas] = useState(0);
   const [aniversariantes, setAniversariantes] = useState<{ tipo: "cliente" | "pet"; id: string; nome: string; dia: number; extra?: string }[]>([]);
   const [novosCadastros, setNovosCadastros] = useState<{ id: string; nome: string; pets: string[] }[]>([]);
 
@@ -267,6 +268,18 @@ export default function Dashboard() {
         });
         setFaturamentoData(chartData);
         setFaturamentoTotal({ pendente: totalPendente, pago: totalPago });
+      });
+    // Fetch despesas pagas do mês (para lucro líquido)
+    supabase
+      .from("contas_pagar")
+      .select("valor, valor_pago, status, data_baixa")
+      .eq("status", "pago")
+      .gte("data_baixa", monthStart)
+      .lte("data_baixa", monthEnd)
+      .then(({ data: desp }) => {
+        if (!desp) return;
+        const total = (desp as any[]).reduce((acc, d) => acc + Number(d.valor_pago || d.valor || 0), 0);
+        setDespesasPagas(total);
       });
     // Fetch aniversariantes do mês (clientes e pets)
     (async () => {
