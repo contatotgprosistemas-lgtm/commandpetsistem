@@ -498,7 +498,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
   const [dataInicio, setDataInicio] = useState<string>(mesVigente.inicio);
   const [dataFim, setDataFim] = useState<string>(mesVigente.fim);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
-  const [itemsCache, setItemsCache] = useState<Record<string, { descricao: string; valor: number; tipo: string }[]>>({});
+  const [itemsCache, setItemsCache] = useState<Record<string, { id: string; descricao: string; valor: number; tipo: string }[]>>({});
   const { sortKey, sortDir, onSort } = useSortable();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -510,9 +510,52 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
     }
     setExpandedRows(prev => [...prev, id]);
     if (!itemsCache[id]) {
-      const { data } = await supabase.from("contas_receber_itens" as any).select("descricao, valor, tipo").eq("conta_receber_id", id);
-      setItemsCache(prev => ({ ...prev, [id]: (data as any) || [] }));
+      await refreshItems(id);
     }
+  };
+
+  const refreshItems = async (contaId: string) => {
+    const { data } = await supabase
+      .from("contas_receber_itens" as any)
+      .select("id, descricao, valor, tipo")
+      .eq("conta_receber_id", contaId);
+    setItemsCache(prev => ({ ...prev, [contaId]: (data as any) || [] }));
+  };
+
+  const handleEditItem = async (contaId: string, item: { id: string; descricao: string; valor: number; tipo: string }) => {
+    const novaDesc = window.prompt("Descrição:", item.descricao);
+    if (novaDesc === null) return;
+    const valorStr = window.prompt("Valor (R$):", String(item.valor).replace(".", ","));
+    if (valorStr === null) return;
+    const novoValor = Number(valorStr.replace(/\./g, "").replace(",", "."));
+    if (Number.isNaN(novoValor)) {
+      toast.error("Valor inválido");
+      return;
+    }
+    const { error } = await supabase
+      .from("contas_receber_itens" as any)
+      .update({ descricao: novaDesc, valor: novoValor })
+      .eq("id", item.id);
+    if (error) {
+      toast.error("Erro ao atualizar item");
+      return;
+    }
+    toast.success("Item atualizado");
+    await refreshItems(contaId);
+  };
+
+  const handleDeleteItem = async (contaId: string, itemId: string) => {
+    if (!window.confirm("Excluir este item da fatura?")) return;
+    const { error } = await supabase
+      .from("contas_receber_itens" as any)
+      .delete()
+      .eq("id", itemId);
+    if (error) {
+      toast.error("Erro ao excluir item");
+      return;
+    }
+    toast.success("Item excluído");
+    await refreshItems(contaId);
   };
 
   const preFiltered = contas.filter(c => {
@@ -750,9 +793,30 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
                               : "text-muted-foreground"
                           }`}
                         >
-                          {Number(item.valor) < 0 ? "-" : ""}R$ {Math.abs(Number(item.valor)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                         {Number(item.valor) < 0 ? "-" : ""}R$ {Math.abs(Number(item.valor)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell colSpan={3} />
+                        <TableCell colSpan={2} />
+                        <TableCell className="text-right py-1">
+                          {item.tipo !== "pagamento" && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-60 hover:opacity-100">
+                                  <MoreVertical className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditItem(c.id, item)}>
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Editar item
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteItem(c.id, item.id)}>
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Excluir item
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </TableCell>
                       </TableRow>
                     )) : (
                       <TableRow key={`${c.id}-empty`} className="bg-muted/20">
