@@ -537,7 +537,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
       toast.error("Erro ao atualizar total da fatura");
       return;
     }
-    setContas(prev => prev.map(c => c.id === contaId ? { ...c, valor: total } as any : c));
+    onTotalChanged?.(contaId, total);
   };
 
   const handleEditItem = async (contaId: string, item: { id: string; descricao: string; valor: number; tipo: string }) => {
