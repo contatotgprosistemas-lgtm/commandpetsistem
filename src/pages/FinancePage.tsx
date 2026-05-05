@@ -498,7 +498,7 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
   const [dataInicio, setDataInicio] = useState<string>(mesVigente.inicio);
   const [dataFim, setDataFim] = useState<string>(mesVigente.fim);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
-  const [itemsCache, setItemsCache] = useState<Record<string, { descricao: string; valor: number; tipo: string }[]>>({});
+  const [itemsCache, setItemsCache] = useState<Record<string, { id: string; descricao: string; valor: number; tipo: string }[]>>({});
   const { sortKey, sortDir, onSort } = useSortable();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -510,9 +510,52 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
     }
     setExpandedRows(prev => [...prev, id]);
     if (!itemsCache[id]) {
-      const { data } = await supabase.from("contas_receber_itens" as any).select("descricao, valor, tipo").eq("conta_receber_id", id);
-      setItemsCache(prev => ({ ...prev, [id]: (data as any) || [] }));
+      await refreshItems(id);
     }
+  };
+
+  const refreshItems = async (contaId: string) => {
+    const { data } = await supabase
+      .from("contas_receber_itens" as any)
+      .select("id, descricao, valor, tipo")
+      .eq("conta_receber_id", contaId);
+    setItemsCache(prev => ({ ...prev, [contaId]: (data as any) || [] }));
+  };
+
+  const handleEditItem = async (contaId: string, item: { id: string; descricao: string; valor: number; tipo: string }) => {
+    const novaDesc = window.prompt("Descrição:", item.descricao);
+    if (novaDesc === null) return;
+    const valorStr = window.prompt("Valor (R$):", String(item.valor).replace(".", ","));
+    if (valorStr === null) return;
+    const novoValor = Number(valorStr.replace(/\./g, "").replace(",", "."));
+    if (Number.isNaN(novoValor)) {
+      toast.error("Valor inválido");
+      return;
+    }
+    const { error } = await supabase
+      .from("contas_receber_itens" as any)
+      .update({ descricao: novaDesc, valor: novoValor })
+      .eq("id", item.id);
+    if (error) {
+      toast.error("Erro ao atualizar item");
+      return;
+    }
+    toast.success("Item atualizado");
+    await refreshItems(contaId);
+  };
+
+  const handleDeleteItem = async (contaId: string, itemId: string) => {
+    if (!window.confirm("Excluir este item da fatura?")) return;
+    const { error } = await supabase
+      .from("contas_receber_itens" as any)
+      .delete()
+      .eq("id", itemId);
+    if (error) {
+      toast.error("Erro ao excluir item");
+      return;
+    }
+    toast.success("Item excluído");
+    await refreshItems(contaId);
   };
 
   const preFiltered = contas.filter(c => {
