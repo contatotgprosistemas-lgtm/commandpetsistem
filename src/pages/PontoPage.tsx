@@ -156,18 +156,6 @@ export default function PontoPage() {
   useEffect(() => { fetchPunches(); }, [fetchPunches]);
   useEffect(() => { fetchJornadas(); }, [fetchJornadas]);
 
-  // Realtime subscription
-  useEffect(() => {
-    if (!empresaId) return;
-    const channel = supabase
-      .channel("ponto-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "ponto_registros" }, () => {
-        fetchPunches();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [empresaId, fetchPunches]);
-
   // Dashboard stats
   const todayPunches = punches;
   const employeesWithEntry = new Set(todayPunches.filter(p => p.tipo === "entrada").map(p => p.operational_user_id));

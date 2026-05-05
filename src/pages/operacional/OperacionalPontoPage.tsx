@@ -214,22 +214,6 @@ export default function OperacionalPontoPage() {
     setCameraOpen(false);
 
     try {
-      // Convert to blob
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob(b => b ? resolve(b) : reject(new Error("Canvas empty")), "image/jpeg", 0.8);
-      });
-
-      // Upload to storage
-      const fileName = `${user.empresa_id}/${user.id}/${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage
-        .from("ponto-selfies")
-        .upload(fileName, blob, { contentType: "image/jpeg" });
-
-      if (uploadError) throw uploadError;
-
-      // Store the file path for signed URL resolution later
-      const { data: signedData } = await supabase.storage.from("ponto-selfies").createSignedUrl(fileName, 3600);
-
       // Insert punch record
       const { error: insertError } = await supabase.from("ponto_registros").insert({
         empresa_id: user.empresa_id,
@@ -238,7 +222,7 @@ export default function OperacionalPontoPage() {
         data_hora: new Date().toISOString(),
         latitude: pendingGeo.lat,
         longitude: pendingGeo.lng,
-        selfie_url: signedData?.signedUrl || fileName,
+        selfie_url: null,
       });
 
       if (insertError) throw insertError;

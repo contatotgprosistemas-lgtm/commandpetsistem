@@ -52,7 +52,7 @@ export async function getSignedUrl(
 /**
  * Detect which private bucket a URL belongs to, if any.
  */
-const PRIVATE_BUCKETS = ["chat-media", "ponto-selfies"];
+const PRIVATE_BUCKETS: string[] = [];
 
 export function detectPrivateBucket(url: string): string | null {
   if (!url || !url.startsWith("http")) return null;
