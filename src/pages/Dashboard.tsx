@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap, Info, X, UserPlus, HeartPulse, User, Cake, Mail, MapPin, Calendar, DollarSign, Bed, CreditCard, FileSearch, Syringe, AlertCircle } from "lucide-react";
+import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap, Info, X, UserPlus, HeartPulse, User, Cake, Mail, MapPin, Calendar, DollarSign, Bed, CreditCard, FileSearch, Syringe, AlertCircle, Bell } from "lucide-react";
 
 // WhatsApp icon (SVG)
 function WhatsAppIcon({ className }: { className?: string }) {
