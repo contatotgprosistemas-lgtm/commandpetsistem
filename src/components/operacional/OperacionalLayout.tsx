@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useOperationalAuth } from "@/hooks/useOperationalAuth";
 import { toast } from "sonner";
 import { useState } from "react";
-import logoTgPro from "@/assets/logo-tgpro.jpeg";
+import logoDefault from "@/assets/logo.png";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 
 const navItems = [
@@ -23,7 +23,7 @@ export function OperacionalLayout() {
   const { user, signOut } = useOperationalAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { logoUrl: empresaLogo } = useEmpresaLogo(logoTgPro);
+  const { logoUrl: empresaLogo } = useEmpresaLogo(logoDefault);
 
   const handleSignOut = async () => {
     await signOut();
