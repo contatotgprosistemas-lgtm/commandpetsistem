@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
-import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap, Info, X, UserPlus, HeartPulse, User, Cake, Mail, MapPin, Calendar, DollarSign, Bed, CreditCard, FileSearch, Syringe, AlertCircle } from "lucide-react";
+import { MessageSquare, PawPrint, Users, LogOut, ClipboardList, Stethoscope, FileText, Pencil, Calculator, Phone, MessageCircle, LogIn, Trash2, FileSignature, Car, XCircle, AlertTriangle, ShowerHead, CheckSquare, TrendingUp, Hotel, GraduationCap, Info, X, UserPlus, HeartPulse, User, Cake, Mail, MapPin, Calendar, DollarSign, Bed, CreditCard, FileSearch, Syringe, AlertCircle, Bell } from "lucide-react";
 
 // WhatsApp icon (SVG)
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -107,6 +107,7 @@ export default function Dashboard() {
   const [massCheckinLoading, setMassCheckinLoading] = useState(false);
   const [faturamentoData, setFaturamentoData] = useState<{ dia: string; pendente: number; pago: number }[]>([]);
   const [faturamentoTotal, setFaturamentoTotal] = useState({ pendente: 0, pago: 0 });
+  const [despesasPagas, setDespesasPagas] = useState(0);
   const [aniversariantes, setAniversariantes] = useState<{ tipo: "cliente" | "pet"; id: string; nome: string; dia: number; extra?: string }[]>([]);
   const [novosCadastros, setNovosCadastros] = useState<{ id: string; nome: string; pets: string[] }[]>([]);
 
@@ -267,6 +268,18 @@ export default function Dashboard() {
         });
         setFaturamentoData(chartData);
         setFaturamentoTotal({ pendente: totalPendente, pago: totalPago });
+      });
+    // Fetch despesas pagas do mês (para lucro líquido)
+    supabase
+      .from("contas_pagar")
+      .select("valor, valor_pago, status, data_baixa")
+      .eq("status", "pago")
+      .gte("data_baixa", monthStart)
+      .lte("data_baixa", monthEnd)
+      .then(({ data: desp }) => {
+        if (!desp) return;
+        const total = (desp as any[]).reduce((acc, d) => acc + Number(d.valor_pago || d.valor || 0), 0);
+        setDespesasPagas(total);
       });
     // Fetch aniversariantes do mês (clientes e pets)
     (async () => {
@@ -802,40 +815,78 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-medium text-foreground">Faturamento Mensal</h2>
-              <p className="text-xs text-muted-foreground capitalize">{format(new Date(), "MMMM yyyy", { locale: ptBR })}</p>
-            </div>
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                <span className="text-muted-foreground">Recebido</span>
-                <span className="font-semibold text-foreground">R$ {faturamentoTotal.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+        <div className="relative bg-card rounded-2xl border border-border/60 p-5 shadow-elevated overflow-hidden">
+          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-accent/10 blur-2xl pointer-events-none" />
+          <div className="relative flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shadow-primary/30">
+                <TrendingUp className="h-5 w-5 text-primary-foreground" strokeWidth={2.4} />
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
-                <span className="text-muted-foreground">Pendente</span>
-                <span className="font-semibold text-foreground">R$ {faturamentoTotal.pendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+              <div>
+                <h2 className="text-base font-bold text-foreground tracking-tight">Faturamento Mensal</h2>
+                <p className="text-[11px] text-muted-foreground capitalize">{format(new Date(), "MMMM yyyy", { locale: ptBR })}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-[11px]">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="font-semibold text-emerald-700 dark:text-emerald-300 tabular-nums">R$ {faturamentoTotal.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/30">
+                <span className="h-2 w-2 rounded-full bg-sky-500" />
+                <span className="font-semibold text-sky-700 dark:text-sky-300 tabular-nums">R$ {faturamentoTotal.pendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
+          {(() => {
+            const lucro = faturamentoTotal.pago - despesasPagas;
+            const pct = faturamentoTotal.pago > 0 ? (lucro / faturamentoTotal.pago) * 100 : 0;
+            const positivo = lucro >= 0;
+            return (
+              <div className={`relative mb-4 p-3.5 rounded-xl border ${positivo ? "bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/30" : "bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/30"}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Lucro Líquido do Mês</p>
+                    <p className={`text-2xl font-bold tabular-nums tracking-tight ${positivo ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                      R$ {lucro.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Recebido − Despesas pagas (R$ {despesasPagas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})</p>
+                  </div>
+                  <div className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold tabular-nums ${positivo ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"} shadow-md`}>
+                    <TrendingUp className={`h-4 w-4 ${positivo ? "" : "rotate-180"}`} strokeWidth={2.5} />
+                    {pct.toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
           {faturamentoData.length > 0 ? (
             <FaturamentoChart data={faturamentoData} />
           ) : (
             <div className="flex items-center justify-center h-[220px] text-[13px] text-muted-foreground">Sem dados para exibir</div>
           )}
         </div>
-        <div className="bg-card rounded-xl border border-border/60 p-5 shadow-card">
-          <h2 className="text-sm font-medium text-foreground mb-4">Atividades Recentes</h2>
+        <div className="relative bg-card rounded-2xl border border-border/60 p-5 shadow-elevated overflow-hidden">
+          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-accent/10 blur-2xl pointer-events-none" />
+          <div className="relative flex items-center gap-3 mb-4">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-md shadow-accent/30">
+              <Bell className="h-5 w-5 text-accent-foreground" strokeWidth={2.4} />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-foreground tracking-tight">Atividades Recentes</h2>
+              <p className="text-[11px] text-muted-foreground">Contratos e aniversariantes</p>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Contratos a vencer</h3>
+              <h3 className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <AlertTriangle className="h-3 w-3" /> Contratos a vencer
+              </h3>
               {expiringContracts.length > 0 ? (
                 <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
                   {expiringContracts.map((c: any) => (
-                    <div key={c.id} className="flex items-start gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                    <div key={c.id} className="flex items-start gap-2 p-2.5 rounded-lg bg-gradient-to-r from-amber-100 to-amber-50 dark:from-amber-950/40 dark:to-amber-950/10 border-l-4 border-amber-400 shadow-sm hover:shadow-md transition-shadow">
                       <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
                       <div className="text-xs leading-tight">
                         <p className="font-medium text-foreground">Vence em {c.daysLeft} dia{c.daysLeft !== 1 ? "s" : ""}</p>
@@ -850,13 +901,13 @@ export default function Dashboard() {
               )}
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                🎂 Aniversariantes do mês
+              <h3 className="text-[10px] font-bold text-pink-700 dark:text-pink-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Cake className="h-3 w-3" /> Aniversariantes do mês
               </h3>
               {aniversariantes.length > 0 ? (
                 <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
                   {aniversariantes.map((a) => (
-                    <div key={`${a.tipo}-${a.id}`} className="flex items-start gap-2 p-2 rounded-lg bg-pink-50 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-800">
+                    <div key={`${a.tipo}-${a.id}`} className="flex items-start gap-2 p-2.5 rounded-lg bg-gradient-to-r from-pink-100 to-pink-50 dark:from-pink-950/40 dark:to-pink-950/10 border-l-4 border-pink-400 shadow-sm hover:shadow-md transition-shadow">
                       <span className="text-base leading-none mt-0.5 shrink-0">{a.tipo === "pet" ? "🐾" : "🎉"}</span>
                       <div className="text-xs leading-tight min-w-0 flex-1">
                         <p className="font-medium text-foreground truncate">
@@ -1205,12 +1256,20 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
   );
   return (
     <div className="bg-card rounded-xl border border-border/60 shadow-card mt-4 divide-y divide-border/60">
-      {items.map(item => {
+      {items.map((item, idx) => {
         const petName = item.pet?.nome ?? "Pet";
         const initials = petName.slice(0, 2).toUpperCase();
         const clientWhatsapp = item.cliente?.whatsapp;
+        const tipo = (item.tipo_servico || "").toLowerCase();
+        const rowAccent = /hotel|hosped|pernoit|diár|diari/.test(tipo)
+          ? "border-l-amber-400 bg-amber-50/40 dark:bg-amber-950/10 hover:bg-amber-50/70 dark:hover:bg-amber-950/20"
+          : /escola|daycare|creche|adestr/.test(tipo)
+          ? "border-l-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/10 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/20"
+          : /banho|tosa|estét|estetic/.test(tipo)
+          ? "border-l-sky-400 bg-sky-50/40 dark:bg-sky-950/10 hover:bg-sky-50/70 dark:hover:bg-sky-950/20"
+          : "border-l-primary/40 bg-primary/[0.02] hover:bg-muted/40";
         return (
-          <div key={item.id} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-3 md:px-5 py-3 hover:bg-muted/30 transition-colors">
+          <div key={item.id} className={`flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-3 md:px-5 py-3 border-l-4 transition-colors ${rowAccent}`}>
             <div className="flex items-center gap-3 md:contents">
             {onToggleSelect && (
               <Checkbox checked={selectedIds?.has(item.id) ?? false} onCheckedChange={() => onToggleSelect(item.id)} className="shrink-0" />

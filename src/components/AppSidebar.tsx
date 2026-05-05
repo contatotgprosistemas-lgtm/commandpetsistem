@@ -5,8 +5,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { useEmpresaModulos } from "@/hooks/useEmpresaModulos";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme } from "@/hooks/useTheme";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, Sun, Moon } from "lucide-react";
 import { isRouteAllowed } from "@/lib/modulos";
 import logoDefault from "@/assets/logo.png";
 import {
@@ -44,6 +45,7 @@ export function AppSidebar() {
   const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const { isSuperAdmin, signOut, profile } = useAuth();
   const { logoUrl: empresaLogo } = useEmpresaLogo(logoDefault);
@@ -119,19 +121,19 @@ export function AppSidebar() {
       to={item.path}
       end={item.path === "/"}
       className={({ isActive }) =>
-        `relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+        `group relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
           isActive
-            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/40"
+            ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-md shadow-primary/30"
+            : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:translate-x-0.5"
         }`
       }
     >
       {({ isActive }) => (
         <>
           {isActive && (
-            <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-sidebar-primary" />
+            <span className="absolute -left-2 top-1.5 bottom-1.5 w-1 rounded-r-full bg-primary-foreground/90" />
           )}
-          <item.icon className="h-[17px] w-[17px] shrink-0" strokeWidth={1.6} />
+          <item.icon className={`h-[17px] w-[17px] shrink-0 transition-transform ${isActive ? "scale-110" : "group-hover:scale-110"}`} strokeWidth={isActive ? 2.2 : 1.7} />
       <AnimatePresence>
         {!collapsed && (
           <motion.span
@@ -246,6 +248,24 @@ export function AppSidebar() {
 
       {/* User + Logout */}
       <div className="border-t border-sidebar-border/60 p-2 space-y-0.5">
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/70 transition-all"
+          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+        >
+          {theme === "dark" ? (
+            <Sun className="h-[17px] w-[17px] shrink-0 text-amber-400" strokeWidth={2} />
+          ) : (
+            <Moon className="h-[17px] w-[17px] shrink-0 text-indigo-500" strokeWidth={2} />
+          )}
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {theme === "dark" ? "Modo claro" : "Modo escuro"}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
         {!collapsed && profile && (
           <div className="px-3 py-1.5 text-[11px] text-sidebar-muted truncate font-medium">
             {profile.nome}
