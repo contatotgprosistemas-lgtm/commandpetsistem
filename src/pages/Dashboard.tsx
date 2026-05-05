@@ -616,14 +616,43 @@ export default function Dashboard() {
   }, [agendamentos]);
 
   return (
-    <div className="p-3 md:p-8 space-y-6 max-w-[1400px]">
-      <div>
-        <h1 className="text-lg font-semibold text-foreground tracking-tight">Dashboard</h1>
-        <p className="text-[13px] text-muted-foreground mt-0.5">Visão geral do dia — {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</p>
+    <div className="relative p-3 md:p-8 space-y-6 max-w-[1400px]">
+      {/* Decorative background blobs */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-32 -right-32 h-[28rem] w-[28rem] rounded-full bg-primary/20 blur-3xl opacity-60" />
+        <div className="absolute top-1/3 -left-40 h-[24rem] w-[24rem] rounded-full bg-accent/20 blur-3xl opacity-50" />
+        <div className="absolute bottom-0 right-1/4 h-[22rem] w-[22rem] rounded-full bg-info/15 blur-3xl opacity-40" />
+      </div>
+
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 shadow-elevated animate-fade-in"
+        style={{ backgroundImage: "var(--gradient-brand)" }}>
+        <div className="absolute -top-16 -right-16 h-64 w-64 rounded-full bg-white/15 blur-3xl" />
+        <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-black/15 blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="text-white">
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/80">
+              {(() => { const h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; })()} ☀️
+            </p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight mt-1 drop-shadow">Dashboard</h1>
+            <p className="text-sm text-white/85 mt-1 capitalize">{new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="[&>*]:!bg-white [&>*]:!text-primary [&>*:hover]:!bg-white/90 [&>*]:!shadow-lg [&>*]:!font-semibold">
+              <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
+            </div>
+            <div className="[&>*]:!bg-white/15 [&>*]:!text-white [&>*]:!border-white/40 [&>*:hover]:!bg-white/25 [&>*]:!backdrop-blur-sm [&>*]:!font-semibold">
+              <OrcamentoDialog />
+            </div>
+            <div className="[&>*]:!bg-white/15 [&>*]:!text-white [&>*]:!border-white/40 [&>*:hover]:!bg-white/25 [&>*]:!backdrop-blur-sm [&>*]:!font-semibold">
+              <EstouChegandoMapDialog />
+            </div>
+          </div>
+        </div>
       </div>
 
       {novosCadastros.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2 animate-fade-in">
           {novosCadastros.map((c) => (
             <div
               key={c.id}
@@ -653,7 +682,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
         <MetricCard
           filled
           title="Ocupação do Hotel"
@@ -671,19 +700,14 @@ export default function Dashboard() {
       </div>
 
       {/* Agenda section */}
-      <div className="space-y-4">
+      <div className="space-y-4 animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              AÇÕES DE HOJE
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2 before:content-[''] before:block before:w-1 before:h-6 before:rounded-full before:bg-gradient-to-b before:from-primary before:to-accent">
+              Ações de hoje
               <span className="text-sm font-normal text-muted-foreground">Todos</span>
             </h2>
             <p className="text-xs text-muted-foreground capitalize">{todayFormatted}</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <EstouChegandoMapDialog />
-            <OrcamentoDialog />
-            <NovoAgendamentoDialog onSuccess={fetchAgendamentos} />
           </div>
         </div>
 
