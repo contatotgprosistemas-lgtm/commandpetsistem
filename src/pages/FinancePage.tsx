@@ -273,6 +273,7 @@ export default function FinancePage() {
             onDividir={(c) => setDividirConta(c)}
             onDelete={(id) => setDeleteTarget({ ids: [id] })}
             onDeleteBulk={(ids) => setDeleteTarget({ ids })}
+            onTotalChanged={(contaId, total) => setContas(prev => prev.map(c => c.id === contaId ? { ...c, valor: total } as any : c))}
           />
         </TabsContent>
 
