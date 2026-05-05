@@ -1205,12 +1205,20 @@ function NaEmpresaList({ items, loading, onEdit, onFicha, onManejo, onChecklist,
   );
   return (
     <div className="bg-card rounded-xl border border-border/60 shadow-card mt-4 divide-y divide-border/60">
-      {items.map(item => {
+      {items.map((item, idx) => {
         const petName = item.pet?.nome ?? "Pet";
         const initials = petName.slice(0, 2).toUpperCase();
         const clientWhatsapp = item.cliente?.whatsapp;
+        const tipo = (item.tipo_servico || "").toLowerCase();
+        const rowAccent = /hotel|hosped|pernoit|diár|diari/.test(tipo)
+          ? "border-l-amber-400 bg-amber-50/40 dark:bg-amber-950/10 hover:bg-amber-50/70 dark:hover:bg-amber-950/20"
+          : /escola|daycare|creche|adestr/.test(tipo)
+          ? "border-l-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/10 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/20"
+          : /banho|tosa|estét|estetic/.test(tipo)
+          ? "border-l-sky-400 bg-sky-50/40 dark:bg-sky-950/10 hover:bg-sky-50/70 dark:hover:bg-sky-950/20"
+          : "border-l-primary/40 bg-primary/[0.02] hover:bg-muted/40";
         return (
-          <div key={item.id} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-3 md:px-5 py-3 hover:bg-muted/30 transition-colors">
+          <div key={item.id} className={`flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-3 md:px-5 py-3 border-l-4 transition-colors ${rowAccent}`}>
             <div className="flex items-center gap-3 md:contents">
             {onToggleSelect && (
               <Checkbox checked={selectedIds?.has(item.id) ?? false} onCheckedChange={() => onToggleSelect(item.id)} className="shrink-0" />
