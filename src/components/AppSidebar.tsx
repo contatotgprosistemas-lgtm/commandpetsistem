@@ -164,13 +164,13 @@ export function AppSidebar() {
       <>
         <button
           onClick={() => setOpen(!isOpen)}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+          className={`group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
             isActive
-              ? "text-sidebar-foreground"
-              : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/70"
+              ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-md shadow-primary/30"
+              : "text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:translate-x-0.5"
           }`}
         >
-          <Icon className="h-[17px] w-[17px] shrink-0" strokeWidth={1.6} />
+          <Icon className={`h-[17px] w-[17px] shrink-0 transition-transform ${isActive ? "scale-110" : "group-hover:scale-110"}`} strokeWidth={isActive ? 2.2 : 1.7} />
           <AnimatePresence>
             {!collapsed && (
               <motion.span
