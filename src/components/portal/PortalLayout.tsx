@@ -22,7 +22,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logoTgPro from "@/assets/logo-tgpro.jpeg";
+import logoDefault from "@/assets/logo.png";
 import { useEmpresaLogo } from "@/hooks/useEmpresaLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +73,7 @@ export function PortalLayout() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logoUrl: empresaLogo } = useEmpresaLogo(logoTgPro);
+  const { logoUrl: empresaLogo } = useEmpresaLogo(logoDefault);
   usePortalPwaManifest();
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export function PortalLayout() {
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
         <img src={empresaLogo} alt="Logo" className="h-8 w-8 rounded-lg object-cover mr-2.5" />
-        <span className="font-semibold text-foreground text-sm tracking-tight">TG-PRO</span>
+        <span className="font-semibold text-foreground text-sm tracking-tight">PetControl System</span>
         <div className="ml-auto">
           <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground">
             <LogOut className="h-4 w-4 mr-1" />
