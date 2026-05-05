@@ -119,32 +119,6 @@ export default function PortalTransportePage() {
     if (cliente) loadBookings();
   }, [cliente]);
 
-  // Realtime for transport_bookings status changes
-  useEffect(() => {
-    if (!cliente) return;
-    const channel = supabase
-      .channel("portal-transport")
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "transport_bookings",
-        filter: `cliente_id=eq.${cliente.id}`,
-      }, () => {
-        loadBookings();
-      })
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "agendamentos",
-        filter: `cliente_id=eq.${cliente.id}`,
-      }, () => {
-        loadBookings();
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [cliente]);
-
   if (clienteLoading || loading) {
     return (
       <div className="space-y-4">
