@@ -793,9 +793,30 @@ function ContasReceberTable({ contas, loading, onBaixar, onBaixarLote, onEdit, o
                               : "text-muted-foreground"
                           }`}
                         >
-                          {Number(item.valor) < 0 ? "-" : ""}R$ {Math.abs(Number(item.valor)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                         {Number(item.valor) < 0 ? "-" : ""}R$ {Math.abs(Number(item.valor)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell colSpan={3} />
+                        <TableCell colSpan={2} />
+                        <TableCell className="text-right py-1">
+                          {item.tipo !== "pagamento" && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-60 hover:opacity-100">
+                                  <MoreVertical className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditItem(c.id, item)}>
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Editar item
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteItem(c.id, item.id)}>
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Excluir item
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </TableCell>
                       </TableRow>
                     )) : (
                       <TableRow key={`${c.id}-empty`} className="bg-muted/20">
