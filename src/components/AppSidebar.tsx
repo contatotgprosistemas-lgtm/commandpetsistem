@@ -238,8 +238,8 @@ export function AppSidebar() {
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
         {showDashboard && renderNavItem({ icon: LayoutDashboard, label: "Dashboard", path: "/" })}
 
-        {showOperacional && renderSubmenu("Operacional", Wrench, operacionalVisible, isOperacionalActive, operacionalOpen, setOperacionalOpen)}
-        {showFinancas && renderSubmenu("Finanças", Wallet, financasVisible, isFinancasActive, financasOpen, setFinancasOpen)}
+        {showOperacional && renderSubmenu("Operacional", Wrench, operacionalVisible, isOperacionalActive || operacionalOpen, operacionalOpen, setOperacionalOpen)}
+        {showFinancas && renderSubmenu("Finanças", Wallet, financasVisible, isFinancasActive || financasOpen, financasOpen, setFinancasOpen)}
 
         <div className="pt-2 mt-2 border-t border-sidebar-border/40 space-y-0.5">
           {bottomItems.map(renderNavItem)}
