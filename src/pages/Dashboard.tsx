@@ -325,19 +325,6 @@ export default function Dashboard() {
     return () => clearTimeout(timerId);
   }, []);
 
-  // Realtime: refetch agendamentos when any change occurs
-  useEffect(() => {
-    const channel = supabase
-      .channel("dashboard-agendamentos-rt")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "agendamentos" },
-        () => { fetchAgendamentos(); }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
   // Capacidade total de pets do hotel (soma de capacidade_pets das baias ativas)
   useEffect(() => {
     const fetchBaias = async () => {
@@ -352,24 +339,6 @@ export default function Dashboard() {
       setCapacidadeHotel(total);
     };
     fetchBaias();
-    const channel = supabase
-      .channel("dashboard-baias-rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "baias" }, fetchBaias)
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  // Realtime: refetch novos cadastros públicos
-  useEffect(() => {
-    const channel = supabase
-      .channel("dashboard-novos-cadastros-rt")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "clientes" },
-        () => { fetchNovosCadastros(); }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
   }, []);
 
   async function handleCheckin(item: Agendamento) {
