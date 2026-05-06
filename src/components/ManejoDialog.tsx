@@ -299,6 +299,7 @@ export function ManejoDialog({ open, onOpenChange, agendamentoId, petId, petName
                 <div className="px-2 pb-3 flex items-center gap-3">
                   <span className="text-xs text-muted-foreground">Foto do pet comendo (opcional)</span>
                   <PhotoUpload
+                    bucket="pet-media"
                     size="sm"
                     folder={`manejo/${petId}`}
                     empresaId={empresaId}
