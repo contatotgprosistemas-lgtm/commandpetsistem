@@ -167,14 +167,31 @@ export default function Dashboard() {
 
   async function fetchAgendamentos() {
     setAgendaLoading(true);
+    // Janela: últimos 30 dias até +60 dias (evita estourar o limite de 1000 linhas
+    // do Supabase em empresas com histórico grande, garantindo que reservas de
+    // hoje sempre apareçam)
+    const rangeFrom = new Date();
+    rangeFrom.setDate(rangeFrom.getDate() - 30);
+    rangeFrom.setHours(0, 0, 0, 0);
+    const rangeTo = new Date();
+    rangeTo.setDate(rangeTo.getDate() + 60);
+    rangeTo.setHours(23, 59, 59, 999);
+    const rangeFromIso = rangeFrom.toISOString();
+    const rangeToIso = rangeTo.toISOString();
+    const rangeFromDate = rangeFromIso.slice(0, 10);
+    const rangeToDate = rangeToIso.slice(0, 10);
     const [{ data }, { data: bookings }] = await Promise.all([
       supabase
         .from("agendamentos")
         .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, hora_prevista_buscar, hora_prevista_levar, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url)")
+        .gte("data_hora", rangeFromIso)
+        .lte("data_hora", rangeToIso)
         .order("data_hora", { ascending: true }),
       supabase
         .from("transport_bookings")
         .select("*, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url), transport_type:transport_types(name, color), driver:drivers(name)")
+        .gte("scheduled_date", rangeFromDate)
+        .lte("scheduled_date", rangeToDate)
         .order("scheduled_date", { ascending: true }),
     ]);
     if (data) setAgendamentos(data as any);
