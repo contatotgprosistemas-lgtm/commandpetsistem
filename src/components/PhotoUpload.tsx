@@ -39,8 +39,17 @@ export function PhotoUpload({ value, onChange, folder = "clientes", size = "md",
       // Get empresa_id for tenant-scoped storage path
       let resolvedEmpresaId = empresaId;
       if (!resolvedEmpresaId) {
-        const { data: profile } = await supabase.from("profiles").select("empresa_id").maybeSingle();
-        resolvedEmpresaId = profile?.empresa_id || "unknown";
+        // Use RPC that resolves empresa from either profiles or operational_users
+        const { data: empId } = await supabase.rpc("get_user_empresa_id" as any);
+        if (empId) {
+          resolvedEmpresaId = empId as string;
+        } else {
+          const { data: profile } = await supabase.from("profiles").select("empresa_id").maybeSingle();
+          resolvedEmpresaId = profile?.empresa_id ?? undefined;
+        }
+      }
+      if (!resolvedEmpresaId) {
+        throw new Error("Não foi possível identificar a empresa do usuário. Recarregue a página e tente novamente.");
       }
       const ext = file.name.split(".").pop() || "jpg";
       const fileName = `${resolvedEmpresaId}/${folder}/${crypto.randomUUID()}.${ext}`;
