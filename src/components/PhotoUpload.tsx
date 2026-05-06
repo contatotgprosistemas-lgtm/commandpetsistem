@@ -57,7 +57,7 @@ export function PhotoUpload({ value, onChange, folder = "clientes", bucket = "pr
 
       const { error } = await supabase.storage
         .from(bucket)
-        .upload(fileName, file, { upsert: true, contentType: file.type });
+        .upload(fileName, file, { contentType: file.type });
 
       if (error) throw error;
 
