@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useOperationalAuth } from "@/hooks/useOperationalAuth";
-import { format, startOfDay } from "date-fns";
+import { format, addDays, startOfDay, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { FaltaDialog } from "@/components/FaltaDialog";
@@ -19,6 +19,7 @@ import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
 import { useAgendamentoExtras } from "@/hooks/useAgendamentoExtras";
+import { parseLocalDate } from "@/lib/utils";
 
 // Service type visuals (same palette used in ReservasPage)
 const serviceTypeMap: Array<{
@@ -69,13 +70,51 @@ export default function OperacionalDashboard() {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const { data: agendamentos } = await supabase
-        .from("agendamentos")
-        .select("id, data_hora, tipo_servico, status, pet:pets(id, nome, foto_url, especie), cliente:clientes(id, nome), subscription_id")
-        .eq("empresa_id", user.empresa_id)
-        .order("data_hora", { ascending: true });
+      const rangeFrom = subDays(today, 30).toISOString();
+      const rangeTo = addDays(today, 60).toISOString();
+      const PAGE_SIZE = 1000;
 
-      const all = agendamentos ?? [];
+      const fetchPaginatedAgendamentos = async (mode: "range" | "na_empresa") => {
+        let offset = 0;
+        const rows: any[] = [];
+
+        while (true) {
+          let query = supabase
+            .from("agendamentos")
+            .select("id, data_hora, tipo_servico, status, empresa_id, pet:pets(id, nome, foto_url, especie), cliente:clientes(id, nome), subscription_id")
+            .eq("empresa_id", user.empresa_id)
+            .order("data_hora", { ascending: true })
+            .range(offset, offset + PAGE_SIZE - 1);
+
+          query = mode === "range"
+            ? query.gte("data_hora", rangeFrom).lte("data_hora", rangeTo)
+            : query.eq("status", "na_empresa");
+
+          const { data, error } = await query;
+
+          if (error) {
+            toast.error("Erro ao carregar agendamentos: " + error.message);
+            break;
+          }
+
+          const page = data ?? [];
+          rows.push(...page);
+
+          if (page.length < PAGE_SIZE) break;
+          offset += PAGE_SIZE;
+        }
+
+        return rows;
+      };
+
+      const [rangeAgendamentos, naEmpresaAgendamentos] = await Promise.all([
+        fetchPaginatedAgendamentos("range"),
+        fetchPaginatedAgendamentos("na_empresa"),
+      ]);
+
+      const byId = new Map<string, any>();
+      [...rangeAgendamentos, ...naEmpresaAgendamentos].forEach((item) => byId.set(item.id, item));
+      const all = Array.from(byId.values()).sort((a, b) => a.data_hora.localeCompare(b.data_hora));
       // Fetch plan/package names for subscription-linked appointments
       const subIds = [...new Set(all.filter(a => a.subscription_id).map(a => a.subscription_id))];
       let subsMap: Record<string, { plan_name?: string; package_name?: string }> = {};
@@ -98,9 +137,10 @@ export default function OperacionalDashboard() {
         return a.tipo_servico;
       };
 
+      const todayKey = format(today, "yyyy-MM-dd");
       const agHoje = all.filter(a => {
-        const d = startOfDay(new Date(a.data_hora));
-        return d >= today && d < tomorrow && a.status !== "cancelado";
+        const agendamentoDateKey = a.data_hora?.split("T")[0]?.split(" ")[0] ?? "";
+        return agendamentoDateKey === todayKey && a.status !== "cancelado";
       });
       const naEmpresa = all.filter(a => a.status === "na_empresa");
 
