@@ -180,21 +180,30 @@ export default function Dashboard() {
     const rangeToIso = rangeTo.toISOString();
     const rangeFromDate = rangeFromIso.slice(0, 10);
     const rangeToDate = rangeToIso.slice(0, 10);
-    const [{ data }, { data: bookings }] = await Promise.all([
-      supabase
+    // Paginate agendamentos to bypass 1000-row limit
+    const PAGE = 1000;
+    const allAgendamentos: any[] = [];
+    let offset = 0;
+    while (true) {
+      const { data: page, error } = await supabase
         .from("agendamentos")
         .select("id, data_hora, tipo_servico, status, notas, valor, duracao_min, data_saida_provavel, hora_saida_provavel, hora_prevista_buscar, hora_prevista_levar, baia, forma_pagamento, empresa_id, cliente_id, pet_id, subscription_id, data_entrada, hora_entrada, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url)")
         .gte("data_hora", rangeFromIso)
         .lte("data_hora", rangeToIso)
-        .order("data_hora", { ascending: true }),
-      supabase
-        .from("transport_bookings")
-        .select("*, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url), transport_type:transport_types(name, color), driver:drivers(name)")
-        .gte("scheduled_date", rangeFromDate)
-        .lte("scheduled_date", rangeToDate)
-        .order("scheduled_date", { ascending: true }),
-    ]);
-    if (data) setAgendamentos(data as any);
+        .order("data_hora", { ascending: true })
+        .range(offset, offset + PAGE - 1);
+      if (error || !page || page.length === 0) break;
+      allAgendamentos.push(...page);
+      if (page.length < PAGE) break;
+      offset += PAGE;
+    }
+    const { data: bookings } = await supabase
+      .from("transport_bookings")
+      .select("*, pet:pets(id, nome, raca, especie, foto_url), cliente:clientes(id, nome, whatsapp, telefone, endereco, foto_url), transport_type:transport_types(name, color), driver:drivers(name)")
+      .gte("scheduled_date", rangeFromDate)
+      .lte("scheduled_date", rangeToDate)
+      .order("scheduled_date", { ascending: true });
+    setAgendamentos(allAgendamentos as any);
     setTransportBookings(bookings ?? []);
     setAgendaLoading(false);
   }
