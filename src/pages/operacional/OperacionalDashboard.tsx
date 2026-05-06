@@ -19,7 +19,6 @@ import { EstouChegandoMapDialog } from "@/components/EstouChegandoMapDialog";
 import { NovoAgendamentoDialog } from "@/components/NovoAgendamentoDialog";
 import { addToEsteiraIfApplicable, removeFromEsteira } from "@/lib/esteira";
 import { useAgendamentoExtras } from "@/hooks/useAgendamentoExtras";
-import { parseLocalDate } from "@/lib/utils";
 
 // Service type visuals (same palette used in ReservasPage)
 const serviceTypeMap: Array<{
