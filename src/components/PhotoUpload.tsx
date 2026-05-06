@@ -7,6 +7,7 @@ interface PhotoUploadProps {
   value?: string | null;
   onChange: (url: string | null) => void;
   folder?: string;
+  bucket?: "profile-photos" | "pet-media";
   size?: "sm" | "md";
   /** Use anon client for public forms (no auth) */
   publicUpload?: boolean;
@@ -14,7 +15,7 @@ interface PhotoUploadProps {
   empresaId?: string;
 }
 
-export function PhotoUpload({ value, onChange, folder = "clientes", size = "md", publicUpload, empresaId }: PhotoUploadProps) {
+export function PhotoUpload({ value, onChange, folder = "clientes", bucket = "profile-photos", size = "md", publicUpload, empresaId }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -55,13 +56,13 @@ export function PhotoUpload({ value, onChange, folder = "clientes", size = "md",
       const fileName = `${resolvedEmpresaId}/${folder}/${crypto.randomUUID()}.${ext}`;
 
       const { error } = await supabase.storage
-        .from("profile-photos")
-        .upload(fileName, file, { upsert: true });
+        .from(bucket)
+        .upload(fileName, file, { upsert: true, contentType: file.type });
 
       if (error) throw error;
 
       const { data: urlData } = supabase.storage
-        .from("profile-photos")
+        .from(bucket)
         .getPublicUrl(fileName);
 
       onChange(urlData.publicUrl);
