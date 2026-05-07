@@ -7,7 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NovoClienteDialog } from "@/components/NovoClienteDialog";
 import { EditarClienteDialog } from "@/components/EditarClienteDialog";
-import { Search, Phone } from "lucide-react";
+import { Search, Phone, Link2, MessageCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 export default function OperacionalClientesPage() {
   const { user } = useOperationalAuth();
@@ -35,12 +37,52 @@ export default function OperacionalClientesPage() {
     (c.whatsapp ?? "").includes(search)
   );
 
+  const linkCadastro = user?.empresa_id
+    ? `${window.location.origin}/cadastro/${user.empresa_id}`
+    : "";
+
+  const copiarLink = async () => {
+    if (!linkCadastro) return;
+    try {
+      await navigator.clipboard.writeText(linkCadastro);
+      toast({ title: "Link copiado!", description: "Envie ao cliente para que ele faça o cadastro." });
+    } catch {
+      toast({ title: "Erro ao copiar", variant: "destructive" });
+    }
+  };
+
+  const enviarWhatsapp = () => {
+    if (!linkCadastro) return;
+    const msg = encodeURIComponent(`Olá! Faça seu cadastro através deste link: ${linkCadastro}`);
+    window.open(`https://wa.me/?text=${msg}`, "_blank");
+  };
+
   return (
     <div className="space-y-6 pb-24 md:pb-0">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
         <NovoClienteDialog onSuccess={fetchClientes} empresaId={user?.empresa_id} />
       </div>
+
+      {linkCadastro && (
+        <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Link2 className="h-4 w-4" /> Link de cadastro público
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Compartilhe este link para que o cliente faça o próprio cadastro.
+          </p>
+          <div className="flex gap-2">
+            <Input value={linkCadastro} readOnly className="text-xs" onFocus={(e) => e.currentTarget.select()} />
+            <Button type="button" variant="outline" size="icon" onClick={copiarLink} title="Copiar link">
+              <Link2 className="h-4 w-4" />
+            </Button>
+            <Button type="button" variant="outline" size="icon" onClick={enviarWhatsapp} title="Enviar via WhatsApp">
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
