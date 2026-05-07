@@ -11,11 +11,11 @@ interface MetricCardProps {
   filled?: boolean;
 }
 
-const accentStyles: Record<string, { bg: string; text: string; border: string; gradient: string }> = {
-  blue: { bg: "bg-sky-500", text: "text-white", border: "border-l-sky-500", gradient: "from-sky-500 via-sky-600 to-blue-700" },
-  emerald: { bg: "bg-emerald-500", text: "text-white", border: "border-l-emerald-500", gradient: "from-emerald-500 via-emerald-600 to-teal-700" },
-  violet: { bg: "bg-violet-500", text: "text-white", border: "border-l-violet-500", gradient: "from-violet-500 via-purple-600 to-fuchsia-700" },
-  amber: { bg: "bg-amber-500", text: "text-white", border: "border-l-amber-500", gradient: "from-amber-500 via-orange-500 to-orange-700" },
+const accentStyles: Record<string, { bg: string; text: string; border: string; gradientStyle: string }> = {
+  blue: { bg: "bg-sky-500", text: "text-white", border: "border-l-sky-500", gradientStyle: "linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #1d4ed8 100%)" },
+  emerald: { bg: "bg-emerald-500", text: "text-white", border: "border-l-emerald-500", gradientStyle: "linear-gradient(135deg, #10b981 0%, #059669 50%, #0f766e 100%)" },
+  violet: { bg: "bg-violet-500", text: "text-white", border: "border-l-violet-500", gradientStyle: "linear-gradient(135deg, #8b5cf6 0%, #9333ea 50%, #a21caf 100%)" },
+  amber: { bg: "bg-amber-500", text: "text-white", border: "border-l-amber-500", gradientStyle: "linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #c2410c 100%)" },
 };
 
 export function MetricCard({ title, value, change, changeType = "neutral", icon, accent, filled }: MetricCardProps) {
@@ -26,10 +26,8 @@ export function MetricCard({ title, value, change, changeType = "neutral", icon,
     return (
       <div className={cn(
         "group relative overflow-hidden rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-default",
-        "bg-gradient-to-br text-white ring-1 ring-white/10", a.gradient
-      )}>
-        <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/20 blur-2xl group-hover:bg-white/30 transition-colors" />
-        <div className="absolute -bottom-12 -left-8 h-28 w-28 rounded-full bg-black/10 blur-3xl" />
+        "text-white ring-1 ring-white/10"
+      )} style={{ backgroundImage: a.gradientStyle }}>
         <div className="relative flex items-center justify-between mb-4">
           <span className="text-[11px] font-semibold text-white/90 uppercase tracking-widest">{title}</span>
           <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-white/25 text-white backdrop-blur-sm ring-1 ring-white/30 shadow-md">
