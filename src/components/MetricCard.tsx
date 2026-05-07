@@ -26,10 +26,8 @@ export function MetricCard({ title, value, change, changeType = "neutral", icon,
     return (
       <div className={cn(
         "group relative overflow-hidden rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-default",
-        "bg-gradient-to-br text-white ring-1 ring-white/10", a.gradient
-      )}>
-        <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/20 blur-2xl group-hover:bg-white/30 transition-colors" />
-        <div className="absolute -bottom-12 -left-8 h-28 w-28 rounded-full bg-black/10 blur-3xl" />
+        "text-white ring-1 ring-white/10"
+      )} style={{ backgroundImage: `linear-gradient(135deg, var(--mc-from), var(--mc-via), var(--mc-to))`, ...gradientVars(accent!) }}>
         <div className="relative flex items-center justify-between mb-4">
           <span className="text-[11px] font-semibold text-white/90 uppercase tracking-widest">{title}</span>
           <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-white/25 text-white backdrop-blur-sm ring-1 ring-white/30 shadow-md">
